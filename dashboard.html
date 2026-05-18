@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    <div>
+        <span class="badge bg-primary p-2">
+            <i class="bi bi-person"></i> 
+            <span id="userRoleDisplay"></span>
+        </span>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Reports</h6>
+                        <h2 class="mb-0" id="totalReports">0</h2>
+                    </div>
+                    <i class="bi bi-file-text" style="font-size: 40px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Water</h6>
+                        <h2 class="mb-0" id="waterCount">0</h2>
+                    </div>
+                    <i class="bi bi-droplet" style="font-size: 40px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Electricity</h6>
+                        <h2 class="mb-0" id="electricityCount">0</h2>
+                    </div>
+                    <i class="bi bi-lightning-charge" style="font-size: 40px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Telephone</h6>
+                        <h2 class="mb-0" id="telephoneCount">0</h2>
+                    </div>
+                    <i class="bi bi-telephone" style="font-size: 40px;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart"></i> Reports by Status
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="200"></canvas>
+                <div class="row mt-3 text-center">
+                    <div class="col-4">
+                        <span class="status-badge status-pending">Pending</span>
+                        <h5 id="pendingCount">0</h5>
+                    </div>
+                    <div class="col-4">
+                        <span class="status-badge status-in_progress">In Progress</span>
+                        <h5 id="inProgressCount">0</h5>
+                    </div>
+                    <div class="col-4">
+                        <span class="status-badge status-resolved">Resolved</span>
+                        <h5 id="resolvedCount">0</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Reports by Priority
+            </div>
+            <div class="card-body">
+                <canvas id="priorityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Leader Acknowledgement Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-check2-square"></i> Team Leader Overview
+                <span class="float-end">
+                    <span class="acknowledged-badge"><i class="bi bi-check-circle"></i> Acknowledged</span>
+                    <span class="unacknowledged-badge ms-2"><i class="bi bi-exclamation-circle"></i> Pending Acknowledgment</span>
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Acknowledged Reports: <span id="acknowledgedCount" class="text-success">0</span></h6>
+                        <div class="progress mb-3">
+                            <div id="acknowledgedProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Unacknowledged Reports: <span id="unacknowledgedCount" class="text-danger">0</span></h6>
+                        <div class="progress mb-3">
+                            <div id="unacknowledgedProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% if is_team_leader %}
+                <a href="{{ url_for('team_leader') }}" class="btn btn-primary mt-2">
+                    <i class="bi bi-eye"></i> Review Pending Acknowledgments
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-clock-history"></i> Recent Reports
+        <a href="{{ url_for('reports_page') }}" class="btn btn-sm btn-outline-primary float-end">View All</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Problem</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Acknowledged</th>
+                        <th>Technician</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recentReportsTable">
+                    <tr>
+                        <td colspan="10" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning"></i> Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> New Report
+                    </a>
+                    <a href="{{ url_for('water_reports') }}" class="btn btn-outline-info">
+                        <i class="bi bi-droplet"></i> Water Issues
+                    </a>
+                    <a href="{{ url_for('electricity_reports') }}" class="btn btn-outline-warning">
+                        <i class="bi bi-lightning-charge"></i> Electricity Issues
+                    </a>
+                    <a href="{{ url_for('telephone_reports') }}" class="btn btn-outline-success">
+                        <i class="bi bi-telephone"></i> Telephone Issues
+                    </a>
+                    <button onclick="exportReports()" class="btn btn-outline-secondary">
+                        <i class="bi bi-download"></i> Export Reports
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let statusChart, priorityChart;
+    
+    // Load dashboard data
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('/api/dashboard-stats');
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('Error loading dashboard:', data.error);
+                return;
+            }
+            
+            // Update stats cards
+            document.getElementById('totalReports').textContent = data.total_reports || 0;
+            document.getElementById('waterCount').textContent = data.by_type?.water || 0;
+            document.getElementById('electricityCount').textContent = data.by_type?.electricity || 0;
+            document.getElementById('telephoneCount').textContent = data.by_type?.telephone || 0;
+            document.getElementById('pendingCount').textContent = data.by_status?.pending || 0;
+            document.getElementById('inProgressCount').textContent = data.by_status?.in_progress || 0;
+            document.getElementById('resolvedCount').textContent = data.by_status?.resolved || 0;
+            document.getElementById('acknowledgedCount').textContent = data.acknowledged_count || 0;
+            
+            const total = data.total_reports || 1;
+            const unacknowledged = total - (data.acknowledged_count || 0);
+            document.getElementById('unacknowledgedCount').textContent = unacknowledged;
+            
+            const ackPercent = ((data.acknowledged_count || 0) / total) * 100;
+            const unackPercent = (unacknowledged / total) * 100;
+            document.getElementById('acknowledgedProgress').style.width = ackPercent + '%';
+            document.getElementById('unacknowledgedProgress').style.width = unackPercent + '%';
+            
+            // Update charts
+            updateStatusChart(data.by_status);
+            updatePriorityChart();
+            
+            // Update recent reports table
+            updateRecentReports(data.recent_reports || []);
+            
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            showToast('Error loading dashboard data', 'error');
+        }
+    }
+    
+    function updateStatusChart(statusData) {
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        if (statusChart) statusChart.destroy();
+        
+        statusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Resolved', 'Closed'],
+                datasets: [{
+                    data: [
+                        statusData?.pending || 0,
+                        statusData?.in_progress || 0,
+                        statusData?.resolved || 0,
+                        0
+                    ],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    async function updatePriorityChart() {
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            
+            const highCount = reports.filter(r => r.priority === 'high').length;
+            const mediumCount = reports.filter(r => r.priority === 'medium').length;
+            const lowCount = reports.filter(r => r.priority === 'low').length;
+            
+            const ctx = document.getElementById('priorityChart').getContext('2d');
+            if (priorityChart) priorityChart.destroy();
+            
+            priorityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['High', 'Medium', 'Low'],
+                    datasets: [{
+                        label: 'Number of Reports',
+                        data: [highCount, mediumCount, lowCount],
+                        backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            stepSize: 1
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error loading priority chart:', error);
+        }
+    }
+    
+    function updateRecentReports(reports) {
+        const tbody = document.getElementById('recentReportsTable');
+        if (!reports || reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reports found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = reports.map(report => `
+            <tr class="report-type-${report.report_type}">
+                <td>#${report.id}</td>
+                <td>
+                    <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
+                    ${report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1)}
+                </td>
+                <td>${report.entity_name || `${report.entity_type} #${report.entity_id}`}</td>
+                <td>${report.problem_type || '-'}<br><small class="text-muted">${(report.complaint_details || '').substring(0, 50)}${(report.complaint_details || '').length > 50 ? '...' : ''}</small></td>
+                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
+                <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge"><i class="bi bi-check-circle"></i> Yes</span>' : '<span class="unacknowledged-badge"><i class="bi bi-exclamation-circle"></i> No</span>'}</td>
+                <td>${report.technician_name || '-'}</td>
+                <td>${formatDate(report.created_at)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    ${!report.team_leader_acknowledged && isTeamLeader() ? `
+                    <button class="btn btn-sm btn-outline-success" onclick="acknowledgeReport(${report.id})">
+                        <i class="bi bi-check2-square"></i>
+                    </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    async function viewReport(id) {
+        window.location.href = `/reports?id=${id}`;
+    }
+    
+    async function acknowledgeReport(id) {
+        const notes = prompt('Enter acknowledgment notes (optional):');
+        try {
+            const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    team_leader_id: getCurrentUser().id,
+                    team_leader_notes: notes || ''
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Report acknowledged successfully');
+                loadDashboardData();
+            } else {
+                showToast(data.error || 'Failed to acknowledge', 'error');
+            }
+        } catch (error) {
+            showToast('Error acknowledging report', 'error');
+        }
+    }
+    
+    async function exportReports() {
+        try {
+            window.location.href = '/api/export-reports';
+            showToast('Export started');
+        } catch (error) {
+            showToast('Error exporting reports', 'error');
+        }
+    }
+    
+    // Display user role
+    document.getElementById('userRoleDisplay').textContent = isTeamLeader() ? 'Senior Technician' : 'Technician';
+    
+    // Load data on page load
+    loadDashboardData();
+    setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+</script>
+{% endblock %}
