@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-telephone text-success"></i> Telephone Reports</h2>
+    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Telephone Report
+    </a>
+</div>
+
+<!-- Similar structure to water_reports with telephone-specific fields -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="filterStatus">
+                    <option value="">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select class="form-select" id="filterPriority">
+                    <option value="">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Entity Type</label>
+                <select class="form-select" id="filterEntityType">
+                    <option value="">All</option>
+                    <option value="school">School</option>
+                    <option value="department">Department</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-primary w-100" onclick="loadTelephoneReports()">
+                    <i class="bi bi-search"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> Telephone Issue Reports
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Location</th>
+                        <th>Phone Number</th>
+                        <th>Lines</th>
+                        <th>Problem</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="telephoneReportsTable">
+                    <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadTelephoneReports() {
+        let url = '/api/technical-reports?type=telephone';
+        const status = document.getElementById('filterStatus').value;
+        if (status) url += `&status=${status}`;
+        
+        try {
+            const response = await fetch(url);
+            const reports = await response.json();
+            displayTelephoneReports(reports);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    
+    function displayTelephoneReports(reports) {
+        const tbody = document.getElementById('telephoneReportsTable');
+        if (!reports || reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No telephone reports found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = reports.map(report => `
+            <tr>
+                <td>#${report.id}</td>
+                <td>${report.entity_name || report.entity_type}</td>
+                <td>${report.phone_number || '-'}</td>
+                <td>${report.number_of_lines || '-'}</td>
+                <td>${report.problem_type}</td>
+                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                <td><span class="status-badge status-${report.status}">${report.status}</span></td>
+                <td>${formatDate(report.created_at)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function viewReport(id) {
+        window.location.href = `/reports?id=${id}`;
+    }
+    
+    loadTelephoneReports();
+</script>
+{% endblock %}
