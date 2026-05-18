@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row min-vh-100 align-items-center">
+        <div class="col-md-8 mx-auto text-center">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <div class="mb-4">
+                        <i class="bi bi-clipboard-check" style="font-size: 80px; color: #006b3f;"></i>
+                    </div>
+                    <h1 class="display-4 mb-3">Ministry of Education</h1>
+                    <h2 class="h3 text-muted mb-4">Technical Report System</h2>
+                    <p class="lead mb-4">Water • Electricity • Telephone</p>
+                    <hr class="my-4">
+                    <p class="mb-4">Welcome to the centralised reporting system for technical issues across all schools and departments under MOE Brunei.</p>
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                            <i class="bi bi-speedometer2"></i> Go to Dashboard
+                        </a>
+                        <a href="{{ url_for('new_report') }}" class="btn btn-outline-success btn-lg px-4">
+                            <i class="bi bi-plus-circle"></i> Create New Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-5 g-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-droplet" style="font-size: 40px; color: #17a2b8;"></i>
+                            <h5 class="card-title mt-3">Water Issues</h5>
+                            <p class="card-text small">Report water leaks, low pressure, tank issues, pipe bursts, and water quality problems.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-lightning-charge" style="font-size: 40px; color: #ffc107;"></i>
+                            <h5 class="card-title mt-3">Electricity Issues</h5>
+                            <p class="card-text small">Report power outages, faulty wiring, tripped breakers, generator problems, and electrical hazards.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-telephone" style="font-size: 40px; color: #28a745;"></i>
+                            <h5 class="card-title mt-3">Telephone Issues</h5>
+                            <p class="card-text small">Report dead lines, static noise, call drops, PBX issues, and internet connectivity problems.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-redirect after 3 seconds if needed
+    setTimeout(function() {
+        const user = getCurrentUser();
+        if (user && user.id) {
+            window.location.href = "{{ url_for('dashboard') }}";
+        }
+    }, 3000);
+</script>
+{% endblock %}
