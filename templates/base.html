@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOE Technical Report System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #006b3f;
+            --secondary-color: #ffcc00;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: white !important;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #006b3f 0%, #008555 100%);
+            min-height: calc(100vh - 56px);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.9);
+            padding: 12px 20px;
+            margin: 4px 0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 2px solid var(--primary-color);
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #005a35;
+            border-color: #005a35;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #ffc107;
+            color: #856404;
+        }
+        
+        .status-in_progress {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .status-resolved {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .status-closed {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .priority-high {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .priority-medium {
+            background-color: #ffc107;
+            color: #856404;
+        }
+        
+        .priority-low {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .report-type-water {
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .report-type-electricity {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .report-type-telephone {
+            border-left: 4px solid #28a745;
+        }
+        
+        .acknowledged-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        
+        .unacknowledged-badge {
+            background-color: #dc3545;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+        
+        footer {
+            background-color: white;
+            padding: 15px;
+            text-align: center;
+            margin-top: 30px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        // Global user management
+        let currentUser = null;
+        
+        function setCurrentUser(role, id, name) {
+            currentUser = { role: role, id: id, name: name };
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('userId', id);
+            localStorage.setItem('userName', name);
+        }
+        
+        function getCurrentUser() {
+            if (!currentUser) {
+                currentUser = {
+                    role: localStorage.getItem('userRole') || 'technician',
+                    id: localStorage.getItem('userId') || '1',
+                    name: localStorage.getItem('userName') || 'Haji Ali'
+                };
+            }
+            return currentUser;
+        }
+        
+        function isTeamLeader() {
+            return getCurrentUser().role === 'senior_technician';
+        }
+        
+        function isTechnician() {
+            return getCurrentUser().role === 'technician';
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function formatDateOnly(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB');
+        }
+        
+        function showToast(message, type = 'success') {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.style.position = 'fixed';
+                toastContainer.style.bottom = '20px';
+                toastContainer.style.right = '20px';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+        
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = '<div class="text-center"><div class="loading-spinner"></div> Loading...</div>';
+            }
+        }
+        
+        // Export function for reports
+        async function exportToCSV(data, filename) {
+            if (!data || data.length === 0) {
+                showToast('No data to export', 'error');
+                return;
+            }
+            
+            const headers = Object.keys(data[0]);
+            const csvRows = [];
+            csvRows.push(headers.join(','));
+            
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const value = row[header] || '';
+                    return `"${String(value).replace(/"/g, '""')}"`;
+                });
+                csvRows.push(values.join(','));
+            }
+            
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showToast('Export completed');
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-clipboard-check"></i> MOE Technical Report System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span id="userName">Technician</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="showUserProfile()"><i class="bi bi-person"></i> Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="switchUser()"><i class="bi bi-arrow-repeat"></i> Switch User</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 p-0">
+                <div class="sidebar">
+                    <div class="p-3">
+                        <h5 class="text-white mb-3">Menu</h5>
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                            <a class="nav-link" href="{{ url_for('water_reports') }}">
+                                <i class="bi bi-droplet"></i> Water Reports
+                            </a>
+                            <a class="nav-link" href="{{ url_for('electricity_reports') }}">
+                                <i class="bi bi-lightning-charge"></i> Electricity Reports
+                            </a>
+                            <a class="nav-link" href="{{ url_for('telephone_reports') }}">
+                                <i class="bi bi-telephone"></i> Telephone Reports
+                            </a>
+                            <a class="nav-link" href="{{ url_for('new_report') }}">
+                                <i class="bi bi-plus-circle"></i> New Report
+                            </a>
+                            <a class="nav-link" href="{{ url_for('my_reports') }}">
+                                <i class="bi bi-file-text"></i> My Reports
+                            </a>
+                            <a class="nav-link" href="{{ url_for('team_leader') }}">
+                                <i class="bi bi-check2-square"></i> Team Leader
+                            </a>
+                            <hr class="bg-light">
+                            <a class="nav-link" href="{{ url_for('schools_page') }}">
+                                <i class="bi bi-building"></i> Schools
+                            </a>
+                            <a class="nav-link" href="{{ url_for('departments_page') }}">
+                                <i class="bi bi-briefcase"></i> Departments
+                            </a>
+                            <a class="nav-link" href="{{ url_for('technicians_page') }}">
+                                <i class="bi bi-people"></i> Technicians
+                            </a>
+                            <hr class="bg-light">
+                            <a class="nav-link" href="{{ url_for('reports_page') }}">
+                                <i class="bi bi-archive"></i> All Reports
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="main-content">
+                    {% block content %}{% endblock %}
+                </div>
+                
+                <footer>
+                    <small>&copy; 2026 Ministry of Education, Brunei Darussalam. All Rights Reserved.</small>
+                    <br>
+                    <small class="text-muted">Version 1.0 | Water | Electricity | Telephone Technical Report System</small>
+                </footer>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize user display on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = getCurrentUser();
+            const userNameSpan = document.getElementById('userName');
+            if (userNameSpan) {
+                userNameSpan.textContent = user.name || 'Technician';
+            }
+            
+            // Highlight active nav link based on current URL
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && href !== '#' && currentPath === href) {
+                    link.classList.add('active');
+                } else if (href === '/dashboard' && currentPath === '/') {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Add role-based access control
+            const teamLeaderMenu = document.querySelector('a[href*="team_leader"]');
+            if (teamLeaderMenu && !isTeamLeader()) {
+                teamLeaderMenu.style.opacity = '0.5';
+                teamLeaderMenu.style.pointerEvents = 'none';
+                teamLeaderMenu.title = 'Senior Technician access only';
+            }
+        });
+        
+        function showUserProfile() {
+            const user = getCurrentUser();
+            alert('User Profile\n' +
+                  'Name: ' + user.name + '\n' +
+                  'Role: ' + (isTeamLeader() ? 'Senior Technician' : 'Technician') + '\n' +
+                  'ID: ' + user.id);
+        }
+        
+        function switchUser() {
+            const newRole = isTeamLeader() ? 'technician' : 'senior_technician';
+            const roleName = newRole === 'senior_technician' ? 'Senior Technician' : 'Technician';
+            const newName = prompt('Enter your name:', roleName + ' Name');
+            if (newName && newName.trim()) {
+                // Find matching technician from database or use default
+                fetch('/api/technicians')
+                    .then(res => res.json())
+                    .then(technicians => {
+                        let techId = '1';
+                        const matchingTech = technicians.find(t => t.name.toLowerCase() === newName.toLowerCase());
+                        if (matchingTech) {
+                            techId = matchingTech.id;
+                        }
+                        setCurrentUser(newRole, techId, newName);
+                        showToast('Switched to ' + roleName + ': ' + newName);
+                        setTimeout(() => location.reload(), 1000);
+                    })
+                    .catch(() => {
+                        setCurrentUser(newRole, '1', newName);
+                        showToast('Switched to ' + roleName + ': ' + newName);
+                        setTimeout(() => location.reload(), 1000);
+                    });
+            }
+        }
+        
+        // Function to refresh data periodically
+        let refreshInterval = null;
+        
+        function startAutoRefresh(intervalSeconds = 30) {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                if (typeof loadDashboardData === 'function') loadDashboardData();
+                if (typeof loadWaterReports === 'function') loadWaterReports();
+                if (typeof loadElectricityReports === 'function') loadElectricityReports();
+                if (typeof loadTelephoneReports === 'function') loadTelephoneReports();
+                if (typeof loadAllReports === 'function') loadAllReports();
+                if (typeof loadMyReports === 'function') loadMyReports();
+            }, intervalSeconds * 1000);
+        }
+        
+        // Optional: Stop auto-refresh when leaving the page
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>

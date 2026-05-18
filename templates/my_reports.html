@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-file-text"></i> My Reports</h2>
+    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Report
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-person"></i> Reports Assigned to Me
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Problem</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Acknowledged</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="myReportsTable">
+                    <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadMyReports() {
+        const user = getCurrentUser();
+        if (!user.id) {
+            document.getElementById('myReportsTable').innerHTML = '<tr><td colspan="9" class="text-center">Please select a technician profile</td></tr>';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/technical-reports?technician_id=${user.id}`);
+            const reports = await response.json();
+            displayMyReports(reports);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    
+    function displayMyReports(reports) {
+        const tbody = document.getElementById('myReportsTable');
+        if (!reports || reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No reports assigned to you</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = reports.map(report => `
+            <tr>
+                <td>#${report.id}</td>
+                <td>
+                    <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
+                    ${report.report_type}
+                </td>
+                <td>${report.entity_name || report.entity_type}</td>
+                <td>${report.problem_type}</br><small>${(report.complaint_details || '').substring(0, 40)}...</small></td>
+                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                <td><span class="status-badge status-${report.status}">${report.status}</span></td>
+                <td>${report.team_leader_acknowledged ? '✓ Yes' : '✗ No'}</td>
+                <td>${formatDate(report.created_at)}</br><small>Updated: ${formatDate(report.updated_at)}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="updateReport(${report.id})">
+                        <i class="bi bi-pencil"></i> Update
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="viewReport(${report.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+             </tr>
+        `).join('');
+    }
+    
+    function updateReport(id) {
+        window.location.href = `/reports?id=${id}&edit=true`;
+    }
+    
+    function viewReport(id) {
+        window.location.href = `/reports?id=${id}`;
+    }
+    
+    loadMyReports();
+    setInterval(loadMyReports, 30000);
+</script>
+{% endblock %}
