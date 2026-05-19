@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .reference-group {
+        background-color: #f8f5fc;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid var(--primary-light);
+    }
+    .reference-title {
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 10px;
+    }
+</style>
+
 <div class="card">
     <div class="card-header">
         <i class="bi bi-plus-circle"></i> Create New Technical Report
@@ -45,6 +60,36 @@
                     <select class="form-select" id="entityId" required disabled>
                         <option value="">Select Entity Type First</option>
                     </select>
+                </div>
+            </div>
+            
+            <!-- Reference Number Section -->
+            <div class="reference-group">
+                <div class="reference-title">
+                    <i class="bi bi-file-text"></i> Reference Information
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Type</label>
+                        <select class="form-select" id="referenceType">
+                            <option value="">Select Reference Type</option>
+                            <option value="memo">📝 Memo</option>
+                            <option value="minute">📋 Minute</option>
+                            <option value="letter">✉️ Letter</option>
+                            <option value="email">📧 Email</option>
+                            <option value="other">📄 Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026, MIN 05/2026">
+                        <small class="text-muted">Enter the reference number from the document</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Date</label>
+                        <input type="date" class="form-control" id="referenceDate">
+                        <small class="text-muted">Date of the reference document</small>
+                    </div>
                 </div>
             </div>
             
@@ -163,8 +208,6 @@
             const response = await fetch('/api/technicians');
             allTechnicians = await response.json();
             console.log('Loaded technicians:', allTechnicians);
-            
-            // Initially load all technicians (for default water type)
             filterTechniciansByType('water');
         } catch (error) {
             console.error('Error loading technicians:', error);
@@ -176,13 +219,10 @@
     function filterTechniciansByType(reportType) {
         const select = document.getElementById('technicianId');
         
-        // Filter technicians who have the required specialization
         const filteredTechnicians = allTechnicians.filter(tech => {
             const specializations = tech.specializations || [];
             return specializations.includes(reportType);
         });
-        
-        console.log(`Filtering for ${reportType}:`, filteredTechnicians);
         
         if (filteredTechnicians.length === 0) {
             select.innerHTML = '<option value="">No technicians available for this type</option>';
@@ -199,9 +239,8 @@
             document.getElementById('techFilterNote').innerHTML = `<span class="text-success">✅ ${filteredTechnicians.length} technician(s) available for ${reportType} issues</span>`;
         }
         
-        // Auto-select current user if matches
         const currentUser = getCurrentUser();
-        if (currentUser.id) {
+        if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
             const option = Array.from(select.options).find(opt => opt.value === currentUser.id);
             if (option) option.selected = true;
         }
@@ -248,12 +287,10 @@
     // Handle report type change
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            // Hide all detail fields
             document.getElementById('waterFields').style.display = 'none';
             document.getElementById('electricityFields').style.display = 'none';
             document.getElementById('telephoneFields').style.display = 'none';
             
-            // Show relevant fields
             if (this.value === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
                 updateProblemTypeOptions('water');
@@ -265,7 +302,6 @@
                 updateProblemTypeOptions('telephone');
             }
             
-            // Filter technicians based on selected report type
             filterTechniciansByType(this.value);
         });
     });
@@ -372,7 +408,11 @@
             technician_id: parseInt(technicianId),
             technician_notes: document.getElementById('technicianNotes').value,
             images: uploadedImages,
-            status: 'pending'
+            status: 'pending',
+            // Reference fields
+            reference_type: document.getElementById('referenceType').value,
+            reference_number: document.getElementById('referenceNumber').value,
+            reference_date: document.getElementById('referenceDate').value
         };
         
         if (!reportData.problem_type || !reportData.complaint_details) {
@@ -403,12 +443,14 @@
         }
     });
     
+    // Set default reference date to today
+    document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
+    
     // Initialize form
     async function initializeForm() {
         await loadTechnicians();
         updateProblemTypeOptions('water');
         
-        // Check if there are any technicians
         if (allTechnicians.length === 0) {
             showToast('No technicians found. Please add technicians first.', 'warning');
         }
