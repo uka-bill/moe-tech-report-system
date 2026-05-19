@@ -1,15 +1,14 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import os
-from supabase import create_client, Client
+from supabase import create_client
 import uuid
 from werkzeug.utils import secure_filename
 import csv
 import io
-from datetime import datetime, timedelta
+from datetime import datetime
 import traceback
 import json
 import base64
-from PIL import Image
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -40,17 +39,10 @@ app.logger.info('MOE Technical Report System startup')
 
 # ============ SUPABASE CONFIGURATION ============
 
-# Get Supabase credentials from environment variables (for production)
+# Get Supabase credentials from environment variables
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://megrxcfmcwrttiwujddh.supabase.co')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZ3J4Y2ZtY3dydHRpd3VqZGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDA4ODgsImV4cCI6MjA5NDYxNjg4OH0.fmwcV6fqqr-hO6hRPTzER6eODl6zffwud9heIchMNkw')
 
-# For production, also check for ANON_KEY as fallback
-if not SUPABASE_KEY:
-    SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
-
-app.logger.info(f"Supabase URL configured: {SUPABASE_URL[:50]}...")
-
-# Initialize Supabase client
 try:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     app.logger.info("✅ Supabase client initialized successfully")
@@ -66,7 +58,7 @@ def allowed_file(filename):
 
 def create_directories():
     """Create necessary directories for the application"""
-    directories = ['uploads', 'logs', 'backups']
+    directories = ['uploads', 'logs']
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
@@ -81,7 +73,6 @@ def test_supabase_connection():
         return False
     
     try:
-        # Try to query a simple table
         response = supabase.table("technicians").select("id").limit(1).execute()
         app.logger.info("✅ Supabase connection test successful")
         return True
@@ -89,38 +80,16 @@ def test_supabase_connection():
         app.logger.error(f"❌ Supabase connection test failed: {e}")
         return False
 
-def format_currency(amount):
-    """Format number as currency"""
-    try:
-        if amount is None:
-            return "B$0.00"
-        return f"B${float(amount):,.2f}"
-    except (ValueError, TypeError):
-        return "B$0.00"
-
-def format_date_iso(date_string):
-    """Format date string to ISO format"""
-    if not date_string:
-        return None
-    try:
-        if isinstance(date_string, str):
-            return date_string
-        return date_string.isoformat()
-    except:
-        return None
-
 # ============ ROUTES ============
 
 @app.route('/')
 def index():
     """Landing page"""
-    app.logger.info("Accessing index page")
     return render_template('index.html')
 
 @app.route('/dashboard')
 def dashboard():
     """Main dashboard page"""
-    app.logger.info("Accessing dashboard")
     return render_template('dashboard.html')
 
 @app.route('/reports')
@@ -177,16 +146,17 @@ def team_leader():
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
-    """Get all technicians"""
+    """Get all technicians sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        response = supabase.table("technicians").select("*").order("name").execute()
+        # IMPORTANT: Sort by id in ascending order (oldest first)
+        response = supabase.table("technicians").select("*").order("id", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting technicians: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify([]), 500
 
 @app.route('/api/technicians', methods=['POST'])
 def create_technician():
@@ -206,7 +176,6 @@ def create_technician():
             "created_at": datetime.now().isoformat()
         }
         
-        # Validate required fields
         if not technician_data['name']:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
         
@@ -280,12 +249,13 @@ def delete_technician(tech_id):
 
 @app.route('/api/schools', methods=['GET'])
 def get_schools():
-    """Get all schools"""
+    """Get all schools sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify([]), 500
         
-        response = supabase.table("schools").select("*").order("name").execute()
+        # IMPORTANT: Sort by id in ascending order (oldest first)
+        response = supabase.table("schools").select("*").order("id", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting schools: {e}")
@@ -372,12 +342,13 @@ def delete_school(school_id):
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
-    """Get all departments"""
+    """Get all departments sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify([]), 500
         
-        response = supabase.table("departments").select("*").order("name").execute()
+        # IMPORTANT: Sort by id in ascending order (oldest first)
+        response = supabase.table("departments").select("*").order("id", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting departments: {e}")
@@ -496,7 +467,7 @@ def get_technical_reports():
         if team_leader_ack is not None:
             query = query.eq("team_leader_acknowledged", team_leader_ack.lower() == 'true')
         
-        # Execute query with ordering
+        # Execute query with ordering by created_at descending (newest first for reports)
         response = query.order("created_at", desc=True).execute()
         
         reports = []
@@ -504,7 +475,6 @@ def get_technical_reports():
             for report in response.data:
                 report_data = dict(report)
                 
-                # Get entity name (school or department)
                 if report_data['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
@@ -514,7 +484,6 @@ def get_technical_reports():
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
                 
-                # Get technician name
                 if report_data.get('technician_id'):
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
@@ -538,7 +507,6 @@ def create_technical_report():
         
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['report_type', 'entity_type', 'entity_id', 'problem_type', 'complaint_details']
         for field in required_fields:
             if not data.get(field):
@@ -594,7 +562,6 @@ def update_technical_report(report_id):
         
         data = request.get_json()
         
-        # Allowed fields for update
         allowed_fields = [
             'problem_type', 'complaint_details', 'priority', 'status',
             'technician_notes', 'action_taken', 'resolution_details',
@@ -699,20 +666,16 @@ def upload_image():
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
         
-        # Generate secure filename
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = secure_filename(f"{uuid.uuid4().hex}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
-        # Save file
         file.save(filepath)
         app.logger.info(f"Image saved: {filepath}")
         
-        # Convert to base64 for storage in Supabase
         with open(filepath, 'rb') as img_file:
             img_data = base64.b64encode(img_file.read()).decode('utf-8')
         
-        # Store image record in Supabase
         image_record = {
             "filename": filename,
             "original_name": file.filename,
@@ -722,7 +685,6 @@ def upload_image():
             "uploaded_at": datetime.now().isoformat()
         }
         
-        # If supabase is available, store there
         if supabase:
             try:
                 response = supabase.table("report_images").insert(image_record).execute()
@@ -732,7 +694,6 @@ def upload_image():
             except Exception as e:
                 app.logger.warning(f"Could not save image to Supabase: {e}")
         
-        # Return the local URL for the image
         image_url = f"/api/images/{filename}"
         
         return jsonify({
@@ -765,23 +726,18 @@ def get_dashboard_stats():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Get counts by report type
         water_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "water").execute()
         electricity_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "electricity").execute()
         telephone_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "telephone").execute()
         
-        # Get counts by status
         pending_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "pending").execute()
         in_progress_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "in_progress").execute()
         resolved_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "resolved").execute()
         
-        # Get acknowledged vs unacknowledged
         acknowledged_reports = supabase.table("technical_reports").select("*", count="exact").eq("team_leader_acknowledged", True).execute()
         
-        # Get recent reports
         recent_reports = supabase.table("technical_reports").select("*").order("created_at", desc=True).limit(10).execute()
         
-        # Enhance recent reports with entity names
         recent_list = []
         if recent_reports.data:
             for report in recent_reports.data:
@@ -849,11 +805,9 @@ def export_reports():
         if not response.data:
             return jsonify({'success': False, 'error': 'No data to export'}), 404
         
-        # Prepare CSV data
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Write headers
         headers = [
             'Report ID', 'Type', 'Entity Type', 'Entity Name', 'Account Number',
             'Meter Number', 'Phone Number', 'Number of Lines', 'Problem Type',
@@ -864,7 +818,6 @@ def export_reports():
         writer.writerow(headers)
         
         for report in response.data:
-            # Get entity name
             entity_name = ''
             if report['entity_type'] == 'school':
                 entity = supabase.table("schools").select("name").eq("id", report['entity_id']).execute()
@@ -875,7 +828,6 @@ def export_reports():
                 if entity.data:
                     entity_name = entity.data[0]['name']
             
-            # Get technician name
             tech_name = ''
             if report.get('technician_id'):
                 tech = supabase.table("technicians").select("name").eq("id", report['technician_id']).execute()
@@ -907,7 +859,6 @@ def export_reports():
         
         output.seek(0)
         
-        # Create response
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"technical_reports_{timestamp}.csv"
         
@@ -966,10 +917,8 @@ def internal_error(error):
 
 def init_app():
     """Initialize application on startup"""
-    # Create necessary directories
     create_directories()
     
-    # Log startup information
     app.logger.info("=" * 60)
     app.logger.info("🏫 MOE Technical Report System Starting")
     app.logger.info("Ministry of Education - Brunei Darussalam")
@@ -978,17 +927,14 @@ def init_app():
     app.logger.info("👥 Users: Senior Technicians & Technicians")
     app.logger.info("=" * 60)
     
-    # Test Supabase connection
     if test_supabase_connection():
         app.logger.info("✅ Supabase connection established")
     else:
         app.logger.warning("⚠️ Supabase connection failed - check credentials")
     
-    # Log environment
     env = os.environ.get('FLASK_ENV', 'production')
     app.logger.info(f"🌍 Running in {env} mode")
     
-    # Log port
     port = int(os.environ.get('PORT', 5000))
     app.logger.info(f"🚀 Server will run on port: {port}")
     
@@ -1000,13 +946,9 @@ init_app()
 # ============ MAIN ENTRY POINT ============
 
 if __name__ == '__main__':
-    # Get port from environment variable (for production)
     port = int(os.environ.get('PORT', 5000))
-    
-    # Get debug mode from environment (default to False for production)
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # Run the app
     app.run(
         host='0.0.0.0',
         port=port,
