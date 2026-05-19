@@ -1,248 +1,358 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
-    <div>
-        <span class="badge bg-primary p-2">
-            <i class="bi bi-person"></i> 
-            <span id="userRoleDisplay"></span>
-        </span>
-    </div>
-</div>
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-left: 4px solid var(--primary-color);
+        transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .summary-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .summary-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: var(--primary-dark);
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--primary-light);
+    }
+    
+    .category-badge {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .category-water {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .category-electricity {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+    
+    .category-telephone {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .status-pending-dot {
+        background-color: #ffc107;
+    }
+    
+    .status-acknowledged-dot {
+        background-color: #28a745;
+    }
+    
+    .status-resolved-dot {
+        background-color: #17a2b8;
+    }
+    
+    .quick-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .report-list-item {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        transition: background 0.2s;
+    }
+    
+    .report-list-item:hover {
+        background-color: var(--secondary-color);
+    }
+    
+    .report-title {
+        font-weight: 500;
+        margin-bottom: 5px;
+    }
+    
+    .report-meta {
+        font-size: 0.8rem;
+        color: #666;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .acknowledgment-progress {
+        background: #f0f0f0;
+        border-radius: 10px;
+        height: 8px;
+        overflow: hidden;
+    }
+    
+    .acknowledgment-bar {
+        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+        height: 100%;
+        transition: width 0.3s;
+    }
+</style>
 
-<!-- Stats Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Total Reports</h6>
-                        <h2 class="mb-0" id="totalReports">0</h2>
-                    </div>
-                    <i class="bi bi-file-text" style="font-size: 40px;"></i>
-                </div>
-            </div>
+<div class="container-fluid">
+    <!-- Welcome Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+            <p class="text-muted mb-0">Welcome back, <strong id="welcomeName"></strong>! Here's your technical report summary.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary p-2">
+                <i class="bi bi-calendar"></i> <span id="currentDate"></span>
+            </span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Water</h6>
-                        <h2 class="mb-0" id="waterCount">0</h2>
-                    </div>
-                    <i class="bi bi-droplet" style="font-size: 40px;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Electricity</h6>
-                        <h2 class="mb-0" id="electricityCount">0</h2>
-                    </div>
-                    <i class="bi bi-lightning-charge" style="font-size: 40px;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title">Telephone</h6>
-                        <h2 class="mb-0" id="telephoneCount">0</h2>
-                    </div>
-                    <i class="bi bi-telephone" style="font-size: 40px;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Status Charts Row -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-pie-chart"></i> Reports by Status
-            </div>
-            <div class="card-body">
-                <canvas id="statusChart" height="200"></canvas>
-                <div class="row mt-3 text-center">
-                    <div class="col-4">
-                        <span class="status-badge status-pending">Pending</span>
-                        <h5 id="pendingCount">0</h5>
-                    </div>
-                    <div class="col-4">
-                        <span class="status-badge status-in_progress">In Progress</span>
-                        <h5 id="inProgressCount">0</h5>
-                    </div>
-                    <div class="col-4">
-                        <span class="status-badge status-resolved">Resolved</span>
-                        <h5 id="resolvedCount">0</h5>
-                    </div>
-                </div>
-            </div>
+    <!-- Quick Stats Cards -->
+    <div class="quick-stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Reports</div>
+            <div class="stat-number" id="totalReports">0</div>
+            <small class="text-muted">All time reports</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Today's Reports</div>
+            <div class="stat-number" id="todayReports">0</div>
+            <small class="text-muted"><span id="todayPending"></span> pending</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pending Acknowledgment</div>
+            <div class="stat-number text-warning" id="pendingAckCount">0</div>
+            <small class="text-muted">Awaiting team leader review</small>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Acknowledged Reports</div>
+            <div class="stat-number text-success" id="acknowledgedCount">0</div>
+            <small class="text-muted">Reviewed by team leader</small>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-bar-chart"></i> Reports by Priority
-            </div>
-            <div class="card-body">
-                <canvas id="priorityChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Team Leader Acknowledgement Section -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-check2-square"></i> Team Leader Overview
-                <span class="float-end">
-                    <span class="acknowledged-badge"><i class="bi bi-check-circle"></i> Acknowledged</span>
-                    <span class="unacknowledged-badge ms-2"><i class="bi bi-exclamation-circle"></i> Pending Acknowledgment</span>
-                </span>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Acknowledged Reports: <span id="acknowledgedCount" class="text-success">0</span></h6>
-                        <div class="progress mb-3">
-                            <div id="acknowledgedProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+    <!-- Reports by Category Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <i class="bi bi-droplet"></i> Water Reports
+                </div>
+                <div class="text-center">
+                    <div class="stat-number" id="waterTotal">0</div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <div><small>Pending:</small><br><strong id="waterPending">0</strong></div>
+                        <div><small>Acknowledged:</small><br><strong id="waterAck">0</strong></div>
+                        <div><small>Resolved:</small><br><strong id="waterResolved">0</strong></div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="acknowledgment-progress">
+                            <div class="acknowledgment-bar" id="waterProgress" style="width: 0%"></div>
                         </div>
+                        <small class="text-muted">Acknowledgment rate</small>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Unacknowledged Reports: <span id="unacknowledgedCount" class="text-danger">0</span></h6>
-                        <div class="progress mb-3">
-                            <div id="unacknowledgedProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <i class="bi bi-lightning-charge"></i> Electricity Reports
+                </div>
+                <div class="text-center">
+                    <div class="stat-number" id="electricityTotal">0</div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <div><small>Pending:</small><br><strong id="electricityPending">0</strong></div>
+                        <div><small>Acknowledged:</small><br><strong id="electricityAck">0</strong></div>
+                        <div><small>Resolved:</small><br><strong id="electricityResolved">0</strong></div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="acknowledgment-progress">
+                            <div class="acknowledgment-bar" id="electricityProgress" style="width: 0%"></div>
                         </div>
+                        <small class="text-muted">Acknowledgment rate</small>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <i class="bi bi-telephone"></i> Telephone Reports
+                </div>
+                <div class="text-center">
+                    <div class="stat-number" id="telephoneTotal">0</div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <div><small>Pending:</small><br><strong id="telephonePending">0</strong></div>
+                        <div><small>Acknowledged:</small><br><strong id="telephoneAck">0</strong></div>
+                        <div><small>Resolved:</small><br><strong id="telephoneResolved">0</strong></div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="acknowledgment-progress">
+                            <div class="acknowledgment-bar" id="telephoneProgress" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">Acknowledgment rate</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest Reports Section -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <i class="bi bi-clock-history"></i> Latest Reports
+                    <span class="float-end">
+                        <select id="filterLatestType" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="loadLatestReports()">
+                            <option value="all">All Types</option>
+                            <option value="water">Water</option>
+                            <option value="electricity">Electricity</option>
+                            <option value="telephone">Telephone</option>
+                        </select>
+                    </span>
+                </div>
+                <div id="latestReportsList">
+                    <div class="text-center py-3">Loading latest reports...</div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('reports_page') }}" class="btn btn-sm btn-outline-primary">View All Reports →</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Acknowledgment Quick View -->
+        <div class="col-md-5">
+            <div class="summary-section">
+                <div class="summary-title">
+                    <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgment
+                </div>
+                <div id="pendingAckList">
+                    <div class="text-center py-3">No pending acknowledgments</div>
                 </div>
                 {% if is_team_leader %}
-                <a href="{{ url_for('team_leader') }}" class="btn btn-primary mt-2">
-                    <i class="bi bi-eye"></i> Review Pending Acknowledgments
-                </a>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('team_leader') }}" class="btn btn-sm btn-primary">Go to Team Leader Dashboard →</a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-</div>
 
-<!-- Recent Reports -->
-<div class="card">
-    <div class="card-header">
-        <i class="bi bi-clock-history"></i> Recent Reports
-        <a href="{{ url_for('reports_page') }}" class="btn btn-sm btn-outline-primary float-end">View All</a>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Location</th>
-                        <th>Problem</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Acknowledged</th>
-                        <th>Technician</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="recentReportsTable">
-                    <tr>
-                        <td colspan="10" class="text-center">Loading...</td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Charts Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h6><i class="bi bi-bar-chart"></i> Reports by Utility Type</h6>
+                <canvas id="utilityChart" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h6><i class="bi bi-pie-chart"></i> Report Status Breakdown</h6>
+                <canvas id="statusChart" height="200"></canvas>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Quick Action Buttons -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-lightning"></i> Quick Actions
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h6><i class="bi bi-check2-square"></i> Acknowledgment Status</h6>
+                <canvas id="acknowledgmentChart" height="200"></canvas>
             </div>
-            <div class="card-body">
-                <div class="d-flex gap-3 flex-wrap">
-                    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> New Report
-                    </a>
-                    <a href="{{ url_for('water_reports') }}" class="btn btn-outline-info">
-                        <i class="bi bi-droplet"></i> Water Issues
-                    </a>
-                    <a href="{{ url_for('electricity_reports') }}" class="btn btn-outline-warning">
-                        <i class="bi bi-lightning-charge"></i> Electricity Issues
-                    </a>
-                    <a href="{{ url_for('telephone_reports') }}" class="btn btn-outline-success">
-                        <i class="bi bi-telephone"></i> Telephone Issues
-                    </a>
-                    <button onclick="exportReports()" class="btn btn-outline-secondary">
-                        <i class="bi bi-download"></i> Export Reports
-                    </button>
-                </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h6><i class="bi bi-graph-up"></i> Weekly Report Trend</h6>
+                <canvas id="trendChart" height="200"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let statusChart, priorityChart;
+    let utilityChart, statusChart, acknowledgmentChart, trendChart;
     
-    // Load dashboard data
+    // Set welcome name and date
+    const user = getCurrentUser();
+    document.getElementById('welcomeName').textContent = user.name || 'Technician';
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Load all dashboard data
     async function loadDashboardData() {
         try {
-            const response = await fetch('/api/dashboard-stats');
-            const data = await response.json();
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
             
-            if (data.error) {
-                console.error('Error loading dashboard:', data.error);
+            if (!reports || reports.length === 0) {
+                displayEmptyState();
                 return;
             }
             
-            // Update stats cards
-            document.getElementById('totalReports').textContent = data.total_reports || 0;
-            document.getElementById('waterCount').textContent = data.by_type?.water || 0;
-            document.getElementById('electricityCount').textContent = data.by_type?.electricity || 0;
-            document.getElementById('telephoneCount').textContent = data.by_type?.telephone || 0;
-            document.getElementById('pendingCount').textContent = data.by_status?.pending || 0;
-            document.getElementById('inProgressCount').textContent = data.by_status?.in_progress || 0;
-            document.getElementById('resolvedCount').textContent = data.by_status?.resolved || 0;
-            document.getElementById('acknowledgedCount').textContent = data.acknowledged_count || 0;
-            
-            const total = data.total_reports || 1;
-            const unacknowledged = total - (data.acknowledged_count || 0);
-            document.getElementById('unacknowledgedCount').textContent = unacknowledged;
-            
-            const ackPercent = ((data.acknowledged_count || 0) / total) * 100;
-            const unackPercent = (unacknowledged / total) * 100;
-            document.getElementById('acknowledgedProgress').style.width = ackPercent + '%';
-            document.getElementById('unacknowledgedProgress').style.width = unackPercent + '%';
-            
-            // Update charts
-            updateStatusChart(data.by_status);
-            updatePriorityChart();
-            
-            // Update recent reports table
-            updateRecentReports(data.recent_reports || []);
+            // Calculate statistics
+            const stats = calculateStats(reports);
+            updateStatsCards(stats);
+            updateCategoryStats(reports, stats);
+            updateLatestReports(reports);
+            updatePendingAckList(reports);
+            updateCharts(reports, stats);
             
         } catch (error) {
             console.error('Error loading dashboard:', error);
@@ -250,114 +360,134 @@
         }
     }
     
-    function updateStatusChart(statusData) {
-        const ctx = document.getElementById('statusChart').getContext('2d');
-        if (statusChart) statusChart.destroy();
+    function calculateStats(reports) {
+        const today = new Date().toDateString();
+        const todayReports = reports.filter(r => new Date(r.created_at).toDateString() === today);
         
-        statusChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Pending', 'In Progress', 'Resolved', 'Closed'],
-                datasets: [{
-                    data: [
-                        statusData?.pending || 0,
-                        statusData?.in_progress || 0,
-                        statusData?.resolved || 0,
-                        0
-                    ],
-                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#6c757d']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
+        const pendingAck = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved');
+        const acknowledged = reports.filter(r => r.team_leader_acknowledged);
+        
+        // Category breakdown
+        const water = reports.filter(r => r.report_type === 'water');
+        const electricity = reports.filter(r => r.report_type === 'electricity');
+        const telephone = reports.filter(r => r.report_type === 'telephone');
+        
+        return {
+            total: reports.length,
+            today: todayReports.length,
+            todayPending: todayReports.filter(r => r.status === 'pending').length,
+            pendingAck: pendingAck.length,
+            acknowledged: acknowledged.length,
+            water: { total: water.length, pending: water.filter(r => r.status === 'pending').length, acknowledged: water.filter(r => r.team_leader_acknowledged).length, resolved: water.filter(r => r.status === 'resolved').length },
+            electricity: { total: electricity.length, pending: electricity.filter(r => r.status === 'pending').length, acknowledged: electricity.filter(r => r.team_leader_acknowledged).length, resolved: electricity.filter(r => r.status === 'resolved').length },
+            telephone: { total: telephone.length, pending: telephone.filter(r => r.status === 'pending').length, acknowledged: telephone.filter(r => r.team_leader_acknowledged).length, resolved: telephone.filter(r => r.status === 'resolved').length }
+        };
     }
     
-    async function updatePriorityChart() {
-        try {
-            const response = await fetch('/api/technical-reports');
-            const reports = await response.json();
-            
-            const highCount = reports.filter(r => r.priority === 'high').length;
-            const mediumCount = reports.filter(r => r.priority === 'medium').length;
-            const lowCount = reports.filter(r => r.priority === 'low').length;
-            
-            const ctx = document.getElementById('priorityChart').getContext('2d');
-            if (priorityChart) priorityChart.destroy();
-            
-            priorityChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['High', 'Medium', 'Low'],
-                    datasets: [{
-                        label: 'Number of Reports',
-                        data: [highCount, mediumCount, lowCount],
-                        backgroundColor: ['#dc3545', '#ffc107', '#28a745']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            stepSize: 1
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading priority chart:', error);
+    function updateStatsCards(stats) {
+        document.getElementById('totalReports').textContent = stats.total;
+        document.getElementById('todayReports').textContent = stats.today;
+        document.getElementById('todayPending').textContent = stats.todayPending;
+        document.getElementById('pendingAckCount').textContent = stats.pendingAck;
+        document.getElementById('acknowledgedCount').textContent = stats.acknowledged;
+    }
+    
+    function updateCategoryStats(reports, stats) {
+        // Water
+        document.getElementById('waterTotal').textContent = stats.water.total;
+        document.getElementById('waterPending').textContent = stats.water.pending;
+        document.getElementById('waterAck').textContent = stats.water.acknowledged;
+        document.getElementById('waterResolved').textContent = stats.water.resolved;
+        const waterProgress = stats.water.total > 0 ? (stats.water.acknowledged / stats.water.total) * 100 : 0;
+        document.getElementById('waterProgress').style.width = waterProgress + '%';
+        
+        // Electricity
+        document.getElementById('electricityTotal').textContent = stats.electricity.total;
+        document.getElementById('electricityPending').textContent = stats.electricity.pending;
+        document.getElementById('electricityAck').textContent = stats.electricity.acknowledged;
+        document.getElementById('electricityResolved').textContent = stats.electricity.resolved;
+        const elecProgress = stats.electricity.total > 0 ? (stats.electricity.acknowledged / stats.electricity.total) * 100 : 0;
+        document.getElementById('electricityProgress').style.width = elecProgress + '%';
+        
+        // Telephone
+        document.getElementById('telephoneTotal').textContent = stats.telephone.total;
+        document.getElementById('telephonePending').textContent = stats.telephone.pending;
+        document.getElementById('telephoneAck').textContent = stats.telephone.acknowledged;
+        document.getElementById('telephoneResolved').textContent = stats.telephone.resolved;
+        const telProgress = stats.telephone.total > 0 ? (stats.telephone.acknowledged / stats.telephone.total) * 100 : 0;
+        document.getElementById('telephoneProgress').style.width = telProgress + '%';
+    }
+    
+    function updateLatestReports(reports) {
+        const filterType = document.getElementById('filterLatestType')?.value || 'all';
+        let filtered = reports;
+        if (filterType !== 'all') {
+            filtered = reports.filter(r => r.report_type === filterType);
         }
-    }
-    
-    function updateRecentReports(reports) {
-        const tbody = document.getElementById('recentReportsTable');
-        if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reports found</td></tr>';
+        
+        const latest = filtered.slice(0, 10);
+        const container = document.getElementById('latestReportsList');
+        
+        if (latest.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-muted">No reports found</div>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => `
-            <tr class="report-type-${report.report_type}">
-                <td>#${report.id}</td>
-                <td>
-                    <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
-                    ${report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1)}
-                </td>
-                <td>${report.entity_name || `${report.entity_type} #${report.entity_id}`}</td>
-                <td>${report.problem_type || '-'}<br><small class="text-muted">${(report.complaint_details || '').substring(0, 50)}${(report.complaint_details || '').length > 50 ? '...' : ''}</small></td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
-                <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
-                <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge"><i class="bi bi-check-circle"></i> Yes</span>' : '<span class="unacknowledged-badge"><i class="bi bi-exclamation-circle"></i> No</span>'}</td>
-                <td>${report.technician_name || '-'}</td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    ${!report.team_leader_acknowledged && isTeamLeader() ? `
-                    <button class="btn btn-sm btn-outline-success" onclick="acknowledgeReport(${report.id})">
-                        <i class="bi bi-check2-square"></i>
-                    </button>
-                    ` : ''}
-                </td>
-            </tr>
+        container.innerHTML = latest.map(report => `
+            <div class="report-list-item" onclick="viewReport(${report.id})" style="cursor: pointer;">
+                <div class="report-title">
+                    <span class="category-badge category-${report.report_type}" style="font-size: 0.7rem; padding: 2px 8px;">
+                        <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
+                        ${report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1)}
+                    </span>
+                    <strong> ${report.entity_name || report.entity_type}</strong> - ${report.problem_type || 'No problem specified'}
+                </div>
+                <div class="report-meta">
+                    <span>
+                        <span class="status-indicator status-${report.status === 'pending' ? 'pending-dot' : report.status === 'resolved' ? 'resolved-dot' : 'acknowledged-dot'}"></span>
+                        Status: ${report.status.replace('_', ' ')}
+                    </span>
+                    <span>
+                        <i class="bi bi-check2-circle"></i> 
+                        ${report.team_leader_acknowledged ? '<span class="text-success">Acknowledged</span>' : '<span class="text-warning">Pending Ack</span>'}
+                    </span>
+                    <span><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</span>
+                    <span><i class="bi bi-clock"></i> ${formatDateOnly(report.created_at)}</span>
+                </div>
+            </div>
         `).join('');
     }
     
-    async function viewReport(id) {
-        window.location.href = `/reports?id=${id}`;
+    function updatePendingAckList(reports) {
+        const pending = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved').slice(0, 5);
+        const container = document.getElementById('pendingAckList');
+        
+        if (pending.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-success"><i class="bi bi-check-circle"></i> All reports acknowledged!</div>';
+            return;
+        }
+        
+        container.innerHTML = pending.map(report => `
+            <div class="report-list-item">
+                <div class="report-title">
+                    <strong>#${report.id}</strong> - ${report.entity_name || report.entity_type}
+                    <span class="priority-${report.priority}" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">${report.priority}</span>
+                </div>
+                <div class="report-meta">
+                    <span>${report.report_type} issue</span>
+                    <span>${report.problem_type || '-'}</span>
+                    <span><i class="bi bi-person"></i> ${report.technician_name || '-'}</span>
+                </div>
+                ${isTeamLeader() ? `
+                <button class="btn btn-sm btn-primary mt-2" onclick="event.stopPropagation(); quickAcknowledge(${report.id})">
+                    <i class="bi bi-check2-square"></i> Acknowledge Now
+                </button>
+                ` : ''}
+            </div>
+        `).join('');
     }
     
-    async function acknowledgeReport(id) {
+    async function quickAcknowledge(id) {
         const notes = prompt('Enter acknowledgment notes (optional):');
         try {
             const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
@@ -365,7 +495,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     team_leader_id: getCurrentUser().id,
-                    team_leader_notes: notes || ''
+                    team_leader_notes: notes || 'Acknowledged from dashboard'
                 })
             });
             const data = await response.json();
@@ -380,20 +510,115 @@
         }
     }
     
-    async function exportReports() {
-        try {
-            window.location.href = '/api/export-reports';
-            showToast('Export started');
-        } catch (error) {
-            showToast('Error exporting reports', 'error');
-        }
+    function updateCharts(reports, stats) {
+        // Utility Type Chart
+        const utilityCtx = document.getElementById('utilityChart').getContext('2d');
+        if (utilityChart) utilityChart.destroy();
+        utilityChart = new Chart(utilityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Water', 'Electricity', 'Telephone'],
+                datasets: [{
+                    label: 'Number of Reports',
+                    data: [stats.water.total, stats.electricity.total, stats.telephone.total],
+                    backgroundColor: ['#1976d2', '#f57c00', '#388e3c'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+        
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        if (statusChart) statusChart.destroy();
+        const pendingCount = reports.filter(r => r.status === 'pending').length;
+        const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
+        const resolvedCount = reports.filter(r => r.status === 'resolved').length;
+        statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Resolved'],
+                datasets: [{
+                    data: [pendingCount, inProgressCount, resolvedCount],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+        
+        // Acknowledgment Chart
+        const ackCtx = document.getElementById('acknowledgmentChart').getContext('2d');
+        if (acknowledgmentChart) acknowledgmentChart.destroy();
+        acknowledgmentChart = new Chart(ackCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Acknowledged', 'Pending Acknowledgment'],
+                datasets: [{
+                    data: [stats.acknowledged, stats.pendingAck],
+                    backgroundColor: ['#28a745', '#dc3545']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+        
+        // Weekly Trend Chart
+        const last7Days = getLast7Days();
+        const weeklyData = last7Days.map(day => {
+            return reports.filter(r => formatDateOnly(r.created_at) === day).length;
+        });
+        
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        if (trendChart) trendChart.destroy();
+        trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: last7Days,
+                datasets: [{
+                    label: 'Reports Submitted',
+                    data: weeklyData,
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
     }
     
-    // Display user role
-    document.getElementById('userRoleDisplay').textContent = isTeamLeader() ? 'Senior Technician' : 'Technician';
+    function getLast7Days() {
+        const dates = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dates.push(date.toISOString().split('T')[0]);
+        }
+        return dates;
+    }
     
-    // Load data on page load
+    function loadLatestReports() {
+        loadDashboardData();
+    }
+    
+    function viewReport(id) {
+        window.location.href = `/reports?id=${id}`;
+    }
+    
+    function displayEmptyState() {
+        const container = document.getElementById('latestReportsList');
+        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
+    }
+    
+    // Load data on page load and every 30 seconds
     loadDashboardData();
-    setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+    setInterval(loadDashboardData, 30000);
 </script>
 {% endblock %}
