@@ -493,11 +493,12 @@
         // Global user management
         let currentUser = null;
         
-        function setCurrentUser(role, id, name) {
-            currentUser = { role: role, id: id, name: name };
+        function setCurrentUser(role, id, name, isAuthorized = false) {
+            currentUser = { role: role, id: id, name: name, isAuthorized: isAuthorized };
             localStorage.setItem('userRole', role);
             localStorage.setItem('userId', id);
             localStorage.setItem('userName', name);
+            localStorage.setItem('isAuthorized', isAuthorized);
         }
         
         function getCurrentUser() {
@@ -505,7 +506,8 @@
                 currentUser = {
                     role: localStorage.getItem('userRole') || 'technician',
                     id: localStorage.getItem('userId') || '1',
-                    name: localStorage.getItem('userName') || 'Technician User'
+                    name: localStorage.getItem('userName') || 'Technician User',
+                    isAuthorized: localStorage.getItem('isAuthorized') === 'true'
                 };
             }
             return currentUser;
@@ -513,6 +515,10 @@
         
         function isTeamLeader() {
             return getCurrentUser().role === 'senior_technician';
+        }
+        
+        function isAuthorized() {
+            return getCurrentUser().isAuthorized === true;
         }
         
         function isTechnician() {
@@ -654,8 +660,8 @@
                         </ul>
                     </li>
                     
-                    <!-- Team Leader (only visible to senior techs) -->
-                    <li class="nav-item" id="teamLeaderNav">
+                    <!-- Team Leader (only visible to authorized users) -->
+                    <li class="nav-item" id="teamLeaderNav" style="display: none;">
                         <a class="nav-link" href="{{ url_for('team_leader') }}">
                             <i class="bi bi-check2-square"></i> Team Leader
                         </a>
@@ -696,11 +702,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize user display on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             const user = getCurrentUser();
             const userNameSpan = document.getElementById('userName');
             if (userNameSpan) {
                 userNameSpan.textContent = user.name || 'User';
+            }
+            
+            // Check if user is authorized to see Team Leader tab
+            if (user.id && user.id !== '1') {
+                try {
+                    const response = await fetch(`/api/technicians/${user.id}/authorization`);
+                    const data = await response.json();
+                    user.isAuthorized = data.authorized;
+                    localStorage.setItem('isAuthorized', data.authorized);
+                } catch (error) {
+                    user.isAuthorized = false;
+                }
+            } else if (user.id === '1') {
+                user.isAuthorized = true;
+            }
+            
+            // Show Team Leader tab ONLY for authorized users
+            const teamLeaderNav = document.getElementById('teamLeaderNav');
+            if (teamLeaderNav) {
+                if (user.isAuthorized === true) {
+                    teamLeaderNav.style.display = 'block';
+                } else {
+                    teamLeaderNav.style.display = 'none';
+                }
             }
             
             // Highlight active nav link based on current URL
@@ -714,46 +744,50 @@
                     }
                 }
             });
-            
-            // Hide Team Leader nav item for non-senior technicians
-            const teamLeaderNav = document.getElementById('teamLeaderNav');
-            if (teamLeaderNav && !isTeamLeader()) {
-                teamLeaderNav.style.display = 'none';
-            }
         });
         
         function showUserProfile() {
             const user = getCurrentUser();
+            const authStatus = user.isAuthorized ? '✓ Authorized Team Leader - Can Acknowledge Reports' : '👁️ View Only Mode';
             alert('👤 User Profile\n\n' +
                   'Name: ' + user.name + '\n' +
-                  'Role: ' + (isTeamLeader() ? 'Senior Technician' : 'Technician') + '\n' +
+                  'Role: ' + (user.role === 'senior_technician' ? 'Senior Technician' : 'Technician') + '\n' +
+                  'Status: ' + authStatus + '\n' +
                   'ID: ' + user.id + '\n\n' +
                   '📋 System: MOE Technical Report System\n' +
                   '🏫 Ministry of Education, Brunei');
         }
         
-        function switchUser() {
-            const newRole = isTeamLeader() ? 'technician' : 'senior_technician';
-            const roleName = newRole === 'senior_technician' ? 'Senior Technician' : 'Technician';
-            const newName = prompt('Enter your name:', roleName + ' Name');
+        async function switchUser() {
+            const newName = prompt('Enter your name:', 'Technician Name');
             if (newName && newName.trim()) {
-                fetch('/api/technicians')
-                    .then(res => res.json())
-                    .then(technicians => {
-                        let techId = '1';
-                        const matchingTech = technicians.find(t => t.name.toLowerCase() === newName.toLowerCase());
-                        if (matchingTech) {
-                            techId = matchingTech.id;
-                        }
-                        setCurrentUser(newRole, techId, newName);
-                        showToast('Switched to ' + roleName + ': ' + newName);
-                        setTimeout(() => location.reload(), 1000);
-                    })
-                    .catch(() => {
-                        setCurrentUser(newRole, '1', newName);
-                        showToast('Switched to ' + roleName + ': ' + newName);
-                        setTimeout(() => location.reload(), 1000);
-                    });
+                try {
+                    const response = await fetch('/api/technicians');
+                    const technicians = await response.json();
+                    const matchingTech = technicians.find(t => t.name.toLowerCase() === newName.toLowerCase());
+                    
+                    if (matchingTech) {
+                        // Check if this technician is authorized
+                        const authResponse = await fetch(`/api/technicians/${matchingTech.id}/authorization`);
+                        const authData = await authResponse.json();
+                        
+                        setCurrentUser(
+                            matchingTech.role, 
+                            matchingTech.id, 
+                            matchingTech.name,
+                            authData.authorized
+                        );
+                        showToast(`Welcome ${matchingTech.name}! Role: ${matchingTech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}`);
+                    } else {
+                        // Create temporary user
+                        const role = confirm('Are you a Senior Technician?') ? 'senior_technician' : 'technician';
+                        setCurrentUser(role, 'temp', newName, false);
+                        showToast(`Temporary user: ${newName} (Not in database)`, 'warning');
+                    }
+                    setTimeout(() => location.reload(), 1000);
+                } catch (error) {
+                    showToast('Error switching user', 'error');
+                }
             }
         }
         
