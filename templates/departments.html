@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    .dept-code-badge {
+        font-family: monospace;
+        font-weight: bold;
+        background-color: #f0f0f0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+    }
+    .unit-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    .dept-name {
+        font-size: 0.9rem;
+        color: #666;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-briefcase"></i> Departments Management</h2>
     <button class="btn btn-primary" onclick="showAddDeptModal()">
@@ -17,17 +36,18 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width: 50px;">#</th>
+                        <th>Dept Code</th>
+                        <th>Unit Name</th>
                         <th>Department Name</th>
                         <th>Division</th>
-                        <th>Code</th>
                         <th>Contact Person</th>
-                        <th>Phone</th>
-                        <th>Actions</th>
+                        <th>Contact Phone</th>
+                        <th style="width: 100px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="departmentsTable">
-                    <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -36,44 +56,64 @@
 
 <!-- Add/Edit Department Modal -->
 <div class="modal fade" id="deptModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deptModalTitle">Add Department</h5>
+                <h5 class="modal-title" id="deptModalTitle">
+                    <i class="bi bi-building"></i> Add Department
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="deptForm">
                     <input type="hidden" id="deptId">
-                    <div class="mb-3">
-                        <label class="form-label">Department Name *</label>
-                        <input type="text" class="form-control" id="deptName" required>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Department Code *</label>
+                            <input type="text" class="form-control" id="deptCode" required placeholder="e.g., ICT-001, FIN-001">
+                            <small class="text-muted">Unique identifier for this department</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Division</label>
+                            <input type="text" class="form-control" id="division" placeholder="e.g., ICT Division, Finance Division">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Division</label>
-                        <input type="text" class="form-control" id="division">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Unit Name *</label>
+                            <input type="text" class="form-control" id="unitName" required placeholder="e.g., IT Support Unit">
+                            <small class="text-muted">Name of the unit/team</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Department Name *</label>
+                            <input type="text" class="form-control" id="deptName" required placeholder="e.g., Information Technology Department">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Department Code</label>
-                        <input type="text" class="form-control" id="deptCode">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contactPerson" placeholder="e.g., Haji Ali bin Haji Omar">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Phone</label>
+                            <input type="text" class="form-control" id="contactPhone" placeholder="e.g., 8881234">
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Address</label>
-                        <textarea class="form-control" id="deptAddress" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Contact Person</label>
-                        <input type="text" class="form-control" id="deptContactPerson">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Contact Phone</label>
-                        <input type="text" class="form-control" id="deptContactPhone">
+                        <textarea class="form-control" id="deptAddress" rows="2" placeholder="Office address"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDepartment()">Save</button>
+                <button type="button" class="btn btn-primary" onclick="saveDepartment()">
+                    <i class="bi bi-save"></i> Save Department
+                </button>
             </div>
         </div>
     </div>
@@ -86,80 +126,111 @@
             const departments = await response.json();
             displayDepartments(departments);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error loading departments:', error);
+            showToast('Error loading departments', 'error');
         }
     }
     
     function displayDepartments(departments) {
         const tbody = document.getElementById('departmentsTable');
         if (!departments || departments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No departments found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No departments found. Click "Add Department" to create one.</td></tr>';
             return;
         }
         
-        tbody.innerHTML = departments.map(dept => `
+        tbody.innerHTML = departments.map((dept, index) => `
             <tr>
-                <td>${dept.id}</td>
-                <td><strong>${dept.name}</strong></td>
+                <td><strong>${index + 1}</strong></td>
+                <td><span class="dept-code-badge">${dept.department_code || '-'}</span></td>
+                <td><span class="unit-name">${dept.unit_name || dept.name || '-'}</span></td>
+                <td><span class="dept-name">${dept.name || dept.department_name || '-'}</span></td>
                 <td>${dept.division || '-'}</td>
-                <td>${dept.department_code || '-'}</td>
                 <td>${dept.contact_person || '-'}</td>
                 <td>${dept.contact_phone || '-'}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editDepartment(${dept.id})">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editDepartment(${dept.id})" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment(${dept.id})">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment(${dept.id})" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
-                 </td>
-             </tr>
+                </td>
+            </tr>
         `).join('');
     }
     
     function showAddDeptModal() {
-        document.getElementById('deptModalTitle').textContent = 'Add Department';
+        document.getElementById('deptModalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Add Department';
         document.getElementById('deptForm').reset();
         document.getElementById('deptId').value = '';
+        suggestNextDeptCode();
         const modal = new bootstrap.Modal(document.getElementById('deptModal'));
         modal.show();
     }
     
+    async function suggestNextDeptCode() {
+        try {
+            const response = await fetch('/api/departments');
+            const departments = await response.json();
+            const count = departments.length;
+            const nextNumber = String(count + 1).padStart(3, '0');
+            document.getElementById('deptCode').value = `DEPT-${nextNumber}`;
+            document.getElementById('deptCode').placeholder = `DEPT-${nextNumber}`;
+        } catch (error) {
+            document.getElementById('deptCode').value = 'DEPT-001';
+        }
+    }
+    
     async function editDepartment(id) {
-        const response = await fetch('/api/departments');
-        const departments = await response.json();
-        const dept = departments.find(d => d.id === id);
-        
-        if (dept) {
-            document.getElementById('deptModalTitle').textContent = 'Edit Department';
-            document.getElementById('deptId').value = dept.id;
-            document.getElementById('deptName').value = dept.name || '';
-            document.getElementById('division').value = dept.division || '';
-            document.getElementById('deptCode').value = dept.department_code || '';
-            document.getElementById('deptAddress').value = dept.address || '';
-            document.getElementById('deptContactPerson').value = dept.contact_person || '';
-            document.getElementById('deptContactPhone').value = dept.contact_phone || '';
+        try {
+            const response = await fetch('/api/departments');
+            const departments = await response.json();
+            const dept = departments.find(d => d.id === id);
             
-            const modal = new bootstrap.Modal(document.getElementById('deptModal'));
-            modal.show();
+            if (dept) {
+                document.getElementById('deptModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Department';
+                document.getElementById('deptId').value = dept.id;
+                document.getElementById('deptCode').value = dept.department_code || '';
+                document.getElementById('division').value = dept.division || '';
+                document.getElementById('unitName').value = dept.unit_name || dept.name || '';
+                document.getElementById('deptName').value = dept.name || dept.department_name || '';
+                document.getElementById('contactPerson').value = dept.contact_person || '';
+                document.getElementById('contactPhone').value = dept.contact_phone || '';
+                document.getElementById('deptAddress').value = dept.address || '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('deptModal'));
+                modal.show();
+            }
+        } catch (error) {
+            showToast('Error loading department details', 'error');
         }
     }
     
     async function saveDepartment() {
         const id = document.getElementById('deptId').value;
-        const data = {
-            name: document.getElementById('deptName').value,
-            division: document.getElementById('division').value,
-            department_code: document.getElementById('deptCode').value,
-            address: document.getElementById('deptAddress').value,
-            contact_person: document.getElementById('deptContactPerson').value,
-            contact_phone: document.getElementById('deptContactPhone').value
-        };
+        const unitName = document.getElementById('unitName').value.trim();
+        const deptName = document.getElementById('deptName').value.trim();
         
-        if (!data.name) {
-            showToast('Department name is required', 'error');
+        if (!unitName) {
+            showToast('Unit Name is required', 'error');
             return;
         }
+        
+        if (!deptName) {
+            showToast('Department Name is required', 'error');
+            return;
+        }
+        
+        const data = {
+            unit_name: unitName,
+            name: deptName,
+            department_name: deptName,
+            department_code: document.getElementById('deptCode').value.trim(),
+            division: document.getElementById('division').value.trim(),
+            contact_person: document.getElementById('contactPerson').value.trim(),
+            contact_phone: document.getElementById('contactPhone').value.trim(),
+            address: document.getElementById('deptAddress').value.trim()
+        };
         
         try {
             let response;
@@ -179,26 +250,27 @@
             
             const result = await response.json();
             if (result.success) {
-                showToast(id ? 'Department updated' : 'Department added');
+                showToast(id ? 'Department updated successfully' : 'Department added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('deptModal')).hide();
                 loadDepartments();
             } else {
-                showToast(result.error || 'Failed to save', 'error');
+                showToast(result.error || 'Failed to save department', 'error');
             }
         } catch (error) {
+            console.error('Error saving department:', error);
             showToast('Error saving department', 'error');
         }
     }
     
     async function deleteDepartment(id) {
-        if (confirm('Are you sure you want to delete this department?')) {
+        if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
             try {
                 const response = await fetch(`/api/departments/${id}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Department deleted');
+                    showToast('Department deleted successfully');
                     loadDepartments();
                 } else {
                     showToast(result.error || 'Cannot delete department with existing reports', 'error');
@@ -209,6 +281,7 @@
         }
     }
     
+    // Load departments on page load
     loadDepartments();
 </script>
 {% endblock %}
