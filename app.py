@@ -166,7 +166,6 @@ def get_technicians():
                         except:
                             tech_dict['specializations'] = []
                     elif isinstance(tech_dict['specializations'], list):
-                        # Already a list, keep as is
                         pass
                     else:
                         tech_dict['specializations'] = []
@@ -394,13 +393,16 @@ def create_department():
         data = request.get_json()
         dept_data = {
             "name": data.get('name'),
-            "division": data.get('division'),
-            "department_code": data.get('department_code'),
+            "unit_name": data.get('unit_name'),
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
             "contact_phone": data.get('contact_phone'),
             "created_at": datetime.now().isoformat()
         }
+        
+        # If unit_name is not provided, use name
+        if not dept_data['unit_name']:
+            dept_data['unit_name'] = dept_data['name']
         
         if not dept_data['name']:
             return jsonify({'success': False, 'error': 'Department name is required'}), 400
@@ -425,7 +427,19 @@ def update_department(dept_id):
             return jsonify({'error': 'Database not connected'}), 500
         
         data = request.get_json()
-        response = supabase.table("departments").update(data).eq("id", dept_id).execute()
+        update_data = {}
+        
+        # Allowed fields for update
+        allowed_fields = ['name', 'unit_name', 'address', 'contact_person', 'contact_phone']
+        
+        for field in allowed_fields:
+            if field in data and data[field] is not None:
+                update_data[field] = data[field]
+        
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+        
+        response = supabase.table("departments").update(update_data).eq("id", dept_id).execute()
         
         if response.data:
             app.logger.info(f"Department updated: ID {dept_id}")
