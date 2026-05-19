@@ -142,7 +142,7 @@ def team_leader():
     """Team leader dashboard page"""
     return render_template('team_leader.html')
 
-# ============ TECHNICIAN API ============
+# ============ TECHNICIAN API WITH MULTIPLE SPECIALIZATIONS ============
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
@@ -151,33 +151,61 @@ def get_technicians():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # IMPORTANT: Sort by id in ascending order (oldest first)
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
-        return jsonify(response.data if response.data else [])
+        
+        # Process the data to ensure specializations is always an array
+        technicians = []
+        if response.data:
+            for tech in response.data:
+                tech_dict = dict(tech)
+                # Handle specializations - could be string or JSONB
+                if 'specializations' in tech_dict and tech_dict['specializations']:
+                    if isinstance(tech_dict['specializations'], str):
+                        try:
+                            tech_dict['specializations'] = json.loads(tech_dict['specializations'])
+                        except:
+                            tech_dict['specializations'] = []
+                    elif isinstance(tech_dict['specializations'], list):
+                        # Already a list, keep as is
+                        pass
+                    else:
+                        tech_dict['specializations'] = []
+                else:
+                    tech_dict['specializations'] = []
+                technicians.append(tech_dict)
+        
+        return jsonify(technicians)
     except Exception as e:
         app.logger.error(f"Error getting technicians: {e}")
         return jsonify([]), 500
 
 @app.route('/api/technicians', methods=['POST'])
 def create_technician():
-    """Create a new technician"""
+    """Create a new technician with multiple specializations"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
         data = request.get_json()
+        
+        # Get specializations as array
+        specializations = data.get('specializations', [])
+        
         technician_data = {
             "name": data.get('name'),
             "role": data.get('role', 'technician'),
             "employee_id": data.get('employee_id'),
             "phone": data.get('phone'),
             "email": data.get('email'),
-            "specialization": data.get('specialization'),
+            "specializations": json.dumps(specializations) if specializations else '[]',
             "created_at": datetime.now().isoformat()
         }
         
         if not technician_data['name']:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
+        
+        if not specializations or len(specializations) == 0:
+            return jsonify({'success': False, 'error': 'At least one specialization is required'}), 400
         
         response = supabase.table("technicians").insert(technician_data).execute()
         
@@ -193,7 +221,7 @@ def create_technician():
 
 @app.route('/api/technicians/<int:tech_id>', methods=['PUT'])
 def update_technician(tech_id):
-    """Update an existing technician"""
+    """Update an existing technician with multiple specializations"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -201,10 +229,14 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'specialization']
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email']
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
+        
+        # Handle specializations separately
+        if 'specializations' in data:
+            update_data['specializations'] = json.dumps(data['specializations'])
         
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
@@ -254,7 +286,6 @@ def get_schools():
         if not supabase:
             return jsonify([]), 500
         
-        # IMPORTANT: Sort by id in ascending order (oldest first)
         response = supabase.table("schools").select("*").order("id", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
@@ -347,7 +378,6 @@ def get_departments():
         if not supabase:
             return jsonify([]), 500
         
-        # IMPORTANT: Sort by id in ascending order (oldest first)
         response = supabase.table("departments").select("*").order("id", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
