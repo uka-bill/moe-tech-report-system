@@ -142,7 +142,7 @@ def team_leader():
     """Team leader dashboard page"""
     return render_template('team_leader.html')
 
-# ============ TECHNICIAN API WITH MULTIPLE SPECIALIZATIONS ============
+# ============ TECHNICIAN API WITH AUTHORIZATION ============
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
@@ -158,7 +158,7 @@ def get_technicians():
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
-                # Handle specializations - could be string or JSONB
+                # Handle specializations
                 if 'specializations' in tech_dict and tech_dict['specializations']:
                     if isinstance(tech_dict['specializations'], str):
                         try:
@@ -171,6 +171,8 @@ def get_technicians():
                         tech_dict['specializations'] = []
                 else:
                     tech_dict['specializations'] = []
+                # Ensure is_authorized is a boolean
+                tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
                 technicians.append(tech_dict)
         
         return jsonify(technicians)
@@ -197,6 +199,7 @@ def create_technician():
             "phone": data.get('phone'),
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
+            "is_authorized": data.get('is_authorized', False),
             "created_at": datetime.now().isoformat()
         }
         
@@ -228,7 +231,7 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email']
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized']
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
@@ -275,6 +278,25 @@ def delete_technician(tech_id):
     except Exception as e:
         app.logger.error(f"Error deleting technician: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/technicians/<int:tech_id>/authorization', methods=['GET'])
+def check_technician_authorization(tech_id):
+    """Check if a technician is authorized to acknowledge reports"""
+    try:
+        if not supabase:
+            return jsonify({'authorized': False}), 500
+        
+        response = supabase.table("technicians").select("is_authorized").eq("id", tech_id).execute()
+        
+        if response.data and len(response.data) > 0:
+            is_authorized = response.data[0].get('is_authorized', False)
+            return jsonify({'authorized': is_authorized})
+        else:
+            return jsonify({'authorized': False}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error checking authorization: {e}")
+        return jsonify({'authorized': False}), 500
 
 # ============ SCHOOLS API ============
 
@@ -400,7 +422,6 @@ def create_department():
             "created_at": datetime.now().isoformat()
         }
         
-        # If unit_name is not provided, use name
         if not dept_data['unit_name']:
             dept_data['unit_name'] = dept_data['name']
         
@@ -429,7 +450,6 @@ def update_department(dept_id):
         data = request.get_json()
         update_data = {}
         
-        # Allowed fields for update
         allowed_fields = ['name', 'unit_name', 'address', 'contact_person', 'contact_phone']
         
         for field in allowed_fields:
@@ -641,17 +661,27 @@ def update_technical_report(report_id):
 
 @app.route('/api/technical-reports/<int:report_id>/acknowledge', methods=['POST'])
 def acknowledge_report(report_id):
-    """Acknowledge a report as team leader"""
+    """Acknowledge a report as team leader (only for authorized technicians)"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
         data = request.get_json()
+        team_leader_id = data.get('team_leader_id')
+        
+        # Check if the technician is authorized
+        auth_response = supabase.table("technicians").select("is_authorized").eq("id", team_leader_id).execute()
+        
+        if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+            return jsonify({
+                'success': False, 
+                'error': 'You are not authorized to acknowledge reports. Only designated team leaders can acknowledge.'
+            }), 403
         
         update_data = {
             "team_leader_acknowledged": True,
             "team_leader_acknowledged_at": datetime.now().isoformat(),
-            "team_leader_id": data.get('team_leader_id'),
+            "team_leader_id": team_leader_id,
             "team_leader_notes": data.get('team_leader_notes', ''),
             "updated_at": datetime.now().isoformat()
         }
@@ -659,7 +689,7 @@ def acknowledge_report(report_id):
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
         
         if response.data:
-            app.logger.info(f"Report acknowledged: ID {report_id}")
+            app.logger.info(f"Report acknowledged by authorized user ID {team_leader_id}: {report_id}")
             return jsonify({
                 'success': True,
                 'message': 'Report acknowledged successfully',
