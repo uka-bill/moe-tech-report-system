@@ -3,13 +3,13 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-check2-square"></i> Team Leader Dashboard</h2>
-    <span class="badge bg-primary p-2">Senior Technician Access</span>
+    <span class="badge bg-primary p-2" id="authStatus">Loading...</span>
 </div>
 
-<!-- Pending Acknowledgements -->
+<!-- Pending Acknowledgements (High Priority) -->
 <div class="card mb-4">
     <div class="card-header bg-warning text-dark">
-        <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgement Reports
+        <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgement - High Priority Reports
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -27,7 +27,7 @@
                     </tr>
                 </thead>
                 <tbody id="pendingAckTable">
-                    <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -52,11 +52,11 @@
                         <th>Status</th>
                         <th>Technician</th>
                         <th>Created</th>
-                        <th>Acknowledge</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="unacknowledgedTable">
-                    <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="9" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -92,27 +92,47 @@
 </div>
 
 <script>
-    async function loadTeamLeaderData() {
-        if (!isTeamLeader()) {
-            showToast('Team leader access required', 'error');
-            return;
+    let isAuthorizedUser = false;
+    
+    async function checkAuthorization() {
+        const user = getCurrentUser();
+        if (user.id) {
+            try {
+                const response = await fetch(`/api/technicians/${user.id}/authorization`);
+                const data = await response.json();
+                isAuthorizedUser = data.authorized;
+                const authStatus = document.getElementById('authStatus');
+                if (isAuthorizedUser) {
+                    authStatus.innerHTML = '✓ Authorized Team Leader - Can Acknowledge Reports';
+                    authStatus.classList.add('bg-success');
+                } else {
+                    authStatus.innerHTML = '👁️ View Only Mode - Cannot Acknowledge Reports';
+                    authStatus.classList.add('bg-secondary');
+                }
+            } catch (error) {
+                isAuthorizedUser = false;
+            }
         }
-        
+        loadTeamLeaderData();
+    }
+    
+    async function loadTeamLeaderData() {
         try {
             const response = await fetch('/api/technical-reports');
             const reports = await response.json();
             
             const unacknowledged = reports.filter(r => !r.team_leader_acknowledged);
+            const highPriorityUnack = unacknowledged.filter(r => r.priority === 'high');
             const acknowledged = reports.filter(r => r.team_leader_acknowledged);
             
             document.getElementById('statTotal').textContent = reports.length;
             document.getElementById('statPending').textContent = unacknowledged.length;
             document.getElementById('statAcknowledged').textContent = acknowledged.length;
             
-            displayPendingAck(reports.filter(r => !r.team_leader_acknowledged && r.priority === 'high'));
+            displayPendingAck(highPriorityUnack);
             displayUnacknowledged(unacknowledged);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error loading reports:', error);
         }
     }
     
@@ -133,11 +153,18 @@
                 <td>${report.technician_name || '-'}</td>
                 <td>${formatDate(report.created_at)}</td>
                 <td>
+                    ${isAuthorizedUser ? `
                     <button class="btn btn-sm btn-success" onclick="quickAcknowledge(${report.id})">
                         <i class="bi bi-check2"></i> Acknowledge
                     </button>
-                 </td>
-             </tr>
+                    ` : `
+                    <span class="text-muted">View only</span>
+                    `}
+                    <button class="btn btn-sm btn-info" onclick="viewReport(${report.id})">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                </td>
+            </tr>
         `).join('');
     }
     
@@ -159,38 +186,55 @@
                 <td>${report.technician_name || '-'}</td>
                 <td>${formatDate(report.created_at)}</td>
                 <td>
+                    ${isAuthorizedUser ? `
                     <button class="btn btn-sm btn-success" onclick="acknowledgeWithNotes(${report.id})">
                         <i class="bi bi-check2-square"></i> Acknowledge
                     </button>
+                    ` : `
+                    <span class="text-muted">View only</span>
+                    `}
                     <button class="btn btn-sm btn-info" onclick="viewReport(${report.id})">
                         <i class="bi bi-eye"></i> View
                     </button>
-                 </td>
-             </tr>
+                </td>
+            </tr>
         `).join('');
     }
     
     async function quickAcknowledge(id) {
-        try {
-            const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    team_leader_id: getCurrentUser().id,
-                    team_leader_notes: 'Acknowledged via quick action'
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                showToast('Report acknowledged');
-                loadTeamLeaderData();
+        if (!isAuthorizedUser) {
+            showToast('You are not authorized to acknowledge reports', 'error');
+            return;
+        }
+        const notes = prompt('Enter acknowledgment notes (optional):');
+        if (notes !== null) {
+            try {
+                const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        team_leader_id: getCurrentUser().id,
+                        team_leader_notes: notes
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Report acknowledged');
+                    loadTeamLeaderData();
+                } else {
+                    showToast(data.error || 'Failed to acknowledge', 'error');
+                }
+            } catch (error) {
+                showToast('Error acknowledging report', 'error');
             }
-        } catch (error) {
-            showToast('Error', 'error');
         }
     }
     
     async function acknowledgeWithNotes(id) {
+        if (!isAuthorizedUser) {
+            showToast('You are not authorized to acknowledge reports', 'error');
+            return;
+        }
         const notes = prompt('Enter acknowledgment notes / feedback for technician:');
         if (notes !== null) {
             try {
@@ -206,9 +250,11 @@
                 if (data.success) {
                     showToast('Report acknowledged with notes');
                     loadTeamLeaderData();
+                } else {
+                    showToast(data.error || 'Failed to acknowledge', 'error');
                 }
             } catch (error) {
-                showToast('Error', 'error');
+                showToast('Error acknowledging report', 'error');
             }
         }
     }
@@ -217,7 +263,7 @@
         window.location.href = `/reports?id=${id}`;
     }
     
-    loadTeamLeaderData();
+    checkAuthorization();
     setInterval(loadTeamLeaderData, 30000);
 </script>
 {% endblock %}
