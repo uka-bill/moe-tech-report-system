@@ -17,10 +17,10 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
+                        <th>Employee ID</th>
                         <th>Name</th>
                         <th>Role</th>
-                        <th>Employee ID</th>
                         <th>Specialization</th>
                         <th>Phone</th>
                         <th>Email</th>
@@ -28,7 +28,7 @@
                     </tr>
                 </thead>
                 <tbody id="techniciansTable">
-                    <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -47,6 +47,11 @@
                 <form id="techForm">
                     <input type="hidden" id="techId">
                     <div class="mb-3">
+                        <label class="form-label">Employee ID *</label>
+                        <input type="text" class="form-control" id="employeeId" required placeholder="e.g., TECH001, ST001">
+                        <small class="text-muted">This will be the unique identifier for the technician</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Full Name *</label>
                         <input type="text" class="form-control" id="techName" required>
                     </div>
@@ -56,10 +61,6 @@
                             <option value="technician">Technician</option>
                             <option value="senior_technician">Senior Technician</option>
                         </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Employee ID</label>
-                        <input type="text" class="form-control" id="employeeId">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Specialization</label>
@@ -106,13 +107,13 @@
             return;
         }
         
-        tbody.innerHTML = technicians.map(tech => `
+        tbody.innerHTML = technicians.map((tech, index) => `
             <tr>
-                <td>${tech.id}</td>
+                <td><strong>${index + 1}</strong></td>
+                <td><span class="badge bg-primary">${tech.employee_id || 'N/A'}</span></td>
                 <td><strong>${tech.name}</strong></td>
-                <td>${tech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</td>
-                <td>${tech.employee_id || '-'}</td>
-                <td>${tech.specialization || '-'}</td>
+                <td>${tech.role === 'senior_technician' ? '<span class="badge bg-warning">Senior Technician</span>' : '<span class="badge bg-info">Technician</span>'}</td>
+                <td>${tech.specialization ? tech.specialization.charAt(0).toUpperCase() + tech.specialization.slice(1) : '-'}</td>
                 <td>${tech.phone || '-'}</td>
                 <td>${tech.email || '-'}</td>
                 <td>
@@ -122,8 +123,8 @@
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})">
                         <i class="bi bi-trash"></i>
                     </button>
-                 </td>
-             </tr>
+                </td>
+            </tr>
         `).join('');
     }
     
@@ -131,8 +132,22 @@
         document.getElementById('techModalTitle').textContent = 'Add Technician';
         document.getElementById('techForm').reset();
         document.getElementById('techId').value = '';
+        // Generate next employee ID suggestion
+        suggestNextEmployeeId();
         const modal = new bootstrap.Modal(document.getElementById('techModal'));
         modal.show();
+    }
+    
+    async function suggestNextEmployeeId() {
+        try {
+            const response = await fetch('/api/technicians');
+            const technicians = await response.json();
+            const count = technicians.length;
+            const nextNumber = String(count + 1).padStart(3, '0');
+            document.getElementById('employeeId').value = `TECH${nextNumber}`;
+        } catch (error) {
+            document.getElementById('employeeId').value = 'TECH001';
+        }
     }
     
     async function editTechnician(id) {
@@ -143,9 +158,9 @@
         if (tech) {
             document.getElementById('techModalTitle').textContent = 'Edit Technician';
             document.getElementById('techId').value = tech.id;
+            document.getElementById('employeeId').value = tech.employee_id || '';
             document.getElementById('techName').value = tech.name || '';
             document.getElementById('techRole').value = tech.role || 'technician';
-            document.getElementById('employeeId').value = tech.employee_id || '';
             document.getElementById('specialization').value = tech.specialization || '';
             document.getElementById('techPhone').value = tech.phone || '';
             document.getElementById('techEmail').value = tech.email || '';
@@ -171,10 +186,14 @@
             return;
         }
         
+        if (!data.employee_id) {
+            showToast('Employee ID is required', 'error');
+            return;
+        }
+        
         try {
             let response;
             if (id) {
-                // For update, we need to implement PUT endpoint
                 response = await fetch(`/api/technicians/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
