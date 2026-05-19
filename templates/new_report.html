@@ -88,21 +88,6 @@
                     <label class="form-label fw-bold">Problem Type *</label>
                     <select class="form-select" id="problemType" required>
                         <option value="">Select Problem Type</option>
-                        <option value="Leakage">Leakage</option>
-                        <option value="Low Pressure">Low Pressure</option>
-                        <option value="No Water">No Water</option>
-                        <option value="Pipe Burst">Pipe Burst</option>
-                        <option value="Water Quality">Water Quality Issue</option>
-                        <option value="Power Outage">Power Outage</option>
-                        <option value="Faulty Wiring">Faulty Wiring</option>
-                        <option value="Tripped Breaker">Tripped Breaker</option>
-                        <option value="Generator Issue">Generator Issue</option>
-                        <option value="Electrical Hazard">Electrical Hazard</option>
-                        <option value="Dead Line">Dead Telephone Line</option>
-                        <option value="Static Noise">Static Noise</option>
-                        <option value="Call Drops">Call Drops</option>
-                        <option value="PBX Issue">PBX Issue</option>
-                        <option value="Internet Issue">Internet Connectivity Issue</option>
                     </select>
                 </div>
             </div>
@@ -124,10 +109,11 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Technician Name *</label>
+                    <label class="form-label fw-bold">Assign To (Technician) *</label>
                     <select class="form-select" id="technicianId" required>
                         <option value="">Select Technician</option>
                     </select>
+                    <small class="text-muted" id="techFilterNote"></small>
                 </div>
             </div>
             
@@ -169,6 +155,57 @@
 
 <script>
     let uploadedImages = [];
+    let allTechnicians = [];
+    
+    // Load technicians on page load
+    async function loadTechnicians() {
+        try {
+            const response = await fetch('/api/technicians');
+            allTechnicians = await response.json();
+            console.log('Loaded technicians:', allTechnicians);
+            
+            // Initially load all technicians (for default water type)
+            filterTechniciansByType('water');
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+            showToast('Error loading technicians', 'error');
+        }
+    }
+    
+    // Filter technicians based on report type
+    function filterTechniciansByType(reportType) {
+        const select = document.getElementById('technicianId');
+        
+        // Filter technicians who have the required specialization
+        const filteredTechnicians = allTechnicians.filter(tech => {
+            const specializations = tech.specializations || [];
+            return specializations.includes(reportType);
+        });
+        
+        console.log(`Filtering for ${reportType}:`, filteredTechnicians);
+        
+        if (filteredTechnicians.length === 0) {
+            select.innerHTML = '<option value="">No technicians available for this type</option>';
+            document.getElementById('techFilterNote').innerHTML = `<span class="text-danger">⚠️ No technicians found with ${reportType} specialization. Please add a technician first.</span>`;
+            select.disabled = true;
+        } else {
+            select.innerHTML = '<option value="">Select Technician</option>' + 
+                filteredTechnicians.map(tech => {
+                    const roleBadge = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Tech';
+                    const specText = (tech.specializations || []).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+                    return `<option value="${tech.id}">${roleBadge} ${tech.name} - [${specText}]</option>`;
+                }).join('');
+            select.disabled = false;
+            document.getElementById('techFilterNote').innerHTML = `<span class="text-success">✅ ${filteredTechnicians.length} technician(s) available for ${reportType} issues</span>`;
+        }
+        
+        // Auto-select current user if matches
+        const currentUser = getCurrentUser();
+        if (currentUser.id) {
+            const option = Array.from(select.options).find(opt => opt.value === currentUser.id);
+            if (option) option.selected = true;
+        }
+    }
     
     // Load schools and departments
     async function loadSchools() {
@@ -181,33 +218,26 @@
         return await response.json();
     }
     
-    async function loadTechnicians() {
-        const response = await fetch('/api/technicians');
-        const technicians = await response.json();
-        const select = document.getElementById('technicianId');
-        select.innerHTML = '<option value="">Select Technician</option>' + 
-            technicians.map(t => `<option value="${t.id}">${t.name} (${t.role === 'senior_technician' ? 'Senior' : 'Technician'})${t.specialization ? ' - ' + t.specialization : ''}</option>`).join('');
-        
-        // Auto-select current user if possible
-        const currentUser = getCurrentUser();
-        if (currentUser.id) {
-            const option = Array.from(select.options).find(opt => opt.value === currentUser.id);
-            if (option) option.selected = true;
-        }
-    }
-    
     // Handle entity type change
     document.getElementById('entityType').addEventListener('change', async function() {
         const entitySelect = document.getElementById('entityId');
         if (this.value === 'school') {
             const schools = await loadSchools();
-            entitySelect.innerHTML = '<option value="">Select School</option>' + 
-                schools.map(s => `<option value="${s.id}">${s.name} (Cluster: ${s.cluster_number || '-'})</option>`).join('');
+            if (schools.length === 0) {
+                entitySelect.innerHTML = '<option value="">No schools found. Please add schools first.</option>';
+            } else {
+                entitySelect.innerHTML = '<option value="">Select School</option>' + 
+                    schools.map(s => `<option value="${s.id}">${s.name} (${s.school_number || 'No code'})</option>`).join('');
+            }
             entitySelect.disabled = false;
         } else if (this.value === 'department') {
             const departments = await loadDepartments();
-            entitySelect.innerHTML = '<option value="">Select Department</option>' + 
-                departments.map(d => `<option value="${d.id}">${d.name}${d.division ? ' - ' + d.division : ''}</option>`).join('');
+            if (departments.length === 0) {
+                entitySelect.innerHTML = '<option value="">No departments found. Please add departments first.</option>';
+            } else {
+                entitySelect.innerHTML = '<option value="">Select Department</option>' + 
+                    departments.map(d => `<option value="${d.id}">${d.unit_name || d.name} - ${d.name}</option>`).join('');
+            }
             entitySelect.disabled = false;
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
@@ -218,10 +248,12 @@
     // Handle report type change
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
+            // Hide all detail fields
             document.getElementById('waterFields').style.display = 'none';
             document.getElementById('electricityFields').style.display = 'none';
             document.getElementById('telephoneFields').style.display = 'none';
             
+            // Show relevant fields
             if (this.value === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
                 updateProblemTypeOptions('water');
@@ -232,6 +264,9 @@
                 document.getElementById('telephoneFields').style.display = 'flex';
                 updateProblemTypeOptions('telephone');
             }
+            
+            // Filter technicians based on selected report type
+            filterTechniciansByType(this.value);
         });
     });
     
@@ -309,9 +344,15 @@
         const reportType = document.querySelector('input[name="reportType"]:checked').value;
         const entityType = document.getElementById('entityType').value;
         const entityId = document.getElementById('entityId').value;
+        const technicianId = document.getElementById('technicianId').value;
         
         if (!entityType || !entityId) {
             showToast('Please select entity type and name', 'error');
+            return;
+        }
+        
+        if (!technicianId) {
+            showToast('Please select a technician to assign', 'error');
             return;
         }
         
@@ -328,7 +369,7 @@
             problem_type: document.getElementById('problemType').value,
             complaint_details: document.getElementById('complaintDetails').value,
             priority: document.getElementById('priority').value,
-            technician_id: parseInt(document.getElementById('technicianId').value),
+            technician_id: parseInt(technicianId),
             technician_notes: document.getElementById('technicianNotes').value,
             images: uploadedImages,
             status: 'pending'
@@ -336,11 +377,6 @@
         
         if (!reportData.problem_type || !reportData.complaint_details) {
             showToast('Please fill in problem type and complaint details', 'error');
-            return;
-        }
-        
-        if (!reportData.technician_id) {
-            showToast('Please select a technician', 'error');
             return;
         }
         
@@ -362,12 +398,22 @@
                 showToast(data.error || 'Failed to create report', 'error');
             }
         } catch (error) {
+            console.error('Error creating report:', error);
             showToast('Error creating report', 'error');
         }
     });
     
-    // Initialize
-    loadTechnicians();
-    updateProblemTypeOptions('water');
+    // Initialize form
+    async function initializeForm() {
+        await loadTechnicians();
+        updateProblemTypeOptions('water');
+        
+        // Check if there are any technicians
+        if (allTechnicians.length === 0) {
+            showToast('No technicians found. Please add technicians first.', 'warning');
+        }
+    }
+    
+    initializeForm();
 </script>
 {% endblock %}
