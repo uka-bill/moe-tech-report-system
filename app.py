@@ -153,12 +153,10 @@ def get_technicians():
         
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
         
-        # Process the data to ensure specializations is always an array
         technicians = []
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
-                # Handle specializations
                 if 'specializations' in tech_dict and tech_dict['specializations']:
                     if isinstance(tech_dict['specializations'], str):
                         try:
@@ -171,7 +169,6 @@ def get_technicians():
                         tech_dict['specializations'] = []
                 else:
                     tech_dict['specializations'] = []
-                # Ensure is_authorized is a boolean
                 tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
                 technicians.append(tech_dict)
         
@@ -188,8 +185,6 @@ def create_technician():
             return jsonify({'error': 'Database not connected'}), 500
         
         data = request.get_json()
-        
-        # Get specializations as array
         specializations = data.get('specializations', [])
         
         technician_data = {
@@ -223,7 +218,7 @@ def create_technician():
 
 @app.route('/api/technicians/<int:tech_id>', methods=['PUT'])
 def update_technician(tech_id):
-    """Update an existing technician with multiple specializations"""
+    """Update an existing technician"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -236,7 +231,6 @@ def update_technician(tech_id):
             if field in data:
                 update_data[field] = data[field]
         
-        # Handle specializations separately
         if 'specializations' in data:
             update_data['specializations'] = json.dumps(data['specializations'])
         
@@ -262,7 +256,6 @@ def delete_technician(tech_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Check if technician has assigned reports
         reports = supabase.table("technical_reports").select("id").eq("technician_id", tech_id).limit(1).execute()
         if reports.data and len(reports.data) > 0:
             return jsonify({'success': False, 'error': 'Cannot delete technician with assigned reports'}), 400
@@ -302,7 +295,7 @@ def check_technician_authorization(tech_id):
 
 @app.route('/api/schools', methods=['GET'])
 def get_schools():
-    """Get all schools sorted by ID ascending (oldest first)"""
+    """Get all schools sorted by ID ascending"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -373,7 +366,6 @@ def delete_school(school_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Check if school has reports
         reports = supabase.table("technical_reports").select("id").eq("entity_id", school_id).eq("entity_type", "school").limit(1).execute()
         if reports.data and len(reports.data) > 0:
             return jsonify({'success': False, 'error': 'Cannot delete school with existing reports'}), 400
@@ -394,7 +386,7 @@ def delete_school(school_id):
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
-    """Get all departments sorted by ID ascending (oldest first)"""
+    """Get all departments sorted by ID ascending"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -478,7 +470,6 @@ def delete_department(dept_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Check if department has reports
         reports = supabase.table("technical_reports").select("id").eq("entity_id", dept_id).eq("entity_type", "department").limit(1).execute()
         if reports.data and len(reports.data) > 0:
             return jsonify({'success': False, 'error': 'Cannot delete department with existing reports'}), 400
@@ -504,7 +495,6 @@ def get_technical_reports():
         if not supabase:
             return jsonify([]), 500
         
-        # Get query parameters
         report_type = request.args.get('type')
         entity_type = request.args.get('entity_type')
         entity_id = request.args.get('entity_id')
@@ -513,7 +503,6 @@ def get_technical_reports():
         technician_id = request.args.get('technician_id')
         team_leader_ack = request.args.get('team_leader_acknowledged')
         
-        # Build query
         query = supabase.table("technical_reports").select("*")
         
         if report_type:
@@ -531,7 +520,6 @@ def get_technical_reports():
         if team_leader_ack is not None:
             query = query.eq("team_leader_acknowledged", team_leader_ack.lower() == 'true')
         
-        # Execute query with ordering by created_at descending (newest first for reports)
         response = query.order("created_at", desc=True).execute()
         
         reports = []
@@ -564,7 +552,7 @@ def get_technical_reports():
 
 @app.route('/api/technical-reports', methods=['POST'])
 def create_technical_report():
-    """Create a new technical report"""
+    """Create a new technical report with reference fields"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -575,6 +563,13 @@ def create_technical_report():
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'{field} is required'}), 400
+        
+        reference_date = data.get('reference_date')
+        if reference_date:
+            try:
+                reference_date = datetime.strptime(reference_date, '%Y-%m-%d').date().isoformat()
+            except:
+                reference_date = None
         
         report_data = {
             "report_type": data.get('report_type'),
@@ -597,8 +592,13 @@ def create_technical_report():
             "team_leader_acknowledged_at": None,
             "team_leader_id": None,
             "images": data.get('images', []),
+            "reference_type": data.get('reference_type', ''),
+            "reference_number": data.get('reference_number', ''),
+            "reference_date": reference_date,
             "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": datetime.now().isoformat(),
+            "print_count": 0,
+            "last_printed_at": None
         }
         
         response = supabase.table("technical_reports").insert(report_data).execute()
@@ -630,13 +630,20 @@ def update_technical_report(report_id):
             'problem_type', 'complaint_details', 'priority', 'status',
             'technician_notes', 'action_taken', 'resolution_details',
             'team_leader_notes', 'images', 'account_number', 'meter_number',
-            'phone_number', 'number_of_lines'
+            'phone_number', 'number_of_lines',
+            'reference_type', 'reference_number', 'reference_date'
         ]
         
         update_data = {}
         for field in allowed_fields:
             if field in data:
-                update_data[field] = data[field]
+                if field == 'reference_date' and data[field]:
+                    try:
+                        update_data[field] = datetime.strptime(data[field], '%Y-%m-%d').date().isoformat()
+                    except:
+                        update_data[field] = None
+                else:
+                    update_data[field] = data[field]
         
         update_data['updated_at'] = datetime.now().isoformat()
         
@@ -669,7 +676,6 @@ def acknowledge_report(report_id):
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
         
-        # Check if the technician is authorized
         auth_response = supabase.table("technicians").select("is_authorized").eq("id", team_leader_id).execute()
         
         if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
@@ -724,6 +730,28 @@ def delete_technical_report(report_id):
         app.logger.error(f"Error deleting technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/technical-reports/<int:report_id>/track-print', methods=['POST'])
+def track_print(report_id):
+    """Track when a report is printed"""
+    try:
+        if not supabase:
+            return jsonify({'success': False}), 500
+        
+        # Get current print count
+        current = supabase.table("technical_reports").select("print_count").eq("id", report_id).execute()
+        current_count = current.data[0].get('print_count', 0) if current.data else 0
+        
+        # Update print count and last printed timestamp
+        response = supabase.table("technical_reports").update({
+            "print_count": current_count + 1,
+            "last_printed_at": datetime.now().isoformat()
+        }).eq("id", report_id).execute()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"Error tracking print: {e}")
+        return jsonify({'success': False}), 500
+
 # ============ IMAGE UPLOAD ============
 
 @app.route('/api/upload-image', methods=['POST'])
@@ -763,8 +791,7 @@ def upload_image():
             try:
                 response = supabase.table("report_images").insert(image_record).execute()
                 if response.data:
-                    image_id = response.data[0]['id']
-                    app.logger.info(f"Image record saved to Supabase: ID {image_id}")
+                    app.logger.info(f"Image record saved to Supabase: ID {response.data[0]['id']}")
             except Exception as e:
                 app.logger.warning(f"Could not save image to Supabase: {e}")
         
@@ -887,7 +914,9 @@ def export_reports():
             'Meter Number', 'Phone Number', 'Number of Lines', 'Problem Type',
             'Complaint Details', 'Priority', 'Status', 'Technician Name',
             'Technician Notes', 'Action Taken', 'Resolution Details',
-            'Team Leader Acknowledged', 'Team Leader Notes', 'Created At', 'Updated At'
+            'Team Leader Acknowledged', 'Team Leader Notes', 'Reference Type',
+            'Reference Number', 'Reference Date', 'Print Count', 'Last Printed',
+            'Created At', 'Updated At'
         ]
         writer.writerow(headers)
         
@@ -927,6 +956,11 @@ def export_reports():
                 report.get('resolution_details', ''),
                 'Yes' if report.get('team_leader_acknowledged') else 'No',
                 report.get('team_leader_notes', ''),
+                report.get('reference_type', ''),
+                report.get('reference_number', ''),
+                report.get('reference_date', ''),
+                report.get('print_count', 0),
+                report.get('last_printed_at', ''),
                 report.get('created_at', ''),
                 report.get('updated_at', '')
             ])
