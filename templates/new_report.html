@@ -14,6 +14,47 @@
         color: var(--primary-dark);
         margin-bottom: 10px;
     }
+    .datetime-panel {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .datetime-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+    }
+    .datetime-label {
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+    .datetime-value {
+        font-family: monospace;
+        background-color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        color: #333;
+    }
+    .auto-save-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #28a745;
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+    }
 </style>
 
 <div class="card">
@@ -21,6 +62,26 @@
         <i class="bi bi-plus-circle"></i> Create New Technical Report
     </div>
     <div class="card-body">
+        <!-- Date/Time Panel at Top Right -->
+        <div class="datetime-panel">
+            <div class="datetime-item">
+                <i class="bi bi-calendar-plus"></i>
+                <span class="datetime-label">Created:</span>
+                <span class="datetime-value" id="createdDateTime">-</span>
+            </div>
+            <div class="datetime-item">
+                <i class="bi bi-save2"></i>
+                <span class="datetime-label">Last Saved:</span>
+                <span class="datetime-value" id="lastSavedDateTime">-</span>
+                <span class="auto-save-indicator" id="autoSaveIndicator" style="display: none;"></span>
+            </div>
+            <div class="datetime-item">
+                <i class="bi bi-person"></i>
+                <span class="datetime-label">Created By:</span>
+                <span class="datetime-value" id="createdBy">-</span>
+            </div>
+        </div>
+
         <form id="reportForm">
             <!-- Report Type Selection -->
             <div class="row mb-4">
@@ -186,7 +247,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-save"></i> Submit Report
                     </button>
-                    <button type="reset" class="btn btn-secondary">
+                    <button type="reset" class="btn btn-secondary" onclick="resetForm()">
                         <i class="bi bi-eraser"></i> Clear Form
                     </button>
                     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
@@ -201,6 +262,172 @@
 <script>
     let uploadedImages = [];
     let allTechnicians = [];
+    let createdDateTime = null;
+    let lastSavedDateTime = null;
+    let autoSaveTimer = null;
+    
+    // Format date and time
+    function formatDateTime(date) {
+        const d = new Date(date);
+        return d.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+    
+    // Initialize date/time when page loads
+    function initializeDateTime() {
+        const now = new Date();
+        createdDateTime = now;
+        lastSavedDateTime = now;
+        
+        document.getElementById('createdDateTime').textContent = formatDateTime(createdDateTime);
+        document.getElementById('lastSavedDateTime').textContent = formatDateTime(lastSavedDateTime);
+        
+        // Set created by from current user
+        const user = getCurrentUser();
+        document.getElementById('createdBy').textContent = user.name || 'Unknown User';
+    }
+    
+    // Update last saved timestamp
+    function updateLastSaved() {
+        const now = new Date();
+        lastSavedDateTime = now;
+        document.getElementById('lastSavedDateTime').textContent = formatDateTime(lastSavedDateTime);
+        
+        // Show auto-save indicator
+        const indicator = document.getElementById('autoSaveIndicator');
+        indicator.style.display = 'inline-block';
+        
+        // Hide indicator after 2 seconds
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 2000);
+    }
+    
+    // Auto-save form data to localStorage
+    function autoSaveForm() {
+        const formData = {
+            reportType: document.querySelector('input[name="reportType"]:checked')?.value,
+            entityType: document.getElementById('entityType').value,
+            entityId: document.getElementById('entityId').value,
+            referenceType: document.getElementById('referenceType').value,
+            referenceNumber: document.getElementById('referenceNumber').value,
+            referenceDate: document.getElementById('referenceDate').value,
+            accountNumber: document.getElementById('accountNumber')?.value,
+            meterNumber: document.getElementById('meterNumber')?.value,
+            electricityAccountNumber: document.getElementById('electricityAccountNumber')?.value,
+            electricityMeterNumber: document.getElementById('electricityMeterNumber')?.value,
+            phoneNumber: document.getElementById('phoneNumber')?.value,
+            numberOfLines: document.getElementById('numberOfLines')?.value,
+            problemType: document.getElementById('problemType').value,
+            complaintDetails: document.getElementById('complaintDetails').value,
+            priority: document.getElementById('priority').value,
+            technicianId: document.getElementById('technicianId').value,
+            technicianNotes: document.getElementById('technicianNotes').value,
+            uploadedImages: uploadedImages,
+            lastSaved: new Date().toISOString()
+        };
+        
+        localStorage.setItem('autoSaveReport', JSON.stringify(formData));
+        updateLastSaved();
+    }
+    
+    // Load auto-saved data
+    function loadAutoSave() {
+        const savedData = localStorage.getItem('autoSaveReport');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            const confirmLoad = confirm('You have an unsaved draft. Do you want to load it?');
+            if (confirmLoad) {
+                // Restore report type
+                if (data.reportType) {
+                    document.querySelector(`input[name="reportType"][value="${data.reportType}"]`).checked = true;
+                    // Trigger change event
+                    document.querySelector(`input[name="reportType"][value="${data.reportType}"]`).dispatchEvent(new Event('change'));
+                }
+                
+                // Restore entity
+                if (data.entityType) {
+                    document.getElementById('entityType').value = data.entityType;
+                    document.getElementById('entityType').dispatchEvent(new Event('change'));
+                    setTimeout(() => {
+                        if (data.entityId) {
+                            document.getElementById('entityId').value = data.entityId;
+                        }
+                    }, 500);
+                }
+                
+                // Restore reference fields
+                document.getElementById('referenceType').value = data.referenceType || '';
+                document.getElementById('referenceNumber').value = data.referenceNumber || '';
+                document.getElementById('referenceDate').value = data.referenceDate || '';
+                
+                // Restore account fields
+                if (document.getElementById('accountNumber')) document.getElementById('accountNumber').value = data.accountNumber || '';
+                if (document.getElementById('meterNumber')) document.getElementById('meterNumber').value = data.meterNumber || '';
+                if (document.getElementById('electricityAccountNumber')) document.getElementById('electricityAccountNumber').value = data.electricityAccountNumber || '';
+                if (document.getElementById('electricityMeterNumber')) document.getElementById('electricityMeterNumber').value = data.electricityMeterNumber || '';
+                if (document.getElementById('phoneNumber')) document.getElementById('phoneNumber').value = data.phoneNumber || '';
+                if (document.getElementById('numberOfLines')) document.getElementById('numberOfLines').value = data.numberOfLines || '';
+                
+                // Restore problem details
+                document.getElementById('problemType').value = data.problemType || '';
+                document.getElementById('complaintDetails').value = data.complaintDetails || '';
+                document.getElementById('priority').value = data.priority || 'medium';
+                document.getElementById('technicianNotes').value = data.technicianNotes || '';
+                
+                // Restore technician
+                if (data.technicianId) {
+                    setTimeout(() => {
+                        document.getElementById('technicianId').value = data.technicianId;
+                    }, 1000);
+                }
+                
+                // Restore images
+                if (data.uploadedImages && data.uploadedImages.length > 0) {
+                    uploadedImages = data.uploadedImages;
+                    const previewContainer = document.getElementById('imagePreviewContainer');
+                    uploadedImages.forEach(imageUrl => {
+                        const preview = document.createElement('div');
+                        preview.className = 'position-relative';
+                        preview.innerHTML = `
+                            <img src="${imageUrl}" class="image-preview" alt="Preview">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImage('${imageUrl}')" style="border-radius: 50%;">&times;</button>
+                        `;
+                        previewContainer.appendChild(preview);
+                    });
+                }
+                
+                updateLastSaved();
+                showToast('Draft loaded successfully');
+            } else {
+                clearAutoSave();
+            }
+        }
+    }
+    
+    // Clear auto-save
+    function clearAutoSave() {
+        localStorage.removeItem('autoSaveReport');
+    }
+    
+    // Reset form
+    function resetForm() {
+        if (confirm('Are you sure you want to clear all form data?')) {
+            document.getElementById('reportForm').reset();
+            uploadedImages = [];
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            clearAutoSave();
+            initializeDateTime();
+            showToast('Form cleared');
+        }
+    }
     
     // Load technicians on page load
     async function loadTechnicians() {
@@ -282,6 +509,7 @@
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
             entitySelect.disabled = true;
         }
+        autoSaveForm();
     });
     
     // Handle report type change
@@ -303,6 +531,7 @@
             }
             
             filterTechniciansByType(this.value);
+            autoSaveForm();
         });
     });
     
@@ -320,6 +549,27 @@
         
         problemSelect.innerHTML = '<option value="">Select Problem Type</option>' + 
             options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+    }
+    
+    // Add auto-save triggers to all form inputs
+    function addAutoSaveTriggers() {
+        const inputs = ['#entityType', '#entityId', '#referenceType', '#referenceNumber', '#referenceDate',
+            '#accountNumber', '#meterNumber', '#electricityAccountNumber', '#electricityMeterNumber',
+            '#phoneNumber', '#numberOfLines', '#problemType', '#complaintDetails', '#priority', 
+            '#technicianId', '#technicianNotes'];
+        
+        inputs.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.addEventListener('change', autoSaveForm);
+                element.addEventListener('input', autoSaveForm);
+            }
+        });
+        
+        // Add auto-save for radio buttons
+        document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+            radio.addEventListener('change', autoSaveForm);
+        });
     }
     
     // Image upload handling
@@ -340,6 +590,7 @@
                 
                 if (data.success) {
                     uploadedImages.push(data.image_url);
+                    autoSaveForm();
                     
                     const preview = document.createElement('div');
                     preview.className = 'position-relative';
@@ -371,6 +622,7 @@
                 break;
             }
         }
+        autoSaveForm();
     }
     
     // Form submission
@@ -409,10 +661,11 @@
             technician_notes: document.getElementById('technicianNotes').value,
             images: uploadedImages,
             status: 'pending',
-            // Reference fields
             reference_type: document.getElementById('referenceType').value,
             reference_number: document.getElementById('referenceNumber').value,
-            reference_date: document.getElementById('referenceDate').value
+            reference_date: document.getElementById('referenceDate').value,
+            created_at: createdDateTime ? createdDateTime.toISOString() : new Date().toISOString(),
+            updated_at: new Date().toISOString()
         };
         
         if (!reportData.problem_type || !reportData.complaint_details) {
@@ -430,6 +683,7 @@
             const data = await response.json();
             
             if (data.success) {
+                clearAutoSave();
                 showToast('Report created successfully!');
                 setTimeout(() => {
                     window.location.href = '/my-reports';
@@ -448,8 +702,13 @@
     
     // Initialize form
     async function initializeForm() {
+        initializeDateTime();
         await loadTechnicians();
         updateProblemTypeOptions('water');
+        addAutoSaveTriggers();
+        
+        // Check for auto-saved draft
+        loadAutoSave();
         
         if (allTechnicians.length === 0) {
             showToast('No technicians found. Please add technicians first.', 'warning');
