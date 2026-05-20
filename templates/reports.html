@@ -1,8 +1,118 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    /* Print Styles - A4 Format */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .print-area, .print-area * {
+            visibility: visible;
+        }
+        .print-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: white;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .print-header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .print-footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            font-size: 10px;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        .print-signature {
+            margin-top: 40px;
+        }
+        .print-signature-line {
+            margin-top: 30px;
+            border-top: 1px solid #000;
+            width: 250px;
+        }
+    }
+    
+    /* Screen Styles */
+    .print-area {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .print-header {
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    .report-title {
+        color: var(--primary-dark);
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .info-row {
+        display: flex;
+        margin-bottom: 10px;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    .info-label {
+        width: 180px;
+        font-weight: bold;
+        color: #555;
+    }
+    .info-value {
+        flex: 1;
+        color: #333;
+    }
+    .status-badge-print {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .signature-section {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+    }
+    .signature-box {
+        text-align: center;
+    }
+    .signature-line {
+        width: 200px;
+        border-top: 1px solid #000;
+        margin-top: 40px;
+        padding-top: 5px;
+    }
+    .print-button-group {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-archive"></i> All Technical Reports</h2>
+    <h2><i class="bi bi-archive"></i> Technical Reports</h2>
     <div>
         <button class="btn btn-success me-2" onclick="exportReports()">
             <i class="bi bi-download"></i> Export CSV
@@ -13,10 +123,10 @@
     </div>
 </div>
 
-<!-- Advanced Filters -->
-<div class="card mb-4">
+<!-- Filters -->
+<div class="card mb-4 no-print">
     <div class="card-header">
-        <i class="bi bi-funnel"></i> Advanced Filters
+        <i class="bi bi-funnel"></i> Filters
     </div>
     <div class="card-body">
         <div class="row g-3">
@@ -75,7 +185,7 @@
 </div>
 
 <!-- Reports Table -->
-<div class="card">
+<div class="card no-print">
     <div class="card-header">
         <i class="bi bi-table"></i> Report List
     </div>
@@ -97,72 +207,36 @@
                     </tr>
                 </thead>
                 <tbody id="allReportsTable">
-                    <tr><td colspan="10" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="10" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Edit Report Modal -->
-<div class="modal fade" id="editReportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- Print Modal for Preview -->
+<div class="modal fade" id="printModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Report #<span id="editReportId"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-printer"></i> Print Preview - Report #<span id="printReportId"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="editReportForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="editStatus">
-                                <option value="pending">Pending</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Priority</label>
-                            <select class="form-select" id="editPriority">
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label">Action Taken</label>
-                            <textarea class="form-control" id="editActionTaken" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label">Resolution Details</label>
-                            <textarea class="form-control" id="editResolutionDetails" rows="3"></textarea>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label">Technician Notes</label>
-                            <textarea class="form-control" id="editTechnicianNotes" rows="3"></textarea>
-                        </div>
-                    </div>
-                </form>
+                <div id="printContent"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveReportEdit()">Save Changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="executePrint()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let currentEditId = null;
+    let currentPrintReport = null;
     
     async function loadAllReports() {
         let url = '/api/technical-reports?';
@@ -190,7 +264,7 @@
     function displayAllReports(reports) {
         const tbody = document.getElementById('allReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reports found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reports found</td</td>';
             return;
         }
         
@@ -209,178 +283,328 @@
                 <td>${report.technician_name || '-'}</td>
                 <td>${formatDate(report.created_at)}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewReportDetail(${report.id})">
+                    <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    ${!report.team_leader_acknowledged && isTeamLeader() ? `
-                    <button class="btn btn-sm btn-outline-success" onclick="acknowledgeReport(${report.id})">
-                        <i class="bi bi-check2-square"></i>
+                    <button class="btn btn-sm btn-outline-primary" onclick="printReport(${report.id})" title="Print">
+                        <i class="bi bi-printer"></i>
                     </button>
-                    ` : ''}
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
+                 </td>
+             </tr>
         `).join('');
     }
     
-    async function viewReportDetail(id) {
-        const response = await fetch('/api/technical-reports');
-        const reports = await response.json();
-        const report = reports.find(r => r.id === id);
+    async function printReport(id) {
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            const report = reports.find(r => r.id === id);
+            
+            if (report) {
+                currentPrintReport = report;
+                document.getElementById('printReportId').textContent = report.id;
+                document.getElementById('printContent').innerHTML = generatePrintHTML(report);
+                
+                const modal = new bootstrap.Modal(document.getElementById('printModal'));
+                modal.show();
+            }
+        } catch (error) {
+            showToast('Error loading report for printing', 'error');
+        }
+    }
+    
+    function generatePrintHTML(report) {
+        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         
-        if (report) {
-            const modalHtml = `
-                <div class="modal fade" id="viewModal" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Report #${report.id} Details</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <strong>Type:</strong> ${report.report_type}<br>
-                                        <strong>Location:</strong> ${report.entity_name || report.entity_type}<br>
-                                        <strong>Problem:</strong> ${report.problem_type}<br>
-                                        <strong>Priority:</strong> ${report.priority}<br>
-                                        <strong>Status:</strong> ${report.status}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <strong>Technician:</strong> ${report.technician_name || '-'}<br>
-                                        <strong>Created:</strong> ${formatDate(report.created_at)}<br>
-                                        <strong>Acknowledged:</strong> ${report.team_leader_acknowledged ? 'Yes' : 'No'}
-                                    </div>
-                                </div>
-                                <hr>
-                                <h6>Complaint Details:</h6>
-                                <p>${report.complaint_details || '-'}</p>
-                                <h6>Technician Notes:</h6>
-                                <p>${report.technician_notes || '-'}</p>
-                                <h6>Action Taken:</h6>
-                                <p>${report.action_taken || '-'}</p>
-                                <h6>Resolution:</h6>
-                                <p>${report.resolution_details || '-'}</p>
-                                ${report.images && report.images.length ? `
-                                <h6>Images:</h6>
-                                <div class="d-flex flex-wrap">
-                                    ${report.images.map(img => `<img src="${img}" class="image-preview m-1" onclick="window.open('${img}')">`).join('')}
-                                </div>
-                                ` : ''}
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            </div>
+        return `
+            <div class="print-area">
+                <div class="print-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="margin: 0; color: #9b59b6;">Ministry of Education, Brunei</h2>
+                            <h3 style="margin: 5px 0 0; color: #666;">Technical Report System</h3>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 24px;">${reportTypeIcon}</div>
+                            <div style="font-weight: bold;">${reportTypeName} Report</div>
                         </div>
                     </div>
                 </div>
-            `;
-            
-            // Remove existing modal if any
-            const existingModal = document.getElementById('viewModal');
-            if (existingModal) existingModal.remove();
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
-            modal.show();
-            
-            document.getElementById('viewModal').addEventListener('hidden.bs.modal', function() {
-                this.remove();
-            });
-        }
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="background: #f8f5fc; padding: 10px; border-radius: 5px;">
+                        <strong>Report ID:</strong> #${report.id} &nbsp;&nbsp;|&nbsp;&nbsp;
+                        <strong>Date Created:</strong> ${formatDate(report.created_at)} &nbsp;&nbsp;|&nbsp;&nbsp;
+                        <strong>Last Updated:</strong> ${formatDate(report.updated_at)}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Report Type:</div>
+                    <div class="info-value">${reportTypeName}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Entity Type:</div>
+                    <div class="info-value">${report.entity_type === 'school' ? 'School' : 'Department'}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Entity Name:</div>
+                    <div class="info-value">${report.entity_name || report.entity_type}</div>
+                </div>
+                
+                ${report.account_number ? `
+                <div class="info-row">
+                    <div class="info-label">Account Number:</div>
+                    <div class="info-value">${report.account_number}</div>
+                </div>
+                ` : ''}
+                
+                ${report.meter_number ? `
+                <div class="info-row">
+                    <div class="info-label">Meter Number:</div>
+                    <div class="info-value">${report.meter_number}</div>
+                </div>
+                ` : ''}
+                
+                ${report.phone_number ? `
+                <div class="info-row">
+                    <div class="info-label">Phone Number:</div>
+                    <div class="info-value">${report.phone_number}</div>
+                </div>
+                ` : ''}
+                
+                ${report.number_of_lines ? `
+                <div class="info-row">
+                    <div class="info-label">Number of Lines:</div>
+                    <div class="info-value">${report.number_of_lines}</div>
+                </div>
+                ` : ''}
+                
+                ${report.reference_type || report.reference_number ? `
+                <div class="info-row">
+                    <div class="info-label">Reference:</div>
+                    <div class="info-value">
+                        ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}
+                        ${report.reference_number || ''}
+                        ${report.reference_date ? ' (' + formatDateOnly(report.reference_date) + ')' : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="info-row">
+                    <div class="info-label">Problem Type:</div>
+                    <div class="info-value">${report.problem_type || '-'}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Priority Level:</div>
+                    <div class="info-value">
+                        <span class="status-badge-print priority-${report.priority}" style="background: ${report.priority === 'high' ? '#f8d7da' : report.priority === 'medium' ? '#fff3cd' : '#d4edda'}; color: ${report.priority === 'high' ? '#721c24' : report.priority === 'medium' ? '#856404' : '#155724'}">
+                            ${report.priority.toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Status:</div>
+                    <div class="info-value">
+                        <span class="status-badge-print" style="background: ${report.status === 'resolved' ? '#d4edda' : report.status === 'in_progress' ? '#d1ecf1' : '#fff3cd'}; color: ${report.status === 'resolved' ? '#155724' : report.status === 'in_progress' ? '#0c5460' : '#856404'}">
+                            ${report.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Complaint Details:</div>
+                    <div class="info-value">${report.complaint_details || '-'}</div>
+                </div>
+                
+                ${report.technician_notes ? `
+                <div class="info-row">
+                    <div class="info-label">Technician Notes:</div>
+                    <div class="info-value">${report.technician_notes}</div>
+                </div>
+                ` : ''}
+                
+                ${report.action_taken ? `
+                <div class="info-row">
+                    <div class="info-label">Action Taken:</div>
+                    <div class="info-value">${report.action_taken}</div>
+                </div>
+                ` : ''}
+                
+                ${report.resolution_details ? `
+                <div class="info-row">
+                    <div class="info-label">Resolution:</div>
+                    <div class="info-value">${report.resolution_details}</div>
+                </div>
+                ` : ''}
+                
+                <div class="info-row">
+                    <div class="info-label">Assigned Technician:</div>
+                    <div class="info-value">${report.technician_name || 'Unassigned'} ${report.technician_role === 'senior_technician' ? '(Senior Technician)' : '(Technician)'}</div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">Team Leader Acknowledged:</div>
+                    <div class="info-value">${report.team_leader_acknowledged ? 'Yes' : 'No'}</div>
+                </div>
+                
+                ${report.team_leader_notes ? `
+                <div class="info-row">
+                    <div class="info-label">Team Leader Notes:</div>
+                    <div class="info-value">${report.team_leader_notes}</div>
+                </div>
+                ` : ''}
+                
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div>Technician's Signature</div>
+                        <div>Name: ${report.technician_name || '_________________'}</div>
+                        <div>Date: ${formatDateOnly(new Date())}</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div>Team Leader's Signature</div>
+                        <div>Name: _________________</div>
+                        <div>Date: _________________</div>
+                    </div>
+                </div>
+                
+                <div class="print-footer">
+                    <small>This is an official report from the Ministry of Education, Brunei. Printed on ${formatDateTime(new Date())}</small>
+                </div>
+            </div>
+        `;
     }
     
-    async function editReport(id) {
-        const response = await fetch('/api/technical-reports');
-        const reports = await response.json();
-        const report = reports.find(r => r.id === id);
+    function formatDateTime(date) {
+        const d = new Date(date);
+        return d.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    function executePrint() {
+        const printContent = document.getElementById('printContent').innerHTML;
+        const originalTitle = document.title;
         
-        if (report) {
-            currentEditId = id;
-            document.getElementById('editReportId').textContent = id;
-            document.getElementById('editStatus').value = report.status || 'pending';
-            document.getElementById('editPriority').value = report.priority || 'medium';
-            document.getElementById('editActionTaken').value = report.action_taken || '';
-            document.getElementById('editResolutionDetails').value = report.resolution_details || '';
-            document.getElementById('editTechnicianNotes').value = report.technician_notes || '';
-            
-            const modal = new bootstrap.Modal(document.getElementById('editReportModal'));
-            modal.show();
-        }
-    }
-    
-    async function saveReportEdit() {
-        const updateData = {
-            status: document.getElementById('editStatus').value,
-            priority: document.getElementById('editPriority').value,
-            action_taken: document.getElementById('editActionTaken').value,
-            resolution_details: document.getElementById('editResolutionDetails').value,
-            technician_notes: document.getElementById('editTechnicianNotes').value
-        };
+        // Open print window
+        const printWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Print Report #${currentPrintReport.id}</title>
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .print-area {
+                        max-width: 100%;
+                        margin: 0 auto;
+                    }
+                    .info-row {
+                        display: flex;
+                        margin-bottom: 8px;
+                        padding: 5px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .info-label {
+                        width: 180px;
+                        font-weight: bold;
+                    }
+                    .info-value {
+                        flex: 1;
+                    }
+                    .signature-section {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 40px;
+                    }
+                    .signature-box {
+                        text-align: center;
+                    }
+                    .signature-line {
+                        width: 200px;
+                        border-top: 1px solid #000;
+                        margin-top: 40px;
+                        padding-top: 5px;
+                    }
+                    .print-header {
+                        border-bottom: 2px solid #9b59b6;
+                        padding-bottom: 10px;
+                        margin-bottom: 20px;
+                    }
+                    .print-footer {
+                        margin-top: 30px;
+                        padding-top: 10px;
+                        border-top: 1px solid #ccc;
+                        font-size: 10px;
+                        text-align: center;
+                    }
+                    @media print {
+                        body {
+                            padding: 0;
+                        }
+                        .no-print {
+                            display: none;
+                        }
+                        .signature-line {
+                            margin-top: 40px;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                ${printContent}
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() {
+                            window.close();
+                        }, 1000);
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
         
-        try {
-            const response = await fetch(`/api/technical-reports/${currentEditId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updateData)
-            });
-            const data = await response.json();
-            
-            if (data.success) {
-                showToast('Report updated successfully');
-                bootstrap.Modal.getInstance(document.getElementById('editReportModal')).hide();
-                loadAllReports();
-            } else {
-                showToast(data.error || 'Failed to update', 'error');
-            }
-        } catch (error) {
-            showToast('Error updating report', 'error');
-        }
+        // Track print count (optional - requires backend API)
+        trackPrint(currentPrintReport.id);
     }
     
-    async function acknowledgeReport(id) {
-        const notes = prompt('Enter acknowledgment notes:');
+    async function trackPrint(reportId) {
         try {
-            const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
+            await fetch(`/api/technical-reports/${reportId}/track-print`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    team_leader_id: getCurrentUser().id,
-                    team_leader_notes: notes || ''
-                })
+                headers: { 'Content-Type': 'application/json' }
             });
-            const data = await response.json();
-            if (data.success) {
-                showToast('Report acknowledged');
-                loadAllReports();
-            }
         } catch (error) {
-            showToast('Error', 'error');
+            console.log('Print tracking failed:', error);
         }
     }
     
-    async function deleteReport(id) {
-        if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-            try {
-                const response = await fetch(`/api/technical-reports/${id}`, {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showToast('Report deleted');
-                    loadAllReports();
-                } else {
-                    showToast(data.error || 'Failed to delete', 'error');
-                }
-            } catch (error) {
-                showToast('Error deleting report', 'error');
-            }
-        }
+    function viewReportDetail(id) {
+        window.location.href = `/reports?id=${id}`;
+    }
+    
+    function editReport(id) {
+        window.location.href = `/reports?id=${id}&edit=true`;
     }
     
     function exportReports() {
@@ -391,15 +615,7 @@
         showToast('Exporting reports...');
     }
     
-    // Check URL params for specific report
-    const urlParams = new URLSearchParams(window.location.search);
-    const reportId = urlParams.get('id');
-    const isEdit = urlParams.get('edit');
-    
-    if (reportId && isEdit) {
-        setTimeout(() => editReport(parseInt(reportId)), 500);
-    }
-    
+    // Load reports on page load
     loadAllReports();
 </script>
 {% endblock %}
