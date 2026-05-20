@@ -2,31 +2,6 @@
 
 {% block content %}
 <style>
-    /* Print Styles */
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-area, .print-area * {
-            visibility: visible;
-        }
-        .print-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-        }
-        .no-print {
-            display: none !important;
-        }
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-    }
-    
     .status-badge {
         padding: 5px 12px;
         border-radius: 20px;
@@ -78,6 +53,33 @@
         border-radius: 20px;
         font-size: 11px;
     }
+    .print-area {
+        background: white;
+        padding: 30px;
+    }
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .print-area, .print-area * {
+            visibility: visible;
+        }
+        .print-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: white;
+        }
+        .no-print {
+            display: none !important;
+        }
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -115,12 +117,36 @@
     </div>
 </div>
 
+<!-- View Report Modal -->
+<div class="modal fade" id="viewReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-text"></i> Report Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewReportContent">
+                <div class="text-center">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printCurrentReport()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+                <button type="button" class="btn btn-warning" onclick="editCurrentReport()">
+                    <i class="bi bi-pencil"></i> Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Print Modal -->
 <div class="modal fade" id="printModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-printer"></i> Print Preview - Report #<span id="printReportId"></span></h5>
+                <h5 class="modal-title"><i class="bi bi-printer"></i> Print Preview</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -137,12 +163,43 @@
 </div>
 
 <script>
+    let currentViewReport = null;
     let currentPrintReport = null;
+    
+    // Format date for Brunei Time (UTC+8)
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+    
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleDateString('en-GB');
+        } catch (e) {
+            return dateString;
+        }
+    }
     
     async function loadMyReports() {
         const user = getCurrentUser();
         if (!user.id) {
-            document.getElementById('myReportsTable').innerHTML = '<tr><td colspan="9" class="text-center">Please select a technician profile</td</tr>';
+            document.getElementById('myReportsTable').innerHTML = '<tr><td colspan="9" class="text-center">Please select a technician profile</td</td>';
             return;
         }
         
@@ -154,24 +211,6 @@
             console.error('Error loading reports:', error);
             showToast('Error loading reports', 'error');
         }
-    }
-    
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-    
-    function formatDateOnly(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-GB');
     }
     
     function displayMyReports(reports) {
@@ -187,26 +226,146 @@
                 <td>
                     <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
                     ${report.report_type}
-                </td>
-                <td>${report.entity_name || report.entity_type}</br><small class="text-muted">${report.entity_type}</small></br>
-                <td>${report.problem_type}</br><small>${(report.complaint_details || '').substring(0, 40)}${(report.complaint_details || '').length > 40 ? '...' : ''}</small></td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></br><small>${report.priority === 'high' ? 'Urgent' : report.priority === 'medium' ? 'Normal' : 'Low priority'}</small></td>
-                <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></br><small>Updated: ${formatDateOnly(report.updated_at)}</small></td>
+                  </td>
+                <td>${report.entity_name || report.entity_type}</td>
+                <td>${report.problem_type}<br><small>${(report.complaint_details || '').substring(0, 40)}${(report.complaint_details || '').length > 40 ? '...' : ''}</small></td>
+                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span><br><small>Updated: ${formatDateOnly(report.updated_at)}</small></td>
                 <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
-                <td>${formatDate(report.created_at)}</br><small>Updated: ${formatDateOnly(report.updated_at)}</small></td>
+                <td>${formatDate(report.created_at)}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="updateReport(${report.id})" title="Edit">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-info" onclick="viewReport(${report.id})" title="View">
+                    <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="printReport(${report.id})" title="Print">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="printReport(${report.id})" title="Print">
                         <i class="bi bi-printer"></i>
                     </button>
-                </td>
-            </tr>
+                  </td>
+             </tr>
         `).join('');
+    }
+    
+    async function viewReportDetail(id) {
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            const report = reports.find(r => r.id === id);
+            
+            if (report) {
+                currentViewReport = report;
+                displayReportInModal(report);
+                const modal = new bootstrap.Modal(document.getElementById('viewReportModal'));
+                modal.show();
+            } else {
+                showToast('Report not found', 'error');
+            }
+        } catch (error) {
+            showToast('Error loading report details', 'error');
+        }
+    }
+    
+    function displayReportInModal(report) {
+        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
+        
+        let imagesHtml = '';
+        if (report.images && report.images.length > 0) {
+            imagesHtml = `
+                <div class="detail-row">
+                    <div class="detail-label">Images:</div>
+                    <div class="detail-value">
+                        <div class="image-gallery">
+                            ${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 120px; object-fit: cover; border-radius: 8px; margin: 5px; cursor: pointer;" onclick="window.open('${img}')">`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const html = `
+            <div>
+                <div style="background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                    <strong>Report ID:</strong> #${report.id} &nbsp;|&nbsp;
+                    <strong>Type:</strong> ${reportTypeName} ${reportTypeIcon} &nbsp;|&nbsp;
+                    <strong>Created:</strong> ${formatDate(report.created_at)} &nbsp;|&nbsp;
+                    <strong>Last Updated:</strong> ${formatDate(report.updated_at)}
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Entity Type:</div>
+                    <div class="detail-value">${report.entity_type === 'school' ? 'School' : 'Department'}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Entity Name:</div>
+                    <div class="detail-value">${report.entity_name || report.entity_type}</div>
+                </div>
+                
+                ${report.account_number ? `<div class="detail-row"><div class="detail-label">Account Number:</div><div class="detail-value">${report.account_number}</div></div>` : ''}
+                ${report.meter_number ? `<div class="detail-row"><div class="detail-label">Meter Number:</div><div class="detail-value">${report.meter_number}</div></div>` : ''}
+                ${report.phone_number ? `<div class="detail-row"><div class="detail-label">Phone Number:</div><div class="detail-value">${report.phone_number}</div></div>` : ''}
+                ${report.reference_number ? `<div class="detail-row"><div class="detail-label">Reference:</div><div class="detail-value">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
+                
+                <div class="detail-row">
+                    <div class="detail-label">Problem Type:</div>
+                    <div class="detail-value">${report.problem_type || '-'}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Priority:</div>
+                    <div class="detail-value"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Status:</div>
+                    <div class="detail-value"><span class="status-badge status-${report.status}">${report.status.replace('_', ' ').toUpperCase()}</span></div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Complaint Details:</div>
+                    <div class="detail-value">${report.complaint_details || '-'}</div>
+                </div>
+                
+                ${report.technician_notes ? `<div class="detail-row"><div class="detail-label">Technician Notes:</div><div class="detail-value">${report.technician_notes}</div></div>` : ''}
+                ${report.action_taken ? `<div class="detail-row"><div class="detail-label">Action Taken:</div><div class="detail-value">${report.action_taken}</div></div>` : ''}
+                ${report.resolution_details ? `<div class="detail-row"><div class="detail-label">Resolution:</div><div class="detail-value">${report.resolution_details}</div></div>` : ''}
+                
+                <div class="detail-row">
+                    <div class="detail-label">Assigned Technician:</div>
+                    <div class="detail-value">${report.technician_name || 'Unassigned'}</div>
+                </div>
+                
+                <div class="detail-row">
+                    <div class="detail-label">Team Leader Acknowledged:</div>
+                    <div class="detail-value">${report.team_leader_acknowledged ? 'Yes' : 'No'}</div>
+                </div>
+                
+                ${report.team_leader_notes ? `<div class="detail-row"><div class="detail-label">Team Leader Notes:</div><div class="detail-value">${report.team_leader_notes}</div></div>` : ''}
+                
+                ${imagesHtml}
+            </div>
+        `;
+        
+        document.getElementById('viewReportContent').innerHTML = html;
+    }
+    
+    function printCurrentReport() {
+        if (currentViewReport) {
+            printReport(currentViewReport.id);
+        }
+    }
+    
+    function editCurrentReport() {
+        if (currentViewReport) {
+            window.location.href = `/reports?id=${currentViewReport.id}&edit=true`;
+        }
+    }
+    
+    function editReport(id) {
+        window.location.href = `/reports?id=${id}&edit=true`;
     }
     
     async function printReport(id) {
@@ -217,9 +376,7 @@
             
             if (report) {
                 currentPrintReport = report;
-                document.getElementById('printReportId').textContent = report.id;
                 document.getElementById('printContent').innerHTML = generatePrintHTML(report);
-                
                 const modal = new bootstrap.Modal(document.getElementById('printModal'));
                 modal.show();
             }
@@ -250,24 +407,24 @@
                     <tr style="background: #f5f5f5;">
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd; width: 30%;">Field</th>
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Details</th>
-                    </tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_name || report.entity_type}</td></tr>
+                     </tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_name || report.entity_type}</td></tr>
                     ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.account_number}</td></tr>` : ''}
                     ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.meter_number}</td></tr>` : ''}
                     ${report.phone_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.phone_number}</td></tr>` : ''}
                     ${report.reference_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.problem_type || '-'}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.complaint_details || '-'}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.problem_type || '-'}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.complaint_details || '-'}</td></tr>
                     ${report.technician_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Technician Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_notes}</td></tr>` : ''}
                     ${report.action_taken ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Action Taken</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.action_taken}</td></tr>` : ''}
                     ${report.resolution_details ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Resolution</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.resolution_details}</td></tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_name || 'Unassigned'}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_name || 'Unassigned'}</td></tr>
+                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
                     ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_notes}</td></tr>` : ''}
-                </table>
+                 </table>
                 
                 <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                     <div style="text-align: center;">
@@ -292,8 +449,9 @@
     }
     
     function executePrint() {
-        const printContent = document.getElementById('printContent').innerHTML;
+        if (!currentPrintReport) return;
         
+        const printContent = document.getElementById('printContent').innerHTML;
         const printWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
         printWindow.document.write(`
             <!DOCTYPE html>
@@ -301,46 +459,27 @@
             <head>
                 <title>Print Report #${currentPrintReport.id}</title>
                 <style>
-                    body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                    }
-                    @media print {
-                        body {
-                            padding: 0;
-                        }
-                    }
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+                    @media print { body { padding: 0; } }
                 </style>
             </head>
             <body>
                 ${printContent}
                 <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() {
-                            window.close();
-                        }, 1000);
-                    }
+                    window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1000); };
                 <\/script>
             </body>
             </html>
         `);
         printWindow.document.close();
         
-        // Track print
         fetch(`/api/technical-reports/${currentPrintReport.id}/track-print`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         }).catch(error => console.log('Print tracking failed:', error));
-    }
-    
-    function updateReport(id) {
-        window.location.href = `/reports?id=${id}&edit=true`;
-    }
-    
-    function viewReport(id) {
-        window.location.href = `/reports?id=${id}`;
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('printModal'));
+        if (modal) modal.hide();
     }
     
     loadMyReports();
