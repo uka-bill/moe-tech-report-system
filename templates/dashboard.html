@@ -106,6 +106,7 @@
     
     .report-list-item:hover {
         background-color: var(--secondary-color);
+        cursor: pointer;
     }
     
     .report-title {
@@ -121,12 +122,42 @@
         flex-wrap: wrap;
     }
     
+    /* Updated Chart Container - Medium Size */
     .chart-container {
         background: white;
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .chart-wrapper {
+        position: relative;
+        height: 280px;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .chart-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .chart-stats {
+        text-align: center;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+        font-size: 0.85rem;
+    }
+    
+    .chart-stats span {
+        display: inline-block;
+        margin: 0 10px;
     }
     
     .acknowledgment-progress {
@@ -140,6 +171,14 @@
         background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
         height: 100%;
         transition: width 0.3s;
+    }
+    
+    /* Make charts responsive and medium sized */
+    @media (max-width: 768px) {
+        .chart-wrapper {
+            height: 220px;
+            max-width: 100%;
+        }
     }
 </style>
 
@@ -255,7 +294,7 @@
                 <div class="summary-title">
                     <i class="bi bi-clock-history"></i> Latest Reports
                     <span class="float-end">
-                        <select id="filterLatestType" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="loadLatestReports()">
+                        <select id="filterLatestType" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="loadDashboardData()">
                             <option value="all">All Types</option>
                             <option value="water">Water</option>
                             <option value="electricity">Electricity</option>
@@ -290,18 +329,28 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- Charts Section - Medium Size with Data Labels -->
     <div class="row">
         <div class="col-md-6">
             <div class="chart-container">
-                <h6><i class="bi bi-bar-chart"></i> Reports by Utility Type</h6>
-                <canvas id="utilityChart" height="200"></canvas>
+                <div class="chart-title">
+                    <i class="bi bi-bar-chart"></i> Reports by Utility Type
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="utilityChart" height="250"></canvas>
+                </div>
+                <div class="chart-stats" id="utilityStats"></div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="chart-container">
-                <h6><i class="bi bi-pie-chart"></i> Report Status Breakdown</h6>
-                <canvas id="statusChart" height="200"></canvas>
+                <div class="chart-title">
+                    <i class="bi bi-pie-chart"></i> Report Status Breakdown
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="statusChart" height="250"></canvas>
+                </div>
+                <div class="chart-stats" id="statusStats"></div>
             </div>
         </div>
     </div>
@@ -309,14 +358,24 @@
     <div class="row">
         <div class="col-md-6">
             <div class="chart-container">
-                <h6><i class="bi bi-check2-square"></i> Acknowledgment Status</h6>
-                <canvas id="acknowledgmentChart" height="200"></canvas>
+                <div class="chart-title">
+                    <i class="bi bi-check2-square"></i> Acknowledgment Status
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="acknowledgmentChart" height="250"></canvas>
+                </div>
+                <div class="chart-stats" id="acknowledgmentStats"></div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="chart-container">
-                <h6><i class="bi bi-graph-up"></i> Weekly Report Trend</h6>
-                <canvas id="trendChart" height="200"></canvas>
+                <div class="chart-title">
+                    <i class="bi bi-graph-up"></i> Weekly Report Trend (Last 7 Days)
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart" height="250"></canvas>
+                </div>
+                <div class="chart-stats" id="trendStats"></div>
             </div>
         </div>
     </div>
@@ -335,6 +394,14 @@
         day: 'numeric'
     });
     
+    // Format date for Brunei Time
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
+    }
+    
     // Load all dashboard data
     async function loadDashboardData() {
         try {
@@ -346,7 +413,6 @@
                 return;
             }
             
-            // Calculate statistics
             const stats = calculateStats(reports);
             updateStatsCards(stats);
             updateCategoryStats(reports, stats);
@@ -367,7 +433,6 @@
         const pendingAck = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved');
         const acknowledged = reports.filter(r => r.team_leader_acknowledged);
         
-        // Category breakdown
         const water = reports.filter(r => r.report_type === 'water');
         const electricity = reports.filter(r => r.report_type === 'electricity');
         const telephone = reports.filter(r => r.report_type === 'telephone');
@@ -393,7 +458,6 @@
     }
     
     function updateCategoryStats(reports, stats) {
-        // Water
         document.getElementById('waterTotal').textContent = stats.water.total;
         document.getElementById('waterPending').textContent = stats.water.pending;
         document.getElementById('waterAck').textContent = stats.water.acknowledged;
@@ -401,7 +465,6 @@
         const waterProgress = stats.water.total > 0 ? (stats.water.acknowledged / stats.water.total) * 100 : 0;
         document.getElementById('waterProgress').style.width = waterProgress + '%';
         
-        // Electricity
         document.getElementById('electricityTotal').textContent = stats.electricity.total;
         document.getElementById('electricityPending').textContent = stats.electricity.pending;
         document.getElementById('electricityAck').textContent = stats.electricity.acknowledged;
@@ -409,7 +472,6 @@
         const elecProgress = stats.electricity.total > 0 ? (stats.electricity.acknowledged / stats.electricity.total) * 100 : 0;
         document.getElementById('electricityProgress').style.width = elecProgress + '%';
         
-        // Telephone
         document.getElementById('telephoneTotal').textContent = stats.telephone.total;
         document.getElementById('telephonePending').textContent = stats.telephone.pending;
         document.getElementById('telephoneAck').textContent = stats.telephone.acknowledged;
@@ -511,7 +573,11 @@
     }
     
     function updateCharts(reports, stats) {
-        // Utility Type Chart
+        const pendingCount = reports.filter(r => r.status === 'pending').length;
+        const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
+        const resolvedCount = reports.filter(r => r.status === 'resolved').length;
+        
+        // Utility Type Chart with data labels
         const utilityCtx = document.getElementById('utilityChart').getContext('2d');
         if (utilityChart) utilityChart.destroy();
         utilityChart = new Chart(utilityCtx, {
@@ -522,35 +588,52 @@
                     label: 'Number of Reports',
                     data: [stats.water.total, stats.electricity.total, stats.telephone.total],
                     backgroundColor: ['#1976d2', '#f57c00', '#388e3c'],
-                    borderRadius: 8
+                    borderRadius: 8,
+                    barPercentage: 0.6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { position: 'top' } }
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { callbacks: { label: function(context) { return `${context.dataset.label}: ${context.raw} reports`; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Reports' } },
+                    x: { title: { display: true, text: 'Utility Type' } }
+                }
             }
         });
+        document.getElementById('utilityStats').innerHTML = `<span>💧 Water: ${stats.water.total}</span> | <span>⚡ Electricity: ${stats.electricity.total}</span> | <span>📞 Telephone: ${stats.telephone.total}</span>`;
         
-        // Status Chart
+        // Status Chart with data labels
         const statusCtx = document.getElementById('statusChart').getContext('2d');
         if (statusChart) statusChart.destroy();
-        const pendingCount = reports.filter(r => r.status === 'pending').length;
-        const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
-        const resolvedCount = reports.filter(r => r.status === 'resolved').length;
         statusChart = new Chart(statusCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Pending', 'In Progress', 'Resolved'],
                 datasets: [{
                     data: [pendingCount, inProgressCount, resolvedCount],
-                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
+                    borderWidth: 2,
+                    borderColor: 'white'
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: function(context) { return `${context.label}: ${context.raw} reports (${((context.raw / reports.length) * 100).toFixed(1)}%)`; } } }
+                }
+            }
         });
+        const totalReports = reports.length;
+        document.getElementById('statusStats').innerHTML = `<span>🟡 Pending: ${pendingCount} (${((pendingCount/totalReports)*100).toFixed(1)}%)</span> | <span>🔵 In Progress: ${inProgressCount} (${((inProgressCount/totalReports)*100).toFixed(1)}%)</span> | <span>🟢 Resolved: ${resolvedCount} (${((resolvedCount/totalReports)*100).toFixed(1)}%)</span>`;
         
-        // Acknowledgment Chart
+        // Acknowledgment Chart with data labels
         const ackCtx = document.getElementById('acknowledgmentChart').getContext('2d');
         if (acknowledgmentChart) acknowledgmentChart.destroy();
         acknowledgmentChart = new Chart(ackCtx, {
@@ -559,16 +642,30 @@
                 labels: ['Acknowledged', 'Pending Acknowledgment'],
                 datasets: [{
                     data: [stats.acknowledged, stats.pendingAck],
-                    backgroundColor: ['#28a745', '#dc3545']
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 2,
+                    borderColor: 'white'
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: true }
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: function(context) { return `${context.label}: ${context.raw} reports (${((context.raw / totalReports) * 100).toFixed(1)}%)`; } } }
+                }
+            }
         });
+        document.getElementById('acknowledgmentStats').innerHTML = `<span>✅ Acknowledged: ${stats.acknowledged} (${((stats.acknowledged/totalReports)*100).toFixed(1)}%)</span> | <span>⏳ Pending: ${stats.pendingAck} (${((stats.pendingAck/totalReports)*100).toFixed(1)}%)</span>`;
         
         // Weekly Trend Chart
         const last7Days = getLast7Days();
         const weeklyData = last7Days.map(day => {
-            return reports.filter(r => formatDateOnly(r.created_at) === day).length;
+            return reports.filter(r => {
+                const reportDate = new Date(r.created_at);
+                reportDate.setHours(reportDate.getHours() + 8);
+                return reportDate.toISOString().split('T')[0] === day;
+            }).length;
         });
         
         const trendCtx = document.getElementById('trendChart').getContext('2d');
@@ -576,22 +673,40 @@
         trendChart = new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: last7Days,
+                labels: last7Days.map(d => {
+                    const date = new Date(d);
+                    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+                }),
                 datasets: [{
                     label: 'Reports Submitted',
                     data: weeklyData,
                     borderColor: '#9b59b6',
                     backgroundColor: 'rgba(155, 89, 182, 0.1)',
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: '#9b59b6',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { position: 'top' } }
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { callbacks: { label: function(context) { return `${context.dataset.label}: ${context.raw} reports`; } } }
+                },
+                scales: {
+                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Reports' } },
+                    x: { title: { display: true, text: 'Date' } }
+                }
             }
         });
+        const totalWeekly = weeklyData.reduce((a, b) => a + b, 0);
+        const avgWeekly = (totalWeekly / 7).toFixed(1);
+        document.getElementById('trendStats').innerHTML = `<span>📊 Total this week: ${totalWeekly} reports</span> | <span>📈 Daily average: ${avgWeekly} reports</span>`;
     }
     
     function getLast7Days() {
@@ -604,10 +719,6 @@
         return dates;
     }
     
-    function loadLatestReports() {
-        loadDashboardData();
-    }
-    
     function viewReport(id) {
         window.location.href = `/reports?id=${id}`;
     }
@@ -617,7 +728,6 @@
         container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
     }
     
-    // Load data on page load and every 30 seconds
     loadDashboardData();
     setInterval(loadDashboardData, 30000);
 </script>
