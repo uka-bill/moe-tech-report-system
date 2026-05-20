@@ -5,29 +5,64 @@ import uuid
 from werkzeug.utils import secure_filename
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import traceback
 import json
 import base64
 import logging
 from logging.handlers import RotatingFileHandler
 
+# ============ TIMEZONE HELPER FUNCTIONS ============
+
+def get_brunei_time():
+    """Get current time in Brunei (UTC+8)"""
+    utc_now = datetime.now(timezone.utc)
+    brunei_time = utc_now + timedelta(hours=8)
+    return brunei_time
+
+def get_brunei_time_iso():
+    """Get current time in Brunei as ISO string"""
+    return get_brunei_time().isoformat()
+
+def format_brunei_time(date_string):
+    """Format a date string to Brunei time display"""
+    if not date_string:
+        return '-'
+    try:
+        # Parse the date string
+        if isinstance(date_string, str):
+            dt = datetime.fromisoformat(date_string.replace('Z', '+00:00'))
+        else:
+            dt = date_string
+        
+        # If the datetime is naive (no timezone), assume it's UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        
+        # Convert to Brunei time (UTC+8)
+        brunei_dt = dt.astimezone(timezone(timedelta(hours=8)))
+        
+        return brunei_dt.strftime('%d/%m/%Y %H:%M:%S')
+    except Exception as e:
+        return date_string
+
 # ============ INITIALIZATION ============
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
 
+# Make the timezone function available to templates
+app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
+
 # ============ LOGGING SETUP ============
 
-# Create logs directory if it doesn't exist
 if not os.path.exists('logs'):
     os.makedirs('logs')
 
-# Configure logging
 file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
 file_handler.setFormatter(logging.Formatter(
     '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
@@ -39,7 +74,6 @@ app.logger.info('MOE Technical Report System startup')
 
 # ============ SUPABASE CONFIGURATION ============
 
-# Get Supabase credentials from environment variables
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://megrxcfmcwrttiwujddh.supabase.co')
 SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZ3J4Y2ZtY3dydHRpd3VqZGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDA4ODgsImV4cCI6MjA5NDYxNjg4OH0.fmwcV6fqqr-hO6hRPTzER6eODl6zffwud9heIchMNkw')
 
@@ -53,11 +87,9 @@ except Exception as e:
 # ============ HELPER FUNCTIONS ============
 
 def allowed_file(filename):
-    """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def create_directories():
-    """Create necessary directories for the application"""
     directories = ['uploads', 'logs']
     for directory in directories:
         try:
@@ -67,7 +99,6 @@ def create_directories():
             app.logger.error(f"❌ Failed to create directory {directory}: {e}")
 
 def test_supabase_connection():
-    """Test Supabase connection and log result"""
     if not supabase:
         app.logger.warning("⚠️ Supabase client not initialized")
         return False
@@ -84,69 +115,56 @@ def test_supabase_connection():
 
 @app.route('/')
 def index():
-    """Landing page"""
     return render_template('index.html')
 
 @app.route('/dashboard')
 def dashboard():
-    """Main dashboard page"""
     return render_template('dashboard.html')
 
 @app.route('/reports')
 def reports_page():
-    """All reports page"""
     return render_template('reports.html')
 
 @app.route('/water-reports')
 def water_reports():
-    """Water reports page"""
     return render_template('water_reports.html')
 
 @app.route('/electricity-reports')
 def electricity_reports():
-    """Electricity reports page"""
     return render_template('electricity_reports.html')
 
 @app.route('/telephone-reports')
 def telephone_reports():
-    """Telephone reports page"""
     return render_template('telephone_reports.html')
 
 @app.route('/new-report')
 def new_report():
-    """Create new report page"""
     return render_template('new_report.html')
 
 @app.route('/schools')
 def schools_page():
-    """Schools management page"""
     return render_template('schools.html')
 
 @app.route('/departments')
 def departments_page():
-    """Departments management page"""
     return render_template('departments.html')
 
 @app.route('/technicians')
 def technicians_page():
-    """Technicians management page"""
     return render_template('technicians.html')
 
 @app.route('/my-reports')
 def my_reports():
-    """Technician's own reports page"""
     return render_template('my_reports.html')
 
 @app.route('/team-leader')
 def team_leader():
-    """Team leader dashboard page"""
     return render_template('team_leader.html')
 
-# ============ TECHNICIAN API WITH AUTHORIZATION ============
+# ============ TECHNICIAN API ============
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
-    """Get all technicians sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -179,7 +197,6 @@ def get_technicians():
 
 @app.route('/api/technicians', methods=['POST'])
 def create_technician():
-    """Create a new technician with multiple specializations"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -195,7 +212,7 @@ def create_technician():
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
             "is_authorized": data.get('is_authorized', False),
-            "created_at": datetime.now().isoformat()
+            "created_at": get_brunei_time_iso()
         }
         
         if not technician_data['name']:
@@ -218,7 +235,6 @@ def create_technician():
 
 @app.route('/api/technicians/<int:tech_id>', methods=['PUT'])
 def update_technician(tech_id):
-    """Update an existing technician"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -251,7 +267,6 @@ def update_technician(tech_id):
 
 @app.route('/api/technicians/<int:tech_id>', methods=['DELETE'])
 def delete_technician(tech_id):
-    """Delete a technician"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -274,7 +289,6 @@ def delete_technician(tech_id):
 
 @app.route('/api/technicians/<int:tech_id>/authorization', methods=['GET'])
 def check_technician_authorization(tech_id):
-    """Check if a technician is authorized to acknowledge reports"""
     try:
         if not supabase:
             return jsonify({'authorized': False}), 500
@@ -295,7 +309,6 @@ def check_technician_authorization(tech_id):
 
 @app.route('/api/schools', methods=['GET'])
 def get_schools():
-    """Get all schools sorted by ID ascending"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -308,7 +321,6 @@ def get_schools():
 
 @app.route('/api/schools', methods=['POST'])
 def create_school():
-    """Create a new school"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -321,7 +333,7 @@ def create_school():
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
             "contact_phone": data.get('contact_phone'),
-            "created_at": datetime.now().isoformat()
+            "created_at": get_brunei_time_iso()
         }
         
         if not school_data['name']:
@@ -341,7 +353,6 @@ def create_school():
 
 @app.route('/api/schools/<int:school_id>', methods=['PUT'])
 def update_school(school_id):
-    """Update an existing school"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -361,7 +372,6 @@ def update_school(school_id):
 
 @app.route('/api/schools/<int:school_id>', methods=['DELETE'])
 def delete_school(school_id):
-    """Delete a school"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -386,7 +396,6 @@ def delete_school(school_id):
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
-    """Get all departments sorted by ID ascending"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -399,7 +408,6 @@ def get_departments():
 
 @app.route('/api/departments', methods=['POST'])
 def create_department():
-    """Create a new department"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -411,7 +419,7 @@ def create_department():
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
             "contact_phone": data.get('contact_phone'),
-            "created_at": datetime.now().isoformat()
+            "created_at": get_brunei_time_iso()
         }
         
         if not dept_data['unit_name']:
@@ -434,7 +442,6 @@ def create_department():
 
 @app.route('/api/departments/<int:dept_id>', methods=['PUT'])
 def update_department(dept_id):
-    """Update an existing department"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -465,7 +472,6 @@ def update_department(dept_id):
 
 @app.route('/api/departments/<int:dept_id>', methods=['DELETE'])
 def delete_department(dept_id):
-    """Delete a department"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -490,7 +496,6 @@ def delete_department(dept_id):
 
 @app.route('/api/technical-reports', methods=['GET'])
 def get_technical_reports():
-    """Get technical reports with filters"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -552,7 +557,6 @@ def get_technical_reports():
 
 @app.route('/api/technical-reports', methods=['POST'])
 def create_technical_report():
-    """Create a new technical report with reference fields"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -595,8 +599,8 @@ def create_technical_report():
             "reference_type": data.get('reference_type', ''),
             "reference_number": data.get('reference_number', ''),
             "reference_date": reference_date,
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat(),
+            "created_at": get_brunei_time_iso(),
+            "updated_at": get_brunei_time_iso(),
             "print_count": 0,
             "last_printed_at": None
         }
@@ -619,7 +623,6 @@ def create_technical_report():
 
 @app.route('/api/technical-reports/<int:report_id>', methods=['PUT'])
 def update_technical_report(report_id):
-    """Update an existing technical report"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -645,7 +648,7 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
         
-        update_data['updated_at'] = datetime.now().isoformat()
+        update_data['updated_at'] = get_brunei_time_iso()
         
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
@@ -668,7 +671,6 @@ def update_technical_report(report_id):
 
 @app.route('/api/technical-reports/<int:report_id>/acknowledge', methods=['POST'])
 def acknowledge_report(report_id):
-    """Acknowledge a report as team leader (only for authorized technicians)"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -686,10 +688,10 @@ def acknowledge_report(report_id):
         
         update_data = {
             "team_leader_acknowledged": True,
-            "team_leader_acknowledged_at": datetime.now().isoformat(),
+            "team_leader_acknowledged_at": get_brunei_time_iso(),
             "team_leader_id": team_leader_id,
             "team_leader_notes": data.get('team_leader_notes', ''),
-            "updated_at": datetime.now().isoformat()
+            "updated_at": get_brunei_time_iso()
         }
         
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
@@ -710,7 +712,6 @@ def acknowledge_report(report_id):
 
 @app.route('/api/technical-reports/<int:report_id>', methods=['DELETE'])
 def delete_technical_report(report_id):
-    """Delete a technical report"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -732,19 +733,16 @@ def delete_technical_report(report_id):
 
 @app.route('/api/technical-reports/<int:report_id>/track-print', methods=['POST'])
 def track_print(report_id):
-    """Track when a report is printed"""
     try:
         if not supabase:
             return jsonify({'success': False}), 500
         
-        # Get current print count
         current = supabase.table("technical_reports").select("print_count").eq("id", report_id).execute()
         current_count = current.data[0].get('print_count', 0) if current.data else 0
         
-        # Update print count and last printed timestamp
         response = supabase.table("technical_reports").update({
             "print_count": current_count + 1,
-            "last_printed_at": datetime.now().isoformat()
+            "last_printed_at": get_brunei_time_iso()
         }).eq("id", report_id).execute()
         
         return jsonify({'success': True})
@@ -756,7 +754,6 @@ def track_print(report_id):
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
-    """Upload an image for a report"""
     try:
         if 'image' not in request.files:
             return jsonify({'success': False, 'error': 'No image file provided'}), 400
@@ -769,7 +766,7 @@ def upload_image():
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
         
         ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = secure_filename(f"{uuid.uuid4().hex}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}")
+        filename = secure_filename(f"{uuid.uuid4().hex}_{get_brunei_time().strftime('%Y%m%d_%H%M%S')}.{ext}")
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
         file.save(filepath)
@@ -784,7 +781,7 @@ def upload_image():
             "filepath": filepath,
             "file_size": os.path.getsize(filepath),
             "image_data_base64": img_data,
-            "uploaded_at": datetime.now().isoformat()
+            "uploaded_at": get_brunei_time_iso()
         }
         
         if supabase:
@@ -810,7 +807,6 @@ def upload_image():
 
 @app.route('/api/images/<filename>')
 def get_image(filename):
-    """Serve uploaded images"""
     try:
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -822,7 +818,6 @@ def get_image(filename):
 
 @app.route('/api/dashboard-stats')
 def get_dashboard_stats():
-    """Get statistics for dashboard"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -886,7 +881,6 @@ def get_dashboard_stats():
 
 @app.route('/api/export-reports', methods=['GET'])
 def export_reports():
-    """Export reports to CSV"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -967,7 +961,7 @@ def export_reports():
         
         output.seek(0)
         
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
         filename = f"technical_reports_{timestamp}.csv"
         
         app.logger.info(f"Reports exported: {filename}")
@@ -987,12 +981,11 @@ def export_reports():
 
 @app.route('/health')
 def health_check():
-    """Health check endpoint for monitoring"""
     supabase_status = test_supabase_connection()
     
     return jsonify({
         'status': 'healthy' if supabase_status else 'degraded',
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': get_brunei_time_iso(),
         'version': '1.0.0',
         'supabase_connected': supabase_status,
         'service': 'MOE Technical Report System',
@@ -1001,30 +994,26 @@ def health_check():
 
 @app.route('/api/health')
 def api_health():
-    """Simple API health check"""
     return jsonify({
         'status': 'ok',
-        'timestamp': datetime.now().isoformat()
+        'timestamp': get_brunei_time_iso()
     })
 
 # ============ ERROR HANDLERS ============
 
 @app.errorhandler(404)
 def not_found_error(error):
-    """Handle 404 errors"""
     app.logger.warning(f"404 error: {request.url}")
     return jsonify({'error': 'Resource not found'}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Handle 500 errors"""
     app.logger.error(f"500 error: {error}")
     return jsonify({'error': 'Internal server error'}), 500
 
 # ============ APPLICATION STARTUP ============
 
 def init_app():
-    """Initialize application on startup"""
     create_directories()
     
     app.logger.info("=" * 60)
@@ -1033,6 +1022,7 @@ def init_app():
     app.logger.info("=" * 60)
     app.logger.info("📋 System for Water, Electricity & Telephone Reports")
     app.logger.info("👥 Users: Senior Technicians & Technicians")
+    app.logger.info(f"🌍 Timezone: UTC+8 (Brunei Time)")
     app.logger.info("=" * 60)
     
     if test_supabase_connection():
