@@ -135,6 +135,7 @@
         padding: 2px 6px;
         border-radius: 4px;
         font-size: 0.8rem;
+        display: inline-block;
     }
     .filter-section {
         background: white;
@@ -150,6 +151,12 @@
     }
     .btn-reset:hover {
         background-color: #5a6268;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .table {
+        min-width: 1200px;
     }
 </style>
 
@@ -263,9 +270,9 @@
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div> Loading...
-                    </td>
+                    </td
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -362,6 +369,20 @@
         }
     }
     
+    function formatUtilityNumber(report) {
+        const letter = getUtilityLetter(report.report_type);
+        const number = report.utility_number || report.id;
+        return `${letter}-${String(number).padStart(3, '0')}`;
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        if (typeof text !== 'string') return text;
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     function resetFilters() {
         document.getElementById('filterType').value = '';
         document.getElementById('filterStatus').value = '';
@@ -406,8 +427,8 @@
                     <td colspan="12" class="text-center text-danger">
                         <i class="bi bi-exclamation-triangle"></i> Error loading reports: ${error.message}
                         <br><button class="btn btn-sm btn-primary mt-2" onclick="loadAllReports()">Retry</button>
-                    </td>
-                </tr>
+                    </td
+                </table>
             `;
             showToast('Error loading reports: ' + error.message, 'error');
         }
@@ -416,30 +437,48 @@
     function displayAllReports(reports) {
         const tbody = document.getElementById('allReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found</td</td>';
+            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found</td<tr>';
             return;
         }
         
         tbody.innerHTML = reports.map(report => {
-            const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
+            const utilityNumber = formatUtilityNumber(report);
             const tenderBadge = report.priority_with_tender ? '<span class="tender-badge"><i class="bi bi-exclamation-triangle"></i> TENDER</span>' : '-';
             
+            // Get status badge class
+            let statusClass = '';
+            switch(report.status) {
+                case 'pending': statusClass = 'status-pending'; break;
+                case 'in_progress': statusClass = 'status-in_progress'; break;
+                case 'resolved': statusClass = 'status-resolved'; break;
+                default: statusClass = 'status-pending';
+            }
+            
+            // Get priority badge class
+            let priorityClass = '';
+            switch(report.priority) {
+                case 'high': priorityClass = 'priority-high'; break;
+                case 'medium': priorityClass = 'priority-medium'; break;
+                case 'low': priorityClass = 'priority-low'; break;
+                default: priorityClass = 'priority-medium';
+            }
+            
             return `
-                <tr class="report-type-${report.report_type}">
-                    <td><span class="utility-number">${utilityNumber}</span></td>
+                <tr>
+                    <td><span class="utility-number">${escapeHtml(utilityNumber)}</span></td>
                     <td>#${report.id}</td>
                     <td>
                         <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
-                        ${report.report_type}
+                        ${escapeHtml(report.report_type)}
                     </td>
-                    <td>${escapeHtml(report.entity_name || report.entity_type)}</br><small class="text-muted">${report.entity_type}</small></td>
+                    <td>${escapeHtml(report.entity_name || report.entity_type)}<br><small class="text-muted">${escapeHtml(report.entity_type)}</small></td>
                     <td>${escapeHtml(report.problem_type || '-')}</td>
-                    <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                    <td><span class="status-badge ${priorityClass}">${escapeHtml(report.priority)}</span></td>
                     <td>${tenderBadge}</td>
-                    <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
+                    <td><span class="status-badge ${statusClass}">${escapeHtml(report.status.replace('_', ' '))}</span></td>
                     <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
                     <td>${escapeHtml(report.technician_name || '-')}</td>
-                    <td>${formatDate(report.created_at)}</br><small>${formatDateOnly(report.created_at)}</small></td>
+                    <td>${formatDate(report.created_at)}<br><small>${formatDateOnly(report.created_at)}</small></td>
                     <td>
                         <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
                             <i class="bi bi-eye"></i>
@@ -457,13 +496,6 @@
                 </tr>
             `;
         }).join('');
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     async function viewReportDetail(id) {
@@ -492,7 +524,7 @@
     function displayReportInModal(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
+        const utilityNumber = formatUtilityNumber(report);
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
@@ -521,7 +553,7 @@
         const html = `
             <div>
                 <div style="background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <strong>Utility Number:</strong> ${utilityNumber} &nbsp;|&nbsp;
+                    <strong>Utility Number:</strong> ${escapeHtml(utilityNumber)} &nbsp;|&nbsp;
                     <strong>Report ID:</strong> #${report.id} &nbsp;|&nbsp;
                     <strong>Type:</strong> ${reportTypeName} ${reportTypeIcon} &nbsp;|&nbsp;
                     <strong>Created:</strong> ${formatDate(report.created_at)} &nbsp;|&nbsp;
@@ -709,7 +741,7 @@
     function generatePrintHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
+        const utilityNumber = formatUtilityNumber(report);
         
         const tenderSection = report.priority_with_tender ? `
             <div style="background-color: #fff3cd; padding: 10px; margin: 10px 0; border-left: 4px solid #dc3545;">
@@ -755,7 +787,7 @@
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_name || 'Unassigned')}</td></tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
                     ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
-                </table>
+                 </div>
                 
                 <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                     <div style="text-align: center;">
