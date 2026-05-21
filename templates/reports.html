@@ -78,6 +78,15 @@
         border-radius: 20px;
         font-size: 11px;
     }
+    .tender-badge {
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 5px;
+    }
     .print-area {
         background: white;
         padding: 30px;
@@ -118,6 +127,14 @@
         transform: scale(1.05);
         transition: transform 0.2s;
     }
+    .utility-number {
+        font-family: monospace;
+        font-weight: bold;
+        background-color: #f0f0f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -141,7 +158,7 @@
         <div class="row g-3">
             <div class="col-md-2">
                 <label class="form-label">Report Type</label>
-                <select class="form-select" id="filterType">
+                <select class="form-select" id="filterType" onchange="loadAllReports()">
                     <option value="">All</option>
                     <option value="water">Water</option>
                     <option value="electricity">Electricity</option>
@@ -150,7 +167,7 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Status</label>
-                <select class="form-select" id="filterStatus">
+                <select class="form-select" id="filterStatus" onchange="loadAllReports()">
                     <option value="">All</option>
                     <option value="pending">Pending</option>
                     <option value="in_progress">In Progress</option>
@@ -160,7 +177,7 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Priority</label>
-                <select class="form-select" id="filterPriority">
+                <select class="form-select" id="filterPriority" onchange="loadAllReports()">
                     <option value="">All</option>
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
@@ -169,24 +186,36 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">Entity Type</label>
-                <select class="form-select" id="filterEntityType">
+                <select class="form-select" id="filterEntityType" onchange="loadAllReports()">
                     <option value="">All</option>
                     <option value="school">School</option>
                     <option value="department">Department</option>
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label">Priority with Tender</label>
+                <select class="form-select" id="filterTender" onchange="loadAllReports()">
+                    <option value="">All</option>
+                    <option value="true">Yes - Tender Required</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label">Acknowledged</label>
-                <select class="form-select" id="filterAcknowledged">
+                <select class="form-select" id="filterAcknowledged" onchange="loadAllReports()">
                     <option value="">All</option>
                     <option value="true">Acknowledged</option>
                     <option value="false">Not Acknowledged</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <button class="btn btn-primary w-100" onclick="loadAllReports()">
-                    <i class="bi bi-search"></i> Search
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <button class="btn btn-primary" onclick="loadAllReports()">
+                    <i class="bi bi-search"></i> Apply Filters
+                </button>
+                <button class="btn btn-secondary ms-2" onclick="resetFilters()">
+                    <i class="bi bi-arrow-repeat"></i> Reset Filters
                 </button>
             </div>
         </div>
@@ -203,11 +232,13 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Utility #</th>
                         <th>ID</th>
                         <th>Type</th>
                         <th>Location</th>
                         <th>Problem</th>
                         <th>Priority</th>
+                        <th>Tender</th>
                         <th>Status</th>
                         <th>Acknowledged</th>
                         <th>Technician</th>
@@ -216,7 +247,7 @@
                     </tr>
                 </thead>
                 <tbody id="allReportsTable">
-                    <tr><td colspan="10" class="text-center">Loading...</td</tr>
+                    <tr><td colspan="12" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -277,7 +308,6 @@
         if (!dateString) return '-';
         try {
             const date = new Date(dateString);
-            // Add 8 hours for Brunei time (UTC+8)
             date.setHours(date.getHours() + 8);
             return date.toLocaleString('en-GB', {
                 day: '2-digit',
@@ -303,18 +333,40 @@
         }
     }
     
+    function getUtilityLetter(type) {
+        switch(type) {
+            case 'water': return 'W';
+            case 'electricity': return 'E';
+            case 'telephone': return 'T';
+            default: return '';
+        }
+    }
+    
+    function resetFilters() {
+        document.getElementById('filterType').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterPriority').value = '';
+        document.getElementById('filterEntityType').value = '';
+        document.getElementById('filterTender').value = '';
+        document.getElementById('filterAcknowledged').value = '';
+        loadAllReports();
+        showToast('Filters reset');
+    }
+    
     async function loadAllReports() {
         let url = '/api/technical-reports?';
         const type = document.getElementById('filterType').value;
         const status = document.getElementById('filterStatus').value;
         const priority = document.getElementById('filterPriority').value;
         const entityType = document.getElementById('filterEntityType').value;
+        const tender = document.getElementById('filterTender').value;
         const acknowledged = document.getElementById('filterAcknowledged').value;
         
         if (type) url += `&type=${type}`;
         if (status) url += `&status=${status}`;
         if (priority) url += `&priority=${priority}`;
         if (entityType) url += `&entity_type=${entityType}`;
+        if (tender) url += `&priority_with_tender=${tender === 'true'}`;
         if (acknowledged) url += `&team_leader_acknowledged=${acknowledged === 'true'}`;
         
         try {
@@ -330,40 +382,47 @@
     function displayAllReports(reports) {
         const tbody = document.getElementById('allReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No reports found</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found</td</tr>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => `
-            <tr class="report-type-${report.report_type}">
-                <td>#${report.id}</td>
-                <td>
-                    <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
-                    ${report.report_type}
-                 </td>
-                <td>${report.entity_name || report.entity_type}</td>
-                <td>${report.problem_type || '-'}</td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
-                <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
-                <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
-                <td>${report.technician_name || '-'}</td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})" title="Edit">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="printReport(${report.id})" title="Print">
-                        <i class="bi bi-printer"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})" title="Delete">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                 </td>
-             </tr>
-        `).join('');
+        tbody.innerHTML = reports.map(report => {
+            const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
+            const tenderBadge = report.priority_with_tender ? '<span class="tender-badge"><i class="bi bi-exclamation-triangle"></i> TENDER</span>' : '-';
+            
+            return `
+                <tr class="report-type-${report.report_type}">
+                    <td><span class="utility-number">${utilityNumber}</span></td>
+                    <td>#${report.id}</td>
+                    <td>
+                        <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
+                        ${report.report_type}
+                    </td>
+                    <td>${report.entity_name || report.entity_type}</td>
+                    <td>${report.problem_type || '-'}</td>
+                    <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                    <td>${tenderBadge}</td>
+                    <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
+                    <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
+                    <td>${report.technician_name || '-'}</td>
+                    <td>${formatDate(report.created_at)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="printReport(${report.id})" title="Print">
+                            <i class="bi bi-printer"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
     
     async function viewReportDetail(id) {
@@ -389,6 +448,7 @@
     function displayReportInModal(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
+        const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
@@ -404,14 +464,27 @@
             `;
         }
         
+        const tenderHtml = report.priority_with_tender ? `
+            <div class="detail-row" style="background-color: #fff3cd;">
+                <div class="detail-label">Priority with Tender:</div>
+                <div class="detail-value">
+                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> YES - TENDER REQUIRED</span>
+                    <small class="text-muted d-block">This report requires immediate tender/emergency action.</small>
+                </div>
+            </div>
+        ` : '';
+        
         const html = `
             <div>
                 <div style="background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                    <strong>Utility Number:</strong> ${utilityNumber} &nbsp;|&nbsp;
                     <strong>Report ID:</strong> #${report.id} &nbsp;|&nbsp;
                     <strong>Type:</strong> ${reportTypeName} ${reportTypeIcon} &nbsp;|&nbsp;
                     <strong>Created:</strong> ${formatDate(report.created_at)} &nbsp;|&nbsp;
                     <strong>Last Updated:</strong> ${formatDate(report.updated_at)}
                 </div>
+                
+                ${tenderHtml}
                 
                 <div class="detail-row">
                     <div class="detail-label">Entity Type:</div>
@@ -588,6 +661,13 @@
     function generatePrintHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
+        const utilityNumber = `${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}`;
+        
+        const tenderSection = report.priority_with_tender ? `
+            <div style="background-color: #fff3cd; padding: 10px; margin: 10px 0; border-left: 4px solid #dc3545;">
+                <strong><span style="color: #dc3545;">🔴 PRIORITY WITH TENDER</span></strong> - This report requires immediate tender/emergency action.
+            </div>
+        ` : '';
         
         return `
             <div class="print-area">
@@ -598,31 +678,34 @@
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <div><strong>Utility Number:</strong> ${utilityNumber}</div>
                     <div><strong>Report ID:</strong> #${report.id}</div>
                     <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
                     <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
                 </div>
                 
+                ${tenderSection}
+                
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <tr style="background: #f5f5f5;">
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd; width: 30%;">Field</th>
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Details</th>
-                     </tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_name || report.entity_type}</td></tr>
+                    </tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_name || report.entity_type}</td></tr>
                     ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.account_number}</td></tr>` : ''}
                     ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.meter_number}</td></tr>` : ''}
                     ${report.phone_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.phone_number}</td></tr>` : ''}
                     ${report.reference_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.problem_type || '-'}</td></tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.complaint_details || '-'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.problem_type || '-'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.complaint_details || '-'}</td></tr>
                     ${report.technician_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Technician Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_notes}</td></tr>` : ''}
                     ${report.action_taken ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Action Taken</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.action_taken}</td></tr>` : ''}
                     ${report.resolution_details ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Resolution</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.resolution_details}</td></tr>` : ''}
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_name || 'Unassigned'}</td></tr>
-                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_name || 'Unassigned'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
                     ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_notes}</td></tr>` : ''}
                 </table>
                 
@@ -699,9 +782,30 @@
     function exportReports() {
         let url = '/api/export-reports?';
         const type = document.getElementById('filterType').value;
+        const status = document.getElementById('filterStatus').value;
+        const priority = document.getElementById('filterPriority').value;
+        const entityType = document.getElementById('filterEntityType').value;
+        const tender = document.getElementById('filterTender').value;
+        const acknowledged = document.getElementById('filterAcknowledged').value;
+        
         if (type) url += `&type=${type}`;
+        if (status) url += `&status=${status}`;
+        if (priority) url += `&priority=${priority}`;
+        if (entityType) url += `&entity_type=${entityType}`;
+        if (tender) url += `&priority_with_tender=${tender === 'true'}`;
+        if (acknowledged) url += `&team_leader_acknowledged=${acknowledged === 'true'}`;
+        
         window.location.href = url;
         showToast('Exporting reports...');
+    }
+    
+    // Check URL params for specific report
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportId = urlParams.get('id');
+    const isEdit = urlParams.get('edit');
+    
+    if (reportId && isEdit) {
+        setTimeout(() => editReport(parseInt(reportId)), 500);
     }
     
     loadAllReports();
