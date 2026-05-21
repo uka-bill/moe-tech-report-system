@@ -86,6 +86,7 @@
         font-size: 10px;
         font-weight: bold;
         margin-left: 5px;
+        display: inline-block;
     }
     .print-area {
         background: white;
@@ -135,6 +136,21 @@
         border-radius: 4px;
         font-size: 0.8rem;
     }
+    .filter-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .btn-reset {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+    }
+    .btn-reset:hover {
+        background-color: #5a6268;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -150,74 +166,70 @@
 </div>
 
 <!-- Filters -->
-<div class="card mb-4 no-print">
-    <div class="card-header">
-        <i class="bi bi-funnel"></i> Filters
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-2">
-                <label class="form-label">Report Type</label>
-                <select class="form-select" id="filterType" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="water">Water</option>
-                    <option value="electricity">Electricity</option>
-                    <option value="telephone">Telephone</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Status</label>
-                <select class="form-select" id="filterStatus" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Priority</label>
-                <select class="form-select" id="filterPriority" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Entity Type</label>
-                <select class="form-select" id="filterEntityType" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="school">School</option>
-                    <option value="department">Department</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Priority with Tender</label>
-                <select class="form-select" id="filterTender" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="true">Yes - Tender Required</option>
-                    <option value="false">No</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Acknowledged</label>
-                <select class="form-select" id="filterAcknowledged" onchange="loadAllReports()">
-                    <option value="">All</option>
-                    <option value="true">Acknowledged</option>
-                    <option value="false">Not Acknowledged</option>
-                </select>
-            </div>
+<div class="filter-section">
+    <h6><i class="bi bi-funnel"></i> Filters</h6>
+    <div class="row g-3">
+        <div class="col-md-2">
+            <label class="form-label">Report Type</label>
+            <select class="form-select" id="filterType">
+                <option value="">All</option>
+                <option value="water">Water</option>
+                <option value="electricity">Electricity</option>
+                <option value="telephone">Telephone</option>
+            </select>
         </div>
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <button class="btn btn-primary" onclick="loadAllReports()">
-                    <i class="bi bi-search"></i> Apply Filters
-                </button>
-                <button class="btn btn-secondary ms-2" onclick="resetFilters()">
-                    <i class="bi bi-arrow-repeat"></i> Reset Filters
-                </button>
-            </div>
+        <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="filterStatus">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Priority</label>
+            <select class="form-select" id="filterPriority">
+                <option value="">All</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Entity Type</label>
+            <select class="form-select" id="filterEntityType">
+                <option value="">All</option>
+                <option value="school">School</option>
+                <option value="department">Department</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Priority with Tender</label>
+            <select class="form-select" id="filterTender">
+                <option value="">All</option>
+                <option value="true">Yes - Tender Required</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Acknowledged</label>
+            <select class="form-select" id="filterAcknowledged">
+                <option value="">All</option>
+                <option value="true">Acknowledged</option>
+                <option value="false">Not Acknowledged</option>
+            </select>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <button class="btn btn-primary" onclick="loadAllReports()">
+                <i class="bi bi-search"></i> Apply Filters
+            </button>
+            <button class="btn btn-reset ms-2" onclick="resetFilters()">
+                <i class="bi bi-arrow-repeat"></i> Reset Filters
+            </button>
         </div>
     </div>
 </div>
@@ -247,7 +259,11 @@
                     </tr>
                 </thead>
                 <tbody id="allReportsTable">
-                    <tr><td colspan="12" class="text-center">Loading...</td</tr>
+                    <tr><td colspan="12" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div> Loading...
+                    </td>
                 </tbody>
             </table>
         </div>
@@ -263,7 +279,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="viewReportContent">
-                <div class="text-center">Loading...</div>
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div> Loading...
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -369,20 +389,34 @@
         if (tender) url += `&priority_with_tender=${tender === 'true'}`;
         if (acknowledged) url += `&team_leader_acknowledged=${acknowledged === 'true'}`;
         
+        console.log('Fetching reports from:', url);
+        
         try {
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const reports = await response.json();
+            console.log('Reports loaded:', reports.length);
             displayAllReports(reports);
         } catch (error) {
             console.error('Error loading reports:', error);
-            showToast('Error loading reports', 'error');
+            document.getElementById('allReportsTable').innerHTML = `
+                <tr>
+                    <td colspan="12" class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error loading reports: ${error.message}
+                        <br><button class="btn btn-sm btn-primary mt-2" onclick="loadAllReports()">Retry</button>
+                    </td>
+                </tr>
+            `;
+            showToast('Error loading reports: ' + error.message, 'error');
         }
     }
     
     function displayAllReports(reports) {
         const tbody = document.getElementById('allReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found</td</td>';
             return;
         }
         
@@ -398,14 +432,14 @@
                         <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
                         ${report.report_type}
                     </td>
-                    <td>${report.entity_name || report.entity_type}</td>
-                    <td>${report.problem_type || '-'}</td>
+                    <td>${escapeHtml(report.entity_name || report.entity_type)}</br><small class="text-muted">${report.entity_type}</small></td>
+                    <td>${escapeHtml(report.problem_type || '-')}</td>
                     <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
                     <td>${tenderBadge}</td>
                     <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
                     <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
-                    <td>${report.technician_name || '-'}</td>
-                    <td>${formatDate(report.created_at)}</td>
+                    <td>${escapeHtml(report.technician_name || '-')}</td>
+                    <td>${formatDate(report.created_at)}</br><small>${formatDateOnly(report.created_at)}</small></td>
                     <td>
                         <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
                             <i class="bi bi-eye"></i>
@@ -425,9 +459,19 @@
         }).join('');
     }
     
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     async function viewReportDetail(id) {
         try {
             const response = await fetch('/api/technical-reports');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const reports = await response.json();
             const report = reports.find(r => r.id === id);
             
@@ -441,7 +485,7 @@
             }
         } catch (error) {
             console.error('Error loading report:', error);
-            showToast('Error loading report details', 'error');
+            showToast('Error loading report details: ' + error.message, 'error');
         }
     }
     
@@ -493,27 +537,27 @@
                 
                 <div class="detail-row">
                     <div class="detail-label">Entity Name:</div>
-                    <div class="detail-value">${report.entity_name || report.entity_type}</div>
+                    <div class="detail-value">${escapeHtml(report.entity_name || report.entity_type)}</div>
                 </div>
                 
                 ${report.account_number ? `
                 <div class="detail-row">
                     <div class="detail-label">Account Number:</div>
-                    <div class="detail-value">${report.account_number}</div>
+                    <div class="detail-value">${escapeHtml(report.account_number)}</div>
                 </div>
                 ` : ''}
                 
                 ${report.meter_number ? `
                 <div class="detail-row">
                     <div class="detail-label">Meter Number:</div>
-                    <div class="detail-value">${report.meter_number}</div>
+                    <div class="detail-value">${escapeHtml(report.meter_number)}</div>
                 </div>
                 ` : ''}
                 
                 ${report.phone_number ? `
                 <div class="detail-row">
                     <div class="detail-label">Phone Number:</div>
-                    <div class="detail-value">${report.phone_number}</div>
+                    <div class="detail-value">${escapeHtml(report.phone_number)}</div>
                 </div>
                 ` : ''}
                 
@@ -529,7 +573,7 @@
                     <div class="detail-label">Reference:</div>
                     <div class="detail-value">
                         ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}
-                        ${report.reference_number}
+                        ${escapeHtml(report.reference_number)}
                         ${report.reference_date ? ' (' + report.reference_date + ')' : ''}
                     </div>
                 </div>
@@ -537,7 +581,7 @@
                 
                 <div class="detail-row">
                     <div class="detail-label">Problem Type:</div>
-                    <div class="detail-value">${report.problem_type || '-'}</div>
+                    <div class="detail-value">${escapeHtml(report.problem_type || '-')}</div>
                 </div>
                 
                 <div class="detail-row">
@@ -556,33 +600,33 @@
                 
                 <div class="detail-row">
                     <div class="detail-label">Complaint Details:</div>
-                    <div class="detail-value">${report.complaint_details || '-'}</div>
+                    <div class="detail-value">${escapeHtml(report.complaint_details || '-')}</div>
                 </div>
                 
                 ${report.technician_notes ? `
                 <div class="detail-row">
                     <div class="detail-label">Technician Notes:</div>
-                    <div class="detail-value">${report.technician_notes}</div>
+                    <div class="detail-value">${escapeHtml(report.technician_notes)}</div>
                 </div>
                 ` : ''}
                 
                 ${report.action_taken ? `
                 <div class="detail-row">
                     <div class="detail-label">Action Taken:</div>
-                    <div class="detail-value">${report.action_taken}</div>
+                    <div class="detail-value">${escapeHtml(report.action_taken)}</div>
                 </div>
                 ` : ''}
                 
                 ${report.resolution_details ? `
                 <div class="detail-row">
                     <div class="detail-label">Resolution:</div>
-                    <div class="detail-value">${report.resolution_details}</div>
+                    <div class="detail-value">${escapeHtml(report.resolution_details)}</div>
                 </div>
                 ` : ''}
                 
                 <div class="detail-row">
                     <div class="detail-label">Assigned Technician:</div>
-                    <div class="detail-value">${report.technician_name || 'Unassigned'} ${report.technician_role === 'senior_technician' ? '(Senior)' : '(Technician)'}</div>
+                    <div class="detail-value">${escapeHtml(report.technician_name || 'Unassigned')} ${report.technician_role === 'senior_technician' ? '(Senior)' : '(Technician)'}</div>
                 </div>
                 
                 <div class="detail-row">
@@ -593,7 +637,7 @@
                 ${report.team_leader_notes ? `
                 <div class="detail-row">
                     <div class="detail-label">Team Leader Notes:</div>
-                    <div class="detail-value">${report.team_leader_notes}</div>
+                    <div class="detail-value">${escapeHtml(report.team_leader_notes)}</div>
                 </div>
                 ` : ''}
                 
@@ -643,6 +687,9 @@
     async function printReport(id) {
         try {
             const response = await fetch('/api/technical-reports');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const reports = await response.json();
             const report = reports.find(r => r.id === id);
             
@@ -654,6 +701,7 @@
                 modal.show();
             }
         } catch (error) {
+            console.error('Error loading report for printing:', error);
             showToast('Error loading report for printing', 'error');
         }
     }
@@ -692,28 +740,28 @@
                         <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Details</th>
                     </tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_name || report.entity_type}</td></tr>
-                    ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.account_number}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.meter_number}</td></tr>` : ''}
-                    ${report.phone_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.phone_number}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.problem_type || '-'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.account_number)}</td></tr>` : ''}
+                    ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.meter_number)}</td></tr>` : ''}
+                    ${report.phone_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.phone_number)}</td></tr>` : ''}
+                    ${report.reference_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.problem_type || '-')}</td></tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.complaint_details || '-'}</td></tr>
-                    ${report.technician_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Technician Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_notes}</td></tr>` : ''}
-                    ${report.action_taken ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Action Taken</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.action_taken}</td></tr>` : ''}
-                    ${report.resolution_details ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Resolution</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.resolution_details}</td></tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.technician_name || 'Unassigned'}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.complaint_details || '-')}</td></tr>
+                    ${report.technician_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Technician Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_notes)}</td></tr>` : ''}
+                    ${report.action_taken ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Action Taken</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.action_taken)}</td></tr>` : ''}
+                    ${report.resolution_details ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Resolution</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.resolution_details)}</td></tr>` : ''}
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_name || 'Unassigned')}</td></tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
-                    ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_notes}</td></tr>` : ''}
+                    ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
                 </table>
                 
                 <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                     <div style="text-align: center;">
                         <div style="border-top: 1px solid #000; width: 200px; margin-top: 30px; padding-top: 5px;"></div>
                         <div>Technician's Signature</div>
-                        <div>Name: ${report.technician_name || '_________________'}</div>
+                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
                         <div>Date: ${formatDateOnly(new Date())}</div>
                     </div>
                     <div style="text-align: center;">
@@ -808,6 +856,7 @@
         setTimeout(() => editReport(parseInt(reportId)), 500);
     }
     
+    // Load reports on page load
     loadAllReports();
 </script>
 {% endblock %}
