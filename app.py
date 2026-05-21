@@ -29,33 +29,27 @@ def format_brunei_time(date_string):
     if not date_string:
         return '-'
     try:
-        # Parse the date string
         if isinstance(date_string, str):
             dt = datetime.fromisoformat(date_string.replace('Z', '+00:00'))
         else:
             dt = date_string
         
-        # If the datetime is naive (no timezone), assume it's UTC
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         
-        # Convert to Brunei time (UTC+8)
         brunei_dt = dt.astimezone(timezone(timedelta(hours=8)))
-        
         return brunei_dt.strftime('%d/%m/%Y %H:%M:%S')
     except Exception as e:
         return date_string
 
 # ============ INITIALIZATION ============
 
-# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
 
-# Make the timezone function available to templates
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
 # ============ LOGGING SETUP ============
@@ -313,86 +307,11 @@ def get_schools():
         if not supabase:
             return jsonify([]), 500
         
-        response = supabase.table("schools").select("*").order("id", desc=False).execute()
+        response = supabase.table("schools").select("*").order("name", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting schools: {e}")
         return jsonify([]), 500
-
-@app.route('/api/schools', methods=['POST'])
-def create_school():
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        school_data = {
-            "name": data.get('name'),
-            "cluster_number": data.get('cluster_number'),
-            "school_number": data.get('school_number'),
-            "address": data.get('address'),
-            "contact_person": data.get('contact_person'),
-            "contact_phone": data.get('contact_phone'),
-            "created_at": get_brunei_time_iso()
-        }
-        
-        if not school_data['name']:
-            return jsonify({'success': False, 'error': 'School name is required'}), 400
-        
-        response = supabase.table("schools").insert(school_data).execute()
-        
-        if response.data:
-            app.logger.info(f"School created: {school_data['name']}")
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create school'}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Error creating school: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/schools/<int:school_id>', methods=['PUT'])
-def update_school(school_id):
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        response = supabase.table("schools").update(data).eq("id", school_id).execute()
-        
-        if response.data:
-            app.logger.info(f"School updated: ID {school_id}")
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'School not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error updating school: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/schools/<int:school_id>', methods=['DELETE'])
-def delete_school(school_id):
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        reports = supabase.table("technical_reports").select("id").eq("entity_id", school_id).eq("entity_type", "school").limit(1).execute()
-        if reports.data and len(reports.data) > 0:
-            return jsonify({'success': False, 'error': 'Cannot delete school with existing reports'}), 400
-        
-        response = supabase.table("schools").delete().eq("id", school_id).execute()
-        
-        if response.data:
-            app.logger.info(f"School deleted: ID {school_id}")
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'School not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error deleting school: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============ DEPARTMENTS API ============
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
@@ -400,97 +319,11 @@ def get_departments():
         if not supabase:
             return jsonify([]), 500
         
-        response = supabase.table("departments").select("*").order("id", desc=False).execute()
+        response = supabase.table("departments").select("*").order("name", desc=False).execute()
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting departments: {e}")
         return jsonify([]), 500
-
-@app.route('/api/departments', methods=['POST'])
-def create_department():
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        dept_data = {
-            "name": data.get('name'),
-            "unit_name": data.get('unit_name'),
-            "address": data.get('address'),
-            "contact_person": data.get('contact_person'),
-            "contact_phone": data.get('contact_phone'),
-            "created_at": get_brunei_time_iso()
-        }
-        
-        if not dept_data['unit_name']:
-            dept_data['unit_name'] = dept_data['name']
-        
-        if not dept_data['name']:
-            return jsonify({'success': False, 'error': 'Department name is required'}), 400
-        
-        response = supabase.table("departments").insert(dept_data).execute()
-        
-        if response.data:
-            app.logger.info(f"Department created: {dept_data['name']}")
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create department'}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Error creating department: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/departments/<int:dept_id>', methods=['PUT'])
-def update_department(dept_id):
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        update_data = {}
-        
-        allowed_fields = ['name', 'unit_name', 'address', 'contact_person', 'contact_phone']
-        
-        for field in allowed_fields:
-            if field in data and data[field] is not None:
-                update_data[field] = data[field]
-        
-        if not update_data:
-            return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
-        response = supabase.table("departments").update(update_data).eq("id", dept_id).execute()
-        
-        if response.data:
-            app.logger.info(f"Department updated: ID {dept_id}")
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Department not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error updating department: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/departments/<int:dept_id>', methods=['DELETE'])
-def delete_department(dept_id):
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        reports = supabase.table("technical_reports").select("id").eq("entity_id", dept_id).eq("entity_type", "department").limit(1).execute()
-        if reports.data and len(reports.data) > 0:
-            return jsonify({'success': False, 'error': 'Cannot delete department with existing reports'}), 400
-        
-        response = supabase.table("departments").delete().eq("id", dept_id).execute()
-        
-        if response.data:
-            app.logger.info(f"Department deleted: ID {dept_id}")
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Department not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error deleting department: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ TECHNICAL REPORTS API ============
 
@@ -586,6 +419,7 @@ def create_technical_report():
             "problem_type": data.get('problem_type'),
             "complaint_details": data.get('complaint_details'),
             "priority": data.get('priority', 'medium'),
+            "priority_with_tender": data.get('priority_with_tender', False),
             "status": data.get('status', 'pending'),
             "technician_id": data.get('technician_id'),
             "technician_notes": data.get('technician_notes', ''),
@@ -630,7 +464,7 @@ def update_technical_report(report_id):
         data = request.get_json()
         
         allowed_fields = [
-            'problem_type', 'complaint_details', 'priority', 'status',
+            'problem_type', 'complaint_details', 'priority', 'priority_with_tender', 'status',
             'technician_notes', 'action_taken', 'resolution_details',
             'team_leader_notes', 'images', 'account_number', 'meter_number',
             'phone_number', 'number_of_lines',
@@ -904,9 +738,9 @@ def export_reports():
         writer = csv.writer(output)
         
         headers = [
-            'Report ID', 'Type', 'Entity Type', 'Entity Name', 'Account Number',
+            'Utility #', 'Report ID', 'Type', 'Entity Type', 'Entity Name', 'Account Number',
             'Meter Number', 'Phone Number', 'Number of Lines', 'Problem Type',
-            'Complaint Details', 'Priority', 'Status', 'Technician Name',
+            'Complaint Details', 'Priority', 'Priority with Tender', 'Status', 'Technician Name',
             'Technician Notes', 'Action Taken', 'Resolution Details',
             'Team Leader Acknowledged', 'Team Leader Notes', 'Reference Type',
             'Reference Number', 'Reference Date', 'Print Count', 'Last Printed',
@@ -932,6 +766,7 @@ def export_reports():
                     tech_name = tech.data[0]['name']
             
             writer.writerow([
+                report.get('utility_number', ''),
                 report.get('id', ''),
                 report.get('report_type', ''),
                 report.get('entity_type', ''),
@@ -943,6 +778,7 @@ def export_reports():
                 report.get('problem_type', ''),
                 report.get('complaint_details', ''),
                 report.get('priority', ''),
+                'Yes' if report.get('priority_with_tender') else 'No',
                 report.get('status', ''),
                 tech_name,
                 report.get('technician_notes', ''),
@@ -1038,10 +874,7 @@ def init_app():
     
     app.logger.info("✅ Application initialization complete")
 
-# Run initialization
 init_app()
-
-# ============ MAIN ENTRY POINT ============
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
