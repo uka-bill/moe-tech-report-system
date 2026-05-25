@@ -66,6 +66,20 @@
         font-size: 0.85rem;
         color: #2e7d32;
     }
+    .loading-indicator {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #9b59b6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
 <div class="card">
@@ -219,6 +233,14 @@
                     <label class="form-label fw-bold">Problem Type *</label>
                     <select class="form-select" id="problemType" required>
                         <option value="">Select Problem Type</option>
+                        <option value="Leakage">Leakage</option>
+                        <option value="Low Pressure">Low Pressure</option>
+                        <option value="No Water">No Water</option>
+                        <option value="Pipe Burst">Pipe Burst</option>
+                        <option value="Water Quality Issue">Water Quality Issue</option>
+                        <option value="Pump Failure">Pump Failure</option>
+                        <option value="Tank Issue">Tank Issue</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
             </div>
@@ -242,7 +264,7 @@
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Assign To (Technician) *</label>
                     <select class="form-select" id="technicianId" required>
-                        <option value="">Select Technician</option>
+                        <option value="">Loading technicians...</option>
                     </select>
                     <small class="text-muted" id="techFilterNote"></small>
                 </div>
@@ -343,22 +365,47 @@
         autoSaveForm();
     });
     
-    // Problem type options based on report type (hardcoded for now)
-    function updateProblemTypeOptions(type) {
+    // Update problem type options based on report type
+    function updateProblemTypeOptions(reportType) {
         const problemSelect = document.getElementById('problemType');
-        let options = [];
         
-        if (type === 'water') {
-            options = ['Leakage', 'Low Pressure', 'No Water', 'Pipe Burst', 'Water Quality Issue', 'Pump Failure', 'Tank Issue', 'Other'];
-        } else if (type === 'electricity') {
-            options = ['Power Outage', 'Faulty Wiring', 'Tripped Breaker', 'Generator Issue', 'Electrical Hazard', 'Flickering Lights', 'Dead Socket', 'Other'];
-        } else if (type === 'telephone') {
-            options = ['Dead Line', 'Static Noise', 'Call Drops', 'PBX Issue', 'Internet Connectivity Issue', 'No Dial Tone', 'Crossed Lines', 'Other'];
+        if (reportType === 'water') {
+            problemSelect.innerHTML = `
+                <option value="">Select Problem Type</option>
+                <option value="Leakage">Leakage</option>
+                <option value="Low Pressure">Low Pressure</option>
+                <option value="No Water">No Water</option>
+                <option value="Pipe Burst">Pipe Burst</option>
+                <option value="Water Quality Issue">Water Quality Issue</option>
+                <option value="Pump Failure">Pump Failure</option>
+                <option value="Tank Issue">Tank Issue</option>
+                <option value="Other">Other</option>
+            `;
+        } else if (reportType === 'electricity') {
+            problemSelect.innerHTML = `
+                <option value="">Select Problem Type</option>
+                <option value="Power Outage">Power Outage</option>
+                <option value="Faulty Wiring">Faulty Wiring</option>
+                <option value="Tripped Breaker">Tripped Breaker</option>
+                <option value="Generator Issue">Generator Issue</option>
+                <option value="Electrical Hazard">Electrical Hazard</option>
+                <option value="Flickering Lights">Flickering Lights</option>
+                <option value="Dead Socket">Dead Socket</option>
+                <option value="Other">Other</option>
+            `;
+        } else if (reportType === 'telephone') {
+            problemSelect.innerHTML = `
+                <option value="">Select Problem Type</option>
+                <option value="Dead Line">Dead Line</option>
+                <option value="Static Noise">Static Noise</option>
+                <option value="Call Drops">Call Drops</option>
+                <option value="PBX Issue">PBX Issue</option>
+                <option value="Internet Connectivity Issue">Internet Connectivity Issue</option>
+                <option value="No Dial Tone">No Dial Tone</option>
+                <option value="Crossed Lines">Crossed Lines</option>
+                <option value="Other">Other</option>
+            `;
         }
-        
-        problemSelect.innerHTML = '<option value="">Select Problem Type</option>' + 
-            options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        console.log(`Problem type options updated for ${type}`);
     }
     
     // Load technicians from API
@@ -402,6 +449,8 @@
             if (!Array.isArray(specializations)) specializations = [];
             return specializations.includes(reportType);
         });
+        
+        console.log(`Filtered technicians for ${reportType}:`, filteredTechnicians);
         
         if (filteredTechnicians.length === 0) {
             select.innerHTML = '<option value="">No technicians available for this type</option>';
@@ -488,7 +537,7 @@
     
     // Handle report type change
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
-        radio.addEventListener('change', async function() {
+        radio.addEventListener('change', function() {
             const reportType = this.value;
             
             // Hide all detail fields
@@ -499,14 +548,14 @@
             // Show relevant fields
             if (reportType === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
-                updateProblemTypeOptions('water');
             } else if (reportType === 'electricity') {
                 document.getElementById('electricityFields').style.display = 'flex';
-                updateProblemTypeOptions('electricity');
             } else if (reportType === 'telephone') {
                 document.getElementById('telephoneFields').style.display = 'flex';
-                updateProblemTypeOptions('telephone');
             }
+            
+            // Update problem type options
+            updateProblemTypeOptions(reportType);
             
             // Filter technicians based on selected report type
             filterTechniciansByType(reportType);
@@ -673,8 +722,9 @@
             document.getElementById('priority').disabled = false;
             clearAutoSave();
             initializeDateTime();
+            // Reset to default water options
             updateProblemTypeOptions('water');
-            loadTechnicians().then(() => filterTechniciansByType('water'));
+            filterTechniciansByType('water');
             showToast('Form cleared');
         }
     }
@@ -760,14 +810,25 @@
     
     // Initialize form
     async function initializeForm() {
+        console.log('Initializing New Report form...');
         initializeDateTime();
-        updateProblemTypeOptions('water');
+        
+        // Load technicians first
         await loadTechnicians();
+        
+        // Initialize problem type options for water (default)
+        updateProblemTypeOptions('water');
+        
+        // Filter technicians for water (default selected)
         filterTechniciansByType('water');
+        
+        // Load auto-save draft
         loadAutoSave();
         
         if (allTechnicians.length === 0) {
             showToast('No technicians found. Please add technicians first.', 'warning');
+        } else {
+            console.log(`Found ${allTechnicians.length} technicians`);
         }
     }
     
