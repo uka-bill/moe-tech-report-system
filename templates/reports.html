@@ -2,31 +2,6 @@
 
 {% block content %}
 <style>
-    /* Print Styles */
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-area, .print-area * {
-            visibility: visible;
-        }
-        .print-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-        }
-        .no-print {
-            display: none !important;
-        }
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-    }
-    
     .status-badge {
         padding: 5px 12px;
         border-radius: 20px;
@@ -123,10 +98,6 @@
         border-radius: 8px;
         cursor: pointer;
         border: 1px solid #ddd;
-    }
-    .detail-image:hover {
-        transform: scale(1.05);
-        transition: transform 0.2s;
     }
     .utility-number {
         font-family: monospace;
@@ -330,7 +301,6 @@
     let currentViewReport = null;
     let currentPrintReport = null;
     
-    // Format date for Brunei Time (UTC+8)
     function formatDate(dateString) {
         if (!dateString) return '-';
         try {
@@ -391,7 +361,7 @@
         document.getElementById('filterTender').value = '';
         document.getElementById('filterAcknowledged').value = '';
         loadAllReports();
-        showToast('Filters reset');
+        if (typeof showToast === 'function') showToast('Filters reset');
     }
     
     async function loadAllReports() {
@@ -412,25 +382,18 @@
         
         console.log('Fetching reports from:', url);
         
-        // Show loading state
         const tbody = document.getElementById('allReportsTable');
         tbody.innerHTML = '<tr><td colspan="12" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading reports...</td</tr>';
         
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await fetch(url);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const reports = await response.json();
-            console.log('Reports loaded successfully:', reports.length, 'reports found');
+            console.log('Reports loaded:', reports.length, 'reports found');
             
             if (!reports || reports.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found. Click "New Report" to create one.</td</tr>';
@@ -445,22 +408,16 @@
                     <td colspan="12" class="text-center text-danger">
                         <i class="bi bi-exclamation-triangle"></i> Error loading reports: ${error.message}
                         <br><br>
-                        <strong>Possible causes:</strong>
-                        <ul class="text-start mt-2">
-                            <li>Supabase connection issue</li>
-                            <li>Network connectivity problem</li>
-                            <li>API endpoint not responding</li>
-                        </ul>
                         <button class="btn btn-primary btn-sm mt-2" onclick="loadAllReports()">
                             <i class="bi bi-arrow-repeat"></i> Retry
                         </button>
                         <button class="btn btn-secondary btn-sm mt-2 ms-2" onclick="checkApiStatus()">
-                            <i class="bi bi-heart"></i> Check API Status
+                            <i class="bi bi-heart"></i> Check API
                         </button>
                     </td
                 </tr>
             `;
-            showToast('Error loading reports: ' + error.message, 'error');
+            if (typeof showToast === 'function') showToast('Error loading reports: ' + error.message, 'error');
         }
     }
     
@@ -468,9 +425,9 @@
         try {
             const response = await fetch('/api/health');
             const data = await response.json();
-            showToast('API Status: ' + data.status + ' - Supabase: ' + (data.supabase_connected ? 'Connected' : 'Disconnected'), 'info');
+            alert('API Status:\n' + JSON.stringify(data, null, 2));
         } catch (error) {
-            showToast('API is not responding', 'error');
+            alert('API is not responding: ' + error.message);
         }
     }
     
@@ -481,7 +438,6 @@
             const utilityNumber = formatUtilityNumber(report);
             const tenderBadge = report.priority_with_tender ? '<span class="tender-badge"><i class="bi bi-exclamation-triangle"></i> TENDER</span>' : '-';
             
-            // Get status badge class
             let statusClass = '';
             switch(report.status) {
                 case 'pending': statusClass = 'status-pending'; break;
@@ -490,7 +446,6 @@
                 default: statusClass = 'status-pending';
             }
             
-            // Get priority badge class
             let priorityClass = '';
             switch(report.priority) {
                 case 'high': priorityClass = 'priority-high'; break;
@@ -502,14 +457,13 @@
             return `
                 <tr>
                     <td><span class="utility-number">${escapeHtml(utilityNumber)}</span></td>
-                    <td>#${report.id}</br><small class="text-muted">DB ID</small></td>
+                    <td>#${report.id}<br><small class="text-muted">DB ID</small></td>
                     <td>
                         <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
                         ${escapeHtml(report.report_type)}
-                    </br><small class="text-muted">${report.report_type}</small>
                     </td>
                     <td>${escapeHtml(report.entity_name || report.entity_type)}<br><small class="text-muted">${escapeHtml(report.entity_type)}</small></td>
-                    <td>${escapeHtml(report.problem_type || '-')}<br><small class="text-muted">${escapeHtml((report.complaint_details || '').substring(0, 30))}${(report.complaint_details || '').length > 30 ? '...' : ''}</small></td>
+                    <td>${escapeHtml(report.problem_type || '-')}<br><small>${escapeHtml((report.complaint_details || '').substring(0, 30))}${(report.complaint_details || '').length > 30 ? '...' : ''}</small></td>
                     <td><span class="status-badge ${priorityClass}">${escapeHtml(report.priority)}</span></td>
                     <td>${tenderBadge}</td>
                     <td><span class="status-badge ${statusClass}">${escapeHtml(report.status.replace('_', ' '))}</span></td>
@@ -539,7 +493,7 @@
         try {
             const response = await fetch('/api/technical-reports');
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             const reports = await response.json();
             const report = reports.find(r => r.id === id);
@@ -547,14 +501,15 @@
             if (report) {
                 currentViewReport = report;
                 displayReportInModal(report);
-                const modal = new bootstrap.Modal(document.getElementById('viewReportModal'));
+                const modalElement = document.getElementById('viewReportModal');
+                const modal = new bootstrap.Modal(modalElement);
                 modal.show();
             } else {
-                showToast('Report not found', 'error');
+                if (typeof showToast === 'function') showToast('Report not found', 'error');
             }
         } catch (error) {
             console.error('Error loading report:', error);
-            showToast('Error loading report details: ' + error.message, 'error');
+            if (typeof showToast === 'function') showToast('Error loading report details: ' + error.message, 'error');
         }
     }
     
@@ -609,106 +564,23 @@
                     <div class="detail-value">${escapeHtml(report.entity_name || report.entity_type)}</div>
                 </div>
                 
-                ${report.account_number ? `
-                <div class="detail-row">
-                    <div class="detail-label">Account Number:</div>
-                    <div class="detail-value">${escapeHtml(report.account_number)}</div>
-                </div>
-                ` : ''}
+                ${report.account_number ? `<div class="detail-row"><div class="detail-label">Account Number:</div><div class="detail-value">${escapeHtml(report.account_number)}</div></div>` : ''}
+                ${report.meter_number ? `<div class="detail-row"><div class="detail-label">Meter Number:</div><div class="detail-value">${escapeHtml(report.meter_number)}</div></div>` : ''}
+                ${report.phone_number ? `<div class="detail-row"><div class="detail-label">Phone Number:</div><div class="detail-value">${escapeHtml(report.phone_number)}</div></div>` : ''}
+                ${report.reference_number ? `<div class="detail-row"><div class="detail-label">Reference:</div><div class="detail-value">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
                 
-                ${report.meter_number ? `
-                <div class="detail-row">
-                    <div class="detail-label">Meter Number:</div>
-                    <div class="detail-value">${escapeHtml(report.meter_number)}</div>
-                </div>
-                ` : ''}
+                <div class="detail-row"><div class="detail-label">Problem Type:</div><div class="detail-value">${escapeHtml(report.problem_type || '-')}</div></div>
+                <div class="detail-row"><div class="detail-label">Priority:</div><div class="detail-value"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></div></div>
+                <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value"><span class="status-badge status-${report.status}">${report.status.replace('_', ' ').toUpperCase()}</span></div></div>
+                <div class="detail-row"><div class="detail-label">Complaint Details:</div><div class="detail-value">${escapeHtml(report.complaint_details || '-')}</div></div>
                 
-                ${report.phone_number ? `
-                <div class="detail-row">
-                    <div class="detail-label">Phone Number:</div>
-                    <div class="detail-value">${escapeHtml(report.phone_number)}</div>
-                </div>
-                ` : ''}
+                ${report.technician_notes ? `<div class="detail-row"><div class="detail-label">Technician Notes:</div><div class="detail-value">${escapeHtml(report.technician_notes)}</div></div>` : ''}
+                ${report.action_taken ? `<div class="detail-row"><div class="detail-label">Action Taken:</div><div class="detail-value">${escapeHtml(report.action_taken)}</div></div>` : ''}
+                ${report.resolution_details ? `<div class="detail-row"><div class="detail-label">Resolution:</div><div class="detail-value">${escapeHtml(report.resolution_details)}</div></div>` : ''}
                 
-                ${report.number_of_lines ? `
-                <div class="detail-row">
-                    <div class="detail-label">Number of Lines:</div>
-                    <div class="detail-value">${report.number_of_lines}</div>
-                </div>
-                ` : ''}
-                
-                ${report.reference_number ? `
-                <div class="detail-row">
-                    <div class="detail-label">Reference:</div>
-                    <div class="detail-value">
-                        ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}
-                        ${escapeHtml(report.reference_number)}
-                        ${report.reference_date ? ' (' + report.reference_date + ')' : ''}
-                    </div>
-                </div>
-                ` : ''}
-                
-                <div class="detail-row">
-                    <div class="detail-label">Problem Type:</div>
-                    <div class="detail-value">${escapeHtml(report.problem_type || '-')}</div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Priority:</div>
-                    <div class="detail-value">
-                        <span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Status:</div>
-                    <div class="detail-value">
-                        <span class="status-badge status-${report.status}">${report.status.replace('_', ' ').toUpperCase()}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Complaint Details:</div>
-                    <div class="detail-value">${escapeHtml(report.complaint_details || '-')}</div>
-                </div>
-                
-                ${report.technician_notes ? `
-                <div class="detail-row">
-                    <div class="detail-label">Technician Notes:</div>
-                    <div class="detail-value">${escapeHtml(report.technician_notes)}</div>
-                </div>
-                ` : ''}
-                
-                ${report.action_taken ? `
-                <div class="detail-row">
-                    <div class="detail-label">Action Taken:</div>
-                    <div class="detail-value">${escapeHtml(report.action_taken)}</div>
-                </div>
-                ` : ''}
-                
-                ${report.resolution_details ? `
-                <div class="detail-row">
-                    <div class="detail-label">Resolution:</div>
-                    <div class="detail-value">${escapeHtml(report.resolution_details)}</div>
-                </div>
-                ` : ''}
-                
-                <div class="detail-row">
-                    <div class="detail-label">Assigned Technician:</div>
-                    <div class="detail-value">${escapeHtml(report.technician_name || 'Unassigned')} ${report.technician_role === 'senior_technician' ? '(Senior)' : '(Technician)'}</div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Team Leader Acknowledged:</div>
-                    <div class="detail-value">${report.team_leader_acknowledged ? 'Yes' : 'No'}</div>
-                </div>
-                
-                ${report.team_leader_notes ? `
-                <div class="detail-row">
-                    <div class="detail-label">Team Leader Notes:</div>
-                    <div class="detail-value">${escapeHtml(report.team_leader_notes)}</div>
-                </div>
-                ` : ''}
+                <div class="detail-row"><div class="detail-label">Assigned Technician:</div><div class="detail-value">${escapeHtml(report.technician_name || 'Unassigned')} ${report.technician_role === 'senior_technician' ? '(Senior)' : '(Technician)'}</div></div>
+                <div class="detail-row"><div class="detail-label">Team Leader Acknowledged:</div><div class="detail-value">${report.team_leader_acknowledged ? 'Yes' : 'No'}</div></div>
+                ${report.team_leader_notes ? `<div class="detail-row"><div class="detail-label">Team Leader Notes:</div><div class="detail-value">${escapeHtml(report.team_leader_notes)}</div></div>` : ''}
                 
                 ${imagesHtml}
             </div>
@@ -718,15 +590,11 @@
     }
     
     function printCurrentReport() {
-        if (currentViewReport) {
-            printReport(currentViewReport.id);
-        }
+        if (currentViewReport) printReport(currentViewReport.id);
     }
     
     function editCurrentReport() {
-        if (currentViewReport) {
-            window.location.href = `/reports?id=${currentViewReport.id}&edit=true`;
-        }
+        if (currentViewReport) window.location.href = `/reports?id=${currentViewReport.id}&edit=true`;
     }
     
     function editReport(id) {
@@ -734,21 +602,21 @@
     }
     
     async function deleteReport(id) {
-        if (confirm('⚠️ Are you sure you want to delete this report?\n\nThis action cannot be undone. All data including images will be permanently removed.')) {
+        if (confirm('⚠️ Are you sure you want to delete this report?\n\nThis action cannot be undone.')) {
             try {
                 const response = await fetch(`/api/technical-reports/${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
                 if (data.success) {
-                    showToast('Report deleted successfully');
+                    if (typeof showToast === 'function') showToast('Report deleted successfully');
                     loadAllReports();
                 } else {
-                    showToast(data.error || 'Failed to delete report', 'error');
+                    if (typeof showToast === 'function') showToast(data.error || 'Failed to delete report', 'error');
                 }
             } catch (error) {
                 console.error('Error deleting report:', error);
-                showToast('Error deleting report', 'error');
+                if (typeof showToast === 'function') showToast('Error deleting report', 'error');
             }
         }
     }
@@ -756,22 +624,20 @@
     async function printReport(id) {
         try {
             const response = await fetch('/api/technical-reports');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const reports = await response.json();
             const report = reports.find(r => r.id === id);
             
             if (report) {
                 currentPrintReport = report;
                 document.getElementById('printContent').innerHTML = generatePrintHTML(report);
-                
-                const modal = new bootstrap.Modal(document.getElementById('printModal'));
+                const modalElement = document.getElementById('printModal');
+                const modal = new bootstrap.Modal(modalElement);
                 modal.show();
             }
         } catch (error) {
             console.error('Error loading report for printing:', error);
-            showToast('Error loading report for printing', 'error');
+            if (typeof showToast === 'function') showToast('Error loading report for printing', 'error');
         }
     }
     
@@ -803,28 +669,19 @@
                 
                 ${tenderSection}
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <tr style="background: #f5f5f5;">
-                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd; width: 30%;">Field</th>
-                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Details</th>
-                    </tr>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="background: #f5f5f5;"><th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Field</th><th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Details</th></tr>
                     <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.entity_name || report.entity_type)}</td</tr>
-                    ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.account_number)}</td</tr>` : ''}
-                    ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.meter_number)}</td</tr>` : ''}
-                    ${report.phone_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Phone Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.phone_number)}</td</tr>` : ''}
-                    ${report.reference_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td</tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.problem_type || '-')}</td</tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td</tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td</tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.complaint_details || '-')}</td</tr>
-                    ${report.technician_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Technician Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_notes)}</td</tr>` : ''}
-                    ${report.action_taken ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Action Taken</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.action_taken)}</td</tr>` : ''}
-                    ${report.resolution_details ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Resolution</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.resolution_details)}</td</tr>` : ''}
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_name || 'Unassigned')}</td</tr>
-                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td</tr>
-                    ${report.team_leader_notes ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.team_leader_notes)}</td</tr>` : ''}
-                 >
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    ${report.account_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Account Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.account_number)}</td></tr>` : ''}
+                    ${report.meter_number ? `<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.meter_number)}</td></tr>` : ''}
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.problem_type || '-')}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Priority</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.priority.toUpperCase()}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Status</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.complaint_details || '-')}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(report.technician_name || 'Unassigned')}</td></tr>
+                    <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td></tr>
+                 </div>
                 
                 <div style="display: flex; justify-content: space-between; margin-top: 40px;">
                     <div style="text-align: center;">
@@ -852,45 +709,19 @@
         if (!currentPrintReport) return;
         
         const printContent = document.getElementById('printContent').innerHTML;
-        
-        const printWindow = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
-            <head>
-                <title>Print Report #${currentPrintReport.id}</title>
-                <style>
-                    body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                    }
-                    @media print {
-                        body {
-                            padding: 0;
-                        }
-                    }
-                </style>
+            <head><title>Print Report #${currentPrintReport.id}</title>
+            <style>body{font-family:'Segoe UI',sans-serif;margin:0;padding:20px;}@media print{body{padding:0;}}</style>
             </head>
-            <body>
-                ${printContent}
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() {
-                            window.close();
-                        }, 1000);
-                    };
-                <\/script>
-            </body>
+            <body>${printContent}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},1000);};<\/script></body>
             </html>
         `);
         printWindow.document.close();
         
-        fetch(`/api/technical-reports/${currentPrintReport.id}/track-print`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        }).catch(error => console.log('Print tracking failed:', error));
+        fetch(`/api/technical-reports/${currentPrintReport.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('printModal'));
         if (modal) modal.hide();
@@ -899,33 +730,13 @@
     function exportReports() {
         let url = '/api/export-reports?';
         const type = document.getElementById('filterType').value;
-        const status = document.getElementById('filterStatus').value;
-        const priority = document.getElementById('filterPriority').value;
-        const entityType = document.getElementById('filterEntityType').value;
         const tender = document.getElementById('filterTender').value;
-        const acknowledged = document.getElementById('filterAcknowledged').value;
-        
         if (type) url += `&type=${type}`;
-        if (status) url += `&status=${status}`;
-        if (priority) url += `&priority=${priority}`;
-        if (entityType) url += `&entity_type=${entityType}`;
         if (tender) url += `&priority_with_tender=${tender === 'true'}`;
-        if (acknowledged) url += `&team_leader_acknowledged=${acknowledged === 'true'}`;
-        
         window.location.href = url;
-        showToast('Exporting reports...');
+        if (typeof showToast === 'function') showToast('Exporting reports...');
     }
     
-    // Check URL params for specific report
-    const urlParams = new URLSearchParams(window.location.search);
-    const reportId = urlParams.get('id');
-    const isEdit = urlParams.get('edit');
-    
-    if (reportId && isEdit) {
-        setTimeout(() => editReport(parseInt(reportId)), 500);
-    }
-    
-    // Load reports on page load
     loadAllReports();
 </script>
 {% endblock %}
