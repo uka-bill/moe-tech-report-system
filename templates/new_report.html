@@ -242,7 +242,7 @@
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Assign To (Technician) *</label>
                     <select class="form-select" id="technicianId" required>
-                        <option value="">Select Technician</option>
+                        <option value="">Loading technicians...</option>
                     </select>
                     <small class="text-muted" id="techFilterNote"></small>
                 </div>
@@ -334,40 +334,55 @@
             infoDiv.style.display = 'none';
             prioritySelect.disabled = false;
         }
+        autoSaveForm();
     });
     
+    // Load technicians from API
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
+            if (!response.ok) throw new Error('Failed to load technicians');
             allTechnicians = await response.json();
+            console.log('Technicians loaded:', allTechnicians.length);
+            
+            // Initially load technicians for water type (default selected)
             filterTechniciansByType('water');
         } catch (error) {
             console.error('Error loading technicians:', error);
+            const techSelect = document.getElementById('technicianId');
+            techSelect.innerHTML = '<option value="">Error loading technicians</option>';
+            showToast('Error loading technicians', 'error');
         }
     }
     
+    // Filter technicians based on report type (specialization)
     function filterTechniciansByType(reportType) {
         const select = document.getElementById('technicianId');
+        
+        // Filter technicians who have the required specialization
         const filteredTechnicians = allTechnicians.filter(tech => {
             const specializations = tech.specializations || [];
             return specializations.includes(reportType);
         });
         
+        console.log(`Filtering for ${reportType}: found ${filteredTechnicians.length} technicians`);
+        
         if (filteredTechnicians.length === 0) {
             select.innerHTML = '<option value="">No technicians available for this type</option>';
-            document.getElementById('techFilterNote').innerHTML = `<span class="text-danger">⚠️ No technicians found with ${reportType} specialization</span>`;
+            document.getElementById('techFilterNote').innerHTML = `<span class="text-danger">⚠️ No technicians found with ${reportType} specialization. Please add a technician first.</span>`;
             select.disabled = true;
         } else {
             select.innerHTML = '<option value="">Select Technician</option>' + 
                 filteredTechnicians.map(tech => {
                     const roleBadge = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Tech';
                     const specText = (tech.specializations || []).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
-                    return `<option value="${tech.id}">${roleBadge} ${tech.name} - [${specText}]</option>`;
+                    return `<option value="${tech.id}">${roleBadge} ${escapeHtml(tech.name)} - [${specText}]</option>`;
                 }).join('');
             select.disabled = false;
-            document.getElementById('techFilterNote').innerHTML = `<span class="text-success">✅ ${filteredTechnicians.length} technician(s) available</span>`;
+            document.getElementById('techFilterNote').innerHTML = `<span class="text-success">✅ ${filteredTechnicians.length} technician(s) available for ${reportType} issues</span>`;
         }
         
+        // Auto-select current user if matches
         const currentUser = getCurrentUser();
         if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
             const option = Array.from(select.options).find(opt => opt.value === currentUser.id);
@@ -375,65 +390,7 @@
         }
     }
     
-    async function loadSchools() {
-        const response = await fetch('/api/schools');
-        return await response.json();
-    }
-    
-    async function loadDepartments() {
-        const response = await fetch('/api/departments');
-        return await response.json();
-    }
-    
-    document.getElementById('entityType').addEventListener('change', async function() {
-        const entitySelect = document.getElementById('entityId');
-        if (this.value === 'school') {
-            const schools = await loadSchools();
-            if (schools.length === 0) {
-                entitySelect.innerHTML = '<option value="">No schools found</option>';
-            } else {
-                entitySelect.innerHTML = '<option value="">Select School</option>' + 
-                    schools.map(s => `<option value="${s.id}">${s.name} (${s.school_number || 'No code'})</option>`).join('');
-            }
-            entitySelect.disabled = false;
-        } else if (this.value === 'department') {
-            const departments = await loadDepartments();
-            if (departments.length === 0) {
-                entitySelect.innerHTML = '<option value="">No departments found</option>';
-            } else {
-                entitySelect.innerHTML = '<option value="">Select Department</option>' + 
-                    departments.map(d => `<option value="${d.id}">${d.unit_name || d.name} - ${d.name}</option>`).join('');
-            }
-            entitySelect.disabled = false;
-        } else {
-            entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
-            entitySelect.disabled = true;
-        }
-        autoSaveForm();
-    });
-    
-    document.querySelectorAll('input[name="reportType"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.getElementById('waterFields').style.display = 'none';
-            document.getElementById('electricityFields').style.display = 'none';
-            document.getElementById('telephoneFields').style.display = 'none';
-            
-            if (this.value === 'water') {
-                document.getElementById('waterFields').style.display = 'flex';
-                updateProblemTypeOptions('water');
-            } else if (this.value === 'electricity') {
-                document.getElementById('electricityFields').style.display = 'flex';
-                updateProblemTypeOptions('electricity');
-            } else if (this.value === 'telephone') {
-                document.getElementById('telephoneFields').style.display = 'flex';
-                updateProblemTypeOptions('telephone');
-            }
-            
-            filterTechniciansByType(this.value);
-            autoSaveForm();
-        });
-    });
-    
+    // Problem type options based on report type
     function updateProblemTypeOptions(type) {
         const problemSelect = document.getElementById('problemType');
         let options = [];
@@ -448,8 +405,85 @@
         
         problemSelect.innerHTML = '<option value="">Select Problem Type</option>' + 
             options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        console.log(`Problem type options updated for ${type}:`, options);
     }
     
+    // Load schools and departments
+    async function loadSchools() {
+        try {
+            const response = await fetch('/api/schools');
+            return await response.json();
+        } catch (error) {
+            console.error('Error loading schools:', error);
+            return [];
+        }
+    }
+    
+    async function loadDepartments() {
+        try {
+            const response = await fetch('/api/departments');
+            return await response.json();
+        } catch (error) {
+            console.error('Error loading departments:', error);
+            return [];
+        }
+    }
+    
+    // Handle entity type change
+    document.getElementById('entityType').addEventListener('change', async function() {
+        const entitySelect = document.getElementById('entityId');
+        if (this.value === 'school') {
+            const schools = await loadSchools();
+            if (schools.length === 0) {
+                entitySelect.innerHTML = '<option value="">No schools found. Please add schools first.</option>';
+            } else {
+                entitySelect.innerHTML = '<option value="">Select School</option>' + 
+                    schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${s.school_number || 'No code'})</option>`).join('');
+            }
+            entitySelect.disabled = false;
+        } else if (this.value === 'department') {
+            const departments = await loadDepartments();
+            if (departments.length === 0) {
+                entitySelect.innerHTML = '<option value="">No departments found. Please add departments first.</option>';
+            } else {
+                entitySelect.innerHTML = '<option value="">Select Department</option>' + 
+                    departments.map(d => `<option value="${d.id}">${escapeHtml(d.unit_name || d.name)} - ${escapeHtml(d.name)}</option>`).join('');
+            }
+            entitySelect.disabled = false;
+        } else {
+            entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
+            entitySelect.disabled = true;
+        }
+        autoSaveForm();
+    });
+    
+    // Handle report type change
+    document.querySelectorAll('input[name="reportType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Hide all detail fields
+            document.getElementById('waterFields').style.display = 'none';
+            document.getElementById('electricityFields').style.display = 'none';
+            document.getElementById('telephoneFields').style.display = 'none';
+            
+            // Show relevant fields
+            if (this.value === 'water') {
+                document.getElementById('waterFields').style.display = 'flex';
+                updateProblemTypeOptions('water');
+            } else if (this.value === 'electricity') {
+                document.getElementById('electricityFields').style.display = 'flex';
+                updateProblemTypeOptions('electricity');
+            } else if (this.value === 'telephone') {
+                document.getElementById('telephoneFields').style.display = 'flex';
+                updateProblemTypeOptions('telephone');
+            }
+            
+            // Filter technicians based on selected report type
+            filterTechniciansByType(this.value);
+            autoSaveForm();
+        });
+    });
+    
+    // Image upload handling
     document.getElementById('imageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -479,7 +513,7 @@
                     
                     showToast('Image uploaded successfully');
                 } else {
-                    showToast('Failed to upload image', 'error');
+                    showToast('Failed to upload image: ' + data.error, 'error');
                 }
             } catch (error) {
                 showToast('Error uploading image', 'error');
@@ -500,6 +534,13 @@
             }
         }
         autoSaveForm();
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function autoSaveForm() {
@@ -608,10 +649,14 @@
             document.getElementById('priority').disabled = false;
             clearAutoSave();
             initializeDateTime();
+            // Re-initialize problem type options and technicians
+            updateProblemTypeOptions('water');
+            filterTechniciansByType('water');
             showToast('Form cleared');
         }
     }
     
+    // Form submission
     document.getElementById('reportForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -653,8 +698,13 @@
             status: 'pending'
         };
         
-        if (!reportData.problem_type || !reportData.complaint_details) {
-            showToast('Please fill in problem type and complaint details', 'error');
+        if (!reportData.problem_type) {
+            showToast('Please select a problem type', 'error');
+            return;
+        }
+        
+        if (!reportData.complaint_details) {
+            showToast('Please fill in complaint details', 'error');
             return;
         }
         
@@ -670,7 +720,9 @@
             if (data.success) {
                 clearAutoSave();
                 showToast('Report created successfully!');
-                setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
+                setTimeout(() => {
+                    window.location.href = '/my-reports';
+                }, 1500);
             } else {
                 showToast(data.error || 'Failed to create report', 'error');
             }
@@ -680,13 +732,22 @@
         }
     });
     
+    // Set default reference date to today
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
     
+    // Initialize form
     async function initializeForm() {
         initializeDateTime();
+        
+        // Load technicians first
         await loadTechnicians();
+        
+        // Initialize problem type options for water (default)
         updateProblemTypeOptions('water');
+        
+        // Load auto-save draft
         loadAutoSave();
+        
         if (allTechnicians.length === 0) {
             showToast('No technicians found. Please add technicians first.', 'warning');
         }
