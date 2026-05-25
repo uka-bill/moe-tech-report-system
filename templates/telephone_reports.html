@@ -8,7 +8,6 @@
     </a>
 </div>
 
-<!-- Similar structure to water_reports with telephone-specific fields -->
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
@@ -57,19 +56,22 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Utility #</th>
                         <th>ID</th>
                         <th>Location</th>
                         <th>Phone Number</th>
-                        <th>Lines</th>
-                        <th>Problem</th>
+                        <th>Problem Type</th>
+                        <th>Problem Details</th>
                         <th>Priority</th>
                         <th>Status</th>
-                        <th>Date</th>
+                        <th>Acknowledged</th>
+                        <th>Technician</th>
+                        <th>Created</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="telephoneReportsTable">
-                    <tr><td colspan="9" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="12" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -77,44 +79,88 @@
 </div>
 
 <script>
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+    
+    function getUtilityLetter(type) {
+        switch(type) {
+            case 'water': return 'W';
+            case 'electricity': return 'E';
+            case 'telephone': return 'T';
+            default: return '';
+        }
+    }
+    
+    function formatUtilityNumber(report) {
+        const letter = getUtilityLetter(report.report_type);
+        const number = report.utility_number || report.id;
+        return `${letter}-${String(number).padStart(3, '0')}`;
+    }
+    
     async function loadTelephoneReports() {
-        let url = '/api/technical-reports?type=telephone';
         const status = document.getElementById('filterStatus').value;
+        const priority = document.getElementById('filterPriority').value;
+        const entityType = document.getElementById('filterEntityType').value;
+        
+        let url = '/api/technical-reports?type=telephone';
         if (status) url += `&status=${status}`;
+        if (priority) url += `&priority=${priority}`;
+        if (entityType) url += `&entity_type=${entityType}`;
         
         try {
             const response = await fetch(url);
             const reports = await response.json();
             displayTelephoneReports(reports);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error loading telephone reports:', error);
+            showToast('Error loading reports', 'error');
         }
     }
     
     function displayTelephoneReports(reports) {
         const tbody = document.getElementById('telephoneReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No telephone reports found</td></tr>';
+            tbody.innerHTML = '<td><td colspan="12" class="text-center">No telephone reports found</td</tr>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => `
-            <tr>
-                <td>#${report.id}</td>
-                <td>${report.entity_name || report.entity_type}</td>
-                <td>${report.phone_number || '-'}</td>
-                <td>${report.number_of_lines || '-'}</td>
-                <td>${report.problem_type}</td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
-                <td><span class="status-badge status-${report.status}">${report.status}</span></td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = reports.map(report => {
+            const utilityNumber = formatUtilityNumber(report);
+            return `
+                <tr class="report-type-telephone">
+                    <td><span class="utility-number">${utilityNumber}</span></td>
+                    <td>#${report.id}</td>
+                    <td><strong>${report.entity_name || report.entity_type}</strong><br><small>${report.entity_type}</small></td>
+                    <td>${report.phone_number || '-'}<br><small>${report.number_of_lines || ''} lines</small></td>
+                    <td>${report.problem_type || '-'}</td>
+                    <td>${(report.complaint_details || '').substring(0, 60)}${(report.complaint_details || '').length > 60 ? '...' : ''}</td>
+                    <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                    <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
+                    <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
+                    <td>${report.technician_name || '-'}</td>
+                    <td>${formatDate(report.created_at)}</br><small>${formatDate(report.created_at).split(',')[0]}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewReport(${report.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
     
     function viewReport(id) {
@@ -122,5 +168,6 @@
     }
     
     loadTelephoneReports();
+    setInterval(loadTelephoneReports, 30000);
 </script>
 {% endblock %}
