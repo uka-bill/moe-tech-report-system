@@ -8,7 +8,6 @@
     </a>
 </div>
 
-<!-- Similar filter structure as water_reports.html but with electricity-specific content -->
 <div class="card mb-4">
     <div class="card-body">
         <div class="row g-3">
@@ -57,20 +56,21 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Utility #</th>
                         <th>ID</th>
                         <th>Location</th>
-                        <th>Problem</th>
-                        <th>Account/Meter</th>
+                        <th>Problem Type</th>
+                        <th>Problem Details</th>
                         <th>Priority</th>
                         <th>Status</th>
                         <th>Acknowledged</th>
                         <th>Technician</th>
-                        <th>Date</th>
+                        <th>Created</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="electricityReportsTable">
-                    <tr><td colspan="10" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="11" class="text-center">Loading...</td</tr>
                 </tbody>
             </table>
         </div>
@@ -78,6 +78,38 @@
 </div>
 
 <script>
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+    
+    function getUtilityLetter(type) {
+        switch(type) {
+            case 'water': return 'W';
+            case 'electricity': return 'E';
+            case 'telephone': return 'T';
+            default: return '';
+        }
+    }
+    
+    function formatUtilityNumber(report) {
+        const letter = getUtilityLetter(report.report_type);
+        const number = report.utility_number || report.id;
+        return `${letter}-${String(number).padStart(3, '0')}`;
+    }
+    
     async function loadElectricityReports() {
         const status = document.getElementById('filterStatus').value;
         const priority = document.getElementById('filterPriority').value;
@@ -94,34 +126,39 @@
             displayElectricityReports(reports);
         } catch (error) {
             console.error('Error loading electricity reports:', error);
+            showToast('Error loading reports', 'error');
         }
     }
     
     function displayElectricityReports(reports) {
         const tbody = document.getElementById('electricityReportsTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No electricity reports found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center">No electricity reports found</td</tr>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => `
-            <tr class="report-type-electricity">
-                <td>#${report.id}</td>
-                <td><strong>${report.entity_name || report.entity_type}</strong><br><small>${report.entity_type}</small></td>
-                <td><strong>${report.problem_type}</strong><br><small>${(report.complaint_details || '').substring(0, 50)}...</small></td>
-                <td>${report.account_number || report.meter_number || '-'}</td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
-                <td><span class="status-badge status-${report.status}">${report.status}</span></td>
-                <td>${report.team_leader_acknowledged ? '✓' : '✗'}</td>
-                <td>${report.technician_name || '-'}</td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = reports.map(report => {
+            const utilityNumber = formatUtilityNumber(report);
+            return `
+                <tr class="report-type-electricity">
+                    <td><span class="utility-number">${utilityNumber}</span></td>
+                    <td>#${report.id}</td>
+                    <td><strong>${report.entity_name || report.entity_type}</strong><br><small>${report.entity_type}</small></td>
+                    <td>${report.problem_type || '-'}</td>
+                    <td>${(report.complaint_details || '').substring(0, 60)}${(report.complaint_details || '').length > 60 ? '...' : ''}</td>
+                    <td><span class="status-badge priority-${report.priority}">${report.priority}</span></td>
+                    <td><span class="status-badge status-${report.status}">${report.status.replace('_', ' ')}</span></td>
+                    <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
+                    <td>${report.technician_name || '-'}</td>
+                    <td>${formatDate(report.created_at)}</br><small>${formatDate(report.created_at).split(',')[0]}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="viewReport(${report.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
     
     function viewReport(id) {
@@ -129,5 +166,6 @@
     }
     
     loadElectricityReports();
+    setInterval(loadElectricityReports, 30000);
 </script>
 {% endblock %}
