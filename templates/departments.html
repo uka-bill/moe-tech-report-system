@@ -2,24 +2,21 @@
 
 {% block content %}
 <style>
+    .dept-code-badge {
+        font-family: monospace;
+        font-weight: bold;
+        background-color: #f0f0f0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+    }
     .unit-name {
         font-weight: 600;
         color: var(--primary-dark);
     }
     .dept-name {
         font-size: 0.9rem;
-        color: #555;
-    }
-    .contact-info {
-        font-size: 0.85rem;
-    }
-    .address-text {
-        font-size: 0.85rem;
         color: #666;
-        max-width: 200px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 </style>
 
@@ -40,6 +37,7 @@
                 <thead>
                     <tr>
                         <th style="width: 60px;">ID</th>
+                        <th>Dept Code</th>
                         <th>Unit Name</th>
                         <th>Department Name</th>
                         <th>Contact Person</th>
@@ -49,9 +47,13 @@
                     </tr>
                 </thead>
                 <tbody id="departmentsTable">
-                    <tr><td colspan="7" class="text-center">Loading...</td</tr>
+                    <tr><td colspan="8" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div> Loading departments...
+                    </td
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -69,6 +71,12 @@
             <div class="modal-body">
                 <form id="deptForm">
                     <input type="hidden" id="deptId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Department Code *</label>
+                        <input type="text" class="form-control" id="deptCode" required placeholder="e.g., ICT-001, FIN-001">
+                        <small class="text-muted">Unique identifier for this department</small>
+                    </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Unit Name *</label>
@@ -113,47 +121,47 @@
         try {
             const response = await fetch('/api/departments');
             const departments = await response.json();
+            // Sort by ID to ensure correct order (already sorted by API, but double-check)
+            departments.sort((a, b) => a.id - b.id);
             displayDepartments(departments);
         } catch (error) {
             console.error('Error loading departments:', error);
             showToast('Error loading departments', 'error');
+            document.getElementById('departmentsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading departments. Please refresh.</td</tr>';
         }
     }
     
     function displayDepartments(departments) {
         const tbody = document.getElementById('departmentsTable');
         if (!departments || departments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No departments found. Click "Add Department" to create one.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No departments found. Click "Add Department" to create one.</td</tr>';
             return;
         }
         
-        tbody.innerHTML = departments.map((dept, index) => {
-            // Use the actual database ID, not the running number
-            const displayId = dept.id;
-            return `
-                <tr>
-                    <td><strong>${displayId}</strong></td>
-                    <td><span class="unit-name">${escapeHtml(dept.unit_name || dept.name || '-')}</span></td>
-                    <td><span class="dept-name">${escapeHtml(dept.name || '-')}</span></td>
-                    <td class="contact-info">${escapeHtml(dept.contact_person || '-')}</td>
-                    <td class="contact-info">${escapeHtml(dept.contact_phone || '-')}</td>
-                    <td class="address-text" title="${escapeHtml(dept.address || '')}">${escapeHtml(dept.address ? dept.address.substring(0, 40) + (dept.address.length > 40 ? '...' : '') : '-')}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editDepartment(${dept.id})" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment(${dept.id})" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        tbody.innerHTML = departments.map(dept => `
+            <tr>
+                <td><strong>${dept.id}</strong></br><small class="text-muted">DB ID</small></td>
+                <td><span class="dept-code-badge">${escapeHtml(dept.department_code || '-')}</span></td>
+                <td><span class="unit-name">${escapeHtml(dept.unit_name || dept.name || '-')}</span></br><small class="text-muted">Unit</small></td>
+                <td><span class="dept-name">${escapeHtml(dept.name || '-')}</span></br><small class="text-muted">Department</small></td>
+                <td>${escapeHtml(dept.contact_person || '-')}</br><small class="text-muted">Contact</small></td>
+                <td>${escapeHtml(dept.contact_phone || '-')}</br><small class="text-muted">Phone</small></td>
+                <td>${escapeHtml(dept.address ? dept.address.substring(0, 40) + (dept.address.length > 40 ? '...' : '') : '-')}</br><small class="text-muted">Address</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editDepartment(${dept.id})" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment(${dept.id})" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
     }
     
-    // Helper function to escape HTML
     function escapeHtml(text) {
-        if (!text) return text;
+        if (!text) return '';
+        if (typeof text !== 'string') return text;
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
@@ -163,8 +171,22 @@
         document.getElementById('deptModalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Add Department';
         document.getElementById('deptForm').reset();
         document.getElementById('deptId').value = '';
+        suggestNextDeptCode();
         const modal = new bootstrap.Modal(document.getElementById('deptModal'));
         modal.show();
+    }
+    
+    async function suggestNextDeptCode() {
+        try {
+            const response = await fetch('/api/departments');
+            const departments = await response.json();
+            const count = departments.length;
+            const nextNumber = String(count + 1).padStart(3, '0');
+            document.getElementById('deptCode').value = `DEPT-${nextNumber}`;
+            document.getElementById('deptCode').placeholder = `DEPT-${nextNumber}`;
+        } catch (error) {
+            document.getElementById('deptCode').value = 'DEPT-001';
+        }
     }
     
     async function editDepartment(id) {
@@ -176,6 +198,7 @@
             if (dept) {
                 document.getElementById('deptModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Department';
                 document.getElementById('deptId').value = dept.id;
+                document.getElementById('deptCode').value = dept.department_code || '';
                 document.getElementById('unitName').value = dept.unit_name || dept.name || '';
                 document.getElementById('deptName').value = dept.name || '';
                 document.getElementById('contactPerson').value = dept.contact_person || '';
@@ -186,6 +209,7 @@
                 modal.show();
             }
         } catch (error) {
+            console.error('Error loading department:', error);
             showToast('Error loading department details', 'error');
         }
     }
@@ -208,6 +232,8 @@
         const data = {
             unit_name: unitName,
             name: deptName,
+            department_name: deptName,
+            department_code: document.getElementById('deptCode').value.trim(),
             contact_person: document.getElementById('contactPerson').value.trim(),
             contact_phone: document.getElementById('contactPhone').value.trim(),
             address: document.getElementById('deptAddress').value.trim()
@@ -244,7 +270,7 @@
     }
     
     async function deleteDepartment(id) {
-        if (confirm('Are you sure you want to delete this department? This action cannot be undone.')) {
+        if (confirm('⚠️ Are you sure you want to delete this department?\n\nThis action cannot be undone.')) {
             try {
                 const response = await fetch(`/api/departments/${id}`, {
                     method: 'DELETE'
@@ -257,6 +283,7 @@
                     showToast(result.error || 'Cannot delete department with existing reports', 'error');
                 }
             } catch (error) {
+                console.error('Error deleting department:', error);
                 showToast('Error deleting department', 'error');
             }
         }
