@@ -10,9 +10,21 @@
         font-weight: 500;
         margin: 2px;
     }
-    .spec-water { background-color: #e3f2fd; color: #1976d2; border-left: 3px solid #1976d2; }
-    .spec-electricity { background-color: #fff3e0; color: #f57c00; border-left: 3px solid #f57c00; }
-    .spec-telephone { background-color: #e8f5e9; color: #388e3c; border-left: 3px solid #388e3c; }
+    .spec-water {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        border-left: 3px solid #1976d2;
+    }
+    .spec-electricity {
+        background-color: #fff3e0;
+        color: #f57c00;
+        border-left: 3px solid #f57c00;
+    }
+    .spec-telephone {
+        background-color: #e8f5e9;
+        color: #388e3c;
+        border-left: 3px solid #388e3c;
+    }
     .checkbox-group {
         display: flex;
         gap: 20px;
@@ -136,7 +148,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">#</th>
+                        <th style="width: 50px;">ID</th>
                         <th>Employee ID</th>
                         <th>Name</th>
                         <th>Role</th>
@@ -149,10 +161,12 @@
                 </thead>
                 <tbody id="techniciansTable">
                     <tr><td colspan="9" class="text-center">
-                        <div class="loading-spinner"></div> Loading technicians...
-                    </tr>
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div> Loading technicians...
+                    </td
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -217,7 +231,7 @@
                                 Authorized Team Leader
                             </label>
                         </div>
-                        <small class="text-muted">Only authorized team leaders can acknowledge reports. You can select multiple authorized team leaders.</small>
+                        <small class="text-muted">Only authorized team leaders can acknowledge reports</small>
                     </div>
                     
                     <div class="mb-3">
@@ -253,7 +267,7 @@
             applyFilter();
         } catch (error) {
             console.error('Error loading technicians:', error);
-            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading technicians. Please refresh the page.</td></tr>';
+            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading technicians. Please refresh the page.</td</tr>';
             showToast('Error loading technicians', 'error');
         }
     }
@@ -274,7 +288,15 @@
         
         if (currentFilter !== 'all') {
             filtered = filtered.filter(tech => {
-                const specializations = tech.specializations || [];
+                let specializations = tech.specializations;
+                if (typeof specializations === 'string') {
+                    try {
+                        specializations = JSON.parse(specializations);
+                    } catch (e) {
+                        specializations = [];
+                    }
+                }
+                if (!Array.isArray(specializations)) specializations = [];
                 return specializations.includes(currentFilter);
             });
             document.getElementById('filterResult').innerHTML = `Showing ${filtered.length} technician(s) with ${currentFilter} specialization`;
@@ -288,12 +310,22 @@
     function displayTechnicians(technicians) {
         const tbody = document.getElementById('techniciansTable');
         if (!technicians || technicians.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No technicians found. Click "Add Technician" to create one.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No technicians found. Click "Add Technician" to create one.</td</tr>';
             return;
         }
         
         tbody.innerHTML = technicians.map((tech, index) => {
-            const specializations = tech.specializations || [];
+            // Parse specializations
+            let specializations = tech.specializations;
+            if (typeof specializations === 'string') {
+                try {
+                    specializations = JSON.parse(specializations);
+                } catch (e) {
+                    specializations = [];
+                }
+            }
+            if (!Array.isArray(specializations)) specializations = [];
+            
             const specBadges = specializations.map(spec => {
                 const icon = spec === 'water' ? '💧' : spec === 'electricity' ? '⚡' : '📞';
                 const label = spec === 'water' ? 'Water' : spec === 'electricity' ? 'Electricity' : 'Telephone';
@@ -305,12 +337,12 @@
                 : '<span class="role-badge-tech">👤 Technician</span>';
             
             const authBadge = tech.is_authorized 
-                ? '<span class="authorized-badge">✓ Authorized Team Leader</span>' 
+                ? '<span class="authorized-badge">✓ Authorized</span>' 
                 : '<span class="unauthorized-badge">✗ Not Authorized</span>';
             
             return `
                 <tr>
-                    <td><strong>${index + 1}</strong></td>
+                    <td><strong>${tech.id}</strong></td>
                     <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
                     <td><strong>${escapeHtml(tech.name)}</strong></td>
                     <td>${roleBadge}</td>
@@ -326,13 +358,12 @@
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
-                </tr>
-            `;
+                 `
         }).join('');
     }
     
     function escapeHtml(text) {
-        if (!text) return text;
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
@@ -377,7 +408,17 @@
                 document.getElementById('techEmail').value = tech.email || '';
                 document.getElementById('isAuthorized').checked = tech.is_authorized || false;
                 
-                const specializations = tech.specializations || [];
+                // Parse and set specializations
+                let specializations = tech.specializations;
+                if (typeof specializations === 'string') {
+                    try {
+                        specializations = JSON.parse(specializations);
+                    } catch (e) {
+                        specializations = [];
+                    }
+                }
+                if (!Array.isArray(specializations)) specializations = [];
+                
                 document.querySelectorAll('.spec-checkbox').forEach(cb => {
                     cb.checked = specializations.includes(cb.value);
                 });
@@ -396,11 +437,13 @@
         const name = document.getElementById('techName').value.trim();
         const employeeId = document.getElementById('employeeId').value.trim();
         
+        // Get selected specializations - THIS IS CRITICAL
         const specializations = [];
         document.querySelectorAll('.spec-checkbox:checked').forEach(cb => {
             specializations.push(cb.value);
         });
         
+        // Validation
         if (!name) {
             showToast('Technician name is required', 'error');
             return;
@@ -425,6 +468,8 @@
             phone: document.getElementById('techPhone').value.trim(),
             email: document.getElementById('techEmail').value.trim()
         };
+        
+        console.log('Saving technician with specializations:', data);
         
         try {
             let response;
@@ -457,7 +502,7 @@
     }
     
     async function deleteTechnician(id) {
-        if (confirm('Are you sure you want to delete this technician?')) {
+        if (confirm('Are you sure you want to delete this technician? This action cannot be undone.')) {
             try {
                 const response = await fetch(`/api/technicians/${id}`, {
                     method: 'DELETE'
@@ -475,6 +520,7 @@
         }
     }
     
+    // Load technicians on page load
     loadTechnicians();
 </script>
 {% endblock %}
