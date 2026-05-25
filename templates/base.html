@@ -6,7 +6,8 @@
     <title>MOE Technical Report System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Remove chart.js from base if not needed on all pages -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <style>
         :root {
             --primary-color: #9b59b6;
@@ -25,7 +26,6 @@
             background-color: #f8f5fc;
         }
         
-        /* Top Navigation Bar */
         .navbar {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -67,7 +67,6 @@
             margin-right: 8px;
         }
         
-        /* Dropdown menu styling */
         .dropdown-menu {
             background-color: white;
             border: none;
@@ -92,13 +91,11 @@
             color: var(--primary-color);
         }
         
-        /* Main Content Area */
         .main-content {
             padding: 25px;
             min-height: calc(100vh - 140px);
         }
         
-        /* Card Styling */
         .card {
             border: none;
             border-radius: 12px;
@@ -125,7 +122,6 @@
             margin-right: 8px;
         }
         
-        /* Button Styling */
         .btn-primary {
             background-color: var(--primary-color);
             border-color: var(--primary-color);
@@ -147,7 +143,6 @@
             border-color: var(--primary-color);
         }
         
-        /* Status Badges */
         .status-badge {
             padding: 5px 12px;
             border-radius: 20px;
@@ -174,12 +169,6 @@
             border-left: 3px solid #28a745;
         }
         
-        .status-closed {
-            background-color: #e2e3e5;
-            color: #383d41;
-            border-left: 3px solid #6c757d;
-        }
-        
         .priority-high {
             background-color: #f8d7da;
             color: #721c24;
@@ -198,20 +187,6 @@
             border-left: 3px solid #28a745;
         }
         
-        /* Report Type Borders */
-        .report-type-water {
-            border-left: 4px solid #17a2b8;
-        }
-        
-        .report-type-electricity {
-            border-left: 4px solid #ffc107;
-        }
-        
-        .report-type-telephone {
-            border-left: 4px solid #28a745;
-        }
-        
-        /* Acknowledgement Badges */
         .acknowledged-badge {
             background-color: #28a745;
             color: white;
@@ -228,7 +203,6 @@
             font-size: 11px;
         }
         
-        /* Table Styling */
         .table thead th {
             background-color: var(--secondary-color);
             color: var(--primary-dark);
@@ -240,7 +214,6 @@
             background-color: var(--secondary-color);
         }
         
-        /* Image Preview */
         .image-preview {
             max-width: 200px;
             max-height: 150px;
@@ -257,7 +230,6 @@
             border-color: var(--primary-color);
         }
         
-        /* Footer */
         footer {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
@@ -270,7 +242,6 @@
             opacity: 0.9;
         }
         
-        /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -285,28 +256,23 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .navbar-nav {
                 margin-top: 10px;
             }
-            
             .navbar-nav .nav-link {
                 padding: 0.5rem 1rem;
             }
-            
             .main-content {
                 padding: 15px;
             }
         }
         
-        /* Form controls focus */
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 0.2rem rgba(155, 89, 182, 0.25);
         }
         
-        /* Pagination styling */
         .pagination .page-link {
             color: var(--primary-color);
         }
@@ -317,7 +283,6 @@
             color: white;
         }
         
-        /* Modal styling */
         .modal-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
@@ -332,7 +297,6 @@
             margin-right: 8px;
         }
         
-        /* Toast Notifications */
         #toast-container {
             position: fixed;
             bottom: 20px;
@@ -340,7 +304,6 @@
             z-index: 9999;
         }
         
-        /* Stat Cards */
         .stat-card {
             background: white;
             border-radius: 12px;
@@ -369,7 +332,6 @@
             margin-bottom: 5px;
         }
         
-        /* Quick Stats Grid */
         .quick-stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -377,7 +339,6 @@
             margin-bottom: 20px;
         }
         
-        /* Report List Item */
         .report-list-item {
             padding: 12px;
             border-bottom: 1px solid #eee;
@@ -402,7 +363,6 @@
             flex-wrap: wrap;
         }
         
-        /* Category Badges */
         .category-badge {
             padding: 8px 15px;
             border-radius: 20px;
@@ -427,7 +387,6 @@
             color: #388e3c;
         }
         
-        /* Status Indicators */
         .status-indicator {
             display: inline-block;
             width: 8px;
@@ -448,7 +407,6 @@
             background-color: #17a2b8;
         }
         
-        /* Acknowledgment Progress */
         .acknowledgment-progress {
             background: #f0f0f0;
             border-radius: 10px;
@@ -462,7 +420,6 @@
             transition: width 0.3s;
         }
         
-        /* Summary Section */
         .summary-section {
             background: white;
             border-radius: 12px;
@@ -480,7 +437,6 @@
             border-bottom: 2px solid var(--primary-light);
         }
         
-        /* Chart Container */
         .chart-container {
             background: white;
             border-radius: 12px;
@@ -489,6 +445,91 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
     </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-clipboard-check"></i> MOE Technical Report System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('new_report') }}">
+                            <i class="bi bi-plus-circle"></i> New Report
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-file-text"></i> Reports
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('water_reports') }}"><i class="bi bi-droplet"></i> Water Reports</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('electricity_reports') }}"><i class="bi bi-lightning-charge"></i> Electricity Reports</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('telephone_reports') }}"><i class="bi bi-telephone"></i> Telephone Reports</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports_page') }}"><i class="bi bi-archive"></i> All Reports</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('my_reports') }}"><i class="bi bi-person"></i> My Reports</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('schools_page') }}"><i class="bi bi-building"></i> Schools</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('departments_page') }}"><i class="bi bi-briefcase"></i> Departments</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('technicians_page') }}"><i class="bi bi-people"></i> Technicians</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item" id="teamLeaderNav">
+                        <a class="nav-link" href="{{ url_for('team_leader') }}">
+                            <i class="bi bi-check2-square"></i> Team Leader
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> <span id="userName">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="showUserProfile()"><i class="bi bi-person"></i> Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="switchUser()"><i class="bi bi-arrow-repeat"></i> Switch User</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <small>
+            <i class="bi bi-building"></i> Ministry of Education, Brunei Darussalam | 
+            <i class="bi bi-telephone"></i> Water | Electricity | Telephone Technical Report System |
+            Version 2.0
+        </small>
+    </footer>
+    
+    <!-- Load Bootstrap JS at the END of body, but BEFORE any custom scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         // Global user management
         let currentUser = null;
@@ -521,26 +562,33 @@
             return getCurrentUser().isAuthorized === true;
         }
         
-        function isTechnician() {
-            return getCurrentUser().role === 'technician';
-        }
-        
         function formatDate(dateString) {
             if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            try {
+                const date = new Date(dateString);
+                date.setHours(date.getHours() + 8);
+                return date.toLocaleString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            } catch (e) {
+                return dateString;
+            }
         }
         
         function formatDateOnly(dateString) {
             if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-GB');
+            try {
+                const date = new Date(dateString);
+                date.setHours(date.getHours() + 8);
+                return date.toLocaleDateString('en-GB');
+            } catch (e) {
+                return dateString;
+            }
         }
         
         function showToast(message, type = 'success') {
@@ -568,140 +616,6 @@
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
         
-        function showLoading(elementId) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.innerHTML = '<div class="text-center"><div class="loading-spinner"></div> Loading...</div>';
-            }
-        }
-        
-        // Export function for reports
-        async function exportToCSV(data, filename) {
-            if (!data || data.length === 0) {
-                showToast('No data to export', 'error');
-                return;
-            }
-            
-            const headers = Object.keys(data[0]);
-            const csvRows = [];
-            csvRows.push(headers.join(','));
-            
-            for (const row of data) {
-                const values = headers.map(header => {
-                    const value = row[header] || '';
-                    return `"${String(value).replace(/"/g, '""')}"`;
-                });
-                csvRows.push(values.join(','));
-            }
-            
-            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            showToast('Export completed');
-        }
-    </script>
-</head>
-<body>
-    <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="bi bi-clipboard-check"></i> MOE Technical Report System
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Dashboard Tab (First) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </li>
-                    
-                    <!-- New Report Tab (Second) -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('new_report') }}">
-                            <i class="bi bi-plus-circle"></i> New Report
-                        </a>
-                    </li>
-                    
-                    <!-- Reports Dropdown (Third) -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-file-text"></i> Reports
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('water_reports') }}"><i class="bi bi-droplet"></i> Water Reports</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('electricity_reports') }}"><i class="bi bi-lightning-charge"></i> Electricity Reports</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('telephone_reports') }}"><i class="bi bi-telephone"></i> Telephone Reports</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reports_page') }}"><i class="bi bi-archive"></i> All Reports</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('my_reports') }}"><i class="bi bi-person"></i> My Reports</a></li>
-                        </ul>
-                    </li>
-                    
-                    <!-- Management Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-gear"></i> Management
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('schools_page') }}"><i class="bi bi-building"></i> Schools</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('departments_page') }}"><i class="bi bi-briefcase"></i> Departments</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('technicians_page') }}"><i class="bi bi-people"></i> Technicians</a></li>
-                        </ul>
-                    </li>
-                    
-                    <!-- Team Leader (only visible to authorized users) -->
-                    <li class="nav-item" id="teamLeaderNav" style="display: none;">
-                        <a class="nav-link" href="{{ url_for('team_leader') }}">
-                            <i class="bi bi-check2-square"></i> Team Leader
-                        </a>
-                    </li>
-                    
-                    <!-- User Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> <span id="userName">User</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#" onclick="showUserProfile()"><i class="bi bi-person"></i> Profile</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="switchUser()"><i class="bi bi-arrow-repeat"></i> Switch User</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <!-- Main Content -->
-    <div class="container-fluid">
-        <div class="main-content">
-            {% block content %}{% endblock %}
-        </div>
-    </div>
-    
-    <!-- Footer -->
-    <footer>
-        <small>
-            <i class="bi bi-building"></i> Ministry of Education, Brunei Darussalam | 
-            <i class="bi bi-telephone"></i> Water | Electricity | Telephone Technical Report System |
-            Version 2.0
-        </small>
-    </footer>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Initialize user display on page load
         document.addEventListener('DOMContentLoaded', async function() {
             const user = getCurrentUser();
             const userNameSpan = document.getElementById('userName');
@@ -709,7 +623,6 @@
                 userNameSpan.textContent = user.name || 'User';
             }
             
-            // Check if user is authorized to see Team Leader tab
             if (user.id && user.id !== '1') {
                 try {
                     const response = await fetch(`/api/technicians/${user.id}/authorization`);
@@ -723,7 +636,6 @@
                 user.isAuthorized = true;
             }
             
-            // Show Team Leader tab ONLY for authorized users
             const teamLeaderNav = document.getElementById('teamLeaderNav');
             if (teamLeaderNav) {
                 if (user.isAuthorized === true) {
@@ -733,7 +645,6 @@
                 }
             }
             
-            // Highlight active nav link based on current URL
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.navbar .nav-link');
             navLinks.forEach(link => {
@@ -748,14 +659,12 @@
         
         function showUserProfile() {
             const user = getCurrentUser();
-            const authStatus = user.isAuthorized ? '✓ Authorized Team Leader - Can Acknowledge Reports' : '👁️ View Only Mode';
+            const authStatus = user.isAuthorized ? '✓ Authorized Team Leader' : '👁️ View Only Mode';
             alert('👤 User Profile\n\n' +
                   'Name: ' + user.name + '\n' +
                   'Role: ' + (user.role === 'senior_technician' ? 'Senior Technician' : 'Technician') + '\n' +
                   'Status: ' + authStatus + '\n' +
-                  'ID: ' + user.id + '\n\n' +
-                  '📋 System: MOE Technical Report System\n' +
-                  '🏫 Ministry of Education, Brunei');
+                  'ID: ' + user.id);
         }
         
         async function switchUser() {
@@ -767,19 +676,11 @@
                     const matchingTech = technicians.find(t => t.name.toLowerCase() === newName.toLowerCase());
                     
                     if (matchingTech) {
-                        // Check if this technician is authorized
                         const authResponse = await fetch(`/api/technicians/${matchingTech.id}/authorization`);
                         const authData = await authResponse.json();
-                        
-                        setCurrentUser(
-                            matchingTech.role, 
-                            matchingTech.id, 
-                            matchingTech.name,
-                            authData.authorized
-                        );
+                        setCurrentUser(matchingTech.role, matchingTech.id, matchingTech.name, authData.authorized);
                         showToast(`Welcome ${matchingTech.name}! Role: ${matchingTech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}`);
                     } else {
-                        // Create temporary user
                         const role = confirm('Are you a Senior Technician?') ? 'senior_technician' : 'technician';
                         setCurrentUser(role, 'temp', newName, false);
                         showToast(`Temporary user: ${newName} (Not in database)`, 'warning');
@@ -790,23 +691,6 @@
                 }
             }
         }
-        
-        // Auto-refresh function (optional)
-        let refreshInterval = null;
-        
-        function startAutoRefresh(intervalSeconds = 60) {
-            if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(() => {
-                if (typeof loadDashboardData === 'function') loadDashboardData();
-                if (typeof loadWaterReports === 'function') loadWaterReports();
-                if (typeof loadAllReports === 'function') loadAllReports();
-                if (typeof loadMyReports === 'function') loadMyReports();
-            }, intervalSeconds * 1000);
-        }
-        
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) clearInterval(refreshInterval);
-        });
     </script>
 </body>
 </html>
