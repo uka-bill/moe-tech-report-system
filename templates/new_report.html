@@ -66,20 +66,25 @@
         font-size: 0.85rem;
         color: #2e7d32;
     }
-    .loading-indicator {
+    .debug-panel {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 20px;
+        font-size: 11px;
+        font-family: monospace;
+        display: none;
+    }
+    .tech-badge {
         display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid #f3f3f3;
-        border-top: 2px solid #9b59b6;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-right: 8px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        margin-left: 5px;
     }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+    .tech-water { background-color: #2196F3; color: white; }
+    .tech-electricity { background-color: #FF9800; color: white; }
+    .tech-telephone { background-color: #4CAF50; color: white; }
 </style>
 
 <div class="card">
@@ -303,6 +308,12 @@
                 </div>
             </div>
         </form>
+        
+        <!-- Debug Panel - Press Ctrl+Shift+D to show -->
+        <div id="debugPanel" class="debug-panel">
+            <strong>Debug Information:</strong>
+            <pre id="debugContent"></pre>
+        </div>
     </div>
 </div>
 
@@ -311,6 +322,22 @@
     let allTechnicians = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
+    
+    // Debug function
+    function debugLog(message, data) {
+        const debugContent = document.getElementById('debugContent');
+        const timestamp = new Date().toLocaleTimeString();
+        debugContent.innerHTML += `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}\n`;
+        console.log(`[DEBUG] ${message}`, data);
+    }
+    
+    // Show/hide debug panel on Ctrl+Shift+D
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            const panel = document.getElementById('debugPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    });
     
     function formatDateTime(date) {
         const d = new Date(date);
@@ -369,6 +396,8 @@
     function updateProblemTypeOptions(reportType) {
         const problemSelect = document.getElementById('problemType');
         
+        debugLog('Updating problem type options for', reportType);
+        
         if (reportType === 'water') {
             problemSelect.innerHTML = `
                 <option value="">Select Problem Type</option>
@@ -410,15 +439,54 @@
     
     // Load technicians from API
     async function loadTechnicians() {
+        debugLog('Loading technicians from API', {});
+        
         try {
             const response = await fetch('/api/technicians');
+            debugLog('API Response status', response.status);
+            
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            allTechnicians = await response.json();
-            console.log('Technicians loaded:', allTechnicians);
+            
+            const technicians = await response.json();
+            debugLog('Raw technicians from API', technicians);
+            
+            if (!technicians || technicians.length === 0) {
+                debugLog('No technicians found', {});
+                allTechnicians = [];
+                return [];
+            }
+            
+            // Process technicians
+            allTechnicians = technicians.map(tech => {
+                let specializations = tech.specializations;
+                
+                // Parse specializations if string
+                if (typeof specializations === 'string') {
+                    try {
+                        specializations = JSON.parse(specializations);
+                    } catch (e) {
+                        specializations = [];
+                    }
+                }
+                
+                if (!specializations) specializations = [];
+                if (!Array.isArray(specializations)) specializations = [];
+                
+                debugLog(`Technician ${tech.name} (ID: ${tech.id})`, { specializations });
+                
+                return {
+                    ...tech,
+                    specializations: specializations
+                };
+            });
+            
+            debugLog('Processed technicians', allTechnicians);
             return allTechnicians;
+            
         } catch (error) {
+            debugLog('ERROR loading technicians', error.message);
             console.error('Error loading technicians:', error);
             allTechnicians = [];
             return [];
@@ -429,28 +497,26 @@
     function filterTechniciansByType(reportType) {
         const select = document.getElementById('technicianId');
         
+        debugLog(`Filtering technicians for type: ${reportType}`, {});
+        debugLog('Available technicians count', allTechnicians.length);
+        
         if (!allTechnicians || allTechnicians.length === 0) {
             select.innerHTML = '<option value="">No technicians available</option>';
             document.getElementById('techFilterNote').innerHTML = '<span class="text-danger">⚠️ No technicians found. Please add technicians in Management tab.</span>';
             select.disabled = true;
+            debugLog('No technicians available', {});
             return;
         }
         
-        // Filter technicians who have the required specialization
+        // Filter technicians by specialization
         const filteredTechnicians = allTechnicians.filter(tech => {
-            let specializations = tech.specializations;
-            if (typeof specializations === 'string') {
-                try {
-                    specializations = JSON.parse(specializations);
-                } catch (e) {
-                    specializations = [];
-                }
-            }
-            if (!Array.isArray(specializations)) specializations = [];
-            return specializations.includes(reportType);
+            const specializations = tech.specializations || [];
+            const includes = specializations.includes(reportType);
+            debugLog(`Checking ${tech.name}`, { specializations, required: reportType, matches: includes });
+            return includes;
         });
         
-        console.log(`Filtered technicians for ${reportType}:`, filteredTechnicians);
+        debugLog(`Filtered technicians count`, filteredTechnicians.length);
         
         if (filteredTechnicians.length === 0) {
             select.innerHTML = '<option value="">No technicians available for this type</option>';
@@ -460,16 +526,7 @@
             select.innerHTML = '<option value="">Select Technician</option>' + 
                 filteredTechnicians.map(tech => {
                     const roleBadge = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Tech';
-                    let specializations = tech.specializations;
-                    if (typeof specializations === 'string') {
-                        try {
-                            specializations = JSON.parse(specializations);
-                        } catch (e) {
-                            specializations = [];
-                        }
-                    }
-                    if (!Array.isArray(specializations)) specializations = [];
-                    const specText = specializations.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+                    const specText = (tech.specializations || []).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
                     return `<option value="${tech.id}">${roleBadge} ${escapeHtml(tech.name)} - [${specText}]</option>`;
                 }).join('');
             select.disabled = false;
@@ -482,6 +539,7 @@
             const optionExists = Array.from(select.options).some(opt => opt.value === currentUser.id);
             if (optionExists) {
                 select.value = currentUser.id;
+                debugLog('Auto-selected current user', { userId: currentUser.id });
             }
         }
     }
@@ -539,6 +597,7 @@
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
+            debugLog(`Report type changed to: ${reportType}`, {});
             
             // Hide all detail fields
             document.getElementById('waterFields').style.display = 'none';
@@ -722,7 +781,6 @@
             document.getElementById('priority').disabled = false;
             clearAutoSave();
             initializeDateTime();
-            // Reset to default water options
             updateProblemTypeOptions('water');
             filterTechniciansByType('water');
             showToast('Form cleared');
@@ -810,10 +868,10 @@
     
     // Initialize form
     async function initializeForm() {
-        console.log('Initializing New Report form...');
+        debugLog('Initializing New Report form', {});
         initializeDateTime();
         
-        // Load technicians first
+        // Load technicians
         await loadTechnicians();
         
         // Initialize problem type options for water (default)
@@ -826,9 +884,10 @@
         loadAutoSave();
         
         if (allTechnicians.length === 0) {
+            debugLog('WARNING: No technicians found in database', {});
             showToast('No technicians found. Please add technicians first.', 'warning');
         } else {
-            console.log(`Found ${allTechnicians.length} technicians`);
+            debugLog('Initialization complete', { technicianCount: allTechnicians.length });
         }
     }
     
