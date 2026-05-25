@@ -159,35 +159,50 @@ def team_leader():
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
+    """Get all technicians sorted by ID ascending"""
     try:
         if not supabase:
+            app.logger.error("Supabase client not initialized")
             return jsonify({'error': 'Database not connected'}), 500
         
+        # Get all technicians ordered by ID
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
+        
+        app.logger.info(f"Fetched {len(response.data) if response.data else 0} technicians from database")
         
         technicians = []
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
+                
+                # Handle specializations - ensure it's an array
                 if 'specializations' in tech_dict and tech_dict['specializations']:
                     if isinstance(tech_dict['specializations'], str):
                         try:
                             tech_dict['specializations'] = json.loads(tech_dict['specializations'])
-                        except:
+                            app.logger.info(f"Parsed specializations for {tech_dict.get('name')}: {tech_dict['specializations']}")
+                        except json.JSONDecodeError as e:
+                            app.logger.warning(f"Failed to parse specializations for {tech_dict.get('name')}: {e}")
                             tech_dict['specializations'] = []
                     elif isinstance(tech_dict['specializations'], list):
-                        pass
+                        pass  # Already a list
                     else:
                         tech_dict['specializations'] = []
                 else:
                     tech_dict['specializations'] = []
+                
+                # Ensure is_authorized is boolean
                 tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
+                
                 technicians.append(tech_dict)
         
+        app.logger.info(f"Returning {len(technicians)} processed technicians")
         return jsonify(technicians)
+        
     except Exception as e:
-        app.logger.error(f"Error getting technicians: {e}")
-        return jsonify([]), 500
+        app.logger.error(f"Error getting technicians: {str(e)}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/technicians', methods=['POST'])
 def create_technician():
@@ -303,7 +318,6 @@ def check_technician_authorization(tech_id):
 
 @app.route('/api/schools', methods=['GET'])
 def get_schools():
-    """Get all schools sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -391,7 +405,6 @@ def delete_school(school_id):
 
 @app.route('/api/departments', methods=['GET'])
 def get_departments():
-    """Get all departments sorted by ID ascending (oldest first)"""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -412,7 +425,6 @@ def create_department():
         dept_data = {
             "name": data.get('name'),
             "unit_name": data.get('unit_name'),
-            "department_code": data.get('department_code'),
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
             "contact_phone": data.get('contact_phone'),
@@ -446,7 +458,7 @@ def update_department(dept_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'unit_name', 'department_code', 'address', 'contact_person', 'contact_phone']
+        allowed_fields = ['name', 'unit_name', 'address', 'contact_person', 'contact_phone']
         
         for field in allowed_fields:
             if field in data and data[field] is not None:
