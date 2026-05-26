@@ -127,7 +127,7 @@
             <div class="datetime-item">
                 <i class="bi bi-person"></i>
                 <span class="datetime-label">Created By:</span>
-                <span class="datetime-value" id="createdBy">-</span>
+                <span class="datetime-value" id="createdBy">Loading...</span>
             </div>
         </div>
 
@@ -354,6 +354,7 @@
     let uploadedImages = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
+    let currentTechnicianName = '';
     
     function formatDateTime(date) {
         const d = new Date(date);
@@ -367,7 +368,59 @@
         });
     }
     
-    function initializeDateTime() {
+    // Function to get the current technician's name from the database
+    async function getCurrentTechnicianName() {
+        try {
+            // First try to get from localStorage
+            let user = getCurrentUser();
+            let userId = user.id;
+            
+            // If user ID is 'temp' or not a number, try to find by name
+            if (userId === 'temp' || isNaN(parseInt(userId))) {
+                const techniciansResponse = await fetch('/api/technicians');
+                const technicians = await techniciansResponse.json();
+                const matchingTech = technicians.find(t => t.name === user.name);
+                if (matchingTech) {
+                    userId = matchingTech.id;
+                    user.id = userId;
+                    localStorage.setItem('userId', userId);
+                }
+            }
+            
+            // Fetch the technician details from API
+            const response = await fetch('/api/technicians');
+            const technicians = await response.json();
+            
+            // Find the technician by ID
+            const technician = technicians.find(t => t.id == userId);
+            
+            if (technician) {
+                currentTechnicianName = technician.name;
+                // Also update localStorage
+                localStorage.setItem('userName', technician.name);
+                localStorage.setItem('userRole', technician.role);
+                return technician.name;
+            } else {
+                // If not found, return the name from localStorage or default
+                const storedName = localStorage.getItem('userName');
+                if (storedName && storedName !== 'User') {
+                    currentTechnicianName = storedName;
+                    return storedName;
+                }
+                return 'Unknown Technician';
+            }
+        } catch (error) {
+            console.error('Error getting technician name:', error);
+            const storedName = localStorage.getItem('userName');
+            if (storedName && storedName !== 'User') {
+                currentTechnicianName = storedName;
+                return storedName;
+            }
+            return 'Unknown Technician';
+        }
+    }
+    
+    async function initializeDateTime() {
         const now = new Date();
         createdDateTime = now;
         lastSavedDateTime = now;
@@ -375,8 +428,9 @@
         document.getElementById('createdDateTime').textContent = formatDateTime(createdDateTime);
         document.getElementById('lastSavedDateTime').textContent = formatDateTime(lastSavedDateTime);
         
-        const user = getCurrentUser();
-        document.getElementById('createdBy').textContent = user.name || 'Unknown User';
+        // Get the technician name
+        const technicianName = await getCurrentTechnicianName();
+        document.getElementById('createdBy').textContent = technicianName;
     }
     
     function updateLastSaved() {
@@ -428,11 +482,23 @@
             }
             select.innerHTML = options;
             
+            // Auto-select current user
             const currentUser = getCurrentUser();
-            if (currentUser.id) {
-                const optionExists = Array.from(select.options).some(opt => opt.value == currentUser.id);
+            let currentUserId = currentUser.id;
+            
+            // If current user ID is 'temp' or not found, try to find by name
+            if (currentUserId === 'temp' || isNaN(parseInt(currentUserId))) {
+                const matchingTech = technicians.find(t => t.name === currentUser.name);
+                if (matchingTech) {
+                    currentUserId = matchingTech.id;
+                    localStorage.setItem('userId', currentUserId);
+                }
+            }
+            
+            if (currentUserId && !isNaN(parseInt(currentUserId))) {
+                const optionExists = Array.from(select.options).some(opt => opt.value == currentUserId);
                 if (optionExists) {
-                    select.value = currentUser.id;
+                    select.value = currentUserId;
                 }
             }
         } catch (error) {
@@ -516,7 +582,7 @@
         });
     });
     
-    // Image upload handling - FIXED VERSION
+    // Image upload handling
     document.getElementById('imageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -533,11 +599,9 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Add to the uploadedImages array
                     uploadedImages.push(data.image_url);
                     autoSaveForm();
                     
-                    // Create preview element
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
@@ -557,43 +621,21 @@
             }
         }
         
-        // Clear the file input so the same file can be uploaded again if needed
         document.getElementById('imageUpload').value = '';
     });
     
-    // Remove image function - FIXED VERSION
     function removeImage(imageUrl) {
-        console.log('Removing image:', imageUrl);
-        
-        // Remove from uploadedImages array
         const index = uploadedImages.indexOf(imageUrl);
         if (index !== -1) {
             uploadedImages.splice(index, 1);
         }
         
-        // Remove the preview div from DOM
         const previewContainer = document.getElementById('imagePreviewContainer');
-        const previewDivs = previewContainer.querySelectorAll('.image-preview-container');
-        
-        for (let i = 0; i < previewDivs.length; i++) {
-            const div = previewDivs[i];
-            if (div.getAttribute('data-image-url') === imageUrl) {
-                div.remove();
-                break;
-            }
+        const previewDiv = previewContainer.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
+        if (previewDiv) {
+            previewDiv.remove();
         }
         
-        // Also check for old style previews (if any)
-        const oldPreviews = previewContainer.querySelectorAll('.position-relative');
-        for (let i = 0; i < oldPreviews.length; i++) {
-            const img = oldPreviews[i].querySelector('img');
-            if (img && img.src === imageUrl) {
-                oldPreviews[i].remove();
-                break;
-            }
-        }
-        
-        // Save the updated form state
         autoSaveForm();
         showToast('Image removed');
     }
@@ -619,6 +661,7 @@
             technicianId: document.getElementById('technicianId').value,
             technicianNotes: document.getElementById('technicianNotes').value,
             uploadedImages: uploadedImages,
+            createdBy: currentTechnicianName,
             lastSaved: new Date().toISOString()
         };
         
@@ -749,6 +792,7 @@
             reference_type: document.getElementById('referenceType').value,
             reference_number: document.getElementById('referenceNumber').value,
             reference_date: document.getElementById('referenceDate').value,
+            created_by: currentTechnicianName,
             status: 'pending'
         };
         
@@ -791,7 +835,7 @@
     
     // Initialize form
     async function initializeForm() {
-        initializeDateTime();
+        await initializeDateTime();
         await loadTechnicians();
         loadAutoSave();
     }
