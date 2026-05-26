@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        /* Your existing CSS here (keeping it compact) */
         :root {
             --primary-color: #9b59b6;
             --primary-dark: #8e44ad;
@@ -491,8 +490,8 @@
                             <i class="bi bi-plus-circle"></i> New Report
                         </a>
                     </li>
-                    <!-- Reports Dropdown with id for manual initialization -->
-                    <li class="nav-item dropdown" id="reportsDropdown">
+                    <!-- Reports Dropdown -->
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-file-text"></i> Reports
                         </a>
@@ -505,8 +504,9 @@
                             <li><a class="dropdown-item" href="{{ url_for('my_reports') }}"><i class="bi bi-person"></i> My Reports</a></li>
                         </ul>
                     </li>
+                    <!-- Management Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear"></i> Management
                         </a>
                         <ul class="dropdown-menu">
@@ -515,13 +515,15 @@
                             <li><a class="dropdown-item" href="{{ url_for('technicians_page') }}"><i class="bi bi-people"></i> Technicians</a></li>
                         </ul>
                     </li>
+                    <!-- Team Leader -->
                     <li class="nav-item" id="teamLeaderNav">
                         <a class="nav-link" href="{{ url_for('team_leader') }}">
                             <i class="bi bi-check2-square"></i> Team Leader
                         </a>
                     </li>
+                    <!-- User Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle"></i> <span id="userName">User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
@@ -640,50 +642,54 @@
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
         
-        // Function to reinitialize dropdowns (fixes the dropdown issue)
-        function reinitializeDropdowns() {
-            // This forces Bootstrap to re-bind dropdown events
-            const dropdownElements = document.querySelectorAll('.dropdown-toggle');
-            dropdownElements.forEach(element => {
-                // Remove existing dropdown instance if any
-                const dropdown = bootstrap.Dropdown.getInstance(element);
-                if (dropdown) {
-                    dropdown.dispose();
+        // Initialize dropdowns - simple and reliable
+        function initDropdowns() {
+            // Find all dropdown toggles
+            const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            dropdownToggles.forEach(toggle => {
+                // Check if dropdown is already initialized
+                if (!toggle.getAttribute('data-bs-init')) {
+                    toggle.setAttribute('data-bs-init', 'true');
+                    // Bootstrap will automatically initialize via data-bs-toggle
                 }
-                // Create new dropdown instance
-                new bootstrap.Dropdown(element);
             });
         }
         
-        document.addEventListener('DOMContentLoaded', async function() {
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize user display
             const user = getCurrentUser();
             const userNameSpan = document.getElementById('userName');
             if (userNameSpan) {
                 userNameSpan.textContent = user.name || 'User';
             }
             
+            // Check authorization for team leader tab
             if (user.id && user.id !== '1') {
-                try {
-                    const response = await fetch(`/api/technicians/${user.id}/authorization`);
-                    const data = await response.json();
-                    user.isAuthorized = data.authorized;
-                    localStorage.setItem('isAuthorized', data.authorized);
-                } catch (error) {
-                    user.isAuthorized = false;
-                }
+                fetch(`/api/technicians/${user.id}/authorization`)
+                    .then(response => response.json())
+                    .then(data => {
+                        user.isAuthorized = data.authorized;
+                        localStorage.setItem('isAuthorized', data.authorized);
+                        const teamLeaderNav = document.getElementById('teamLeaderNav');
+                        if (teamLeaderNav) {
+                            teamLeaderNav.style.display = data.authorized ? 'block' : 'none';
+                        }
+                    })
+                    .catch(() => {
+                        const teamLeaderNav = document.getElementById('teamLeaderNav');
+                        if (teamLeaderNav) teamLeaderNav.style.display = 'none';
+                    });
             } else if (user.id === '1') {
                 user.isAuthorized = true;
+                const teamLeaderNav = document.getElementById('teamLeaderNav');
+                if (teamLeaderNav) teamLeaderNav.style.display = 'block';
+            } else {
+                const teamLeaderNav = document.getElementById('teamLeaderNav');
+                if (teamLeaderNav) teamLeaderNav.style.display = 'none';
             }
             
-            const teamLeaderNav = document.getElementById('teamLeaderNav');
-            if (teamLeaderNav) {
-                if (user.isAuthorized === true) {
-                    teamLeaderNav.style.display = 'block';
-                } else {
-                    teamLeaderNav.style.display = 'none';
-                }
-            }
-            
+            // Highlight active nav link
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.navbar .nav-link');
             navLinks.forEach(link => {
@@ -691,29 +697,24 @@
                 if (href && href !== '#' && href !== '/logout') {
                     if (currentPath === href || (href === '/dashboard' && currentPath === '/')) {
                         link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
                     }
                 }
             });
             
-            // Reinitialize dropdowns to ensure they work
-            setTimeout(reinitializeDropdowns, 100);
+            // Initialize dropdowns
+            initDropdowns();
         });
         
-        // Also reinitialize dropdowns after any AJAX content loads
-        // This is a MutationObserver to detect when new content is added
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    reinitializeDropdowns();
-                }
-            });
+        // Re-initialize dropdowns after any navigation (for non-full page loads)
+        // This handles cases where Turbo or similar might be used
+        document.addEventListener('click', function(e) {
+            // If a navigation link is clicked, reinitialize dropdowns after a short delay
+            if (e.target.closest('.nav-link') || e.target.closest('.dropdown-item')) {
+                setTimeout(initDropdowns, 100);
+            }
         });
-        
-        // Start observing the main content area for changes
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-            observer.observe(mainContent, { childList: true, subtree: true });
-        }
         
         function showUserProfile() {
             const user = getCurrentUser();
@@ -749,24 +750,6 @@
                 }
             }
         }
-        
-        // Also reinitialize dropdowns when the page is fully loaded (including images)
-        window.addEventListener('load', function() {
-            reinitializeDropdowns();
-        });
-        
-        // Fix for dropdown on dynamic content
-        document.body.addEventListener('click', function(e) {
-            // Check if clicked element is a dropdown toggle or inside a dropdown
-            const dropdownToggle = e.target.closest('.dropdown-toggle');
-            if (dropdownToggle) {
-                // Ensure dropdown is initialized
-                const dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
-                if (!dropdown) {
-                    new bootstrap.Dropdown(dropdownToggle);
-                }
-            }
-        });
     </script>
 </body>
 </html>
