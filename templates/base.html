@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        /* Your existing CSS here (keeping it compact) */
         :root {
             --primary-color: #9b59b6;
             --primary-dark: #8e44ad;
@@ -87,6 +88,18 @@
         .dropdown-item i {
             margin-right: 8px;
             color: var(--primary-color);
+        }
+        
+        /* Ensure dropdowns work properly */
+        .dropdown-toggle::after {
+            display: inline-block;
+            margin-left: 0.255em;
+            vertical-align: 0.255em;
+            content: "";
+            border-top: 0.3em solid;
+            border-right: 0.3em solid transparent;
+            border-bottom: 0;
+            border-left: 0.3em solid transparent;
         }
         
         .main-content {
@@ -492,10 +505,10 @@
                     </li>
                     <!-- Reports Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportsDropdownLink" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <i class="bi bi-file-text"></i> Reports
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" aria-labelledby="reportsDropdownLink">
                             <li><a class="dropdown-item" href="{{ url_for('water_reports') }}"><i class="bi bi-droplet"></i> Water Reports</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('electricity_reports') }}"><i class="bi bi-lightning-charge"></i> Electricity Reports</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('telephone_reports') }}"><i class="bi bi-telephone"></i> Telephone Reports</a></li>
@@ -506,16 +519,15 @@
                     </li>
                     <!-- Management Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="managementDropdownLink" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <i class="bi bi-gear"></i> Management
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" aria-labelledby="managementDropdownLink">
                             <li><a class="dropdown-item" href="{{ url_for('schools_page') }}"><i class="bi bi-building"></i> Schools</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('departments_page') }}"><i class="bi bi-briefcase"></i> Departments</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('technicians_page') }}"><i class="bi bi-people"></i> Technicians</a></li>
                         </ul>
                     </li>
-                    <!-- Team Leader -->
                     <li class="nav-item" id="teamLeaderNav">
                         <a class="nav-link" href="{{ url_for('team_leader') }}">
                             <i class="bi bi-check2-square"></i> Team Leader
@@ -523,10 +535,10 @@
                     </li>
                     <!-- User Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdownLink" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <i class="bi bi-person-circle"></i> <span id="userName">User</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownLink">
                             <li><a class="dropdown-item" href="#" onclick="showUserProfile()"><i class="bi bi-person"></i> Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="switchUser()"><i class="bi bi-arrow-repeat"></i> Switch User</a></li>
@@ -642,54 +654,58 @@
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
         
-        // Initialize dropdowns - simple and reliable
-        function initDropdowns() {
+        // Function to fix dropdowns - this is the key fix
+        function fixAllDropdowns() {
             // Find all dropdown toggles
-            const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+            
             dropdownToggles.forEach(toggle => {
-                // Check if dropdown is already initialized
-                if (!toggle.getAttribute('data-bs-init')) {
-                    toggle.setAttribute('data-bs-init', 'true');
-                    // Bootstrap will automatically initialize via data-bs-toggle
+                // Check if Bootstrap dropdown is already initialized
+                let dropdown = bootstrap.Dropdown.getInstance(toggle);
+                
+                // If not initialized, initialize it
+                if (!dropdown) {
+                    try {
+                        new bootstrap.Dropdown(toggle);
+                        console.log('Initialized dropdown for:', toggle.id || toggle.className);
+                    } catch(e) {
+                        console.warn('Could not initialize dropdown:', e);
+                    }
                 }
             });
         }
         
-        // Run on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize user display
+        // Force initialize dropdowns when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize user info
             const user = getCurrentUser();
             const userNameSpan = document.getElementById('userName');
             if (userNameSpan) {
                 userNameSpan.textContent = user.name || 'User';
             }
             
-            // Check authorization for team leader tab
             if (user.id && user.id !== '1') {
-                fetch(`/api/technicians/${user.id}/authorization`)
-                    .then(response => response.json())
-                    .then(data => {
-                        user.isAuthorized = data.authorized;
-                        localStorage.setItem('isAuthorized', data.authorized);
-                        const teamLeaderNav = document.getElementById('teamLeaderNav');
-                        if (teamLeaderNav) {
-                            teamLeaderNav.style.display = data.authorized ? 'block' : 'none';
-                        }
-                    })
-                    .catch(() => {
-                        const teamLeaderNav = document.getElementById('teamLeaderNav');
-                        if (teamLeaderNav) teamLeaderNav.style.display = 'none';
-                    });
+                try {
+                    const response = await fetch(`/api/technicians/${user.id}/authorization`);
+                    const data = await response.json();
+                    user.isAuthorized = data.authorized;
+                    localStorage.setItem('isAuthorized', data.authorized);
+                } catch (error) {
+                    user.isAuthorized = false;
+                }
             } else if (user.id === '1') {
                 user.isAuthorized = true;
-                const teamLeaderNav = document.getElementById('teamLeaderNav');
-                if (teamLeaderNav) teamLeaderNav.style.display = 'block';
-            } else {
-                const teamLeaderNav = document.getElementById('teamLeaderNav');
-                if (teamLeaderNav) teamLeaderNav.style.display = 'none';
             }
             
-            // Highlight active nav link
+            const teamLeaderNav = document.getElementById('teamLeaderNav');
+            if (teamLeaderNav) {
+                if (user.isAuthorized === true) {
+                    teamLeaderNav.style.display = 'block';
+                } else {
+                    teamLeaderNav.style.display = 'none';
+                }
+            }
+            
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.navbar .nav-link');
             navLinks.forEach(link => {
@@ -697,22 +713,48 @@
                 if (href && href !== '#' && href !== '/logout') {
                     if (currentPath === href || (href === '/dashboard' && currentPath === '/')) {
                         link.classList.add('active');
-                    } else {
-                        link.classList.remove('active');
                     }
                 }
             });
             
-            // Initialize dropdowns
-            initDropdowns();
+            // Fix dropdowns after initial load
+            setTimeout(fixAllDropdowns, 100);
         });
         
-        // Re-initialize dropdowns after any navigation (for non-full page loads)
-        // This handles cases where Turbo or similar might be used
-        document.addEventListener('click', function(e) {
-            // If a navigation link is clicked, reinitialize dropdowns after a short delay
-            if (e.target.closest('.nav-link') || e.target.closest('.dropdown-item')) {
-                setTimeout(initDropdowns, 100);
+        // Fix dropdowns after any AJAX content loads
+        const dropdownObserver = new MutationObserver(function(mutations) {
+            let shouldFix = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    shouldFix = true;
+                }
+            });
+            if (shouldFix) {
+                setTimeout(fixAllDropdowns, 50);
+            }
+        });
+        
+        // Start observing the entire body for changes
+        dropdownObserver.observe(document.body, { childList: true, subtree: true });
+        
+        // Also fix dropdowns on window resize (sometimes affects positioning)
+        window.addEventListener('resize', function() {
+            setTimeout(fixAllDropdowns, 100);
+        });
+        
+        // Handle clicks on dropdown toggles to ensure they work
+        document.body.addEventListener('click', function(e) {
+            const toggle = e.target.closest('.dropdown-toggle');
+            if (toggle) {
+                // Small delay to ensure Bootstrap has time to process
+                setTimeout(() => {
+                    const dropdown = bootstrap.Dropdown.getInstance(toggle);
+                    if (dropdown && toggle.getAttribute('aria-expanded') === 'true') {
+                        // Already open, let Bootstrap handle it
+                    } else if (dropdown) {
+                        dropdown.show();
+                    }
+                }, 10);
             }
         });
         
@@ -750,6 +792,18 @@
                 }
             }
         }
+        
+        // Run fix after full page load including images
+        window.addEventListener('load', function() {
+            fixAllDropdowns();
+        });
+        
+        // Run fix when page becomes visible again (for tab switching)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(fixAllDropdowns, 100);
+            }
+        });
     </script>
 </body>
 </html>
