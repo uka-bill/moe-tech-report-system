@@ -66,15 +66,6 @@
         font-size: 0.85rem;
         color: #2e7d32;
     }
-    .debug-box {
-        background-color: #f0f0f0;
-        padding: 10px;
-        margin-top: 20px;
-        border-radius: 5px;
-        font-family: monospace;
-        font-size: 12px;
-        display: none;
-    }
 </style>
 
 <div class="card">
@@ -279,7 +270,7 @@
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Assign To (Technician) *</label>
                     <select class="form-select" id="technicianId" required>
-                        <option value="">Loading technicians...</option>
+                        <option value="">-- Select Technician --</option>
                     </select>
                 </div>
             </div>
@@ -317,33 +308,70 @@
                 </div>
             </div>
         </form>
-        
-        <!-- Debug Panel -->
-        <div class="debug-box" id="debugBox">
-            <strong>Debug Info:</strong>
-            <div id="debugContent"></div>
-        </div>
-        <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="toggleDebug()">Show Debug</button>
     </div>
 </div>
 
 <script>
+    // Simple function to load technicians - runs immediately
+    (function() {
+        console.log('Script starting...');
+        
+        // Function to load technicians
+        async function loadTechniciansDirect() {
+            console.log('loadTechniciansDirect called');
+            const select = document.getElementById('technicianId');
+            if (!select) {
+                console.error('Could not find technicianId select element');
+                return;
+            }
+            
+            try {
+                console.log('Fetching from /api/technicians');
+                const response = await fetch('/api/technicians');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error('HTTP error: ' + response.status);
+                }
+                
+                const technicians = await response.json();
+                console.log('Technicians received:', technicians);
+                
+                if (!technicians || technicians.length === 0) {
+                    select.innerHTML = '<option value="">No technicians found</option>';
+                    return;
+                }
+                
+                let options = '<option value="">Select Technician</option>';
+                for (let i = 0; i < technicians.length; i++) {
+                    const tech = technicians[i];
+                    const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
+                    options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
+                }
+                select.innerHTML = options;
+                console.log('Dropdown populated with', technicians.length, 'technicians');
+                
+            } catch (error) {
+                console.error('Error loading technicians:', error);
+                select.innerHTML = '<option value="">Error loading technicians</option>';
+            }
+        }
+        
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOMContentLoaded fired');
+                loadTechniciansDirect();
+            });
+        } else {
+            console.log('DOM already loaded');
+            loadTechniciansDirect();
+        }
+    })();
+    
     let uploadedImages = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
-    
-    function toggleDebug() {
-        const box = document.getElementById('debugBox');
-        box.style.display = box.style.display === 'none' ? 'block' : 'none';
-    }
-    
-    function debugLog(message) {
-        console.log(message);
-        const debugContent = document.getElementById('debugContent');
-        if (debugContent) {
-            debugContent.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
-        }
-    }
     
     function formatDateTime(date) {
         const d = new Date(date);
@@ -397,60 +425,6 @@
         }
         autoSaveForm();
     });
-    
-    // Load technicians - SIMPLE DIRECT APPROACH
-    async function loadTechnicians() {
-        debugLog('Starting to load technicians...');
-        
-        try {
-            debugLog('Fetching from /api/technicians...');
-            const response = await fetch('/api/technicians');
-            debugLog('Response status: ' + response.status);
-            
-            if (!response.ok) {
-                throw new Error('HTTP error: ' + response.status);
-            }
-            
-            const technicians = await response.json();
-            debugLog('Received technicians: ' + JSON.stringify(technicians));
-            debugLog('Number of technicians: ' + technicians.length);
-            
-            const select = document.getElementById('technicianId');
-            
-            if (!technicians || technicians.length === 0) {
-                select.innerHTML = '<option value="">No technicians found</option>';
-                debugLog('No technicians found in response');
-                return;
-            }
-            
-            // Build options HTML
-            let options = '<option value="">Select Technician</option>';
-            for (let i = 0; i < technicians.length; i++) {
-                const tech = technicians[i];
-                const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
-                options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
-                debugLog('Added option: ' + roleText + ' ' + tech.name);
-            }
-            select.innerHTML = options;
-            debugLog('Dropdown populated successfully with ' + technicians.length + ' options');
-            
-            // Auto-select current user if exists
-            const currentUser = getCurrentUser();
-            if (currentUser.id) {
-                const optionExists = Array.from(select.options).some(opt => opt.value == currentUser.id);
-                if (optionExists) {
-                    select.value = currentUser.id;
-                    debugLog('Auto-selected user: ' + currentUser.name);
-                }
-            }
-            
-        } catch (error) {
-            debugLog('ERROR loading technicians: ' + error.message);
-            console.error('Error loading technicians:', error);
-            const select = document.getElementById('technicianId');
-            select.innerHTML = '<option value="">Error loading technicians</option>';
-        }
-    }
     
     // Load schools and departments
     async function loadSchools() {
@@ -511,7 +485,6 @@
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
-            debugLog('Report type changed to: ' + reportType);
             
             document.getElementById('waterFields').style.display = 'none';
             document.getElementById('electricityFields').style.display = 'none';
@@ -772,20 +745,12 @@
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
     
     // Initialize form
-    async function initializeForm() {
-        debugLog('=== INITIALIZING NEW REPORT FORM ===');
+    function initializeForm() {
+        console.log('Initializing form...');
         initializeDateTime();
-        debugLog('Date/time initialized');
-        
-        await loadTechnicians();
-        debugLog('Technician loading completed');
-        
         loadAutoSave();
-        debugLog('Auto-save check completed');
-        debugLog('=== INITIALIZATION COMPLETE ===');
     }
     
-    // Run initialization when page loads
     initializeForm();
 </script>
 {% endblock %}
