@@ -66,6 +66,15 @@
         font-size: 0.85rem;
         color: #2e7d32;
     }
+    .debug-box {
+        background-color: #f0f0f0;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        display: none;
+    }
 </style>
 
 <div class="card">
@@ -213,7 +222,7 @@
                 </div>
             </div>
             
-            <!-- Problem Details with ALL options in ONE dropdown -->
+            <!-- Problem Details -->
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label class="form-label fw-bold">Problem Type *</label>
@@ -308,6 +317,13 @@
                 </div>
             </div>
         </form>
+        
+        <!-- Debug Panel -->
+        <div class="debug-box" id="debugBox">
+            <strong>Debug Info:</strong>
+            <div id="debugContent"></div>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="toggleDebug()">Show Debug</button>
     </div>
 </div>
 
@@ -315,6 +331,19 @@
     let uploadedImages = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
+    
+    function toggleDebug() {
+        const box = document.getElementById('debugBox');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function debugLog(message) {
+        console.log(message);
+        const debugContent = document.getElementById('debugContent');
+        if (debugContent) {
+            debugContent.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+        }
+    }
     
     function formatDateTime(date) {
         const d = new Date(date);
@@ -369,29 +398,41 @@
         autoSaveForm();
     });
     
-    // Load technicians - SIMPLE WORKING VERSION
+    // Load technicians - SIMPLE DIRECT APPROACH
     async function loadTechnicians() {
+        debugLog('Starting to load technicians...');
+        
         try {
-            console.log('Loading technicians...');
+            debugLog('Fetching from /api/technicians...');
             const response = await fetch('/api/technicians');
+            debugLog('Response status: ' + response.status);
+            
+            if (!response.ok) {
+                throw new Error('HTTP error: ' + response.status);
+            }
+            
             const technicians = await response.json();
-            console.log('Technicians:', technicians);
+            debugLog('Received technicians: ' + JSON.stringify(technicians));
+            debugLog('Number of technicians: ' + technicians.length);
             
             const select = document.getElementById('technicianId');
             
             if (!technicians || technicians.length === 0) {
                 select.innerHTML = '<option value="">No technicians found</option>';
+                debugLog('No technicians found in response');
                 return;
             }
             
+            // Build options HTML
             let options = '<option value="">Select Technician</option>';
             for (let i = 0; i < technicians.length; i++) {
                 const tech = technicians[i];
                 const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
                 options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
+                debugLog('Added option: ' + roleText + ' ' + tech.name);
             }
             select.innerHTML = options;
-            console.log('Dropdown populated with', technicians.length, 'technicians');
+            debugLog('Dropdown populated successfully with ' + technicians.length + ' options');
             
             // Auto-select current user if exists
             const currentUser = getCurrentUser();
@@ -399,11 +440,15 @@
                 const optionExists = Array.from(select.options).some(opt => opt.value == currentUser.id);
                 if (optionExists) {
                     select.value = currentUser.id;
+                    debugLog('Auto-selected user: ' + currentUser.name);
                 }
             }
+            
         } catch (error) {
+            debugLog('ERROR loading technicians: ' + error.message);
             console.error('Error loading technicians:', error);
-            document.getElementById('technicianId').innerHTML = '<option value="">Error loading technicians</option>';
+            const select = document.getElementById('technicianId');
+            select.innerHTML = '<option value="">Error loading technicians</option>';
         }
     }
     
@@ -466,14 +511,12 @@
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
-            console.log('Report type changed to:', reportType);
+            debugLog('Report type changed to: ' + reportType);
             
-            // Hide all detail fields
             document.getElementById('waterFields').style.display = 'none';
             document.getElementById('electricityFields').style.display = 'none';
             document.getElementById('telephoneFields').style.display = 'none';
             
-            // Show relevant fields
             if (reportType === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
             } else if (reportType === 'electricity') {
@@ -730,11 +773,16 @@
     
     // Initialize form
     async function initializeForm() {
-        console.log('Initializing New Report form...');
+        debugLog('=== INITIALIZING NEW REPORT FORM ===');
         initializeDateTime();
+        debugLog('Date/time initialized');
+        
         await loadTechnicians();
+        debugLog('Technician loading completed');
+        
         loadAutoSave();
-        console.log('Initialization complete');
+        debugLog('Auto-save check completed');
+        debugLog('=== INITIALIZATION COMPLETE ===');
     }
     
     // Run initialization when page loads
