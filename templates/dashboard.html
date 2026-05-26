@@ -47,50 +47,6 @@
         border-bottom: 2px solid var(--primary-light);
     }
     
-    .category-badge {
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .category-water {
-        background-color: #e3f2fd;
-        color: #1976d2;
-    }
-    
-    .category-electricity {
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-    
-    .category-telephone {
-        background-color: #e8f5e9;
-        color: #388e3c;
-    }
-    
-    .status-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 5px;
-    }
-    
-    .status-pending-dot {
-        background-color: #ffc107;
-    }
-    
-    .status-acknowledged-dot {
-        background-color: #28a745;
-    }
-    
-    .status-resolved-dot {
-        background-color: #17a2b8;
-    }
-    
     .quick-stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -232,16 +188,28 @@
         border-radius: 20px;
         font-size: 0.9rem;
         text-align: right;
+        display: inline-block;
+        min-width: 200px;
     }
     
     .datetime-badge .date {
         font-weight: bold;
+        font-size: 1rem;
     }
     
     .datetime-badge .time {
         font-family: monospace;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
+        font-weight: bold;
         margin-top: 3px;
+    }
+    
+    .no-reports-message {
+        text-align: center;
+        padding: 50px;
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 20px;
     }
 </style>
 
@@ -249,17 +217,17 @@
     <!-- Welcome Header with Date and Time -->
     <div class="welcome-header">
         <div class="row align-items-center">
-            <div class="col-md-8">
+            <div class="col-md-7">
                 <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
                 <p class="mb-0 mt-1 opacity-75">Welcome back, <strong id="welcomeName"></strong>!</p>
             </div>
-            <div class="col-md-4 text-end">
+            <div class="col-md-5 text-end">
                 <div class="datetime-badge">
                     <div class="date">
-                        <i class="bi bi-calendar3"></i> <span id="currentDate"></span>
+                        <i class="bi bi-calendar3"></i> <span id="currentDate">Loading...</span>
                     </div>
                     <div class="time">
-                        <i class="bi bi-clock"></i> <span id="currentTime"></span>
+                        <i class="bi bi-clock"></i> <span id="currentTime">--:--:--</span>
                     </div>
                 </div>
             </div>
@@ -302,11 +270,11 @@
         </div>
         <div class="card-body">
             <div id="tenderReportsList">
-                <div class="text-center py-3">Loading urgent reports...</div>
+                <div class="text-center py-3">No urgent reports at this time.</div>
             </div>
             <div class="text-center mt-3">
-                <a href="{{ url_for('reports_page') }}?filter=priority_with_tender" class="btn btn-warning btn-sm">
-                    <i class="bi bi-eye"></i> View All Priority with Tender Reports
+                <a href="{{ url_for('reports_page') }}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-eye"></i> View All Reports
                 </a>
             </div>
         </div>
@@ -395,10 +363,10 @@
                     </span>
                 </div>
                 <div id="latestReportsList">
-                    <div class="text-center py-3">Loading latest reports...</div>
+                    <div class="text-center py-3 text-muted">No reports yet. Click "New Report" to create your first report.</div>
                 </div>
                 <div class="text-center mt-3">
-                    <a href="{{ url_for('reports_page') }}" class="btn btn-sm btn-outline-primary">View All Reports →</a>
+                    <a href="{{ url_for('new_report') }}" class="btn btn-sm btn-primary">Create New Report →</a>
                 </div>
             </div>
         </div>
@@ -410,7 +378,7 @@
                     <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgment
                 </div>
                 <div id="pendingAckList">
-                    <div class="text-center py-3">No pending acknowledgments</div>
+                    <div class="text-center py-3 text-success">All reports acknowledged!</div>
                 </div>
                 {% if is_team_leader %}
                 <div class="text-center mt-3">
@@ -431,7 +399,7 @@
                 <div class="chart-wrapper">
                     <canvas id="utilityChart" height="250"></canvas>
                 </div>
-                <div class="chart-stats" id="utilityStats"></div>
+                <div class="chart-stats" id="utilityStats">No data available</div>
             </div>
         </div>
         <div class="col-md-6">
@@ -442,7 +410,7 @@
                 <div class="chart-wrapper">
                     <canvas id="statusChart" height="250"></canvas>
                 </div>
-                <div class="chart-stats" id="statusStats"></div>
+                <div class="chart-stats" id="statusStats">No data available</div>
             </div>
         </div>
     </div>
@@ -456,7 +424,7 @@
                 <div class="chart-wrapper">
                     <canvas id="acknowledgmentChart" height="250"></canvas>
                 </div>
-                <div class="chart-stats" id="acknowledgmentStats"></div>
+                <div class="chart-stats" id="acknowledgmentStats">No data available</div>
             </div>
         </div>
         <div class="col-md-6">
@@ -467,41 +435,69 @@
                 <div class="chart-wrapper">
                     <canvas id="trendChart" height="250"></canvas>
                 </div>
-                <div class="chart-stats" id="trendStats"></div>
+                <div class="chart-stats" id="trendStats">No data available</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let utilityChart, statusChart, acknowledgmentChart, trendChart;
-    let timeInterval;
-    
-    // Update time every second
+    // Function to update date and time - runs independently
     function updateDateTime() {
-        const now = new Date();
-        
-        // Format date: 26 May 2026
-        const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
-        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', dateOptions);
-        
-        // Format time: 14:30:45
-        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-        document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-GB', timeOptions);
+        try {
+            const now = new Date();
+            
+            // Format date: 26 May 2026
+            const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                dateElement.textContent = now.toLocaleDateString('en-GB', dateOptions);
+            }
+            
+            // Format time: 14:30:45
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = now.toLocaleTimeString('en-GB', timeOptions);
+            }
+        } catch (error) {
+            console.error('Error updating date/time:', error);
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) dateElement.textContent = 'Date unavailable';
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) timeElement.textContent = '--:--:--';
+        }
     }
     
-    const user = getCurrentUser();
-    document.getElementById('welcomeName').textContent = user.name || 'Technician';
+    // Set welcome name
+    try {
+        const user = getCurrentUser();
+        const welcomeElement = document.getElementById('welcomeName');
+        if (welcomeElement) {
+            welcomeElement.textContent = user.name || 'Technician';
+        }
+    } catch (error) {
+        console.error('Error getting user:', error);
+        document.getElementById('welcomeName').textContent = 'User';
+    }
     
-    // Start the clock
+    // Initialize date/time immediately
     updateDateTime();
-    timeInterval = setInterval(updateDateTime, 1000);
+    
+    // Update time every second
+    setInterval(updateDateTime, 1000);
+    
+    let utilityChart, statusChart, acknowledgmentChart, trendChart;
     
     function formatDateOnly(dateString) {
         if (!dateString) return '-';
-        const date = new Date(dateString);
-        date.setHours(date.getHours() + 8);
-        return date.toLocaleDateString('en-GB');
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleDateString('en-GB');
+        } catch (e) {
+            return dateString;
+        }
     }
     
     function getUtilityIcon(type) {
@@ -533,13 +529,14 @@
             
         } catch (error) {
             console.error('Error loading dashboard:', error);
-            showToast('Error loading dashboard data', 'error');
         }
     }
     
     function updateTenderReports(reports) {
         const tenderReports = reports.filter(r => r.priority_with_tender === true);
         const container = document.getElementById('tenderReportsList');
+        
+        if (!container) return;
         
         if (tenderReports.length === 0) {
             container.innerHTML = `
@@ -606,34 +603,57 @@
     }
     
     function updateStatsCards(stats) {
-        document.getElementById('totalReports').textContent = stats.total;
-        document.getElementById('todayReports').textContent = stats.today;
-        document.getElementById('todayPending').textContent = stats.todayPending;
-        document.getElementById('pendingAckCount').textContent = stats.pendingAck;
-        document.getElementById('acknowledgedCount').textContent = stats.acknowledged;
+        const elements = ['totalReports', 'todayReports', 'todayPending', 'pendingAckCount', 'acknowledgedCount'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = stats[id === 'todayPending' ? 'todayPending' : id === 'pendingAckCount' ? 'pendingAck' : id === 'acknowledgedCount' ? 'acknowledged' : id] || 0;
+        });
+        if (document.getElementById('totalReports')) document.getElementById('totalReports').textContent = stats.total;
+        if (document.getElementById('todayReports')) document.getElementById('todayReports').textContent = stats.today;
+        if (document.getElementById('todayPending')) document.getElementById('todayPending').textContent = stats.todayPending;
+        if (document.getElementById('pendingAckCount')) document.getElementById('pendingAckCount').textContent = stats.pendingAck;
+        if (document.getElementById('acknowledgedCount')) document.getElementById('acknowledgedCount').textContent = stats.acknowledged;
     }
     
     function updateCategoryStats(reports, stats) {
-        document.getElementById('waterTotal').textContent = stats.water.total;
-        document.getElementById('waterPending').textContent = stats.water.pending;
-        document.getElementById('waterAck').textContent = stats.water.acknowledged;
-        document.getElementById('waterResolved').textContent = stats.water.resolved;
         const waterProgress = stats.water.total > 0 ? (stats.water.acknowledged / stats.water.total) * 100 : 0;
-        document.getElementById('waterProgress').style.width = waterProgress + '%';
+        const waterProgressEl = document.getElementById('waterProgress');
+        if (waterProgressEl) waterProgressEl.style.width = waterProgress + '%';
         
-        document.getElementById('electricityTotal').textContent = stats.electricity.total;
-        document.getElementById('electricityPending').textContent = stats.electricity.pending;
-        document.getElementById('electricityAck').textContent = stats.electricity.acknowledged;
-        document.getElementById('electricityResolved').textContent = stats.electricity.resolved;
         const elecProgress = stats.electricity.total > 0 ? (stats.electricity.acknowledged / stats.electricity.total) * 100 : 0;
-        document.getElementById('electricityProgress').style.width = elecProgress + '%';
+        const elecProgressEl = document.getElementById('electricityProgress');
+        if (elecProgressEl) elecProgressEl.style.width = elecProgress + '%';
         
-        document.getElementById('telephoneTotal').textContent = stats.telephone.total;
-        document.getElementById('telephonePending').textContent = stats.telephone.pending;
-        document.getElementById('telephoneAck').textContent = stats.telephone.acknowledged;
-        document.getElementById('telephoneResolved').textContent = stats.telephone.resolved;
         const telProgress = stats.telephone.total > 0 ? (stats.telephone.acknowledged / stats.telephone.total) * 100 : 0;
-        document.getElementById('telephoneProgress').style.width = telProgress + '%';
+        const telProgressEl = document.getElementById('telephoneProgress');
+        if (telProgressEl) telProgressEl.style.width = telProgress + '%';
+        
+        const waterTotalEl = document.getElementById('waterTotal');
+        if (waterTotalEl) waterTotalEl.textContent = stats.water.total;
+        const waterPendingEl = document.getElementById('waterPending');
+        if (waterPendingEl) waterPendingEl.textContent = stats.water.pending;
+        const waterAckEl = document.getElementById('waterAck');
+        if (waterAckEl) waterAckEl.textContent = stats.water.acknowledged;
+        const waterResolvedEl = document.getElementById('waterResolved');
+        if (waterResolvedEl) waterResolvedEl.textContent = stats.water.resolved;
+        
+        const elecTotalEl = document.getElementById('electricityTotal');
+        if (elecTotalEl) elecTotalEl.textContent = stats.electricity.total;
+        const elecPendingEl = document.getElementById('electricityPending');
+        if (elecPendingEl) elecPendingEl.textContent = stats.electricity.pending;
+        const elecAckEl = document.getElementById('electricityAck');
+        if (elecAckEl) elecAckEl.textContent = stats.electricity.acknowledged;
+        const elecResolvedEl = document.getElementById('electricityResolved');
+        if (elecResolvedEl) elecResolvedEl.textContent = stats.electricity.resolved;
+        
+        const telTotalEl = document.getElementById('telephoneTotal');
+        if (telTotalEl) telTotalEl.textContent = stats.telephone.total;
+        const telPendingEl = document.getElementById('telephonePending');
+        if (telPendingEl) telPendingEl.textContent = stats.telephone.pending;
+        const telAckEl = document.getElementById('telephoneAck');
+        if (telAckEl) telAckEl.textContent = stats.telephone.acknowledged;
+        const telResolvedEl = document.getElementById('telephoneResolved');
+        if (telResolvedEl) telResolvedEl.textContent = stats.telephone.resolved;
     }
     
     function updateLatestReports(reports) {
@@ -645,6 +665,8 @@
         
         const latest = filtered.slice(0, 10);
         const container = document.getElementById('latestReportsList');
+        
+        if (!container) return;
         
         if (latest.length === 0) {
             container.innerHTML = '<div class="text-center py-3 text-muted">No reports found</div>';
@@ -663,11 +685,9 @@
                 </div>
                 <div class="report-meta">
                     <span>
-                        <span class="status-indicator status-${report.status === 'pending' ? 'pending-dot' : report.status === 'resolved' ? 'resolved-dot' : 'acknowledged-dot'}"></span>
                         Status: ${report.status.replace('_', ' ')}
                     </span>
                     <span>
-                        <i class="bi bi-check2-circle"></i> 
                         ${report.team_leader_acknowledged ? '<span class="text-success">Acknowledged</span>' : '<span class="text-warning">Pending Ack</span>'}
                     </span>
                     <span><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</span>
@@ -680,6 +700,8 @@
     function updatePendingAckList(reports) {
         const pending = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved').slice(0, 5);
         const container = document.getElementById('pendingAckList');
+        
+        if (!container) return;
         
         if (pending.length === 0) {
             container.innerHTML = '<div class="text-center py-3 text-success"><i class="bi bi-check-circle"></i> All reports acknowledged!</div>';
@@ -698,120 +720,70 @@
                     <span>${report.problem_type || '-'}</span>
                     <span><i class="bi bi-person"></i> ${report.technician_name || '-'}</span>
                 </div>
-                ${isTeamLeader() ? `
-                <button class="btn btn-sm btn-primary mt-2" onclick="event.stopPropagation(); quickAcknowledge(${report.id})">
-                    <i class="bi bi-check2-square"></i> Acknowledge Now
-                </button>
-                ` : ''}
             </div>
         `).join('');
     }
     
-    async function quickAcknowledge(id) {
-        const notes = prompt('Enter acknowledgment notes (optional):');
-        try {
-            const response = await fetch(`/api/technical-reports/${id}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    team_leader_id: getCurrentUser().id,
-                    team_leader_notes: notes || 'Acknowledged from dashboard'
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                showToast('Report acknowledged successfully');
-                loadDashboardData();
-            } else {
-                showToast(data.error || 'Failed to acknowledge', 'error');
-            }
-        } catch (error) {
-            showToast('Error acknowledging report', 'error');
-        }
-    }
-    
     function updateCharts(reports, stats) {
+        // Simple chart data - show message if no data
+        const totalReports = reports.length;
+        
+        if (totalReports === 0) {
+            return;
+        }
+        
         const pendingCount = reports.filter(r => r.status === 'pending').length;
         const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
         const resolvedCount = reports.filter(r => r.status === 'resolved').length;
         
-        const utilityCtx = document.getElementById('utilityChart').getContext('2d');
-        if (utilityChart) utilityChart.destroy();
-        utilityChart = new Chart(utilityCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Water', 'Electricity', 'Telephone'],
-                datasets: [{
-                    label: 'Number of Reports',
-                    data: [stats.water.total, stats.electricity.total, stats.telephone.total],
-                    backgroundColor: ['#1976d2', '#f57c00', '#388e3c'],
-                    borderRadius: 8,
-                    barPercentage: 0.6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    tooltip: { callbacks: { label: function(context) { return `${context.dataset.label}: ${context.raw} reports`; } } }
+        const utilityCtx = document.getElementById('utilityChart')?.getContext('2d');
+        if (utilityCtx && utilityChart) utilityChart.destroy();
+        if (utilityCtx) {
+            utilityChart = new Chart(utilityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Water', 'Electricity', 'Telephone'],
+                    datasets: [{
+                        label: 'Number of Reports',
+                        data: [stats.water.total, stats.electricity.total, stats.telephone.total],
+                        backgroundColor: ['#1976d2', '#f57c00', '#388e3c']
+                    }]
                 },
-                scales: {
-                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Reports' } },
-                    x: { title: { display: true, text: 'Utility Type' } }
-                }
-            }
-        });
-        document.getElementById('utilityStats').innerHTML = `<span>💧 Water: ${stats.water.total}</span> | <span>⚡ Electricity: ${stats.electricity.total}</span> | <span>📞 Telephone: ${stats.telephone.total}</span>`;
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            const utilityStats = document.getElementById('utilityStats');
+            if (utilityStats) utilityStats.innerHTML = `<span>💧 Water: ${stats.water.total}</span> | <span>⚡ Electricity: ${stats.electricity.total}</span> | <span>📞 Telephone: ${stats.telephone.total}</span>`;
+        }
         
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        if (statusChart) statusChart.destroy();
-        statusChart = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Pending', 'In Progress', 'Resolved'],
-                datasets: [{
-                    data: [pendingCount, inProgressCount, resolvedCount],
-                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745'],
-                    borderWidth: 2,
-                    borderColor: 'white'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: { callbacks: { label: function(context) { return `${context.label}: ${context.raw} reports (${((context.raw / reports.length) * 100).toFixed(1)}%)`; } } }
-                }
-            }
-        });
-        const totalReports = reports.length;
-        document.getElementById('statusStats').innerHTML = `<span>🟡 Pending: ${pendingCount} (${((pendingCount/totalReports)*100).toFixed(1)}%)</span> | <span>🔵 In Progress: ${inProgressCount} (${((inProgressCount/totalReports)*100).toFixed(1)}%)</span> | <span>🟢 Resolved: ${resolvedCount} (${((resolvedCount/totalReports)*100).toFixed(1)}%)</span>`;
+        const statusCtx = document.getElementById('statusChart')?.getContext('2d');
+        if (statusCtx && statusChart) statusChart.destroy();
+        if (statusCtx) {
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'In Progress', 'Resolved'],
+                    datasets: [{ data: [pendingCount, inProgressCount, resolvedCount], backgroundColor: ['#ffc107', '#17a2b8', '#28a745'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            const statusStats = document.getElementById('statusStats');
+            if (statusStats) statusStats.innerHTML = `<span>🟡 Pending: ${pendingCount} (${((pendingCount/totalReports)*100).toFixed(1)}%)</span> | <span>🔵 In Progress: ${inProgressCount} (${((inProgressCount/totalReports)*100).toFixed(1)}%)</span> | <span>🟢 Resolved: ${resolvedCount} (${((resolvedCount/totalReports)*100).toFixed(1)}%)</span>`;
+        }
         
-        const ackCtx = document.getElementById('acknowledgmentChart').getContext('2d');
-        if (acknowledgmentChart) acknowledgmentChart.destroy();
-        acknowledgmentChart = new Chart(ackCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Acknowledged', 'Pending Acknowledgment'],
-                datasets: [{
-                    data: [stats.acknowledged, stats.pendingAck],
-                    backgroundColor: ['#28a745', '#dc3545'],
-                    borderWidth: 2,
-                    borderColor: 'white'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: { callbacks: { label: function(context) { return `${context.label}: ${context.raw} reports (${((context.raw / totalReports) * 100).toFixed(1)}%)`; } } }
-                }
-            }
-        });
-        document.getElementById('acknowledgmentStats').innerHTML = `<span>✅ Acknowledged: ${stats.acknowledged} (${((stats.acknowledged/totalReports)*100).toFixed(1)}%)</span> | <span>⏳ Pending: ${stats.pendingAck} (${((stats.pendingAck/totalReports)*100).toFixed(1)}%)</span>`;
+        const ackCtx = document.getElementById('acknowledgmentChart')?.getContext('2d');
+        if (ackCtx && acknowledgmentChart) acknowledgmentChart.destroy();
+        if (ackCtx) {
+            acknowledgmentChart = new Chart(ackCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Acknowledged', 'Pending'],
+                    datasets: [{ data: [stats.acknowledged, stats.pendingAck], backgroundColor: ['#28a745', '#dc3545'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            const ackStats = document.getElementById('acknowledgmentStats');
+            if (ackStats) ackStats.innerHTML = `<span>✅ Acknowledged: ${stats.acknowledged} (${((stats.acknowledged/totalReports)*100).toFixed(1)}%)</span> | <span>⏳ Pending: ${stats.pendingAck} (${((stats.pendingAck/totalReports)*100).toFixed(1)}%)</span>`;
+        }
         
         const last7Days = getLast7Days();
         const weeklyData = last7Days.map(day => {
@@ -822,45 +794,21 @@
             }).length;
         });
         
-        const trendCtx = document.getElementById('trendChart').getContext('2d');
-        if (trendChart) trendChart.destroy();
-        trendChart = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: last7Days.map(d => {
-                    const date = new Date(d);
-                    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
-                }),
-                datasets: [{
-                    label: 'Reports Submitted',
-                    data: weeklyData,
-                    borderColor: '#9b59b6',
-                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#9b59b6',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    tooltip: { callbacks: { label: function(context) { return `${context.dataset.label}: ${context.raw} reports`; } } }
+        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+        if (trendCtx && trendChart) trendChart.destroy();
+        if (trendCtx) {
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days.map(d => d.substring(5, 10)),
+                    datasets: [{ label: 'Reports', data: weeklyData, borderColor: '#9b59b6', tension: 0.4 }]
                 },
-                scales: {
-                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Reports' } },
-                    x: { title: { display: true, text: 'Date' } }
-                }
-            }
-        });
-        const totalWeekly = weeklyData.reduce((a, b) => a + b, 0);
-        const avgWeekly = (totalWeekly / 7).toFixed(1);
-        document.getElementById('trendStats').innerHTML = `<span>📊 Total this week: ${totalWeekly} reports</span> | <span>📈 Daily average: ${avgWeekly} reports</span>`;
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+            const totalWeekly = weeklyData.reduce((a, b) => a + b, 0);
+            const trendStats = document.getElementById('trendStats');
+            if (trendStats) trendStats.innerHTML = `<span>📊 Total this week: ${totalWeekly} reports</span> | <span>📈 Daily average: ${(totalWeekly/7).toFixed(1)}</span>`;
+        }
     }
     
     function getLast7Days() {
@@ -878,16 +826,17 @@
     }
     
     function displayEmptyState() {
-        const container = document.getElementById('latestReportsList');
-        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
-        document.getElementById('tenderReportsList').innerHTML = '<div class="text-center py-3">No reports yet</div>';
+        const latestContainer = document.getElementById('latestReportsList');
+        if (latestContainer) {
+            latestContainer.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
+        }
+        const tenderContainer = document.getElementById('tenderReportsList');
+        if (tenderContainer) {
+            tenderContainer.innerHTML = '<div class="text-center py-3">No urgent reports yet</div>';
+        }
     }
     
-    // Clean up interval when page unloads
-    window.addEventListener('beforeunload', function() {
-        if (timeInterval) clearInterval(timeInterval);
-    });
-    
+    // Load dashboard data
     loadDashboardData();
     setInterval(loadDashboardData, 30000);
 </script>
