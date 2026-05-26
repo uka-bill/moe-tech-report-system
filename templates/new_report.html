@@ -213,12 +213,34 @@
                 </div>
             </div>
             
-            <!-- Problem Details -->
+            <!-- Problem Details - HARDCODED OPTIONS -->
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label class="form-label fw-bold">Problem Type *</label>
                     <select class="form-select" id="problemType" required>
                         <option value="">Select Problem Type</option>
+                        <option value="Leakage">Leakage</option>
+                        <option value="Low Pressure">Low Pressure</option>
+                        <option value="No Water">No Water</option>
+                        <option value="Pipe Burst">Pipe Burst</option>
+                        <option value="Water Quality Issue">Water Quality Issue</option>
+                        <option value="Pump Failure">Pump Failure</option>
+                        <option value="Tank Issue">Tank Issue</option>
+                        <option value="Power Outage">Power Outage</option>
+                        <option value="Faulty Wiring">Faulty Wiring</option>
+                        <option value="Tripped Breaker">Tripped Breaker</option>
+                        <option value="Generator Issue">Generator Issue</option>
+                        <option value="Electrical Hazard">Electrical Hazard</option>
+                        <option value="Flickering Lights">Flickering Lights</option>
+                        <option value="Dead Socket">Dead Socket</option>
+                        <option value="Dead Line">Dead Line</option>
+                        <option value="Static Noise">Static Noise</option>
+                        <option value="Call Drops">Call Drops</option>
+                        <option value="PBX Issue">PBX Issue</option>
+                        <option value="Internet Connectivity Issue">Internet Connectivity Issue</option>
+                        <option value="No Dial Tone">No Dial Tone</option>
+                        <option value="Crossed Lines">Crossed Lines</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
             </div>
@@ -244,7 +266,6 @@
                     <select class="form-select" id="technicianId" required>
                         <option value="">Loading technicians...</option>
                     </select>
-                    <small class="text-muted" id="techFilterNote"></small>
                 </div>
             </div>
             
@@ -286,7 +307,6 @@
 
 <script>
     let uploadedImages = [];
-    let allTechnicians = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
     
@@ -343,178 +363,41 @@
         autoSaveForm();
     });
     
-    // Initialize problem type dropdown for Water (called immediately)
-    function initializeProblemTypeOptions() {
-        const problemSelect = document.getElementById('problemType');
-        problemSelect.innerHTML = `
-            <option value="">Select Problem Type</option>
-            <option value="Leakage">Leakage</option>
-            <option value="Low Pressure">Low Pressure</option>
-            <option value="No Water">No Water</option>
-            <option value="Pipe Burst">Pipe Burst</option>
-            <option value="Water Quality Issue">Water Quality Issue</option>
-            <option value="Pump Failure">Pump Failure</option>
-            <option value="Tank Issue">Tank Issue</option>
-            <option value="Other">Other</option>
-        `;
-    }
-    
-    // Update problem type based on report type
-    function updateProblemTypeOptions(reportType) {
-        const problemSelect = document.getElementById('problemType');
-        
-        if (reportType === 'water') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Leakage">Leakage</option>
-                <option value="Low Pressure">Low Pressure</option>
-                <option value="No Water">No Water</option>
-                <option value="Pipe Burst">Pipe Burst</option>
-                <option value="Water Quality Issue">Water Quality Issue</option>
-                <option value="Pump Failure">Pump Failure</option>
-                <option value="Tank Issue">Tank Issue</option>
-                <option value="Other">Other</option>
-            `;
-        } else if (reportType === 'electricity') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Power Outage">Power Outage</option>
-                <option value="Faulty Wiring">Faulty Wiring</option>
-                <option value="Tripped Breaker">Tripped Breaker</option>
-                <option value="Generator Issue">Generator Issue</option>
-                <option value="Electrical Hazard">Electrical Hazard</option>
-                <option value="Flickering Lights">Flickering Lights</option>
-                <option value="Dead Socket">Dead Socket</option>
-                <option value="Other">Other</option>
-            `;
-        } else if (reportType === 'telephone') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Dead Line">Dead Line</option>
-                <option value="Static Noise">Static Noise</option>
-                <option value="Call Drops">Call Drops</option>
-                <option value="PBX Issue">PBX Issue</option>
-                <option value="Internet Connectivity Issue">Internet Connectivity Issue</option>
-                <option value="No Dial Tone">No Dial Tone</option>
-                <option value="Crossed Lines">Crossed Lines</option>
-                <option value="Other">Other</option>
-            `;
-        }
-    }
-    
-    // Load technicians and populate dropdown
-    async function loadAndPopulateTechnicians() {
-        console.log('Loading technicians from API...');
-        
+    // Load technicians - SIMPLE VERSION
+    async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
             const technicians = await response.json();
-            console.log('Raw technicians data:', technicians);
+            
+            const select = document.getElementById('technicianId');
             
             if (!technicians || technicians.length === 0) {
-                console.warn('No technicians found');
-                const select = document.getElementById('technicianId');
-                select.innerHTML = '<option value="">No technicians found</option>';
-                document.getElementById('techFilterNote').innerHTML = '<span class="text-danger">⚠️ No technicians found. Please add technicians first.</span>';
-                allTechnicians = [];
+                select.innerHTML = '<option value="">No technicians found. Please add technicians first.</option>';
                 return;
             }
             
-            // Store all technicians
-            allTechnicians = technicians;
+            select.innerHTML = '<option value="">Select Technician</option>';
             
-            // Get current report type (default is 'water' since it's checked)
-            const currentReportType = document.querySelector('input[name="reportType"]:checked').value;
-            console.log('Current report type:', currentReportType);
+            technicians.forEach(tech => {
+                const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
+                const option = document.createElement('option');
+                option.value = tech.id;
+                option.textContent = `${roleText} ${tech.name}`;
+                select.appendChild(option);
+            });
             
-            // Filter and display technicians
-            filterAndDisplayTechnicians(currentReportType);
-            
+            // Auto-select current user if matches
+            const currentUser = getCurrentUser();
+            if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
+                const optionExists = Array.from(select.options).some(opt => opt.value === currentUser.id);
+                if (optionExists) {
+                    select.value = currentUser.id;
+                }
+            }
         } catch (error) {
             console.error('Error loading technicians:', error);
             const select = document.getElementById('technicianId');
             select.innerHTML = '<option value="">Error loading technicians</option>';
-            document.getElementById('techFilterNote').innerHTML = '<span class="text-danger">⚠️ Error loading technicians. Please refresh.</span>';
-        }
-    }
-    
-    // Filter and display technicians based on report type
-    function filterAndDisplayTechnicians(reportType) {
-        const select = document.getElementById('technicianId');
-        
-        console.log(`Filtering technicians for: ${reportType}`);
-        console.log('All technicians:', allTechnicians);
-        
-        if (!allTechnicians || allTechnicians.length === 0) {
-            select.innerHTML = '<option value="">No technicians available</option>';
-            document.getElementById('techFilterNote').innerHTML = '<span class="text-danger">⚠️ No technicians found. Please add technicians in Management tab.</span>';
-            select.disabled = true;
-            return;
-        }
-        
-        // Filter technicians who have the required specialization
-        const filteredTechnicians = allTechnicians.filter(tech => {
-            let specializations = tech.specializations;
-            
-            // Handle different formats of specializations
-            if (!specializations) {
-                return false;
-            }
-            
-            if (typeof specializations === 'string') {
-                try {
-                    specializations = JSON.parse(specializations);
-                } catch (e) {
-                    specializations = [];
-                }
-            }
-            
-            if (!Array.isArray(specializations)) {
-                specializations = [];
-            }
-            
-            console.log(`Technician ${tech.name}: specializations =`, specializations);
-            return specializations.includes(reportType);
-        });
-        
-        console.log(`Filtered technicians for ${reportType}:`, filteredTechnicians);
-        
-        if (filteredTechnicians.length === 0) {
-            select.innerHTML = '<option value="">No technicians available for this type</option>';
-            document.getElementById('techFilterNote').innerHTML = `<span class="text-danger">⚠️ No technicians found with ${reportType} specialization. Please edit a technician and add this specialization.</span>`;
-            select.disabled = true;
-        } else {
-            select.innerHTML = '<option value="">Select Technician</option>' + 
-                filteredTechnicians.map(tech => {
-                    const roleBadge = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Tech';
-                    let specializations = tech.specializations;
-                    if (typeof specializations === 'string') {
-                        try {
-                            specializations = JSON.parse(specializations);
-                        } catch (e) {
-                            specializations = [];
-                        }
-                    }
-                    if (!Array.isArray(specializations)) specializations = [];
-                    const specText = specializations.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
-                    return `<option value="${tech.id}">${roleBadge} ${escapeHtml(tech.name)} - [${specText}]</option>`;
-                }).join('');
-            select.disabled = false;
-            document.getElementById('techFilterNote').innerHTML = `<span class="text-success">✅ ${filteredTechnicians.length} technician(s) available for ${reportType} issues</span>`;
-        }
-        
-        // Auto-select current user if matches
-        const currentUser = getCurrentUser();
-        if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
-            const optionExists = Array.from(select.options).some(opt => opt.value === currentUser.id);
-            if (optionExists) {
-                select.value = currentUser.id;
-                console.log(`Auto-selected current user: ${currentUser.name}`);
-            }
         }
     }
     
@@ -567,11 +450,10 @@
         autoSaveForm();
     });
     
-    // Handle report type change
+    // Handle report type change - Update problem type dropdown
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
-            console.log(`Report type changed to: ${reportType}`);
             
             // Hide all detail fields
             document.getElementById('waterFields').style.display = 'none';
@@ -581,17 +463,12 @@
             // Show relevant fields
             if (reportType === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
-                updateProblemTypeOptions('water');
             } else if (reportType === 'electricity') {
                 document.getElementById('electricityFields').style.display = 'flex';
-                updateProblemTypeOptions('electricity');
             } else if (reportType === 'telephone') {
                 document.getElementById('telephoneFields').style.display = 'flex';
-                updateProblemTypeOptions('telephone');
             }
             
-            // Filter technicians based on selected report type
-            filterAndDisplayTechnicians(reportType);
             autoSaveForm();
         });
     });
@@ -755,8 +632,6 @@
             document.getElementById('priority').disabled = false;
             clearAutoSave();
             initializeDateTime();
-            initializeProblemTypeOptions();
-            filterAndDisplayTechnicians('water');
             showToast('Form cleared');
         }
     }
@@ -840,21 +715,11 @@
     // Set default reference date to today
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
     
-    // Initialize form - THIS IS THE KEY
+    // Initialize form
     async function initializeForm() {
-        console.log('Initializing New Report form...');
         initializeDateTime();
-        
-        // Initialize problem type options for Water (default) - THIS FIXES THE WATER TAB ISSUE
-        initializeProblemTypeOptions();
-        
-        // Load and populate technicians
-        await loadAndPopulateTechnicians();
-        
-        // Load auto-save draft
+        await loadTechnicians();
         loadAutoSave();
-        
-        console.log('Initialization complete');
     }
     
     initializeForm();
