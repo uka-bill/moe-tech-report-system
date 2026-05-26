@@ -66,6 +66,45 @@
         font-size: 0.85rem;
         color: #2e7d32;
     }
+    .image-preview-container {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .image-preview {
+        width: 150px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--primary-light);
+        transition: transform 0.2s;
+    }
+    .image-preview:hover {
+        transform: scale(1.05);
+        border-color: var(--primary-color);
+    }
+    .remove-image-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .remove-image-btn:hover {
+        background-color: #c82333;
+        transform: scale(1.1);
+    }
 </style>
 
 <div class="card">
@@ -312,63 +351,6 @@
 </div>
 
 <script>
-    // Simple function to load technicians - runs immediately
-    (function() {
-        console.log('Script starting...');
-        
-        // Function to load technicians
-        async function loadTechniciansDirect() {
-            console.log('loadTechniciansDirect called');
-            const select = document.getElementById('technicianId');
-            if (!select) {
-                console.error('Could not find technicianId select element');
-                return;
-            }
-            
-            try {
-                console.log('Fetching from /api/technicians');
-                const response = await fetch('/api/technicians');
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error('HTTP error: ' + response.status);
-                }
-                
-                const technicians = await response.json();
-                console.log('Technicians received:', technicians);
-                
-                if (!technicians || technicians.length === 0) {
-                    select.innerHTML = '<option value="">No technicians found</option>';
-                    return;
-                }
-                
-                let options = '<option value="">Select Technician</option>';
-                for (let i = 0; i < technicians.length; i++) {
-                    const tech = technicians[i];
-                    const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
-                    options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
-                }
-                select.innerHTML = options;
-                console.log('Dropdown populated with', technicians.length, 'technicians');
-                
-            } catch (error) {
-                console.error('Error loading technicians:', error);
-                select.innerHTML = '<option value="">Error loading technicians</option>';
-            }
-        }
-        
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOMContentLoaded fired');
-                loadTechniciansDirect();
-            });
-        } else {
-            console.log('DOM already loaded');
-            loadTechniciansDirect();
-        }
-    })();
-    
     let uploadedImages = [];
     let createdDateTime = null;
     let lastSavedDateTime = null;
@@ -426,6 +408,38 @@
         autoSaveForm();
     });
     
+    // Load technicians
+    async function loadTechnicians() {
+        try {
+            const response = await fetch('/api/technicians');
+            const technicians = await response.json();
+            const select = document.getElementById('technicianId');
+            
+            if (!technicians || technicians.length === 0) {
+                select.innerHTML = '<option value="">No technicians found</option>';
+                return;
+            }
+            
+            let options = '<option value="">Select Technician</option>';
+            for (let i = 0; i < technicians.length; i++) {
+                const tech = technicians[i];
+                const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
+                options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
+            }
+            select.innerHTML = options;
+            
+            const currentUser = getCurrentUser();
+            if (currentUser.id) {
+                const optionExists = Array.from(select.options).some(opt => opt.value == currentUser.id);
+                if (optionExists) {
+                    select.value = currentUser.id;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
+    }
+    
     // Load schools and departments
     async function loadSchools() {
         try {
@@ -481,7 +495,7 @@
         autoSaveForm();
     });
     
-    // Handle report type change - only show/hide account fields
+    // Handle report type change
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
@@ -502,7 +516,7 @@
         });
     });
     
-    // Image upload handling
+    // Image upload handling - FIXED VERSION
     document.getElementById('imageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -519,16 +533,20 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Add to the uploadedImages array
                     uploadedImages.push(data.image_url);
                     autoSaveForm();
                     
-                    const preview = document.createElement('div');
-                    preview.className = 'position-relative';
-                    preview.innerHTML = `
+                    // Create preview element
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview-container';
+                    previewDiv.setAttribute('data-image-url', data.image_url);
+                    
+                    previewDiv.innerHTML = `
                         <img src="${data.image_url}" class="image-preview" alt="Preview">
-                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImage('${data.image_url}')" style="border-radius: 50%;">&times;</button>
+                        <button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>
                     `;
-                    previewContainer.appendChild(preview);
+                    previewContainer.appendChild(previewDiv);
                     
                     showToast('Image uploaded successfully');
                 } else {
@@ -539,20 +557,45 @@
             }
         }
         
+        // Clear the file input so the same file can be uploaded again if needed
         document.getElementById('imageUpload').value = '';
     });
     
+    // Remove image function - FIXED VERSION
     function removeImage(imageUrl) {
-        uploadedImages = uploadedImages.filter(img => img !== imageUrl);
+        console.log('Removing image:', imageUrl);
+        
+        // Remove from uploadedImages array
+        const index = uploadedImages.indexOf(imageUrl);
+        if (index !== -1) {
+            uploadedImages.splice(index, 1);
+        }
+        
+        // Remove the preview div from DOM
         const previewContainer = document.getElementById('imagePreviewContainer');
-        const previews = previewContainer.children;
-        for (let i = 0; i < previews.length; i++) {
-            if (previews[i].querySelector('img')?.src === imageUrl) {
-                previews[i].remove();
+        const previewDivs = previewContainer.querySelectorAll('.image-preview-container');
+        
+        for (let i = 0; i < previewDivs.length; i++) {
+            const div = previewDivs[i];
+            if (div.getAttribute('data-image-url') === imageUrl) {
+                div.remove();
                 break;
             }
         }
+        
+        // Also check for old style previews (if any)
+        const oldPreviews = previewContainer.querySelectorAll('.position-relative');
+        for (let i = 0; i < oldPreviews.length; i++) {
+            const img = oldPreviews[i].querySelector('img');
+            if (img && img.src === imageUrl) {
+                oldPreviews[i].remove();
+                break;
+            }
+        }
+        
+        // Save the updated form state
         autoSaveForm();
+        showToast('Image removed');
     }
     
     function autoSaveForm() {
@@ -630,14 +673,16 @@
                 if (data.uploadedImages && data.uploadedImages.length > 0) {
                     uploadedImages = data.uploadedImages;
                     const previewContainer = document.getElementById('imagePreviewContainer');
+                    previewContainer.innerHTML = '';
                     uploadedImages.forEach(imageUrl => {
-                        const preview = document.createElement('div');
-                        preview.className = 'position-relative';
-                        preview.innerHTML = `
+                        const previewDiv = document.createElement('div');
+                        previewDiv.className = 'image-preview-container';
+                        previewDiv.setAttribute('data-image-url', imageUrl);
+                        previewDiv.innerHTML = `
                             <img src="${imageUrl}" class="image-preview" alt="Preview">
-                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="removeImage('${imageUrl}')" style="border-radius: 50%;">&times;</button>
+                            <button type="button" class="remove-image-btn" onclick="removeImage('${imageUrl}')">×</button>
                         `;
-                        previewContainer.appendChild(preview);
+                        previewContainer.appendChild(previewDiv);
                     });
                 }
                 
@@ -745,9 +790,9 @@
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
     
     // Initialize form
-    function initializeForm() {
-        console.log('Initializing form...');
+    async function initializeForm() {
         initializeDateTime();
+        await loadTechnicians();
         loadAutoSave();
     }
     
