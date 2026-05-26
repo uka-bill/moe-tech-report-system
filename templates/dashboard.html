@@ -226,24 +226,42 @@
         margin-bottom: 25px;
     }
     
-    .date-badge {
+    .datetime-badge {
         background-color: rgba(255,255,255,0.2);
         padding: 8px 15px;
         border-radius: 20px;
         font-size: 0.9rem;
+        text-align: right;
+    }
+    
+    .datetime-badge .date {
+        font-weight: bold;
+    }
+    
+    .datetime-badge .time {
+        font-family: monospace;
+        font-size: 1.1rem;
+        margin-top: 3px;
     }
 </style>
 
 <div class="container-fluid">
-    <!-- Welcome Header -->
+    <!-- Welcome Header with Date and Time -->
     <div class="welcome-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
+        <div class="row align-items-center">
+            <div class="col-md-8">
                 <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
                 <p class="mb-0 mt-1 opacity-75">Welcome back, <strong id="welcomeName"></strong>!</p>
             </div>
-            <div class="date-badge">
-                <i class="bi bi-calendar"></i> <span id="currentDate"></span>
+            <div class="col-md-4 text-end">
+                <div class="datetime-badge">
+                    <div class="date">
+                        <i class="bi bi-calendar3"></i> <span id="currentDate"></span>
+                    </div>
+                    <div class="time">
+                        <i class="bi bi-clock"></i> <span id="currentTime"></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -457,15 +475,27 @@
 
 <script>
     let utilityChart, statusChart, acknowledgmentChart, trendChart;
+    let timeInterval;
+    
+    // Update time every second
+    function updateDateTime() {
+        const now = new Date();
+        
+        // Format date: 26 May 2026
+        const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-GB', dateOptions);
+        
+        // Format time: 14:30:45
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-GB', timeOptions);
+    }
     
     const user = getCurrentUser();
     document.getElementById('welcomeName').textContent = user.name || 'Technician';
-    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-GB', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    
+    // Start the clock
+    updateDateTime();
+    timeInterval = setInterval(updateDateTime, 1000);
     
     function formatDateOnly(dateString) {
         if (!dateString) return '-';
@@ -852,6 +882,11 @@
         container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
         document.getElementById('tenderReportsList').innerHTML = '<div class="text-center py-3">No reports yet</div>';
     }
+    
+    // Clean up interval when page unloads
+    window.addEventListener('beforeunload', function() {
+        if (timeInterval) clearInterval(timeInterval);
+    });
     
     loadDashboardData();
     setInterval(loadDashboardData, 30000);
