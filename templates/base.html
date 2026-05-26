@@ -6,9 +6,8 @@
     <title>MOE Technical Report System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Remove chart.js from base if not needed on all pages -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <style>
+        /* Your existing CSS here (keeping it compact) */
         :root {
             --primary-color: #9b59b6;
             --primary-dark: #8e44ad;
@@ -444,6 +443,30 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 280px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-stats {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -468,8 +491,9 @@
                             <i class="bi bi-plus-circle"></i> New Report
                         </a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <!-- Reports Dropdown with id for manual initialization -->
+                    <li class="nav-item dropdown" id="reportsDropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-file-text"></i> Reports
                         </a>
                         <ul class="dropdown-menu">
@@ -527,7 +551,7 @@
         </small>
     </footer>
     
-    <!-- Load Bootstrap JS at the END of body, but BEFORE any custom scripts -->
+    <!-- Load Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
@@ -616,6 +640,21 @@
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
         
+        // Function to reinitialize dropdowns (fixes the dropdown issue)
+        function reinitializeDropdowns() {
+            // This forces Bootstrap to re-bind dropdown events
+            const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+            dropdownElements.forEach(element => {
+                // Remove existing dropdown instance if any
+                const dropdown = bootstrap.Dropdown.getInstance(element);
+                if (dropdown) {
+                    dropdown.dispose();
+                }
+                // Create new dropdown instance
+                new bootstrap.Dropdown(element);
+            });
+        }
+        
         document.addEventListener('DOMContentLoaded', async function() {
             const user = getCurrentUser();
             const userNameSpan = document.getElementById('userName');
@@ -655,7 +694,26 @@
                     }
                 }
             });
+            
+            // Reinitialize dropdowns to ensure they work
+            setTimeout(reinitializeDropdowns, 100);
         });
+        
+        // Also reinitialize dropdowns after any AJAX content loads
+        // This is a MutationObserver to detect when new content is added
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    reinitializeDropdowns();
+                }
+            });
+        });
+        
+        // Start observing the main content area for changes
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+            observer.observe(mainContent, { childList: true, subtree: true });
+        }
         
         function showUserProfile() {
             const user = getCurrentUser();
@@ -691,6 +749,24 @@
                 }
             }
         }
+        
+        // Also reinitialize dropdowns when the page is fully loaded (including images)
+        window.addEventListener('load', function() {
+            reinitializeDropdowns();
+        });
+        
+        // Fix for dropdown on dynamic content
+        document.body.addEventListener('click', function(e) {
+            // Check if clicked element is a dropdown toggle or inside a dropdown
+            const dropdownToggle = e.target.closest('.dropdown-toggle');
+            if (dropdownToggle) {
+                // Ensure dropdown is initialized
+                const dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+                if (!dropdown) {
+                    new bootstrap.Dropdown(dropdownToggle);
+                }
+            }
+        });
     </script>
 </body>
 </html>
