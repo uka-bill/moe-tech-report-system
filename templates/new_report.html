@@ -213,12 +213,40 @@
                 </div>
             </div>
             
-            <!-- Problem Details -->
+            <!-- Problem Details with ALL options in ONE dropdown -->
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label class="form-label fw-bold">Problem Type *</label>
                     <select class="form-select" id="problemType" required>
                         <option value="">Select Problem Type</option>
+                        <optgroup label="Water Issues">
+                            <option value="Leakage">💧 Leakage</option>
+                            <option value="Low Pressure">💧 Low Pressure</option>
+                            <option value="No Water">💧 No Water</option>
+                            <option value="Pipe Burst">💧 Pipe Burst</option>
+                            <option value="Water Quality Issue">💧 Water Quality Issue</option>
+                            <option value="Pump Failure">💧 Pump Failure</option>
+                            <option value="Tank Issue">💧 Tank Issue</option>
+                        </optgroup>
+                        <optgroup label="Electricity Issues">
+                            <option value="Power Outage">⚡ Power Outage</option>
+                            <option value="Faulty Wiring">⚡ Faulty Wiring</option>
+                            <option value="Tripped Breaker">⚡ Tripped Breaker</option>
+                            <option value="Generator Issue">⚡ Generator Issue</option>
+                            <option value="Electrical Hazard">⚡ Electrical Hazard</option>
+                            <option value="Flickering Lights">⚡ Flickering Lights</option>
+                            <option value="Dead Socket">⚡ Dead Socket</option>
+                        </optgroup>
+                        <optgroup label="Telephone Issues">
+                            <option value="Dead Line">📞 Dead Line</option>
+                            <option value="Static Noise">📞 Static Noise</option>
+                            <option value="Call Drops">📞 Call Drops</option>
+                            <option value="PBX Issue">📞 PBX Issue</option>
+                            <option value="Internet Connectivity Issue">📞 Internet Connectivity Issue</option>
+                            <option value="No Dial Tone">📞 No Dial Tone</option>
+                            <option value="Crossed Lines">📞 Crossed Lines</option>
+                        </optgroup>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
             </div>
@@ -341,97 +369,41 @@
         autoSaveForm();
     });
     
-    // Update problem type based on selected report type
-    function updateProblemTypeOptions(reportType) {
-        const problemSelect = document.getElementById('problemType');
-        
-        if (reportType === 'water') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Leakage">Leakage</option>
-                <option value="Low Pressure">Low Pressure</option>
-                <option value="No Water">No Water</option>
-                <option value="Pipe Burst">Pipe Burst</option>
-                <option value="Water Quality Issue">Water Quality Issue</option>
-                <option value="Pump Failure">Pump Failure</option>
-                <option value="Tank Issue">Tank Issue</option>
-                <option value="Other">Other</option>
-            `;
-        } else if (reportType === 'electricity') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Power Outage">Power Outage</option>
-                <option value="Faulty Wiring">Faulty Wiring</option>
-                <option value="Tripped Breaker">Tripped Breaker</option>
-                <option value="Generator Issue">Generator Issue</option>
-                <option value="Electrical Hazard">Electrical Hazard</option>
-                <option value="Flickering Lights">Flickering Lights</option>
-                <option value="Dead Socket">Dead Socket</option>
-                <option value="Other">Other</option>
-            `;
-        } else if (reportType === 'telephone') {
-            problemSelect.innerHTML = `
-                <option value="">Select Problem Type</option>
-                <option value="Dead Line">Dead Line</option>
-                <option value="Static Noise">Static Noise</option>
-                <option value="Call Drops">Call Drops</option>
-                <option value="PBX Issue">PBX Issue</option>
-                <option value="Internet Connectivity Issue">Internet Connectivity Issue</option>
-                <option value="No Dial Tone">No Dial Tone</option>
-                <option value="Crossed Lines">Crossed Lines</option>
-                <option value="Other">Other</option>
-            `;
-        }
-    }
-    
-    // Load technicians - SIMPLE VERSION THAT WORKS
+    // Load technicians - SIMPLE WORKING VERSION
     async function loadTechnicians() {
         try {
-            console.log('Fetching technicians from API...');
+            console.log('Loading technicians...');
             const response = await fetch('/api/technicians');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
             const technicians = await response.json();
-            console.log('Technicians received:', technicians);
+            console.log('Technicians:', technicians);
             
             const select = document.getElementById('technicianId');
             
             if (!technicians || technicians.length === 0) {
-                select.innerHTML = '<option value="">No technicians found. Please add technicians first.</option>';
+                select.innerHTML = '<option value="">No technicians found</option>';
                 return;
             }
             
-            // Clear and populate dropdown
-            select.innerHTML = '<option value="">Select Technician</option>';
-            
-            for (const tech of technicians) {
-                const option = document.createElement('option');
-                option.value = tech.id;
-                // Display name with role
+            let options = '<option value="">Select Technician</option>';
+            for (let i = 0; i < technicians.length; i++) {
+                const tech = technicians[i];
                 const roleText = tech.role === 'senior_technician' ? '⭐ Senior' : '👤 Technician';
-                option.textContent = `${roleText} ${tech.name}`;
-                select.appendChild(option);
-                console.log(`Added technician: ${option.textContent} (ID: ${tech.id})`);
+                options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
             }
+            select.innerHTML = options;
+            console.log('Dropdown populated with', technicians.length, 'technicians');
             
-            // Auto-select current user if they exist in the list
+            // Auto-select current user if exists
             const currentUser = getCurrentUser();
-            if (currentUser.id && !isNaN(parseInt(currentUser.id))) {
+            if (currentUser.id) {
                 const optionExists = Array.from(select.options).some(opt => opt.value == currentUser.id);
                 if (optionExists) {
                     select.value = currentUser.id;
-                    console.log(`Auto-selected current user: ${currentUser.name} (ID: ${currentUser.id})`);
                 }
             }
-            
         } catch (error) {
             console.error('Error loading technicians:', error);
-            const select = document.getElementById('technicianId');
-            select.innerHTML = '<option value="">Error loading technicians. Please refresh.</option>';
-            showToast('Error loading technicians: ' + error.message, 'error');
+            document.getElementById('technicianId').innerHTML = '<option value="">Error loading technicians</option>';
         }
     }
     
@@ -462,19 +434,25 @@
         if (this.value === 'school') {
             const schools = await loadSchools();
             if (schools.length === 0) {
-                entitySelect.innerHTML = '<option value="">No schools found. Please add schools first.</option>';
+                entitySelect.innerHTML = '<option value="">No schools found</option>';
             } else {
-                entitySelect.innerHTML = '<option value="">Select School</option>' + 
-                    schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (${s.school_number || 'No code'})</option>`).join('');
+                let options = '<option value="">Select School</option>';
+                for (let i = 0; i < schools.length; i++) {
+                    options += `<option value="${schools[i].id}">${escapeHtml(schools[i].name)}</option>`;
+                }
+                entitySelect.innerHTML = options;
             }
             entitySelect.disabled = false;
         } else if (this.value === 'department') {
             const departments = await loadDepartments();
             if (departments.length === 0) {
-                entitySelect.innerHTML = '<option value="">No departments found. Please add departments first.</option>';
+                entitySelect.innerHTML = '<option value="">No departments found</option>';
             } else {
-                entitySelect.innerHTML = '<option value="">Select Department</option>' + 
-                    departments.map(d => `<option value="${d.id}">${escapeHtml(d.unit_name || d.name)} - ${escapeHtml(d.name)}</option>`).join('');
+                let options = '<option value="">Select Department</option>';
+                for (let i = 0; i < departments.length; i++) {
+                    options += `<option value="${departments[i].id}">${escapeHtml(departments[i].name)}</option>`;
+                }
+                entitySelect.innerHTML = options;
             }
             entitySelect.disabled = false;
         } else {
@@ -484,7 +462,7 @@
         autoSaveForm();
     });
     
-    // Handle report type change - Update problem type dropdown
+    // Handle report type change - only show/hide account fields
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() {
             const reportType = this.value;
@@ -498,13 +476,10 @@
             // Show relevant fields
             if (reportType === 'water') {
                 document.getElementById('waterFields').style.display = 'flex';
-                updateProblemTypeOptions('water');
             } else if (reportType === 'electricity') {
                 document.getElementById('electricityFields').style.display = 'flex';
-                updateProblemTypeOptions('electricity');
             } else if (reportType === 'telephone') {
                 document.getElementById('telephoneFields').style.display = 'flex';
-                updateProblemTypeOptions('telephone');
             }
             
             autoSaveForm();
@@ -670,7 +645,6 @@
             document.getElementById('priority').disabled = false;
             clearAutoSave();
             initializeDateTime();
-            updateProblemTypeOptions('water');
             showToast('Form cleared');
         }
     }
@@ -758,19 +732,12 @@
     async function initializeForm() {
         console.log('Initializing New Report form...');
         initializeDateTime();
-        
-        // Set initial problem type options for Water (default selected)
-        updateProblemTypeOptions('water');
-        
-        // Load technicians
         await loadTechnicians();
-        
-        // Load auto-save draft
         loadAutoSave();
-        
         console.log('Initialization complete');
     }
     
+    // Run initialization when page loads
     initializeForm();
 </script>
 {% endblock %}
