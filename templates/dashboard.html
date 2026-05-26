@@ -102,11 +102,11 @@
         padding: 12px;
         border-bottom: 1px solid #eee;
         transition: background 0.2s;
+        cursor: pointer;
     }
     
     .report-list-item:hover {
         background-color: var(--secondary-color);
-        cursor: pointer;
     }
     
     .report-title {
@@ -122,7 +122,6 @@
         flex-wrap: wrap;
     }
     
-    /* Priority with Tender Card */
     .tender-card {
         background: linear-gradient(135deg, #fff8e7 0%, #fff3cd 100%);
         border-left: 4px solid #ffc107;
@@ -166,12 +165,6 @@
     .tender-item:hover {
         transform: translateX(5px);
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .tender-priority-icon {
-        color: #dc3545;
-        font-size: 1.2rem;
-        animation: pulse 1.5s infinite;
     }
     
     .chart-container {
@@ -225,25 +218,33 @@
         color: #856404;
     }
     
-    @media (max-width: 768px) {
-        .chart-wrapper {
-            height: 220px;
-            max-width: 100%;
-        }
+    .welcome-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+    }
+    
+    .date-badge {
+        background-color: rgba(255,255,255,0.2);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
     }
 </style>
 
 <div class="container-fluid">
     <!-- Welcome Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
-            <p class="text-muted mb-0">Welcome back, <strong id="welcomeName"></strong>! Here's your technical report summary.</p>
-        </div>
-        <div>
-            <span class="badge bg-primary p-2">
+    <div class="welcome-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
+                <p class="mb-0 mt-1 opacity-75">Welcome back, <strong id="welcomeName"></strong>!</p>
+            </div>
+            <div class="date-badge">
                 <i class="bi bi-calendar"></i> <span id="currentDate"></span>
-            </span>
+            </div>
         </div>
     </div>
 
@@ -526,9 +527,7 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
                         <div class="report-title">
-                            <span class="tender-priority-icon">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                            </span>
+                            <span class="tender-priority-icon">🔴</span>
                             <strong>[${getUtilityIcon(report.report_type)}] #${report.utility_number || report.id}</strong>
                             <span class="badge bg-danger ms-2">TENDER REQUIRED</span>
                             <span class="badge bg-warning ms-1">${report.priority.toUpperCase()}</span>
