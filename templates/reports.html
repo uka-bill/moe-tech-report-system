@@ -124,10 +124,6 @@
         cursor: pointer;
         border: 1px solid #ddd;
     }
-    .detail-image:hover {
-        transform: scale(1.05);
-        transition: transform 0.2s;
-    }
     .utility-number {
         font-family: monospace;
         font-weight: bold;
@@ -149,26 +145,11 @@
         border-color: #6c757d;
         color: white;
     }
-    .btn-reset:hover {
-        background-color: #5a6268;
-    }
     .table-responsive {
         overflow-x: auto;
     }
     .table {
         min-width: 1200px;
-    }
-    .acknowledge-btn {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 12px;
-        cursor: pointer;
-    }
-    .acknowledge-btn:hover {
-        background-color: #218838;
     }
     .debug-info {
         background-color: #f0f0f0;
@@ -290,7 +271,7 @@
                     </tr>
                 </thead>
                 <tbody id="allReportsTable">
-                    <td><td colspan="12" class="text-center">
+                    <tr><td colspan="12" class="text-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div> Loading reports...
@@ -390,26 +371,15 @@
     function debugLog(message, data) {
         const debugContent = document.getElementById('debugContent');
         const timestamp = new Date().toLocaleTimeString();
-        debugContent.innerHTML += `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}\n`;
-        console.log(`[DEBUG] ${message}`, data);
-    }
-    
-    // Check if current user is authorized (Team Leader)
-    async function checkAuthorization() {
-        const user = getCurrentUser();
-        debugLog('Checking authorization for user', user);
-        if (user.id && user.id !== 'temp') {
-            try {
-                const response = await fetch(`/api/technicians/${user.id}/authorization`);
-                const data = await response.json();
-                isAuthorizedUser = data.authorized;
-                debugLog('Authorization result', { authorized: isAuthorizedUser });
-            } catch (error) {
-                console.error('Error checking authorization:', error);
-                debugLog('Authorization error', error.message);
-                isAuthorizedUser = false;
-            }
+        if (data !== undefined) {
+            debugContent.innerHTML += `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}\n`;
+            console.log(`[DEBUG] ${message}`, data);
+        } else {
+            debugContent.innerHTML += `[${timestamp}] ${message}\n`;
+            console.log(`[DEBUG] ${message}`);
         }
+        // Auto-scroll to bottom
+        debugContent.scrollTop = debugContent.scrollHeight;
     }
     
     // Format date for Brunei Time (UTC+8)
@@ -473,7 +443,7 @@
         document.getElementById('filterTender').value = '';
         document.getElementById('filterAcknowledged').value = '';
         loadAllReports();
-        showToast('Filters reset');
+        if (typeof showToast === 'function') showToast('Filters reset');
     }
     
     async function loadAllReports() {
@@ -507,12 +477,15 @@
             }
             
             const reports = await response.json();
-            debugLog('Reports received', { count: reports.length, reports: reports });
+            debugLog('Reports received', { count: reports.length });
             
             if (!reports || reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found. Click "New Report" to create one.</td</tr>';
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found. Click "New Report" to create one.</td<tr>';
                 return;
             }
+            
+            // Check authorization after loading reports
+            await checkAuthorization();
             
             displayAllReports(reports);
         } catch (error) {
@@ -526,32 +499,40 @@
                         <button class="btn btn-primary btn-sm mt-2" onclick="loadAllReports()">
                             <i class="bi bi-arrow-repeat"></i> Retry
                         </button>
-                        <button class="btn btn-secondary btn-sm mt-2 ms-2" onclick="testApiDirect()">
-                            <i class="bi bi-link"></i> Test API
-                        </button>
                     </td
                 </tr>
             `;
-            showToast('Error loading reports: ' + error.message, 'error');
+            if (typeof showToast === 'function') showToast('Error loading reports: ' + error.message, 'error');
         }
     }
     
-    async function testApiDirect() {
+    async function checkAuthorization() {
         try {
-            debugLog('Testing API directly...');
-            const response = await fetch('/api/technical-reports');
-            const text = await response.text();
-            debugLog('API Response', { status: response.status, body: text.substring(0, 500) });
-            alert(`API Response Status: ${response.status}\n\nFirst 500 chars:\n${text.substring(0, 500)}`);
+            // Get user from localStorage
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            debugLog('User from localStorage', { userId, userRole });
+            
+            if (userId && userId !== 'temp') {
+                const response = await fetch(`/api/technicians/${userId}/authorization`);
+                const data = await response.json();
+                isAuthorizedUser = data.authorized;
+                debugLog('Authorization result', { authorized: isAuthorizedUser });
+            } else {
+                // Default to false if no user
+                isAuthorizedUser = false;
+                debugLog('No valid user found, authorization set to false');
+            }
         } catch (error) {
-            debugLog('API Test Error', error.message);
-            alert('API Test Failed: ' + error.message);
+            console.error('Error checking authorization:', error);
+            debugLog('Authorization error', error.message);
+            isAuthorizedUser = false;
         }
     }
     
     function displayAllReports(reports) {
         const tbody = document.getElementById('allReportsTable');
-        debugLog('Displaying reports', reports.length);
+        debugLog('Displaying reports', { count: reports.length, isAuthorized: isAuthorizedUser });
         
         tbody.innerHTML = reports.map(report => {
             const utilityNumber = formatUtilityNumber(report);
@@ -578,7 +559,7 @@
             
             return `
                 <tr>
-                    <td><span class="utility-number">${escapeHtml(utilityNumber)}</span></br><small class="text-muted">${report.report_type}</small></td>
+                    <td><span class="utility-number">${escapeHtml(utilityNumber)}</span><br><small class="text-muted">${report.report_type}</small></td>
                     <td>#${report.id}<br><small class="text-muted">DB ID</small></td>
                     <td>
                         <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
@@ -624,28 +605,33 @@
     
     async function submitAcknowledge() {
         const notes = document.getElementById('acknowledgeNotes').value;
-        const user = getCurrentUser();
+        const userId = localStorage.getItem('userId');
+        
+        if (!userId) {
+            if (typeof showToast === 'function') showToast('User not found. Please switch user.', 'error');
+            return;
+        }
         
         try {
             const response = await fetch(`/api/technical-reports/${currentAcknowledgeId}/acknowledge`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    team_leader_id: user.id,
+                    team_leader_id: parseInt(userId),
                     team_leader_notes: notes
                 })
             });
             const data = await response.json();
             if (data.success) {
-                showToast('Report acknowledged successfully');
+                if (typeof showToast === 'function') showToast('Report acknowledged successfully');
                 bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
                 loadAllReports();
             } else {
-                showToast(data.error || 'Failed to acknowledge', 'error');
+                if (typeof showToast === 'function') showToast(data.error || 'Failed to acknowledge', 'error');
             }
         } catch (error) {
             console.error('Error acknowledging report:', error);
-            showToast('Error acknowledging report', 'error');
+            if (typeof showToast === 'function') showToast('Error acknowledging report', 'error');
         }
     }
     
@@ -668,14 +654,14 @@
                     modal.show();
                 } else {
                     console.error('Modal element not found');
-                    showToast('Error: Modal not found', 'error');
+                    if (typeof showToast === 'function') showToast('Error: Modal not found', 'error');
                 }
             } else {
-                showToast('Report not found', 'error');
+                if (typeof showToast === 'function') showToast('Report not found', 'error');
             }
         } catch (error) {
             console.error('Error loading report:', error);
-            showToast('Error loading report details: ' + error.message, 'error');
+            if (typeof showToast === 'function') showToast('Error loading report details: ' + error.message, 'error');
         }
     }
     
@@ -782,7 +768,7 @@
             }
         } catch (error) {
             console.error('Error loading report for printing:', error);
-            showToast('Error loading report for printing', 'error');
+            if (typeof showToast === 'function') showToast('Error loading report for printing', 'error');
         }
     }
     
@@ -818,8 +804,8 @@
                     <tr style="background:#f5f5f5;"><th style="padding:10px;border:1px solid #ddd;text-align:left;">Field</th><th style="padding:10px;border:1px solid #ddd;text-align:left;">Details</th></tr>
                     <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                     <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.entity_name || report.entity_type)}</td</tr>
-                    ${report.account_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Account Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.account_number)}</td</tr>` : ''}
-                    ${report.meter_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.meter_number)}</td</tr>` : ''}
+                    ${report.account_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Account Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.account_number)}</td</td>` : ''}
+                    ${report.meter_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.meter_number)}</td</td>` : ''}
                     <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.problem_type || '-')}</td</tr>
                     <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Priority</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.priority.toUpperCase()}</td</tr>
                     <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Status</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td</tr>
@@ -869,15 +855,15 @@
         if (type) url += `&type=${type}`;
         if (tender) url += `&priority_with_tender=${tender === 'true'}`;
         window.location.href = url;
-        showToast('Exporting reports...');
+        if (typeof showToast === 'function') showToast('Exporting reports...');
     }
     
     // Initialize the page
     async function init() {
         debugLog('Initializing reports page');
-        await checkAuthorization();
-        debugLog('Authorization check complete, loading reports');
-        loadAllReports();
+        
+        // First load reports
+        await loadAllReports();
     }
     
     init();
