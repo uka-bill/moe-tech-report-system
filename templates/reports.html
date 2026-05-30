@@ -2,309 +2,199 @@
 
 {% block content %}
 <style>
-    /* Print Styles */
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-area, .print-area * {
-            visibility: visible;
-        }
-        .print-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-        }
-        .no-print {
-            display: none !important;
-        }
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
-    }
-    
-    .status-badge {
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-        display: inline-block;
-    }
-    .status-pending {
-        background-color: #fff3cd;
-        color: #856404;
-        border-left: 3px solid #ffc107;
-    }
-    .status-in_progress {
-        background-color: #d1ecf1;
-        color: #0c5460;
-        border-left: 3px solid #17a2b8;
-    }
-    .status-resolved {
-        background-color: #d4edda;
-        color: #155724;
-        border-left: 3px solid #28a745;
-    }
-    .priority-high {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-left: 3px solid #dc3545;
-    }
-    .priority-medium {
-        background-color: #fff3cd;
-        color: #856404;
-        border-left: 3px solid #ffc107;
-    }
-    .priority-low {
-        background-color: #d4edda;
-        color: #155724;
-        border-left: 3px solid #28a745;
-    }
-    .acknowledged-badge {
-        background-color: #28a745;
-        color: white;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-    }
-    .unacknowledged-badge {
-        background-color: #dc3545;
-        color: white;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-    }
-    .tender-badge {
-        background-color: #dc3545;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: bold;
-        margin-left: 5px;
-        display: inline-block;
-    }
-    .print-area {
-        background: white;
-        padding: 30px;
-    }
-    .modal-xl {
-        max-width: 900px;
-    }
-    .detail-row {
-        display: flex;
-        margin-bottom: 12px;
-        padding: 8px;
-        border-bottom: 1px solid #eee;
-    }
-    .detail-label {
-        width: 180px;
-        font-weight: bold;
-        color: #555;
-    }
-    .detail-value {
-        flex: 1;
-        color: #333;
-    }
-    .image-gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .detail-image {
-        max-width: 150px;
-        max-height: 120px;
-        object-fit: cover;
-        border-radius: 8px;
-        cursor: pointer;
-        border: 1px solid #ddd;
-    }
-    .utility-number {
-        font-family: monospace;
-        font-weight: bold;
-        background-color: #f0f0f0;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-        display: inline-block;
-    }
-    .filter-section {
+    .filter-card {
         background: white;
         border-radius: 12px;
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    .btn-reset {
-        background-color: #6c757d;
-        border-color: #6c757d;
-        color: white;
+    .report-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+        cursor: pointer;
     }
-    .table-responsive {
-        overflow-x: auto;
+    .report-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    .table {
-        min-width: 1200px;
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
     }
-    .debug-info {
-        background-color: #f0f0f0;
-        padding: 10px;
-        margin-top: 20px;
-        border-radius: 5px;
-        font-family: monospace;
+    .report-type-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .type-water {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    .type-electricity {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+    .type-telephone {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    .priority-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
         font-size: 11px;
-        display: none;
+        font-weight: 500;
+    }
+    .priority-high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .priority-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .priority-low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-resolved {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .comment-section {
+        background-color: #f8f5fc;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        border-left: 3px solid var(--primary-color);
+    }
+    .comment-item {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+    }
+    .comment-author {
+        font-weight: bold;
+        color: var(--primary-dark);
+        font-size: 12px;
+    }
+    .comment-date {
+        font-size: 10px;
+        color: #999;
+        margin-left: 10px;
+    }
+    .comment-text {
+        margin-top: 5px;
+        font-size: 13px;
+    }
+    .btn-acknowledge {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 5px;
+        font-size: 12px;
+    }
+    .btn-acknowledge:hover {
+        background-color: #218838;
+    }
+    .modal-comments {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+    }
+    .filter-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
     }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-archive"></i> Technical Reports</h2>
-    <div>
-        <button class="btn btn-success me-2" onclick="exportReports()">
-            <i class="bi bi-download"></i> Export CSV
-        </button>
-        <a href="{{ url_for('new_report') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> New Report
-        </a>
-        <button class="btn btn-secondary ms-2" onclick="toggleDebug()">
-            <i class="bi bi-bug"></i> Debug
-        </button>
-    </div>
+    <h2><i class="bi bi-archive"></i> Reports</h2>
+    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Report
+    </a>
 </div>
 
-<!-- Filters -->
-<div class="filter-section">
-    <h6><i class="bi bi-funnel"></i> Filters</h6>
-    <div class="row g-3">
-        <div class="col-md-2">
-            <label class="form-label">Report Type</label>
-            <select class="form-select" id="filterType" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="water">Water</option>
-                <option value="electricity">Electricity</option>
-                <option value="telephone">Telephone</option>
+<!-- Filter Section -->
+<div class="filter-card">
+    <div class="row">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Report Type</label>
+            <select class="filter-select" id="filterType">
+                <option value="all">All Reports</option>
+                <option value="water">💧 Water Reports</option>
+                <option value="electricity">⚡ Electricity Reports</option>
+                <option value="telephone">📞 Telephone Reports</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label">Status</label>
-            <select class="form-select" id="filterStatus" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Technician Name</label>
+            <select class="filter-select" id="filterTechnician">
+                <option value="all">All Technicians</option>
             </select>
         </div>
-        <div class="col-md-2">
-            <label class="form-label">Priority</label>
-            <select class="form-select" id="filterPriority" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Entity Type</label>
-            <select class="form-select" id="filterEntityType" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="school">School</option>
-                <option value="department">Department</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Priority with Tender</label>
-            <select class="form-select" id="filterTender" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="true">Yes - Tender Required</option>
-                <option value="false">No</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Acknowledged</label>
-            <select class="form-select" id="filterAcknowledged" onchange="loadAllReports()">
-                <option value="">All</option>
-                <option value="true">Acknowledged</option>
-                <option value="false">Not Acknowledged</option>
-            </select>
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col-md-12">
-            <button class="btn btn-primary" onclick="loadAllReports()">
-                <i class="bi bi-search"></i> Apply Filters
-            </button>
-            <button class="btn btn-reset ms-2" onclick="resetFilters()">
-                <i class="bi bi-arrow-repeat"></i> Reset Filters
-            </button>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">&nbsp;</label>
+            <div>
+                <button class="btn btn-primary w-100" onclick="loadReports()">
+                    <i class="bi bi-search"></i> Search Reports
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Reports Table -->
-<div class="card no-print">
-    <div class="card-header">
-        <i class="bi bi-table"></i> Report List
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Utility #</th>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Location</th>
-                        <th>Problem</th>
-                        <th>Priority</th>
-                        <th>Tender</th>
-                        <th>Status</th>
-                        <th>Acknowledged</th>
-                        <th>Technician</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="allReportsTable">
-                    <tr><td colspan="12" class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div> Loading reports...
-                    </td
-                </tbody>
-             </div>
+<!-- Reports List -->
+<div id="reportsContainer">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+        <p class="mt-2">Loading reports...</p>
     </div>
 </div>
 
-<!-- Debug Panel -->
-<div id="debugPanel" class="debug-info">
-    <strong>Debug Information:</strong>
-    <pre id="debugContent"></pre>
-</div>
-
-<!-- View Report Modal -->
-<div class="modal fade" id="viewReportModal" tabindex="-1">
+<!-- Report Detail Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-file-text"></i> Report Details</h5>
+                <h5 class="modal-title" id="modalTitle">Report Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="viewReportContent">
-                <div class="text-center">Loading...</div>
+            <div class="modal-body" id="modalBody">
+                Loading...
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printCurrentReport()">
+                <button type="button" class="btn btn-primary" onclick="printReport()">
                     <i class="bi bi-printer"></i> Print
                 </button>
-                <button type="button" class="btn btn-warning" onclick="editCurrentReport()">
+                <button type="button" class="btn btn-warning" onclick="editReport()">
                     <i class="bi bi-pencil"></i> Edit
                 </button>
             </div>
@@ -322,8 +212,8 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Team Leader Notes</label>
-                    <textarea class="form-control" id="acknowledgeNotes" rows="4" placeholder="Enter any notes or feedback for the technician..."></textarea>
+                    <label class="form-label">Team Leader Comments / Findings</label>
+                    <textarea class="form-control" id="acknowledgeComment" rows="4" placeholder="Enter your comments, findings, or recommendations..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -336,21 +226,24 @@
     </div>
 </div>
 
-<!-- Print Modal -->
-<div class="modal fade" id="printModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+<!-- Add Comment Modal -->
+<div class="modal fade" id="commentModal" tabindex="-1">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-printer"></i> Print Preview</h5>
+                <h5 class="modal-title"><i class="bi bi-chat-dots"></i> Add Comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div id="printContent"></div>
+                <div class="mb-3">
+                    <label class="form-label">Your Comment</label>
+                    <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment or finding..."></textarea>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="executePrint()">
-                    <i class="bi bi-printer"></i> Print
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitComment()">
+                    <i class="bi bi-save"></i> Add Comment
                 </button>
             </div>
         </div>
@@ -358,58 +251,255 @@
 </div>
 
 <script>
-    let currentViewReport = null;
-    let currentPrintReport = null;
-    let currentAcknowledgeId = null;
-    let isAuthorizedUser = false;
+    let currentReport = null;
+    let currentReportId = null;
+    let allTechnicians = [];
     
-    function toggleDebug() {
-        const panel = document.getElementById('debugPanel');
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-    }
-    
-    function debugLog(message, data) {
-        const debugContent = document.getElementById('debugContent');
-        const timestamp = new Date().toLocaleTimeString();
-        if (data !== undefined) {
-            debugContent.innerHTML += `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}\n`;
-            console.log(`[DEBUG] ${message}`, data);
-        } else {
-            debugContent.innerHTML += `[${timestamp}] ${message}\n`;
-            console.log(`[DEBUG] ${message}`);
-        }
-        // Auto-scroll to bottom
-        debugContent.scrollTop = debugContent.scrollHeight;
-    }
-    
-    // Format date for Brunei Time (UTC+8)
-    function formatDate(dateString) {
-        if (!dateString) return '-';
+    // Load technicians for filter dropdown
+    async function loadTechniciansForFilter() {
         try {
-            const date = new Date(dateString);
-            date.setHours(date.getHours() + 8);
-            return date.toLocaleString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
+            const response = await fetch('/api/technicians');
+            const technicians = await response.json();
+            allTechnicians = technicians;
+            
+            const select = document.getElementById('filterTechnician');
+            let options = '<option value="all">All Technicians</option>';
+            technicians.forEach(tech => {
+                const roleText = tech.role === 'senior_technician' ? '⭐' : '👤';
+                options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
             });
-        } catch (e) {
-            return dateString;
+            select.innerHTML = options;
+        } catch (error) {
+            console.error('Error loading technicians:', error);
         }
     }
     
-    function formatDateOnly(dateString) {
-        if (!dateString) return '-';
+    // Load reports based on filters
+    async function loadReports() {
+        const type = document.getElementById('filterType').value;
+        const technicianId = document.getElementById('filterTechnician').value;
+        
+        let url = '/api/technical-reports?';
+        if (type !== 'all') url += `&type=${type}`;
+        
+        const container = document.getElementById('reportsContainer');
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading reports...</p></div>';
+        
         try {
-            const date = new Date(dateString);
-            date.setHours(date.getHours() + 8);
-            return date.toLocaleDateString('en-GB');
-        } catch (e) {
-            return dateString;
+            const response = await fetch(url);
+            let reports = await response.json();
+            
+            // Filter by technician if needed
+            if (technicianId !== 'all') {
+                reports = reports.filter(r => r.technician_id == technicianId);
+            }
+            
+            if (reports.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
+                        <p class="mt-2">No reports found. Try changing the filters.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            displayReports(reports);
+        } catch (error) {
+            console.error('Error loading reports:', error);
+            container.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p class="mt-2">Error loading reports. Please refresh the page.</p>
+                </div>
+            `;
         }
+    }
+    
+    // Display reports as cards
+    function displayReports(reports) {
+        const container = document.getElementById('reportsContainer');
+        
+        container.innerHTML = reports.map(report => {
+            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+            const typeClass = `type-${report.report_type}`;
+            const priorityClass = `priority-${report.priority}`;
+            const statusClass = `status-${report.status}`;
+            const isAcknowledged = report.team_leader_acknowledged;
+            
+            return `
+                <div class="report-card" onclick="openReportDetail(${report.id})">
+                    <div class="report-header">
+                        <div>
+                            <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span>
+                            <span class="priority-badge ${priorityClass} ms-2">${report.priority.toUpperCase()}</span>
+                            ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">🔴 TENDER</span>' : ''}
+                        </div>
+                        <div>
+                            <span class="status-badge ${statusClass}">${report.status.replace('_', ' ')}</span>
+                            ${isAcknowledged ? '<span class="badge bg-success ms-2">✓ Acknowledged</span>' : '<span class="badge bg-warning ms-2">⏳ Pending</span>'}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <strong>${report.entity_name || report.entity_type}</strong>
+                            <div class="text-muted small">Report #${report.utility_number || report.id}</div>
+                            <div class="mt-2">${report.problem_type || 'No problem type'}</div>
+                            <div class="text-muted small mt-1">${(report.complaint_details || '').substring(0, 100)}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</div>
+                            <div class="small text-muted"><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
+                            ${report.comments && report.comments.length > 0 ? `<div class="small text-primary mt-1"><i class="bi bi-chat-dots"></i> ${report.comments.length} comment(s)</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Open report detail modal
+    async function openReportDetail(id) {
+        currentReportId = id;
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            currentReport = reports.find(r => r.id === id);
+            
+            if (currentReport) {
+                displayReportModal();
+                const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+                modal.show();
+            }
+        } catch (error) {
+            console.error('Error loading report:', error);
+            showToast('Error loading report details', 'error');
+        }
+    }
+    
+    // Display report in modal
+    function displayReportModal() {
+        const report = currentReport;
+        const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+        const typeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
+        const priorityClass = `priority-${report.priority}`;
+        const statusClass = `status-${report.status}`;
+        const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
+        const isAcknowledged = report.team_leader_acknowledged;
+        
+        // Build comments section
+        let commentsHtml = '';
+        if (report.comments && report.comments.length > 0) {
+            commentsHtml = `
+                <div class="comment-section">
+                    <h6><i class="bi bi-chat-dots"></i> Comments & Findings</h6>
+                    ${report.comments.map(c => `
+                        <div class="comment-item">
+                            <div>
+                                <span class="comment-author">${c.author}</span>
+                                <span class="comment-date">${formatDate(c.created_at)}</span>
+                            </div>
+                            <div class="comment-text">${c.text}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Build acknowledgment section
+        let acknowledgmentHtml = '';
+        if (isAcknowledged) {
+            acknowledgmentHtml = `
+                <div class="alert alert-success mt-3">
+                    <i class="bi bi-check-circle"></i> <strong>Report Acknowledged</strong><br>
+                    By: ${report.team_leader_name || 'Team Leader'}<br>
+                    Date: ${formatDate(report.team_leader_acknowledged_at)}<br>
+                    Notes: ${report.team_leader_notes || 'No notes provided'}
+                </div>
+            `;
+        } else if (isAuthorized && report.role !== 'senior_technician') {
+            acknowledgmentHtml = `
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i> This report is pending acknowledgment.
+                    <button class="btn btn-acknowledge ms-3" onclick="showAcknowledgeModal()">
+                        <i class="bi bi-check2-square"></i> Acknowledge Report
+                    </button>
+                </div>
+            `;
+        }
+        
+        const html = `
+            <div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Report ID:</strong> #${report.id}<br>
+                        <strong>Utility Number:</strong> ${getUtilityLetter(report.report_type)}-${String(report.utility_number || report.id).padStart(3, '0')}<br>
+                        <strong>Type:</strong> ${typeName} ${typeIcon}<br>
+                        <strong>Created:</strong> ${formatDate(report.created_at)}<br>
+                        <strong>Last Updated:</strong> ${formatDate(report.updated_at)}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong> <span class="status-badge ${statusClass}">${report.status.replace('_', ' ')}</span><br>
+                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span><br>
+                        ${report.priority_with_tender ? '<strong>Priority with Tender:</strong> <span class="badge bg-danger">YES</span><br>' : ''}
+                        <strong>Acknowledged:</strong> ${report.team_leader_acknowledged ? 'Yes' : 'No'}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Entity Type:</strong> ${report.entity_type === 'school' ? '🏫 School' : '🏢 Department'}<br>
+                        <strong>Entity Name:</strong> ${report.entity_name || report.entity_type}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Assigned Technician:</strong> ${report.technician_name || 'Unassigned'}<br>
+                        <strong>Technician Role:</strong> ${report.technician_role === 'senior_technician' ? 'Senior Technician' : 'Technician'}
+                    </div>
+                </div>
+                
+                ${report.account_number ? `<div><strong>Account Number:</strong> ${report.account_number}</div>` : ''}
+                ${report.meter_number ? `<div><strong>Meter Number:</strong> ${report.meter_number}</div>` : ''}
+                ${report.phone_number ? `<div><strong>Phone Number:</strong> ${report.phone_number}</div>` : ''}
+                ${report.reference_number ? `<div><strong>Reference:</strong> ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div>` : ''}
+                
+                <div class="mt-3">
+                    <strong>Problem Type:</strong> ${report.problem_type || '-'}<br>
+                    <strong>Complaint Details:</strong><br>
+                    <div class="border p-2 rounded bg-light mt-1">${report.complaint_details || '-'}</div>
+                </div>
+                
+                ${report.technician_notes ? `
+                <div class="mt-3">
+                    <strong>Technician Notes:</strong><br>
+                    <div class="border p-2 rounded bg-light mt-1">${report.technician_notes}</div>
+                </div>
+                ` : ''}
+                
+                ${report.images && report.images.length > 0 ? `
+                <div class="mt-3">
+                    <strong>Images:</strong>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        ${report.images.map(img => `<img src="${img}" class="image-preview" onclick="window.open('${img}')" style="width: 100px; height: 80px; object-fit: cover; border-radius: 5px; cursor: pointer;">`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${commentsHtml}
+                
+                ${acknowledgmentHtml}
+                
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="showAddCommentModal()">
+                        <i class="bi bi-chat-dots"></i> Add Comment
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('modalTitle').innerHTML = `<i class="bi bi-file-text"></i> Report #${report.id} - ${typeName} Issue`;
+        document.getElementById('modalBody').innerHTML = html;
     }
     
     function getUtilityLetter(type) {
@@ -421,449 +511,159 @@
         }
     }
     
-    function formatUtilityNumber(report) {
-        const letter = getUtilityLetter(report.report_type);
-        const number = report.utility_number || report.id;
-        return `${letter}-${String(number).padStart(3, '0')}`;
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
     
-    function escapeHtml(text) {
-        if (!text) return '';
-        if (typeof text !== 'string') return text;
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
     }
     
-    function resetFilters() {
-        document.getElementById('filterType').value = '';
-        document.getElementById('filterStatus').value = '';
-        document.getElementById('filterPriority').value = '';
-        document.getElementById('filterEntityType').value = '';
-        document.getElementById('filterTender').value = '';
-        document.getElementById('filterAcknowledged').value = '';
-        loadAllReports();
-        if (typeof showToast === 'function') showToast('Filters reset');
-    }
-    
-    async function loadAllReports() {
-        let url = '/api/technical-reports?';
-        const type = document.getElementById('filterType').value;
-        const status = document.getElementById('filterStatus').value;
-        const priority = document.getElementById('filterPriority').value;
-        const entityType = document.getElementById('filterEntityType').value;
-        const tender = document.getElementById('filterTender').value;
-        const acknowledged = document.getElementById('filterAcknowledged').value;
-        
-        if (type) url += `&type=${type}`;
-        if (status) url += `&status=${status}`;
-        if (priority) url += `&priority=${priority}`;
-        if (entityType) url += `&entity_type=${entityType}`;
-        if (tender) url += `&priority_with_tender=${tender === 'true'}`;
-        if (acknowledged) url += `&team_leader_acknowledged=${acknowledged === 'true'}`;
-        
-        debugLog('Fetching reports from URL', url);
-        
-        const tbody = document.getElementById('allReportsTable');
-        tbody.innerHTML = '<tr><td colspan="12" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading reports...</td</tr>';
-        
-        try {
-            debugLog('Making fetch request...');
-            const response = await fetch(url);
-            debugLog('Response status', response.status);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const reports = await response.json();
-            debugLog('Reports received', { count: reports.length });
-            
-            if (!reports || reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="text-center">No reports found. Click "New Report" to create one.</td<tr>';
-                return;
-            }
-            
-            // Check authorization after loading reports
-            await checkAuthorization();
-            
-            displayAllReports(reports);
-        } catch (error) {
-            console.error('Error loading reports:', error);
-            debugLog('ERROR', error.message);
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="12" class="text-center text-danger">
-                        <i class="bi bi-exclamation-triangle"></i> Error loading reports: ${error.message}
-                        <br><br>
-                        <button class="btn btn-primary btn-sm mt-2" onclick="loadAllReports()">
-                            <i class="bi bi-arrow-repeat"></i> Retry
-                        </button>
-                    </td
-                </tr>
-            `;
-            if (typeof showToast === 'function') showToast('Error loading reports: ' + error.message, 'error');
-        }
-    }
-    
-    async function checkAuthorization() {
-        try {
-            // Get user from localStorage
-            const userId = localStorage.getItem('userId');
-            const userRole = localStorage.getItem('userRole');
-            debugLog('User from localStorage', { userId, userRole });
-            
-            if (userId && userId !== 'temp') {
-                const response = await fetch(`/api/technicians/${userId}/authorization`);
-                const data = await response.json();
-                isAuthorizedUser = data.authorized;
-                debugLog('Authorization result', { authorized: isAuthorizedUser });
-            } else {
-                // Default to false if no user
-                isAuthorizedUser = false;
-                debugLog('No valid user found, authorization set to false');
-            }
-        } catch (error) {
-            console.error('Error checking authorization:', error);
-            debugLog('Authorization error', error.message);
-            isAuthorizedUser = false;
-        }
-    }
-    
-    function displayAllReports(reports) {
-        const tbody = document.getElementById('allReportsTable');
-        debugLog('Displaying reports', { count: reports.length, isAuthorized: isAuthorizedUser });
-        
-        tbody.innerHTML = reports.map(report => {
-            const utilityNumber = formatUtilityNumber(report);
-            const tenderBadge = report.priority_with_tender ? '<span class="tender-badge"><i class="bi bi-exclamation-triangle"></i> TENDER</span>' : '-';
-            
-            let statusClass = '';
-            switch(report.status) {
-                case 'pending': statusClass = 'status-pending'; break;
-                case 'in_progress': statusClass = 'status-in_progress'; break;
-                case 'resolved': statusClass = 'status-resolved'; break;
-                default: statusClass = 'status-pending';
-            }
-            
-            let priorityClass = '';
-            switch(report.priority) {
-                case 'high': priorityClass = 'priority-high'; break;
-                case 'medium': priorityClass = 'priority-medium'; break;
-                case 'low': priorityClass = 'priority-low'; break;
-                default: priorityClass = 'priority-medium';
-            }
-            
-            // Determine if acknowledge button should be shown
-            const showAcknowledge = isAuthorizedUser && !report.team_leader_acknowledged && report.status !== 'resolved';
-            
-            return `
-                <tr>
-                    <td><span class="utility-number">${escapeHtml(utilityNumber)}</span><br><small class="text-muted">${report.report_type}</small></td>
-                    <td>#${report.id}<br><small class="text-muted">DB ID</small></td>
-                    <td>
-                        <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
-                        ${escapeHtml(report.report_type)}
-                    </td>
-                    <td>${escapeHtml(report.entity_name || report.entity_type)}<br><small class="text-muted">${escapeHtml(report.entity_type)}</small></td>
-                    <td>${escapeHtml(report.problem_type || '-')}<br><small>${escapeHtml((report.complaint_details || '').substring(0, 30))}${(report.complaint_details || '').length > 30 ? '...' : ''}</small></td>
-                    <td><span class="status-badge ${priorityClass}">${escapeHtml(report.priority)}</span></td>
-                    <td>${tenderBadge}</td>
-                    <td><span class="status-badge ${statusClass}">${escapeHtml(report.status.replace('_', ' '))}</span></td>
-                    <td>${report.team_leader_acknowledged ? '<span class="acknowledged-badge">✓ Acknowledged</span>' : '<span class="unacknowledged-badge">✗ Pending</span>'}</td>
-                    <td>${escapeHtml(report.technician_name || '-')}</td>
-                    <td>${formatDate(report.created_at)}<br><small>${formatDateOnly(report.created_at)}</small></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-info" onclick="viewReportDetail(${report.id})" title="View">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="editReport(${report.id})" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="printReport(${report.id})" title="Print">
-                            <i class="bi bi-printer"></i>
-                        </button>
-                        ${showAcknowledge ? `
-                        <button class="btn btn-sm btn-success" onclick="showAcknowledgeModal(${report.id})" title="Acknowledge">
-                            <i class="bi bi-check2-square"></i> Ack
-                        </button>
-                        ` : ''}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        debugLog('Reports displayed successfully');
-    }
-    
-    function showAcknowledgeModal(id) {
-        currentAcknowledgeId = id;
-        document.getElementById('acknowledgeNotes').value = '';
+    function showAcknowledgeModal() {
         const modal = new bootstrap.Modal(document.getElementById('acknowledgeModal'));
         modal.show();
     }
     
     async function submitAcknowledge() {
-        const notes = document.getElementById('acknowledgeNotes').value;
+        const comment = document.getElementById('acknowledgeComment').value;
         const userId = localStorage.getItem('userId');
         
         if (!userId) {
-            if (typeof showToast === 'function') showToast('User not found. Please switch user.', 'error');
+            showToast('Please switch to your user account first', 'error');
             return;
         }
         
         try {
-            const response = await fetch(`/api/technical-reports/${currentAcknowledgeId}/acknowledge`, {
+            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     team_leader_id: parseInt(userId),
-                    team_leader_notes: notes
+                    team_leader_notes: comment
                 })
             });
             const data = await response.json();
             if (data.success) {
-                if (typeof showToast === 'function') showToast('Report acknowledged successfully');
+                showToast('Report acknowledged successfully');
                 bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
-                loadAllReports();
+                // Refresh the modal content
+                openReportDetail(currentReportId);
+                loadReports(); // Refresh the list
             } else {
-                if (typeof showToast === 'function') showToast(data.error || 'Failed to acknowledge', 'error');
+                showToast(data.error || 'Failed to acknowledge', 'error');
             }
         } catch (error) {
-            console.error('Error acknowledging report:', error);
-            if (typeof showToast === 'function') showToast('Error acknowledging report', 'error');
+            showToast('Error acknowledging report', 'error');
         }
     }
     
-    async function viewReportDetail(id) {
-        debugLog('Viewing report', id);
+    function showAddCommentModal() {
+        document.getElementById('newComment').value = '';
+        const modal = new bootstrap.Modal(document.getElementById('commentModal'));
+        modal.show();
+    }
+    
+    async function submitComment() {
+        const comment = document.getElementById('newComment').value;
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName') || 'Unknown User';
+        
+        if (!comment.trim()) {
+            showToast('Please enter a comment', 'error');
+            return;
+        }
+        
         try {
-            const response = await fetch('/api/technical-reports');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const reports = await response.json();
-            const report = reports.find(r => r.id === id);
+            // Get current comments
+            let comments = currentReport.comments || [];
+            comments.push({
+                author: userName,
+                text: comment,
+                created_at: new Date().toISOString()
+            });
             
-            if (report) {
-                currentViewReport = report;
-                displayReportInModal(report);
-                const modalElement = document.getElementById('viewReportModal');
-                if (modalElement) {
-                    const modal = new bootstrap.Modal(modalElement);
-                    modal.show();
-                } else {
-                    console.error('Modal element not found');
-                    if (typeof showToast === 'function') showToast('Error: Modal not found', 'error');
-                }
+            // Update report with new comment
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comments: comments })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                showToast('Comment added successfully');
+                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
+                // Refresh the modal content
+                openReportDetail(currentReportId);
             } else {
-                if (typeof showToast === 'function') showToast('Report not found', 'error');
+                showToast(data.error || 'Failed to add comment', 'error');
             }
         } catch (error) {
-            console.error('Error loading report:', error);
-            if (typeof showToast === 'function') showToast('Error loading report details: ' + error.message, 'error');
+            showToast('Error adding comment', 'error');
         }
     }
     
-    function displayReportInModal(report) {
-        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const utilityNumber = formatUtilityNumber(report);
-        
-        let imagesHtml = '';
-        if (report.images && report.images.length > 0) {
-            imagesHtml = `
-                <div class="detail-row">
-                    <div class="detail-label">Images:</div>
-                    <div class="detail-value">
-                        <div class="image-gallery">
-                            ${report.images.map(img => `<img src="${img}" class="detail-image" onclick="window.open('${img}')" alt="Report Image">`).join('')}
-                        </div>
+    function editReport() {
+        window.location.href = `/reports?id=${currentReportId}&edit=true`;
+    }
+    
+    function printReport() {
+        if (currentReport) {
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Report #${currentReport.id}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', sans-serif; padding: 40px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .content { margin-bottom: 20px; }
+                        .label { font-weight: bold; }
+                        hr { margin: 20px 0; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>Ministry of Education, Brunei</h2>
+                        <h3>Technical Report System</h3>
+                        <p>Report #${currentReport.id} - ${currentReport.report_type.toUpperCase()} Issue</p>
                     </div>
-                </div>
-            `;
-        }
-        
-        const tenderHtml = report.priority_with_tender ? `
-            <div class="detail-row" style="background-color: #fff3cd;">
-                <div class="detail-label">Priority with Tender:</div>
-                <div class="detail-value">
-                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> YES - TENDER REQUIRED</span>
-                    <small class="text-muted d-block">This report requires immediate tender/emergency action.</small>
-                </div>
-            </div>
-        ` : '';
-        
-        const html = `
-            <div>
-                <div style="background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <strong>Utility Number:</strong> ${escapeHtml(utilityNumber)} &nbsp;|&nbsp;
-                    <strong>Report ID:</strong> #${report.id} &nbsp;|&nbsp;
-                    <strong>Type:</strong> ${reportTypeName} ${reportTypeIcon} &nbsp;|&nbsp;
-                    <strong>Created:</strong> ${formatDate(report.created_at)} &nbsp;|&nbsp;
-                    <strong>Last Updated:</strong> ${formatDate(report.updated_at)}
-                </div>
-                
-                ${tenderHtml}
-                
-                <div class="detail-row">
-                    <div class="detail-label">Entity Type:</div>
-                    <div class="detail-value">${report.entity_type === 'school' ? 'School' : 'Department'}</div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">Entity Name:</div>
-                    <div class="detail-value">${escapeHtml(report.entity_name || report.entity_type)}</div>
-                </div>
-                
-                ${report.account_number ? `<div class="detail-row"><div class="detail-label">Account Number:</div><div class="detail-value">${escapeHtml(report.account_number)}</div></div>` : ''}
-                ${report.meter_number ? `<div class="detail-row"><div class="detail-label">Meter Number:</div><div class="detail-value">${escapeHtml(report.meter_number)}</div></div>` : ''}
-                ${report.phone_number ? `<div class="detail-row"><div class="detail-label">Phone Number:</div><div class="detail-value">${escapeHtml(report.phone_number)}</div></div>` : ''}
-                ${report.reference_number ? `<div class="detail-row"><div class="detail-label">Reference:</div><div class="detail-value">${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
-                
-                <div class="detail-row"><div class="detail-label">Problem Type:</div><div class="detail-value">${escapeHtml(report.problem_type || '-')}</div></div>
-                <div class="detail-row"><div class="detail-label">Priority:</div><div class="detail-value"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></div></div>
-                <div class="detail-row"><div class="detail-label">Status:</div><div class="detail-value"><span class="status-badge status-${report.status}">${report.status.replace('_', ' ').toUpperCase()}</span></div></div>
-                <div class="detail-row"><div class="detail-label">Complaint Details:</div><div class="detail-value">${escapeHtml(report.complaint_details || '-')}</div></div>
-                
-                ${report.technician_notes ? `<div class="detail-row"><div class="detail-label">Technician Notes:</div><div class="detail-value">${escapeHtml(report.technician_notes)}</div></div>` : ''}
-                ${report.action_taken ? `<div class="detail-row"><div class="detail-label">Action Taken:</div><div class="detail-value">${escapeHtml(report.action_taken)}</div></div>` : ''}
-                ${report.resolution_details ? `<div class="detail-row"><div class="detail-label">Resolution:</div><div class="detail-value">${escapeHtml(report.resolution_details)}</div></div>` : ''}
-                
-                <div class="detail-row"><div class="detail-label">Assigned Technician:</div><div class="detail-value">${escapeHtml(report.technician_name || 'Unassigned')} ${report.technician_role === 'senior_technician' ? '(Senior)' : '(Technician)'}</div></div>
-                <div class="detail-row"><div class="detail-label">Team Leader Acknowledged:</div><div class="detail-value">${report.team_leader_acknowledged ? 'Yes' : 'No'}</div></div>
-                ${report.team_leader_notes ? `<div class="detail-row"><div class="detail-label">Team Leader Notes:</div><div class="detail-value">${escapeHtml(report.team_leader_notes)}</div></div>` : ''}
-                
-                ${imagesHtml}
-            </div>
-        `;
-        
-        document.getElementById('viewReportContent').innerHTML = html;
-    }
-    
-    function printCurrentReport() {
-        if (currentViewReport) printReport(currentViewReport.id);
-    }
-    
-    function editCurrentReport() {
-        if (currentViewReport) window.location.href = `/reports?id=${currentViewReport.id}&edit=true`;
-    }
-    
-    function editReport(id) {
-        window.location.href = `/reports?id=${id}&edit=true`;
-    }
-    
-    async function printReport(id) {
-        try {
-            const response = await fetch('/api/technical-reports');
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const reports = await response.json();
-            const report = reports.find(r => r.id === id);
-            if (report) {
-                currentPrintReport = report;
-                document.getElementById('printContent').innerHTML = generatePrintHTML(report);
-                const modalElement = document.getElementById('printModal');
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            }
-        } catch (error) {
-            console.error('Error loading report for printing:', error);
-            if (typeof showToast === 'function') showToast('Error loading report for printing', 'error');
+                    <div class="content">
+                        <p><span class="label">Entity:</span> ${currentReport.entity_name || currentReport.entity_type}</p>
+                        <p><span class="label">Problem Type:</span> ${currentReport.problem_type || '-'}</p>
+                        <p><span class="label">Complaint Details:</span> ${currentReport.complaint_details || '-'}</p>
+                        <p><span class="label">Priority:</span> ${currentReport.priority}</p>
+                        <p><span class="label">Status:</span> ${currentReport.status}</p>
+                        <p><span class="label">Technician:</span> ${currentReport.technician_name || 'Unassigned'}</p>
+                        <p><span class="label">Created:</span> ${formatDate(currentReport.created_at)}</p>
+                        <hr>
+                        <p class="footer">This is an official report from the Ministry of Education, Brunei.</p>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
     }
     
-    function generatePrintHTML(report) {
-        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const utilityNumber = formatUtilityNumber(report);
-        
-        const tenderSection = report.priority_with_tender ? `
-            <div style="background-color: #fff3cd; padding: 10px; margin: 10px 0; border-left: 4px solid #dc3545;">
-                <strong><span style="color: #dc3545;">🔴 PRIORITY WITH TENDER</span></strong> - This report requires immediate tender/emergency action.
-            </div>
-        ` : '';
-        
-        return `
-            <div class="print-area">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #9b59b6;">Ministry of Education, Brunei</h2>
-                    <h3 style="margin: 5px 0; color: #666;">Technical Report System</h3>
-                    <hr style="border-top: 2px solid #9b59b6;">
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                    <div><strong>Utility Number:</strong> ${utilityNumber}</div>
-                    <div><strong>Report ID:</strong> #${report.id}</div>
-                    <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
-                    <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
-                </div>
-                
-                ${tenderSection}
-                
-                <table style="width:100%;border-collapse:collapse;">
-                    <tr style="background:#f5f5f5;"><th style="padding:10px;border:1px solid #ddd;text-align:left;">Field</th><th style="padding:10px;border:1px solid #ddd;text-align:left;">Details</th></tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Entity Type</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Entity Name</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.entity_name || report.entity_type)}</td</tr>
-                    ${report.account_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Account Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.account_number)}</td</td>` : ''}
-                    ${report.meter_number ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Meter Number</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.meter_number)}</td</td>` : ''}
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Problem Type</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.problem_type || '-')}</td</tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Priority</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.priority.toUpperCase()}</td</tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Status</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.status.replace('_', ' ').toUpperCase()}</td</tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Complaint Details</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.complaint_details || '-')}</td</tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Assigned Technician</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.technician_name || 'Unassigned')}</td</tr>
-                    <tr><td style="padding:8px;border:1px solid #ddd;"><strong>Team Leader Acknowledged</strong></td><td style="padding:8px;border:1px solid #ddd;">${report.team_leader_acknowledged ? 'Yes' : 'No'}</td</tr>
-                    ${report.team_leader_notes ? `<tr><td style="padding:8px;border:1px solid #ddd;"><strong>Team Leader Notes</strong></td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(report.team_leader_notes)}</td</tr>` : ''}
-                 >
-                
-                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
-                    <div style="text-align: center;">
-                        <div style="border-top: 1px solid #000; width: 200px; margin-top: 30px; padding-top: 5px;"></div>
-                        <div>Technician's Signature</div>
-                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
-                        <div>Date: ${formatDateOnly(new Date())}</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="border-top: 1px solid #000; width: 200px; margin-top: 30px; padding-top: 5px;"></div>
-                        <div>Team Leader's Signature</div>
-                        <div>Name: _________________</div>
-                        <div>Date: _________________</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 30px; text-align: center; font-size: 10px;">
-                    This is an official report from the Ministry of Education, Brunei. Printed on ${formatDate(new Date())}
-                </div>
-            </div>
-        `;
-    }
-    
-    function executePrint() {
-        if (!currentPrintReport) return;
-        const printContent = document.getElementById('printContent').innerHTML;
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
-        printWindow.document.write(`<!DOCTYPE html><html><head><title>Print Report #${currentPrintReport.id}</title><style>body{font-family:'Segoe UI',sans-serif;margin:0;padding:20px;}@media print{body{padding:0;}}</style></head><body>${printContent}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},1000);};<\/script></body></html>`);
-        printWindow.document.close();
-        fetch(`/api/technical-reports/${currentPrintReport.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
-        const modal = bootstrap.Modal.getInstance(document.getElementById('printModal'));
-        if (modal) modal.hide();
-    }
-    
-    function exportReports() {
-        let url = '/api/export-reports?';
-        const type = document.getElementById('filterType').value;
-        const tender = document.getElementById('filterTender').value;
-        if (type) url += `&type=${type}`;
-        if (tender) url += `&priority_with_tender=${tender === 'true'}`;
-        window.location.href = url;
-        if (typeof showToast === 'function') showToast('Exporting reports...');
-    }
-    
-    // Initialize the page
+    // Initialize
     async function init() {
-        debugLog('Initializing reports page');
-        
-        // First load reports
-        await loadAllReports();
+        await loadTechniciansForFilter();
+        await loadReports();
     }
     
     init();
