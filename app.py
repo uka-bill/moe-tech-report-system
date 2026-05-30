@@ -188,6 +188,7 @@ def get_technicians():
                     tech_dict['specializations'] = []
                 
                 tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
+                tech_dict['can_edit_technicians'] = tech_dict.get('can_edit_technicians', False)
                 technicians.append(tech_dict)
         
         return jsonify(technicians)
@@ -213,6 +214,7 @@ def create_technician():
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
             "is_authorized": data.get('is_authorized', False),
+            "can_edit_technicians": data.get('can_edit_technicians', False),
             "created_at": get_brunei_time_iso()
         }
         
@@ -243,7 +245,7 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized']
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians']
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
@@ -305,6 +307,24 @@ def check_technician_authorization(tech_id):
     except Exception as e:
         app.logger.error(f"Error checking authorization: {e}")
         return jsonify({'authorized': False}), 500
+
+@app.route('/api/technicians/<int:tech_id>/can-edit', methods=['GET'])
+def check_can_edit_technicians(tech_id):
+    try:
+        if not supabase:
+            return jsonify({'can_edit': False}), 500
+        
+        response = supabase.table("technicians").select("can_edit_technicians").eq("id", tech_id).execute()
+        
+        if response.data and len(response.data) > 0:
+            can_edit = response.data[0].get('can_edit_technicians', False)
+            return jsonify({'can_edit': can_edit})
+        else:
+            return jsonify({'can_edit': False}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error checking edit permission: {e}")
+        return jsonify({'can_edit': False}), 500
 
 # ============ SCHOOLS API ============
 
@@ -551,7 +571,6 @@ def get_technical_reports():
                         report_data['technician_name'] = tech.data[0]['name']
                         report_data['technician_role'] = tech.data[0]['role']
                 
-                # Ensure comments is an array
                 if 'comments' not in report_data or report_data['comments'] is None:
                     report_data['comments'] = []
                 elif isinstance(report_data['comments'], str):
@@ -701,7 +720,6 @@ def acknowledge_report(report_id):
                 'error': 'You are not authorized to acknowledge reports. Only designated team leaders can acknowledge.'
             }), 403
         
-        # Get team leader name
         tech_response = supabase.table("technicians").select("name").eq("id", team_leader_id).execute()
         team_leader_name = tech_response.data[0]['name'] if tech_response.data else 'Team Leader'
         
