@@ -159,13 +159,11 @@ def team_leader():
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
-    """Get all technicians sorted by ID ascending"""
     try:
         if not supabase:
             app.logger.error("Supabase client not initialized")
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Get all technicians ordered by ID
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
         
         app.logger.info(f"Fetched {len(response.data) if response.data else 0} technicians from database")
@@ -175,34 +173,28 @@ def get_technicians():
             for tech in response.data:
                 tech_dict = dict(tech)
                 
-                # Handle specializations - ensure it's an array
                 if 'specializations' in tech_dict and tech_dict['specializations']:
                     if isinstance(tech_dict['specializations'], str):
                         try:
                             tech_dict['specializations'] = json.loads(tech_dict['specializations'])
-                            app.logger.info(f"Parsed specializations for {tech_dict.get('name')}: {tech_dict['specializations']}")
                         except json.JSONDecodeError as e:
                             app.logger.warning(f"Failed to parse specializations for {tech_dict.get('name')}: {e}")
                             tech_dict['specializations'] = []
                     elif isinstance(tech_dict['specializations'], list):
-                        pass  # Already a list
+                        pass
                     else:
                         tech_dict['specializations'] = []
                 else:
                     tech_dict['specializations'] = []
                 
-                # Ensure is_authorized is boolean
                 tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
-                
                 technicians.append(tech_dict)
         
-        app.logger.info(f"Returning {len(technicians)} processed technicians")
         return jsonify(technicians)
         
     except Exception as e:
         app.logger.error(f"Error getting technicians: {str(e)}")
-        app.logger.error(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
+        return jsonify([]), 500
 
 @app.route('/api/technicians', methods=['POST'])
 def create_technician():
@@ -559,6 +551,15 @@ def get_technical_reports():
                         report_data['technician_name'] = tech.data[0]['name']
                         report_data['technician_role'] = tech.data[0]['role']
                 
+                # Ensure comments is an array
+                if 'comments' not in report_data or report_data['comments'] is None:
+                    report_data['comments'] = []
+                elif isinstance(report_data['comments'], str):
+                    try:
+                        report_data['comments'] = json.loads(report_data['comments'])
+                    except:
+                        report_data['comments'] = []
+                
                 reports.append(report_data)
         
         return jsonify(reports)
@@ -609,6 +610,7 @@ def create_technical_report():
             "team_leader_acknowledged_at": None,
             "team_leader_id": None,
             "images": data.get('images', []),
+            "comments": data.get('comments', []),
             "reference_type": data.get('reference_type', ''),
             "reference_number": data.get('reference_number', ''),
             "reference_date": reference_date,
@@ -646,7 +648,7 @@ def update_technical_report(report_id):
             'problem_type', 'complaint_details', 'priority', 'priority_with_tender', 'status',
             'technician_notes', 'action_taken', 'resolution_details',
             'team_leader_notes', 'images', 'account_number', 'meter_number',
-            'phone_number', 'number_of_lines',
+            'phone_number', 'number_of_lines', 'comments',
             'reference_type', 'reference_number', 'reference_date'
         ]
         
@@ -699,10 +701,15 @@ def acknowledge_report(report_id):
                 'error': 'You are not authorized to acknowledge reports. Only designated team leaders can acknowledge.'
             }), 403
         
+        # Get team leader name
+        tech_response = supabase.table("technicians").select("name").eq("id", team_leader_id).execute()
+        team_leader_name = tech_response.data[0]['name'] if tech_response.data else 'Team Leader'
+        
         update_data = {
             "team_leader_acknowledged": True,
             "team_leader_acknowledged_at": get_brunei_time_iso(),
             "team_leader_id": team_leader_id,
+            "team_leader_name": team_leader_name,
             "team_leader_notes": data.get('team_leader_notes', ''),
             "updated_at": get_brunei_time_iso()
         }
@@ -933,9 +940,9 @@ def export_reports():
             'Meter Number', 'Phone Number', 'Number of Lines', 'Problem Type',
             'Complaint Details', 'Priority', 'Priority with Tender', 'Status', 'Technician Name',
             'Technician Notes', 'Action Taken', 'Resolution Details',
-            'Team Leader Acknowledged', 'Team Leader Notes', 'Reference Type',
-            'Reference Number', 'Reference Date', 'Print Count', 'Last Printed',
-            'Created At', 'Updated At'
+            'Team Leader Acknowledged', 'Team Leader Name', 'Team Leader Notes', 
+            'Reference Type', 'Reference Number', 'Reference Date', 
+            'Print Count', 'Last Printed', 'Created At', 'Updated At'
         ]
         writer.writerow(headers)
         
@@ -979,6 +986,7 @@ def export_reports():
                 report.get('action_taken', ''),
                 report.get('resolution_details', ''),
                 'Yes' if report.get('team_leader_acknowledged') else 'No',
+                report.get('team_leader_name', ''),
                 report.get('team_leader_notes', ''),
                 report.get('reference_type', ''),
                 report.get('reference_number', ''),
