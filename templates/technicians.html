@@ -216,7 +216,7 @@
                     <div class="mb-3">
                         <label class="form-label">Employee ID *</label>
                         <input type="text" class="form-control" id="employeeId" required placeholder="e.g., TECH001, ST001">
-                        <small class="text-muted">Unique identifier for this technician</small>
+                        <small class="text-muted">Unique identifier for this technician (also default password)</small>
                     </div>
                     
                     <div class="mb-3">
@@ -273,6 +273,12 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="techPassword" placeholder="Leave blank to use Employee ID as password">
+                        <small class="text-muted">If left blank, Employee ID will be used as default password</small>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label class="form-label">Phone Number</label>
                         <input type="text" class="form-control" id="techPhone" placeholder="e.g., 8881234">
                     </div>
@@ -301,7 +307,7 @@
     // Check if current user can edit technicians
     function checkEditPermission() {
         const user = getCurrentUser();
-        canEdit = user.canEditTechnicians === true;
+        canEdit = user && user.canEditTechnicians === true;
         
         const addButton = document.getElementById('addTechBtn');
         const permissionNote = document.getElementById('permissionNote');
@@ -418,13 +424,13 @@
                     <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
                     <td><strong>${escapeHtml(tech.name)}</strong></td>
                     <td>${roleBadge}</br><small>ID: ${tech.id}</small></td>
-                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</td>
+                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</br><small>Areas</small></td>
                     <td>${authBadge}</br><small>Team Leader</small></td>
                     <td>${canEditBadge}</br><small>Tech Management</small></td>
                     <td>${escapeHtml(tech.phone || '-')}</br><small>Contact</small></td>
                     <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
-                    <td class="text-nowrap">${actionButtons}</td>
-                </table>
+                    <td>${actionButtons}</td>
+                </tr>
             `;
         }).join('');
     }
@@ -446,6 +452,7 @@
         document.getElementById('techId').value = '';
         document.getElementById('isAuthorized').checked = false;
         document.getElementById('canEditTechnicians').checked = false;
+        document.getElementById('techPassword').value = '';
         document.querySelectorAll('.spec-checkbox').forEach(cb => cb.checked = false);
         suggestNextEmployeeId();
         const modal = new bootstrap.Modal(document.getElementById('techModal'));
@@ -484,6 +491,7 @@
                 document.getElementById('techEmail').value = tech.email || '';
                 document.getElementById('isAuthorized').checked = tech.is_authorized || false;
                 document.getElementById('canEditTechnicians').checked = tech.can_edit_technicians || false;
+                document.getElementById('techPassword').value = '';
                 
                 let specializations = tech.specializations;
                 if (typeof specializations === 'string') {
@@ -517,6 +525,7 @@
         const id = document.getElementById('techId').value;
         const name = document.getElementById('techName').value.trim();
         const employeeId = document.getElementById('employeeId').value.trim();
+        const password = document.getElementById('techPassword').value.trim();
         
         const specializations = [];
         document.querySelectorAll('.spec-checkbox:checked').forEach(cb => {
@@ -546,10 +555,11 @@
             is_authorized: document.getElementById('isAuthorized').checked,
             can_edit_technicians: document.getElementById('canEditTechnicians').checked,
             phone: document.getElementById('techPhone').value.trim(),
-            email: document.getElementById('techEmail').value.trim()
+            email: document.getElementById('techEmail').value.trim(),
+            password: password || null
         };
         
-        console.log('Saving technician with data:', data);
+        console.log('Saving technician with data:', { ...data, password: password ? '***' : 'null' });
         
         try {
             let response;
