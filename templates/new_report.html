@@ -52,6 +52,42 @@
         margin-bottom: 20px;
         border-left: 4px solid #4caf50;
     }
+    .priority-box {
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    .priority-low {
+        background-color: #d4edda;
+        border: 2px solid #28a745;
+        color: #155724;
+    }
+    .priority-medium {
+        background-color: #fff3cd;
+        border: 2px solid #ffc107;
+        color: #856404;
+    }
+    .priority-high {
+        background-color: #f8d7da;
+        border: 2px solid #dc3545;
+        color: #721c24;
+    }
+    .priority-tender {
+        background-color: #ffe4b5;
+        border: 2px solid #ff8c00;
+        color: #cc7000;
+    }
+    .priority-option {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .priority-option:hover {
+        transform: scale(1.02);
+    }
+    .priority-option.selected {
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
     .image-preview-container {
         position: relative;
         display: inline-block;
@@ -90,6 +126,10 @@
         background-color: #c82333;
         transform: scale(1.1);
     }
+    .btn-radio-icon {
+        padding: 10px;
+        font-size: 1.2rem;
+    }
 </style>
 
 <div class="card">
@@ -126,46 +166,113 @@
                     <div class="col-md-12">
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="reportType" id="waterType" value="water" autocomplete="off" checked>
-                            <label class="btn btn-outline-info" for="waterType">
-                                <i class="bi bi-droplet"></i> 💧 Water Issue
+                            <label class="btn btn-outline-info btn-radio-icon" for="waterType">
+                                <i class="bi bi-droplet"></i> Water Issue
                             </label>
                             
                             <input type="radio" class="btn-check" name="reportType" id="electricityType" value="electricity" autocomplete="off">
-                            <label class="btn btn-outline-warning" for="electricityType">
-                                <i class="bi bi-lightning-charge"></i> ⚡ Electricity Issue
+                            <label class="btn btn-outline-warning btn-radio-icon" for="electricityType">
+                                <i class="bi bi-lightning-charge"></i> Electricity Issue
                             </label>
                             
                             <input type="radio" class="btn-check" name="reportType" id="telephoneType" value="telephone" autocomplete="off">
-                            <label class="btn btn-outline-success" for="telephoneType">
-                                <i class="bi bi-telephone"></i> 📞 Telephone Issue
+                            <label class="btn btn-outline-success btn-radio-icon" for="telephoneType">
+                                <i class="bi bi-telephone"></i> Telephone Issue
                             </label>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Priority Section -->
+            <!-- Priority Level Section -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-exclamation-triangle"></i> Priority Level
                 </div>
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <select class="form-select" id="priority" required>
-                            <option value="low">🟢 Low - Routine issue, can wait</option>
-                            <option value="medium" selected>🟡 Medium - Needs attention soon</option>
-                            <option value="high">🔴 High - Urgent / Emergency</option>
-                        </select>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="priority-box priority-low priority-option" data-priority="low" onclick="selectPriority('low')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priorityRadio" id="priorityLow" value="low">
+                                <label class="form-check-label fw-bold" for="priorityLow">
+                                    🟢 LOW - Routine issue, can wait
+                                </label>
+                            </div>
+                            <small class="d-block mt-1">Normal maintenance or non-urgent issue</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="priority-box priority-medium priority-option" data-priority="medium" onclick="selectPriority('medium')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priorityRadio" id="priorityMedium" value="medium" checked>
+                                <label class="form-check-label fw-bold" for="priorityMedium">
+                                    🟡 MEDIUM - Needs attention soon
+                                </label>
+                            </div>
+                            <small class="d-block mt-1">Affects operations but not emergency</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="priority-box priority-high priority-option" data-priority="high" onclick="selectPriority('high')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="priorityRadio" id="priorityHigh" value="high">
+                                <label class="form-check-label fw-bold" for="priorityHigh">
+                                    🔴 HIGH - Urgent / Emergency
+                                </label>
+                            </div>
+                            <small class="d-block mt-1">Immediate action required</small>
+                        </div>
                     </div>
                 </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="priorityWithTender" style="width: 50px; height: 25px;">
-                    <label class="form-check-label fw-bold" for="priorityWithTender">
-                        🔴 Priority with Tender (Requires immediate tender/emergency action)
-                    </label>
+                <div class="mt-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="priorityWithTender" style="width: 50px; height: 25px;">
+                        <label class="form-check-label fw-bold" for="priorityWithTender">
+                            🔥 Priority with Tender (Requires immediate tender/emergency action)
+                        </label>
+                    </div>
+                    <div id="priorityInfo" class="alert alert-warning mt-2" style="display: none; background-color: #ffe4b5; border-color: #ff8c00; color: #cc7000;">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Priority with Tender Selected</strong> - This report will be flagged for immediate tender action.
+                    </div>
                 </div>
-                <div id="priorityInfo" class="alert alert-warning mt-2" style="display: none;">
-                    <i class="bi bi-exclamation-triangle"></i> <strong>Priority with Tender Selected</strong> - This report will be flagged for immediate tender action.
+            </div>
+            
+            <!-- Account Details Section (MOVED FIRST) -->
+            <div class="form-section" id="accountSection">
+                <div class="form-section-title">
+                    <i class="bi bi-receipt"></i> Account Details
+                </div>
+                <div id="waterFields" class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Water Account Number</label>
+                        <input type="text" class="form-control" id="accountNumber" placeholder="e.g., W-12345">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Water Meter Number</label>
+                        <input type="text" class="form-control" id="meterNumber" placeholder="e.g., MTR-12345">
+                    </div>
+                </div>
+                
+                <div id="electricityFields" class="row mb-3" style="display: none;">
+                    <div class="col-md-6">
+                        <label class="form-label">Electricity Account Number</label>
+                        <input type="text" class="form-control" id="electricityAccountNumber" placeholder="e.g., E-12345">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Electricity Meter Number</label>
+                        <input type="text" class="form-control" id="electricityMeterNumber" placeholder="e.g., MET-12345">
+                    </div>
+                </div>
+                
+                <div id="telephoneFields" class="row mb-3" style="display: none;">
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 2380000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Number of Lines</label>
+                        <input type="number" class="form-control" id="numberOfLines" placeholder="e.g., 10">
+                    </div>
                 </div>
             </div>
             
@@ -192,7 +299,7 @@
                 </div>
             </div>
             
-            <!-- Problem Details Section -->
+            <!-- Problem Details Section (MOVED SECOND) -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-chat-left-text"></i> Problem Details
@@ -245,45 +352,6 @@
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Action Taken / Work Done</label>
                         <textarea class="form-control" id="actionTaken" rows="3" placeholder="Describe what action was taken, repairs done, or recommendations..."></textarea>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Account Details Section (dynamic) -->
-            <div class="form-section" id="accountSection">
-                <div class="form-section-title">
-                    <i class="bi bi-receipt"></i> Account Details
-                </div>
-                <div id="waterFields" class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Water Account Number</label>
-                        <input type="text" class="form-control" id="accountNumber" placeholder="e.g., W-12345">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Water Meter Number</label>
-                        <input type="text" class="form-control" id="meterNumber" placeholder="e.g., MTR-12345">
-                    </div>
-                </div>
-                
-                <div id="electricityFields" class="row mb-3" style="display: none;">
-                    <div class="col-md-6">
-                        <label class="form-label">Electricity Account Number</label>
-                        <input type="text" class="form-control" id="electricityAccountNumber" placeholder="e.g., E-12345">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Electricity Meter Number</label>
-                        <input type="text" class="form-control" id="electricityMeterNumber" placeholder="e.g., MET-12345">
-                    </div>
-                </div>
-                
-                <div id="telephoneFields" class="row mb-3" style="display: none;">
-                    <div class="col-md-6">
-                        <label class="form-label">Phone Number</label>
-                        <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 2380000">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Number of Lines</label>
-                        <input type="number" class="form-control" id="numberOfLines" placeholder="e.g., 10">
                     </div>
                 </div>
             </div>
@@ -365,6 +433,20 @@
     let currentTechnicianId = null;
     let currentTechnicianName = '';
     
+    function selectPriority(priority) {
+        document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
+        document.getElementById('priority').value = priority;
+        
+        // Update visual selection
+        document.querySelectorAll('.priority-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
+    }
+    
+    // Set initial selected style for medium priority
+    document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+    
     // Get current technician info
     async function getCurrentTechnician() {
         try {
@@ -384,7 +466,6 @@
                     return;
                 }
             }
-            // Fallback
             currentTechnicianName = userName || 'Technician';
             currentTechnicianId = null;
             document.getElementById('technicianName').textContent = currentTechnicianName;
@@ -412,15 +493,21 @@
     // Priority with Tender toggle
     document.getElementById('priorityWithTender').addEventListener('change', function() {
         const infoDiv = document.getElementById('priorityInfo');
-        const prioritySelect = document.getElementById('priority');
+        const priorityBoxes = document.querySelectorAll('.priority-option');
         
         if (this.checked) {
             infoDiv.style.display = 'block';
-            prioritySelect.value = 'high';
-            prioritySelect.disabled = true;
+            // Change priority boxes to tender style
+            priorityBoxes.forEach(box => {
+                box.style.opacity = '0.5';
+            });
+            // Highlight tender info
+            infoDiv.style.display = 'block';
         } else {
             infoDiv.style.display = 'none';
-            prioritySelect.disabled = false;
+            priorityBoxes.forEach(box => {
+                box.style.opacity = '1';
+            });
         }
     });
     
@@ -559,7 +646,11 @@
             document.getElementById('imagePreviewContainer').innerHTML = '';
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
-            document.getElementById('priority').disabled = false;
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.style.opacity = '1';
+            });
+            document.getElementById('priorityMedium').checked = true;
+            document.getElementById('priority').value = 'medium';
             updateAccountFields('water');
             setReportDateTime();
             showToast('Form cleared');
@@ -580,6 +671,12 @@
         const entityId = document.getElementById('entityId').value;
         const problemType = document.getElementById('problemType').value;
         const complaintDetails = document.getElementById('complaintDetails').value;
+        
+        // Get selected priority from radio buttons
+        let priority = 'medium';
+        if (document.getElementById('priorityLow').checked) priority = 'low';
+        if (document.getElementById('priorityMedium').checked) priority = 'medium';
+        if (document.getElementById('priorityHigh').checked) priority = 'high';
         
         if (!entityType || !entityId) {
             showToast('Please select entity type and name', 'error');
@@ -609,7 +706,7 @@
             problem_type: problemType,
             complaint_details: complaintDetails,
             action_taken: document.getElementById('actionTaken').value,
-            priority: document.getElementById('priority').value,
+            priority: priority,
             priority_with_tender: document.getElementById('priorityWithTender').checked,
             technician_id: currentTechnicianId,
             technician_notes: document.getElementById('technicianNotes').value,
@@ -645,6 +742,20 @@
     
     // Set default reference date
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
+    
+    // Set hidden priority input
+    const priorityHidden = document.createElement('input');
+    priorityHidden.type = 'hidden';
+    priorityHidden.id = 'priority';
+    priorityHidden.value = 'medium';
+    document.getElementById('reportForm').appendChild(priorityHidden);
+    
+    // Update hidden priority when radio changes
+    document.querySelectorAll('input[name="priorityRadio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.getElementById('priority').value = this.value;
+        });
+    });
     
     // Initialize
     async function init() {
