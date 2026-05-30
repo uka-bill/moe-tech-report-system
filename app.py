@@ -172,6 +172,8 @@ def get_technicians():
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
+                # Remove password from response for security
+                tech_dict.pop('password', None)
                 
                 if 'specializations' in tech_dict and tech_dict['specializations']:
                     if isinstance(tech_dict['specializations'], str):
@@ -206,15 +208,22 @@ def create_technician():
         data = request.get_json()
         specializations = data.get('specializations', [])
         
+        # Get password, default to employee_id if not provided
+        password = data.get('password')
+        employee_id = data.get('employee_id')
+        if not password:
+            password = employee_id
+        
         technician_data = {
             "name": data.get('name'),
             "role": data.get('role', 'technician'),
-            "employee_id": data.get('employee_id'),
+            "employee_id": employee_id,
             "phone": data.get('phone'),
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
             "is_authorized": data.get('is_authorized', False),
             "can_edit_technicians": data.get('can_edit_technicians', False),
+            "password": password,
             "created_at": get_brunei_time_iso()
         }
         
@@ -228,6 +237,8 @@ def create_technician():
         
         if response.data:
             app.logger.info(f"Technician created: {technician_data['name']}")
+            # Remove password from response
+            response.data[0].pop('password', None)
             return jsonify({'success': True, 'data': response.data[0]})
         else:
             return jsonify({'success': False, 'error': 'Failed to create technician'}), 500
@@ -245,9 +256,9 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians']
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians', 'password']
         for field in allowed_fields:
-            if field in data:
+            if field in data and data[field] is not None:
                 update_data[field] = data[field]
         
         if 'specializations' in data:
@@ -260,6 +271,7 @@ def update_technician(tech_id):
         
         if response.data:
             app.logger.info(f"Technician updated: ID {tech_id}")
+            response.data[0].pop('password', None)
             return jsonify({'success': True, 'data': response.data[0]})
         else:
             return jsonify({'success': False, 'error': 'Technician not found'}), 404
@@ -325,6 +337,66 @@ def check_can_edit_technicians(tech_id):
     except Exception as e:
         app.logger.error(f"Error checking edit permission: {e}")
         return jsonify({'can_edit': False}), 500
+
+@app.route('/api/technicians/verify-password', methods=['POST'])
+def verify_technician_password():
+    """Verify technician password for login"""
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        technician_id = data.get('technician_id')
+        password = data.get('password')
+        
+        if not technician_id or not password:
+            return jsonify({'success': False, 'error': 'Technician ID and password required'}), 400
+        
+        response = supabase.table("technicians").select("id, name, role, is_authorized, can_edit_technicians, password, employee_id").eq("id", technician_id).execute()
+        
+        if not response.data or len(response.data) == 0:
+            return jsonify({'success': False, 'error': 'Technician not found'}), 404
+        
+        tech = response.data[0]
+        stored_password = tech.get('password', '')
+        employee_id = tech.get('employee_id', '')
+        
+        if stored_password and password == stored_password:
+            return jsonify({'success': True, 'message': 'Password verified'})
+        elif not stored_password and password == employee_id:
+            return jsonify({'success': True, 'message': 'Password verified'})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid password'}), 401
+            
+    except Exception as e:
+        app.logger.error(f"Error verifying password: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/technicians/reset-password', methods=['POST'])
+def reset_technician_password():
+    """Reset technician password (Team Leader only)"""
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        technician_id = data.get('technician_id')
+        new_password = data.get('new_password')
+        
+        if not technician_id or not new_password:
+            return jsonify({'success': False, 'error': 'Technician ID and new password required'}), 400
+        
+        response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
+        
+        if response.data:
+            app.logger.info(f"Password reset for technician ID {technician_id}")
+            return jsonify({'success': True, 'message': 'Password reset successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reset password'}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error resetting password: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ SCHOOLS API ============
 
