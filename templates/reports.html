@@ -130,13 +130,67 @@
         border-radius: 8px;
         border: 1px solid #ddd;
     }
+    .image-container {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .image-preview {
+        width: 120px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid var(--primary-light);
+        transition: transform 0.2s;
+    }
+    .image-preview:hover {
+        transform: scale(1.05);
+        border-color: var(--primary-color);
+    }
+    .remove-image-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .remove-image-btn:hover {
+        background-color: #c82333;
+        transform: scale(1.1);
+    }
+    .debug-info {
+        background-color: #f0f0f0;
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 11px;
+        display: none;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-archive"></i> Reports</h2>
-    <a href="{{ url_for('new_report') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> New Report
-    </a>
+    <div>
+        <a href="{{ url_for('new_report') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Report
+        </a>
+        <button class="btn btn-secondary ms-2" onclick="toggleDebug()">
+            <i class="bi bi-bug"></i> Debug
+        </button>
+    </div>
 </div>
 
 <!-- Filter Section -->
@@ -176,6 +230,12 @@
         </div>
         <p class="mt-2">Loading reports...</p>
     </div>
+</div>
+
+<!-- Debug Panel -->
+<div id="debugPanel" class="debug-info">
+    <strong>Debug Information:</strong>
+    <pre id="debugContent"></pre>
 </div>
 
 <!-- Report Detail Modal -->
@@ -250,10 +310,82 @@
     </div>
 </div>
 
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-image"></i> Image Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" style="max-width: 100%; max-height: 80vh;" alt="Report Image">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="downloadImageLink" href="#" download class="btn btn-primary">
+                    <i class="bi bi-download"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentReport = null;
     let currentReportId = null;
     let allTechnicians = [];
+    
+    function toggleDebug() {
+        const panel = document.getElementById('debugPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function debugLog(message, data) {
+        const debugContent = document.getElementById('debugContent');
+        const timestamp = new Date().toLocaleTimeString();
+        if (data !== undefined) {
+            debugContent.innerHTML += `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}\n`;
+            console.log(`[DEBUG] ${message}`, data);
+        } else {
+            debugContent.innerHTML += `[${timestamp}] ${message}\n`;
+            console.log(`[DEBUG] ${message}`);
+        }
+        debugContent.scrollTop = debugContent.scrollHeight;
+    }
+    
+    // Helper function to get absolute image URL
+    function getImageUrl(imgPath) {
+        if (!imgPath) return '';
+        if (imgPath.startsWith('http')) {
+            return imgPath;
+        }
+        // If it's a relative path, add the base URL
+        const baseUrl = window.location.origin;
+        return baseUrl + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
+    }
+    
+    // Open image in full size modal
+    function openImageModal(imageUrl) {
+        const fullUrl = getImageUrl(imageUrl);
+        debugLog('Opening image modal', { original: imageUrl, fullUrl: fullUrl });
+        
+        const modalImage = document.getElementById('modalImage');
+        const downloadLink = document.getElementById('downloadImageLink');
+        
+        modalImage.src = fullUrl;
+        downloadLink.href = fullUrl;
+        
+        // Add error handler
+        modalImage.onerror = function() {
+            debugLog('Image failed to load', fullUrl);
+            modalImage.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\' viewBox=\'0 0 200 200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'100\' y=\'110\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'14\'%3EImage Not Found%3C/text%3E%3C/svg%3E';
+            modalImage.style.objectFit = 'contain';
+        };
+        
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+    }
     
     // Load technicians for filter dropdown
     async function loadTechniciansForFilter() {
@@ -269,8 +401,10 @@
                 options += `<option value="${tech.id}">${roleText} ${tech.name}</option>`;
             });
             select.innerHTML = options;
+            debugLog('Technicians loaded for filter', technicians.length);
         } catch (error) {
             console.error('Error loading technicians:', error);
+            debugLog('Error loading technicians', error.message);
         }
     }
     
@@ -286,12 +420,15 @@
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Loading reports...</p></div>';
         
         try {
+            debugLog('Fetching reports', url);
             const response = await fetch(url);
             let reports = await response.json();
+            debugLog('Reports received', reports.length);
             
             // Filter by technician if needed
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
+                debugLog('Filtered by technician', reports.length);
             }
             
             if (reports.length === 0) {
@@ -307,6 +444,7 @@
             displayReports(reports);
         } catch (error) {
             console.error('Error loading reports:', error);
+            debugLog('Error loading reports', error.message);
             container.innerHTML = `
                 <div class="text-center py-5 text-danger">
                     <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
@@ -342,13 +480,13 @@
                     </div>
                     <div class="row">
                         <div class="col-md-8">
-                            <strong>${report.entity_name || report.entity_type}</strong>
+                            <strong>${escapeHtml(report.entity_name || report.entity_type)}</strong>
                             <div class="text-muted small">Report #${report.utility_number || report.id}</div>
-                            <div class="mt-2">${report.problem_type || 'No problem type'}</div>
-                            <div class="text-muted small mt-1">${(report.complaint_details || '').substring(0, 100)}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
+                            <div class="mt-2">${escapeHtml(report.problem_type || 'No problem type')}</div>
+                            <div class="text-muted small mt-1">${escapeHtml((report.complaint_details || '').substring(0, 100))}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
                         </div>
                         <div class="col-md-4 text-end">
-                            <div><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</div>
+                            <div><i class="bi bi-person"></i> ${escapeHtml(report.technician_name || 'Unassigned')}</div>
                             <div class="small text-muted"><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
                             ${report.comments && report.comments.length > 0 ? `<div class="small text-primary mt-1"><i class="bi bi-chat-dots"></i> ${report.comments.length} comment(s)</div>` : ''}
                         </div>
@@ -358,21 +496,34 @@
         }).join('');
     }
     
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     // Open report detail modal
     async function openReportDetail(id) {
         currentReportId = id;
         try {
+            debugLog('Opening report detail', id);
             const response = await fetch('/api/technical-reports');
             const reports = await response.json();
             currentReport = reports.find(r => r.id === id);
             
             if (currentReport) {
+                debugLog('Report found', { id: currentReport.id, images: currentReport.images });
                 displayReportModal();
                 const modal = new bootstrap.Modal(document.getElementById('reportModal'));
                 modal.show();
+            } else {
+                debugLog('Report not found', id);
+                showToast('Report not found', 'error');
             }
         } catch (error) {
             console.error('Error loading report:', error);
+            debugLog('Error loading report', error.message);
             showToast('Error loading report details', 'error');
         }
     }
@@ -396,14 +547,45 @@
                     ${report.comments.map(c => `
                         <div class="comment-item">
                             <div>
-                                <span class="comment-author">${c.author}</span>
+                                <span class="comment-author">${escapeHtml(c.author)}</span>
                                 <span class="comment-date">${formatDate(c.created_at)}</span>
                             </div>
-                            <div class="comment-text">${c.text}</div>
+                            <div class="comment-text">${escapeHtml(c.text)}</div>
                         </div>
                     `).join('')}
                 </div>
             `;
+        }
+        
+        // Build images section with proper error handling
+        let imagesHtml = '';
+        if (report.images && report.images.length > 0) {
+            debugLog('Images found in report', report.images);
+            imagesHtml = `
+                <div class="mt-3">
+                    <strong>Images (${report.images.length}):</strong>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        ${report.images.map((img, idx) => {
+                            const fullUrl = getImageUrl(img);
+                            debugLog(`Image ${idx + 1}: ${fullUrl}`);
+                            return `
+                                <div class="image-container">
+                                    <img src="${fullUrl}" class="image-preview" 
+                                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'100\' viewBox=\'0 0 120 100\'%3E%3Crect width=\'120\' height=\'100\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'60\' y=\'55\' text-anchor=\'middle\' fill=\'%23999\' font-size=\'11\'%3EImage Not Found%3C/text%3E%3C/svg%3E'"
+                                         onclick="openImageModal('${img}')">
+                                    <button class="btn btn-sm btn-danger remove-image-btn" 
+                                            onclick="event.stopPropagation(); deleteImageFromReport('${report.id}', '${img}')">
+                                        ×
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <small class="text-muted">Click on image to enlarge. Click × to delete.</small>
+                </div>
+            `;
+        } else {
+            debugLog('No images found in report');
         }
         
         // Build acknowledgment section
@@ -412,12 +594,12 @@
             acknowledgmentHtml = `
                 <div class="alert alert-success mt-3">
                     <i class="bi bi-check-circle"></i> <strong>Report Acknowledged</strong><br>
-                    By: ${report.team_leader_name || 'Team Leader'}<br>
+                    By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
                     Date: ${formatDate(report.team_leader_acknowledged_at)}<br>
-                    Notes: ${report.team_leader_notes || 'No notes provided'}
+                    Notes: ${escapeHtml(report.team_leader_notes || 'No notes provided')}
                 </div>
             `;
-        } else if (isAuthorized && report.role !== 'senior_technician') {
+        } else if (isAuthorized) {
             acknowledgmentHtml = `
                 <div class="alert alert-warning mt-3">
                     <i class="bi bi-exclamation-triangle"></i> This report is pending acknowledgment.
@@ -451,40 +633,33 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <strong>Entity Type:</strong> ${report.entity_type === 'school' ? '🏫 School' : '🏢 Department'}<br>
-                        <strong>Entity Name:</strong> ${report.entity_name || report.entity_type}
+                        <strong>Entity Name:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
                     </div>
                     <div class="col-md-6">
-                        <strong>Assigned Technician:</strong> ${report.technician_name || 'Unassigned'}<br>
+                        <strong>Assigned Technician:</strong> ${escapeHtml(report.technician_name || 'Unassigned')}<br>
                         <strong>Technician Role:</strong> ${report.technician_role === 'senior_technician' ? 'Senior Technician' : 'Technician'}
                     </div>
                 </div>
                 
-                ${report.account_number ? `<div><strong>Account Number:</strong> ${report.account_number}</div>` : ''}
-                ${report.meter_number ? `<div><strong>Meter Number:</strong> ${report.meter_number}</div>` : ''}
-                ${report.phone_number ? `<div><strong>Phone Number:</strong> ${report.phone_number}</div>` : ''}
-                ${report.reference_number ? `<div><strong>Reference:</strong> ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${report.reference_number}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div>` : ''}
+                ${report.account_number ? `<div><strong>Account Number:</strong> ${escapeHtml(report.account_number)}</div>` : ''}
+                ${report.meter_number ? `<div><strong>Meter Number:</strong> ${escapeHtml(report.meter_number)}</div>` : ''}
+                ${report.phone_number ? `<div><strong>Phone Number:</strong> ${escapeHtml(report.phone_number)}</div>` : ''}
+                ${report.reference_number ? `<div><strong>Reference:</strong> ${report.reference_type ? report.reference_type.toUpperCase() + ': ' : ''}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div>` : ''}
                 
                 <div class="mt-3">
-                    <strong>Problem Type:</strong> ${report.problem_type || '-'}<br>
+                    <strong>Problem Type:</strong> ${escapeHtml(report.problem_type || '-')}<br>
                     <strong>Complaint Details:</strong><br>
-                    <div class="border p-2 rounded bg-light mt-1">${report.complaint_details || '-'}</div>
+                    <div class="border p-2 rounded bg-light mt-1">${escapeHtml(report.complaint_details || '-')}</div>
                 </div>
                 
                 ${report.technician_notes ? `
                 <div class="mt-3">
                     <strong>Technician Notes:</strong><br>
-                    <div class="border p-2 rounded bg-light mt-1">${report.technician_notes}</div>
+                    <div class="border p-2 rounded bg-light mt-1">${escapeHtml(report.technician_notes)}</div>
                 </div>
                 ` : ''}
                 
-                ${report.images && report.images.length > 0 ? `
-                <div class="mt-3">
-                    <strong>Images:</strong>
-                    <div class="d-flex flex-wrap gap-2 mt-2">
-                        ${report.images.map(img => `<img src="${img}" class="image-preview" onclick="window.open('${img}')" style="width: 100px; height: 80px; object-fit: cover; border-radius: 5px; cursor: pointer;">`).join('')}
-                    </div>
-                </div>
-                ` : ''}
+                ${imagesHtml}
                 
                 ${commentsHtml}
                 
@@ -532,6 +707,7 @@
     }
     
     function showAcknowledgeModal() {
+        document.getElementById('acknowledgeComment').value = '';
         const modal = new bootstrap.Modal(document.getElementById('acknowledgeModal'));
         modal.show();
     }
@@ -558,9 +734,8 @@
             if (data.success) {
                 showToast('Report acknowledged successfully');
                 bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
-                // Refresh the modal content
                 openReportDetail(currentReportId);
-                loadReports(); // Refresh the list
+                loadReports();
             } else {
                 showToast(data.error || 'Failed to acknowledge', 'error');
             }
@@ -586,7 +761,6 @@
         }
         
         try {
-            // Get current comments
             let comments = currentReport.comments || [];
             comments.push({
                 author: userName,
@@ -594,7 +768,6 @@
                 created_at: new Date().toISOString()
             });
             
-            // Update report with new comment
             const response = await fetch(`/api/technical-reports/${currentReportId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -605,13 +778,39 @@
             if (data.success) {
                 showToast('Comment added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
-                // Refresh the modal content
                 openReportDetail(currentReportId);
             } else {
                 showToast(data.error || 'Failed to add comment', 'error');
             }
         } catch (error) {
             showToast('Error adding comment', 'error');
+        }
+    }
+    
+    async function deleteImageFromReport(reportId, imageUrl) {
+        if (!confirm('Are you sure you want to remove this image?')) return;
+        
+        try {
+            const updatedImages = currentReport.images.filter(img => img !== imageUrl);
+            
+            const response = await fetch(`/api/technical-reports/${reportId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ images: updatedImages })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                showToast('Image removed successfully');
+                currentReport.images = updatedImages;
+                displayReportModal();
+                loadReports();
+            } else {
+                showToast('Failed to remove image', 'error');
+            }
+        } catch (error) {
+            console.error('Error removing image:', error);
+            showToast('Error removing image', 'error');
         }
     }
     
@@ -633,6 +832,8 @@
                         .content { margin-bottom: 20px; }
                         .label { font-weight: bold; }
                         hr { margin: 20px 0; }
+                        .image-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+                        .image-grid img { max-width: 150px; max-height: 120px; object-fit: cover; border-radius: 5px; }
                     </style>
                 </head>
                 <body>
@@ -642,13 +843,19 @@
                         <p>Report #${currentReport.id} - ${currentReport.report_type.toUpperCase()} Issue</p>
                     </div>
                     <div class="content">
-                        <p><span class="label">Entity:</span> ${currentReport.entity_name || currentReport.entity_type}</p>
-                        <p><span class="label">Problem Type:</span> ${currentReport.problem_type || '-'}</p>
-                        <p><span class="label">Complaint Details:</span> ${currentReport.complaint_details || '-'}</p>
+                        <p><span class="label">Entity:</span> ${escapeHtml(currentReport.entity_name || currentReport.entity_type)}</p>
+                        <p><span class="label">Problem Type:</span> ${escapeHtml(currentReport.problem_type || '-')}</p>
+                        <p><span class="label">Complaint Details:</span> ${escapeHtml(currentReport.complaint_details || '-')}</p>
                         <p><span class="label">Priority:</span> ${currentReport.priority}</p>
                         <p><span class="label">Status:</span> ${currentReport.status}</p>
-                        <p><span class="label">Technician:</span> ${currentReport.technician_name || 'Unassigned'}</p>
+                        <p><span class="label">Technician:</span> ${escapeHtml(currentReport.technician_name || 'Unassigned')}</p>
                         <p><span class="label">Created:</span> ${formatDate(currentReport.created_at)}</p>
+                        ${currentReport.images && currentReport.images.length > 0 ? `
+                        <p><span class="label">Images:</span></p>
+                        <div class="image-grid">
+                            ${currentReport.images.map(img => `<img src="${getImageUrl(img)}" onerror="this.style.display='none'">`).join('')}
+                        </div>
+                        ` : ''}
                         <hr>
                         <p class="footer">This is an official report from the Ministry of Education, Brunei.</p>
                     </div>
@@ -662,6 +869,7 @@
     
     // Initialize
     async function init() {
+        debugLog('Initializing reports page');
         await loadTechniciansForFilter();
         await loadReports();
     }
