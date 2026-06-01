@@ -27,26 +27,29 @@
         .navbar {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 0.8rem 1rem;
+            padding: 0.3rem 1rem;
+            min-height: 50px;
         }
         
         .navbar-brand {
             font-weight: bold;
             color: white !important;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
+            padding: 0.2rem 0;
         }
         
         .navbar-brand i {
-            margin-right: 10px;
+            margin-right: 8px;
         }
         
         .navbar-nav .nav-link {
             color: rgba(255,255,255,0.9) !important;
             font-weight: 500;
-            padding: 0.6rem 1.2rem;
+            padding: 0.4rem 0.8rem;
             margin: 0 2px;
-            border-radius: 8px;
+            border-radius: 6px;
             transition: all 0.3s;
+            font-size: 0.9rem;
         }
         
         .navbar-nav .nav-link:hover {
@@ -62,7 +65,8 @@
         }
         
         .navbar-nav .nav-link i {
-            margin-right: 8px;
+            margin-right: 5px;
+            font-size: 0.9rem;
         }
         
         .dropdown-menu {
@@ -70,13 +74,15 @@
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             border-radius: 10px;
-            margin-top: 8px;
+            margin-top: 4px;
+            padding: 0.3rem 0;
         }
         
         .dropdown-item {
-            padding: 8px 20px;
+            padding: 6px 20px;
             color: #333;
             transition: all 0.2s;
+            font-size: 0.85rem;
         }
         
         .dropdown-item:hover {
@@ -87,11 +93,17 @@
         .dropdown-item i {
             margin-right: 8px;
             color: var(--primary-color);
+            font-size: 0.85rem;
+        }
+        
+        .dropdown-header {
+            font-size: 0.75rem;
+            padding: 4px 20px;
         }
         
         .main-content {
-            padding: 25px;
-            min-height: calc(100vh - 140px);
+            padding: 20px;
+            min-height: calc(100vh - 110px);
         }
         
         .card {
@@ -111,7 +123,7 @@
             border-bottom: 2px solid var(--primary-color);
             border-radius: 12px 12px 0 0 !important;
             font-weight: bold;
-            padding: 15px 20px;
+            padding: 12px 20px;
             color: var(--primary-dark);
         }
         
@@ -142,9 +154,9 @@
         }
         
         .status-badge {
-            padding: 5px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             display: inline-block;
         }
@@ -188,17 +200,17 @@
         .acknowledged-badge {
             background-color: #28a745;
             color: white;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
         }
         
         .unacknowledged-badge {
             background-color: #dc3545;
             color: white;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
         }
         
         .table thead th {
@@ -206,6 +218,13 @@
             color: var(--primary-dark);
             font-weight: 600;
             border-bottom: 2px solid var(--primary-light);
+            font-size: 0.85rem;
+            padding: 10px;
+        }
+        
+        .table tbody td {
+            font-size: 0.85rem;
+            padding: 8px 10px;
         }
         
         .table-hover tbody tr:hover {
@@ -231,9 +250,10 @@
         footer {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 20px;
+            padding: 12px;
             text-align: center;
-            margin-top: 30px;
+            margin-top: 20px;
+            font-size: 0.75rem;
         }
         
         footer small {
@@ -254,15 +274,27 @@
             to { transform: rotate(360deg); }
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .navbar-nav {
-                margin-top: 10px;
+                margin-top: 5px;
             }
             .navbar-nav .nav-link {
-                padding: 0.5rem 1rem;
+                padding: 0.3rem 0.8rem;
             }
             .main-content {
                 padding: 15px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-nav {
+                margin-top: 5px;
+            }
+            .navbar-nav .nav-link {
+                padding: 0.25rem 0.8rem;
+            }
+            .main-content {
+                padding: 12px;
             }
         }
         
@@ -285,10 +317,15 @@
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             border-radius: 10px 10px 0 0;
+            padding: 10px 15px;
         }
         
         .modal-header .btn-close {
             filter: brightness(0) invert(1);
+        }
+        
+        .modal-title {
+            font-size: 1rem;
         }
         
         .modal-title i {
@@ -304,16 +341,21 @@
         
         .user-selector {
             background-color: rgba(255,255,255,0.15);
-            border-radius: 8px;
-            padding: 5px 10px;
+            border-radius: 6px;
+            padding: 3px 8px;
         }
         .user-selector select {
             background-color: white;
             border: none;
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 0.9rem;
-            margin-left: 8px;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            margin-left: 6px;
+        }
+        
+        /* Make the user name display more compact */
+        #currentUserName {
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -336,7 +378,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('new_report') }}">
-                            <i class="bi bi-plus-circle"></i> New Report
+                            <i class="bi bi-plus-circle"></i> New
                         </a>
                     </li>
                     <li class="nav-item dropdown">
@@ -354,12 +396,12 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('mapping_page') }}">
-                            <i class="bi bi-map"></i> Mapping & Profiling
+                            <i class="bi bi-map"></i> Mapping
                         </a>
                     </li>
                     <li class="nav-item dropdown" id="managementNav">
                         <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-gear"></i> Management
+                            <i class="bi bi-gear"></i> Mgmt
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('schools_page') }}"><i class="bi bi-building"></i> Schools</a></li>
@@ -369,7 +411,7 @@
                     </li>
                     <li class="nav-item" id="teamLeaderNav">
                         <a class="nav-link" href="{{ url_for('team_leader') }}">
-                            <i class="bi bi-check2-square"></i> Team Leader
+                            <i class="bi bi-check2-square"></i> Leader
                         </a>
                     </li>
                     <!-- User Selector -->
@@ -420,15 +462,15 @@
                 </div>
                 <div class="modal-body">
                     <div class="text-center mb-3">
-                        <i class="bi bi-person-circle" style="font-size: 48px; color: var(--primary-color);"></i>
+                        <i class="bi bi-person-circle" style="font-size: 36px; color: var(--primary-color);"></i>
                         <h6 id="passwordUserName" class="mt-2">User Name</h6>
                     </div>
                     <input type="password" class="form-control" id="passwordInput" placeholder="Enter password" autocomplete="off">
                     <small class="text-muted">Default password is your Employee ID (e.g., TECH001)</small>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="verifyPassword()">Unlock</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="verifyPassword()">Unlock</button>
                 </div>
             </div>
         </div>
@@ -462,7 +504,7 @@
                         <a class="dropdown-item ${isActive ? 'active' : ''}" href="#" onclick="selectUser(${user.id}, '${escapeHtml(user.name)}', '${user.role}', ${user.is_authorized || false}, ${user.can_edit_technicians || false}); return false;">
                             <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(user.name)}
                             ${isActive ? ' ✓' : ''}
-                            <br><small class="text-muted">${user.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
+                            <br><small class="text-muted">${user.role === 'senior_technician' ? 'Senior Tech' : 'Tech'}</small>
                         </a>
                     `;
                 }
