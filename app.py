@@ -1076,6 +1076,43 @@ def delete_mapping_image(image_id):
         app.logger.error(f"Error deleting mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============ DEBUG ENDPOINT FOR MAPPING TABLES ============
+
+@app.route('/api/debug/mapping-tables', methods=['GET'])
+def debug_mapping_tables():
+    """Debug endpoint to check if mapping tables exist"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Supabase not connected'}), 500
+        
+        # Try to query mapping_locations
+        try:
+            locations_response = supabase.table("mapping_locations").select("id").limit(1).execute()
+            locations_exists = True
+            locations_error = None
+        except Exception as e:
+            locations_exists = False
+            locations_error = str(e)
+        
+        # Try to query mapping_images
+        try:
+            images_response = supabase.table("mapping_images").select("id").limit(1).execute()
+            images_exists = True
+            images_error = None
+        except Exception as e:
+            images_exists = False
+            images_error = str(e)
+        
+        return jsonify({
+            'mapping_locations_exists': locations_exists,
+            'mapping_images_exists': images_exists,
+            'locations_error': locations_error,
+            'images_error': images_error
+        })
+    except Exception as e:
+        app.logger.error(f"Debug endpoint error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ============ IMAGE UPLOAD ============
 
 @app.route('/api/upload-image', methods=['POST'])
