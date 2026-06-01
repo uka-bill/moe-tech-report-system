@@ -57,6 +57,7 @@
         border-radius: 10px;
         margin-bottom: 15px;
         transition: all 0.3s;
+        cursor: pointer;
     }
     .priority-low {
         background-color: #d4edda;
@@ -73,21 +74,6 @@
         border: 2px solid #dc3545;
         color: #721c24;
     }
-    .priority-tender {
-        background-color: #ffe4b5;
-        border: 2px solid #ff8c00;
-        color: #cc7000;
-    }
-    .priority-option {
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .priority-option:hover {
-        transform: scale(1.02);
-    }
-    .priority-option.selected {
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
-    }
     .image-preview-container {
         position: relative;
         display: inline-block;
@@ -99,11 +85,6 @@
         object-fit: cover;
         border-radius: 8px;
         border: 2px solid var(--primary-light);
-        transition: transform 0.2s;
-    }
-    .image-preview:hover {
-        transform: scale(1.05);
-        border-color: var(--primary-color);
     }
     .remove-image-btn {
         position: absolute;
@@ -118,17 +99,9 @@
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
-    .remove-image-btn:hover {
-        background-color: #c82333;
-        transform: scale(1.1);
-    }
-    .btn-radio-icon {
-        padding: 10px;
-        font-size: 1.2rem;
+    .priority-option.selected {
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
     }
 </style>
 
@@ -137,12 +110,10 @@
         <i class="bi bi-plus-circle"></i> Submit New Technical Report
     </div>
     <div class="card-body">
-        <!-- Info Box -->
         <div class="info-box">
-            <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields. Upload photos of the issue and the work done. Your report will be sent to the Team Leader for review and acknowledgment.
+            <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields. Your report will be sent to the Team Leader for review.
         </div>
 
-        <!-- Date/Time Panel -->
         <div class="datetime-panel">
             <div class="datetime-item">
                 <i class="bi bi-calendar-plus"></i>
@@ -166,17 +137,15 @@
                     <div class="col-md-12">
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="reportType" id="waterType" value="water" autocomplete="off" checked>
-                            <label class="btn btn-outline-info btn-radio-icon" for="waterType">
+                            <label class="btn btn-outline-info" for="waterType">
                                 <i class="bi bi-droplet"></i> Water Issue
                             </label>
-                            
                             <input type="radio" class="btn-check" name="reportType" id="electricityType" value="electricity" autocomplete="off">
-                            <label class="btn btn-outline-warning btn-radio-icon" for="electricityType">
+                            <label class="btn btn-outline-warning" for="electricityType">
                                 <i class="bi bi-lightning-charge"></i> Electricity Issue
                             </label>
-                            
                             <input type="radio" class="btn-check" name="reportType" id="telephoneType" value="telephone" autocomplete="off">
-                            <label class="btn btn-outline-success btn-radio-icon" for="telephoneType">
+                            <label class="btn btn-outline-success" for="telephoneType">
                                 <i class="bi bi-telephone"></i> Telephone Issue
                             </label>
                         </div>
@@ -184,7 +153,35 @@
                 </div>
             </div>
             
-            <!-- Priority Level Section -->
+            <!-- Reference Information Section - MOVED TO TOP -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="bi bi-file-text"></i> Reference Information (Optional)
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Type</label>
+                        <select class="form-select" id="referenceType">
+                            <option value="">Select Reference Type</option>
+                            <option value="memo">📝 Memo</option>
+                            <option value="minute">📋 Minute</option>
+                            <option value="letter">✉️ Letter</option>
+                            <option value="email">📧 Email</option>
+                            <option value="other">📄 Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Date</label>
+                        <input type="date" class="form-control" id="referenceDate">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Priority Section -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-exclamation-triangle"></i> Priority Level
@@ -194,33 +191,27 @@
                         <div class="priority-box priority-low priority-option" data-priority="low" onclick="selectPriority('low')">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="priorityRadio" id="priorityLow" value="low">
-                                <label class="form-check-label fw-bold" for="priorityLow">
-                                    🟢 LOW - Routine issue, can wait
-                                </label>
+                                <label class="form-check-label fw-bold">🟢 LOW - Can wait</label>
                             </div>
-                            <small class="d-block mt-1">Normal maintenance or non-urgent issue</small>
+                            <small>Normal maintenance or non-urgent issue</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="priority-box priority-medium priority-option" data-priority="medium" onclick="selectPriority('medium')">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="priorityRadio" id="priorityMedium" value="medium" checked>
-                                <label class="form-check-label fw-bold" for="priorityMedium">
-                                    🟡 MEDIUM - Needs attention soon
-                                </label>
+                                <label class="form-check-label fw-bold">🟡 MEDIUM - Needs attention soon</label>
                             </div>
-                            <small class="d-block mt-1">Affects operations but not emergency</small>
+                            <small>Affects operations but not emergency</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="priority-box priority-high priority-option" data-priority="high" onclick="selectPriority('high')">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="priorityRadio" id="priorityHigh" value="high">
-                                <label class="form-check-label fw-bold" for="priorityHigh">
-                                    🔴 HIGH - Urgent / Emergency
-                                </label>
+                                <label class="form-check-label fw-bold">🔴 HIGH - Urgent / Emergency</label>
                             </div>
-                            <small class="d-block mt-1">Immediate action required</small>
+                            <small>Immediate action required</small>
                         </div>
                     </div>
                 </div>
@@ -237,8 +228,8 @@
                 </div>
             </div>
             
-            <!-- Account Details Section (MOVED FIRST) -->
-            <div class="form-section" id="accountSection">
+            <!-- Account Details Section -->
+            <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-receipt"></i> Account Details
                 </div>
@@ -252,7 +243,6 @@
                         <input type="text" class="form-control" id="meterNumber" placeholder="e.g., MTR-12345">
                     </div>
                 </div>
-                
                 <div id="electricityFields" class="row mb-3" style="display: none;">
                     <div class="col-md-6">
                         <label class="form-label">Electricity Account Number</label>
@@ -263,7 +253,6 @@
                         <input type="text" class="form-control" id="electricityMeterNumber" placeholder="e.g., MET-12345">
                     </div>
                 </div>
-                
                 <div id="telephoneFields" class="row mb-3" style="display: none;">
                     <div class="col-md-6">
                         <label class="form-label">Phone Number</label>
@@ -299,7 +288,7 @@
                 </div>
             </div>
             
-            <!-- Problem Details Section (MOVED SECOND) -->
+            <!-- Problem Details Section -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-chat-left-text"></i> Problem Details
@@ -340,46 +329,16 @@
                         </select>
                     </div>
                 </div>
-                
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Complaint / Issue Description *</label>
                         <textarea class="form-control" id="complaintDetails" rows="4" required placeholder="Please provide detailed description of the problem..."></textarea>
                     </div>
                 </div>
-                
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Action Taken / Work Done</label>
                         <textarea class="form-control" id="actionTaken" rows="3" placeholder="Describe what action was taken, repairs done, or recommendations..."></textarea>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Reference Section -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-file-text"></i> Reference Information (Optional)
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Type</label>
-                        <select class="form-select" id="referenceType">
-                            <option value="">Select Reference Type</option>
-                            <option value="memo">📝 Memo</option>
-                            <option value="minute">📋 Minute</option>
-                            <option value="letter">✉️ Letter</option>
-                            <option value="email">📧 Email</option>
-                            <option value="other">📄 Other</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Number</label>
-                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Date</label>
-                        <input type="date" class="form-control" id="referenceDate">
                     </div>
                 </div>
             </div>
@@ -405,7 +364,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <textarea class="form-control" id="technicianNotes" rows="3" placeholder="Any additional observations, recommendations, or notes from the technician..."></textarea>
+                        <textarea class="form-control" id="technicianNotes" rows="3" placeholder="Any additional observations, recommendations, or notes..."></textarea>
                     </div>
                 </div>
             </div>
@@ -419,9 +378,7 @@
                     <button type="reset" class="btn btn-secondary" onclick="resetForm()">
                         <i class="bi bi-eraser"></i> Clear Form
                     </button>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
-                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </div>
         </form>
@@ -436,24 +393,16 @@
     function selectPriority(priority) {
         document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
         document.getElementById('priority').value = priority;
-        
-        // Update visual selection
-        document.querySelectorAll('.priority-option').forEach(opt => {
-            opt.classList.remove('selected');
-        });
+        document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
         document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
     }
-    
-    // Set initial selected style for medium priority
     document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
     
-    // Get current technician info
     async function getCurrentTechnician() {
         try {
             const userId = localStorage.getItem('userId');
             const userName = localStorage.getItem('userName');
-            
-            if (userId && userId !== 'temp') {
+            if (userId && userId !== 'null') {
                 const response = await fetch('/api/technicians');
                 const technicians = await response.json();
                 const technician = technicians.find(t => t.id == userId);
@@ -461,118 +410,70 @@
                     currentTechnicianId = technician.id;
                     currentTechnicianName = technician.name;
                     document.getElementById('technicianName').textContent = technician.name;
-                    document.getElementById('technicianName').style.color = 'var(--primary-dark)';
-                    document.getElementById('technicianName').style.fontWeight = 'bold';
                     return;
                 }
             }
             currentTechnicianName = userName || 'Technician';
-            currentTechnicianId = null;
             document.getElementById('technicianName').textContent = currentTechnicianName;
         } catch (error) {
-            console.error('Error getting technician:', error);
-            currentTechnicianName = 'Technician';
             document.getElementById('technicianName').textContent = 'Unknown Technician';
         }
     }
     
-    // Set report date
     function setReportDateTime() {
         const now = new Date();
-        const formatted = now.toLocaleString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+        document.getElementById('reportDateTime').textContent = now.toLocaleString('en-GB', {
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
         });
-        document.getElementById('reportDateTime').textContent = formatted;
     }
     
-    // Priority with Tender toggle
     document.getElementById('priorityWithTender').addEventListener('change', function() {
         const infoDiv = document.getElementById('priorityInfo');
-        const priorityBoxes = document.querySelectorAll('.priority-option');
-        
+        const prioritySelect = document.getElementById('priority');
         if (this.checked) {
             infoDiv.style.display = 'block';
-            // Change priority boxes to tender style
-            priorityBoxes.forEach(box => {
-                box.style.opacity = '0.5';
-            });
-            // Highlight tender info
-            infoDiv.style.display = 'block';
+            prioritySelect.value = 'high';
+            prioritySelect.disabled = true;
+            document.getElementById('priorityHigh').checked = true;
+            document.querySelector('.priority-option[data-priority="high"]').classList.add('selected');
         } else {
             infoDiv.style.display = 'none';
-            priorityBoxes.forEach(box => {
-                box.style.opacity = '1';
-            });
+            prioritySelect.disabled = false;
         }
     });
     
-    // Update account fields based on report type
     function updateAccountFields(reportType) {
         document.getElementById('waterFields').style.display = 'none';
         document.getElementById('electricityFields').style.display = 'none';
         document.getElementById('telephoneFields').style.display = 'none';
-        
-        if (reportType === 'water') {
-            document.getElementById('waterFields').style.display = 'flex';
-        } else if (reportType === 'electricity') {
-            document.getElementById('electricityFields').style.display = 'flex';
-        } else if (reportType === 'telephone') {
-            document.getElementById('telephoneFields').style.display = 'flex';
-        }
+        if (reportType === 'water') document.getElementById('waterFields').style.display = 'flex';
+        else if (reportType === 'electricity') document.getElementById('electricityFields').style.display = 'flex';
+        else if (reportType === 'telephone') document.getElementById('telephoneFields').style.display = 'flex';
     }
     
-    // Load schools and departments
     async function loadSchools() {
         try {
             const response = await fetch('/api/schools');
             return await response.json();
-        } catch (error) {
-            console.error('Error loading schools:', error);
-            return [];
-        }
+        } catch { return []; }
     }
     
     async function loadDepartments() {
         try {
             const response = await fetch('/api/departments');
             return await response.json();
-        } catch (error) {
-            console.error('Error loading departments:', error);
-            return [];
-        }
+        } catch { return []; }
     }
     
-    // Handle entity type change
     document.getElementById('entityType').addEventListener('change', async function() {
         const entitySelect = document.getElementById('entityId');
         if (this.value === 'school') {
             const schools = await loadSchools();
-            if (schools.length === 0) {
-                entitySelect.innerHTML = '<option value="">No schools found</option>';
-            } else {
-                let options = '<option value="">Select School</option>';
-                schools.forEach(s => {
-                    options += `<option value="${s.id}">${escapeHtml(s.name)} (${s.school_number || 'No code'})</option>`;
-                });
-                entitySelect.innerHTML = options;
-            }
+            entitySelect.innerHTML = '<option value="">Select School</option>' + schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
             entitySelect.disabled = false;
         } else if (this.value === 'department') {
             const departments = await loadDepartments();
-            if (departments.length === 0) {
-                entitySelect.innerHTML = '<option value="">No departments found</option>';
-            } else {
-                let options = '<option value="">Select Department</option>';
-                departments.forEach(d => {
-                    options += `<option value="${d.id}">${escapeHtml(d.name)}</option>`;
-                });
-                entitySelect.innerHTML = options;
-            }
+            entitySelect.innerHTML = '<option value="">Select Department</option>' + departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
             entitySelect.disabled = false;
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
@@ -580,56 +481,37 @@
         }
     });
     
-    // Handle report type change
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            updateAccountFields(this.value);
-        });
+        radio.addEventListener('change', function() { updateAccountFields(this.value); });
     });
     
-    // Image upload handling
     document.getElementById('imageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
-        
         for (const file of files) {
             const formData = new FormData();
             formData.append('image', file);
-            
             try {
-                const response = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
                 const data = await response.json();
-                
                 if (data.success) {
                     uploadedImages.push(data.image_url);
-                    
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
-                    previewDiv.innerHTML = `
-                        <img src="${data.image_url}" class="image-preview" alt="Preview">
-                        <button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>
-                    `;
+                    previewDiv.innerHTML = `<img src="${data.image_url}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
                     showToast('Image uploaded successfully');
-                } else {
-                    showToast('Failed to upload image', 'error');
                 }
-            } catch (error) {
-                showToast('Error uploading image', 'error');
-            }
+            } catch (error) { showToast('Error uploading image', 'error'); }
         }
         document.getElementById('imageUpload').value = '';
     });
     
     function removeImage(imageUrl) {
         uploadedImages = uploadedImages.filter(img => img !== imageUrl);
-        const previewDiv = document.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
-        if (previewDiv) previewDiv.remove();
-        showToast('Image removed');
+        const preview = document.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
+        if (preview) preview.remove();
     }
     
     function escapeHtml(text) {
@@ -640,31 +522,21 @@
     }
     
     function resetForm() {
-        if (confirm('Are you sure you want to clear all form data?')) {
+        if (confirm('Clear all form data?')) {
             document.getElementById('reportForm').reset();
             uploadedImages = [];
             document.getElementById('imagePreviewContainer').innerHTML = '';
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
-            document.querySelectorAll('.priority-option').forEach(opt => {
-                opt.style.opacity = '1';
-            });
-            document.getElementById('priorityMedium').checked = true;
-            document.getElementById('priority').value = 'medium';
+            document.getElementById('priority').disabled = false;
             updateAccountFields('water');
             setReportDateTime();
             showToast('Form cleared');
         }
     }
     
-    // Form submission
     document.getElementById('reportForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
-        if (!currentTechnicianId) {
-            showToast('Please switch to your technician account first', 'error');
-            return;
-        }
         
         const reportType = document.querySelector('input[name="reportType"]:checked').value;
         const entityType = document.getElementById('entityType').value;
@@ -672,35 +544,21 @@
         const problemType = document.getElementById('problemType').value;
         const complaintDetails = document.getElementById('complaintDetails').value;
         
-        // Get selected priority from radio buttons
         let priority = 'medium';
         if (document.getElementById('priorityLow').checked) priority = 'low';
         if (document.getElementById('priorityMedium').checked) priority = 'medium';
         if (document.getElementById('priorityHigh').checked) priority = 'high';
         
-        if (!entityType || !entityId) {
-            showToast('Please select entity type and name', 'error');
-            return;
-        }
-        
-        if (!problemType) {
-            showToast('Please select a problem type', 'error');
-            return;
-        }
-        
-        if (!complaintDetails) {
-            showToast('Please provide complaint details', 'error');
-            return;
-        }
+        if (!entityType || !entityId) { showToast('Please select entity type and name', 'error'); return; }
+        if (!problemType) { showToast('Please select a problem type', 'error'); return; }
+        if (!complaintDetails) { showToast('Please provide complaint details', 'error'); return; }
         
         const reportData = {
             report_type: reportType,
             entity_type: entityType,
             entity_id: parseInt(entityId),
-            account_number: reportType === 'water' ? document.getElementById('accountNumber').value : 
-                           (reportType === 'electricity' ? document.getElementById('electricityAccountNumber').value : ''),
-            meter_number: reportType === 'water' ? document.getElementById('meterNumber').value : 
-                         (reportType === 'electricity' ? document.getElementById('electricityMeterNumber').value : ''),
+            account_number: reportType === 'water' ? document.getElementById('accountNumber').value : (reportType === 'electricity' ? document.getElementById('electricityAccountNumber').value : ''),
+            meter_number: reportType === 'water' ? document.getElementById('meterNumber').value : (reportType === 'electricity' ? document.getElementById('electricityMeterNumber').value : ''),
             phone_number: reportType === 'telephone' ? document.getElementById('phoneNumber').value : '',
             number_of_lines: reportType === 'telephone' ? parseInt(document.getElementById('numberOfLines').value) || null : null,
             problem_type: problemType,
@@ -723,47 +581,33 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reportData)
             });
-            
             const data = await response.json();
-            
             if (data.success) {
-                showToast('Report submitted successfully! The Team Leader will review it.');
-                setTimeout(() => {
-                    window.location.href = '/my-reports';
-                }, 2000);
+                showToast('Report submitted successfully!');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                showToast(data.error || 'Failed to submit report', 'error');
+                showToast(data.error || 'Failed to submit', 'error');
             }
         } catch (error) {
-            console.error('Error submitting report:', error);
             showToast('Error submitting report', 'error');
         }
     });
     
-    // Set default reference date
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
-    
-    // Set hidden priority input
     const priorityHidden = document.createElement('input');
     priorityHidden.type = 'hidden';
     priorityHidden.id = 'priority';
     priorityHidden.value = 'medium';
     document.getElementById('reportForm').appendChild(priorityHidden);
-    
-    // Update hidden priority when radio changes
     document.querySelectorAll('input[name="priorityRadio"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            document.getElementById('priority').value = this.value;
-        });
+        radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
     });
     
-    // Initialize
     async function init() {
         setReportDateTime();
         await getCurrentTechnician();
         updateAccountFields('water');
     }
-    
     init();
 </script>
 {% endblock %}
