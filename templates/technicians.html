@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    // Ensure user is loaded from storage before anything else
+    (function() {
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName');
+        if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+            console.log('Technicians Page - User loaded:', userName, 'ID:', userId);
+        } else {
+            console.log('Technicians Page - No user found in storage');
+        }
+    })();
+</script>
+
 <style>
     .specialization-badge {
         display: inline-block;
@@ -297,13 +310,15 @@
     let currentFilter = 'all';
     let canEdit = false;
     
-    // Check if current user can edit technicians
+    // Check if current user can edit technicians using global user
     function checkEditPermission() {
         const user = window.getCurrentUser();
         canEdit = user && user.canEditTechnicians === true;
         
         const addButton = document.getElementById('addTechBtn');
         const permissionNote = document.getElementById('permissionNote');
+        
+        console.log('Technicians Page - Edit permission:', canEdit, 'User:', user?.name);
         
         if (!canEdit) {
             if (addButton) addButton.style.display = 'none';
@@ -317,7 +332,13 @@
     
     async function loadTechnicians() {
         try {
+            console.log('Loading technicians list...');
             const response = await fetch('/api/technicians');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             allTechnicians = await response.json();
             console.log('Loaded technicians:', allTechnicians.length);
             applyFilter();
@@ -325,7 +346,7 @@
         } catch (error) {
             console.error('Error loading technicians:', error);
             document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh the page.</td</tr>';
-            window.showToast('Error loading technicians', 'error');
+            if (window.showToast) window.showToast('Error loading technicians', 'error');
         }
     }
     
@@ -367,11 +388,11 @@
     function displayTechnicians(technicians) {
         const tbody = document.getElementById('techniciansTable');
         if (!technicians || technicians.length === 0) {
-            tbody.innerHTML = '<td><td colspan="10" class="text-center">No technicians found. Click "Add Technician" to create one.</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No technicians found. Click "Add Technician" to create one.</td</tr>';
             return;
         }
         
-        tbody.innerHTML = technicians.map((tech, index) => {
+        tbody.innerHTML = technicians.map((tech) => {
             // Parse specializations
             let specializations = tech.specializations;
             if (typeof specializations === 'string') {
@@ -416,14 +437,14 @@
                     <td><strong>${tech.id}</strong></td>
                     <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
                     <td><strong>${escapeHtml(tech.name)}</strong></td>
-                    <td>${roleBadge}</br><small>ID: ${tech.id}</small></td>
-                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</br><small>Areas</small></td>
-                    <td>${authBadge}</br><small>Team Leader</small></td>
-                    <td>${canEditBadge}</br><small>Tech Management</small></td>
-                    <td>${escapeHtml(tech.phone || '-')}</br><small>Contact</small></td>
-                    <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
+                    <td>${roleBadge}<br><small>ID: ${tech.id}</small></td>
+                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}<br><small>Areas</small></td>
+                    <td>${authBadge}<br><small>Team Leader</small></td>
+                    <td>${canEditBadge}<br><small>Tech Management</small></td>
+                    <td>${escapeHtml(tech.phone || '-')}<br><small>Contact</small></td>
+                    <td>${escapeHtml(tech.email || '-')}<br><small>Email</small></td>
                     <td class="text-nowrap">${actionButtons}</td>
-                <tr>
+                </tr>
             `;
         }).join('');
     }
@@ -437,7 +458,7 @@
     
     function showAddTechModal() {
         if (!canEdit) {
-            window.showToast('You do not have permission to add technicians', 'error');
+            if (window.showToast) window.showToast('You do not have permission to add technicians', 'error');
             return;
         }
         document.getElementById('techModalTitle').innerHTML = '<i class="bi bi-person-plus"></i> Add Technician';
@@ -466,7 +487,7 @@
     
     async function editTechnician(id) {
         if (!canEdit) {
-            window.showToast('You do not have permission to edit technicians', 'error');
+            if (window.showToast) window.showToast('You do not have permission to edit technicians', 'error');
             return;
         }
         try {
@@ -505,13 +526,13 @@
             }
         } catch (error) {
             console.error('Error loading technician:', error);
-            window.showToast('Error loading technician details', 'error');
+            if (window.showToast) window.showToast('Error loading technician details', 'error');
         }
     }
     
     async function saveTechnician() {
         if (!canEdit) {
-            window.showToast('You do not have permission to save changes', 'error');
+            if (window.showToast) window.showToast('You do not have permission to save changes', 'error');
             return;
         }
         
@@ -526,17 +547,17 @@
         });
         
         if (!name) {
-            window.showToast('Technician name is required', 'error');
+            if (window.showToast) window.showToast('Technician name is required', 'error');
             return;
         }
         
         if (!employeeId) {
-            window.showToast('Employee ID is required', 'error');
+            if (window.showToast) window.showToast('Employee ID is required', 'error');
             return;
         }
         
         if (specializations.length === 0) {
-            window.showToast('Please select at least one specialization', 'error');
+            if (window.showToast) window.showToast('Please select at least one specialization', 'error');
             return;
         }
         
@@ -572,21 +593,21 @@
             
             const result = await response.json();
             if (result.success) {
-                window.showToast(id ? 'Technician updated successfully' : 'Technician added successfully');
+                if (window.showToast) window.showToast(id ? 'Technician updated successfully' : 'Technician added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('techModal')).hide();
                 loadTechnicians();
             } else {
-                window.showToast(result.error || 'Failed to save technician', 'error');
+                if (window.showToast) window.showToast(result.error || 'Failed to save technician', 'error');
             }
         } catch (error) {
             console.error('Error saving technician:', error);
-            window.showToast('Error saving technician', 'error');
+            if (window.showToast) window.showToast('Error saving technician', 'error');
         }
     }
     
     async function deleteTechnician(id) {
         if (!canEdit) {
-            window.showToast('You do not have permission to delete technicians', 'error');
+            if (window.showToast) window.showToast('You do not have permission to delete technicians', 'error');
             return;
         }
         
@@ -597,18 +618,22 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    window.showToast('Technician deleted successfully');
+                    if (window.showToast) window.showToast('Technician deleted successfully');
                     loadTechnicians();
                 } else {
-                    window.showToast(result.error || 'Cannot delete technician with assigned reports', 'error');
+                    if (window.showToast) window.showToast(result.error || 'Cannot delete technician with assigned reports', 'error');
                 }
             } catch (error) {
-                window.showToast('Error deleting technician', 'error');
+                console.error('Error deleting technician:', error);
+                if (window.showToast) window.showToast('Error deleting technician', 'error');
             }
         }
     }
     
     // Initialize on page load
-    loadTechnicians();
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Technicians page DOM loaded');
+        loadTechnicians();
+    });
 </script>
 {% endblock %}
