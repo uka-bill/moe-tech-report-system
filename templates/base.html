@@ -301,6 +301,15 @@
             right: 20px;
             z-index: 9999;
         }
+        
+        /* User selector styles */
+        .user-active-badge {
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .dropdown-item.active-user {
+            background-color: var(--secondary-color);
+        }
     </style>
 </head>
 <body>
@@ -355,7 +364,7 @@
                     </li>
                     <!-- User Selector Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="userDropdownToggle">
                             <i class="bi bi-person-circle"></i> <span id="currentUserName">Select User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" id="userSelectorMenu">
@@ -426,7 +435,7 @@
         </div>
     </div>
     
-    <!-- Reset Password Modal (Team Leader only) -->
+    <!-- Reset Password Modal -->
     <div class="modal fade" id="resetPasswordModal" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -491,14 +500,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Global user management
+        // ============ GLOBAL VARIABLES ============
         let currentUser = null;
         let allTechnicians = [];
         let pendingUserSelection = null;
         
         // ============ USER PERSISTENCE FUNCTIONS ============
         
-        // Initialize user from localStorage on page load (called IMMEDIATELY)
         function initUserFromStorage() {
             const userId = localStorage.getItem('userId');
             const userName = localStorage.getItem('userName');
@@ -534,7 +542,6 @@
             }
         }
         
-        // Save user to localStorage
         function saveUserToStorage(user) {
             if (user && user.id) {
                 localStorage.setItem('userId', user.id);
@@ -546,7 +553,6 @@
             }
         }
         
-        // Clear user from storage
         function clearUserStorage() {
             localStorage.removeItem('userId');
             localStorage.removeItem('userName');
@@ -562,7 +568,6 @@
             console.log('User cleared from storage');
         }
         
-        // Update profile menu visibility
         function updateProfileMenuVisibility() {
             const changePasswordItem = document.getElementById('changePasswordItem');
             const logoutItem = document.getElementById('logoutItem');
@@ -576,7 +581,6 @@
         
         // ============ USER SELECTOR FUNCTIONS ============
         
-        // Load technicians and populate user selector
         async function loadUserSelector() {
             try {
                 console.log('Loading technicians for user selector...');
@@ -591,30 +595,33 @@
                 
                 const container = document.getElementById('userListContainer');
                 if (!allTechnicians || allTechnicians.length === 0) {
-                    container.innerHTML = '<div class="text-center py-2 text-muted">No technicians found. Please add technicians first.</div>';
+                    container.innerHTML = '<div class="text-center py-2 text-muted">No technicians found.</div>';
                     return;
                 }
                 
                 let html = '';
-                allTechnicians.forEach(tech => {
+                for (const tech of allTechnicians) {
                     const isSelected = currentUser && currentUser.id == tech.id;
                     const roleIcon = tech.role === 'senior_technician' ? '⭐' : '👤';
                     const isAuthorizedBadge = tech.is_authorized ? '<span class="badge bg-success ms-1">TL</span>' : '';
+                    const activeBadge = isSelected ? '<span class="badge bg-success float-end">Active</span>' : '';
+                    
                     html += `
-                        <div class="dropdown-item d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
+                        <div class="dropdown-item d-flex justify-content-between align-items-center ${isSelected ? 'active-user' : ''}" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
                             <div>
                                 <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(tech.name)} ${isAuthorizedBadge}
                                 <br><small class="text-muted">${tech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
                             </div>
-                            ${isSelected ? '<span class="badge bg-success">Active</span>' : ''}
+                            ${activeBadge}
                             ${currentUser && currentUser.canEditTechnicians ? `<button class="btn btn-sm btn-outline-warning ms-2" onclick="event.stopPropagation(); showResetPassword('${tech.id}', '${escapeHtml(tech.name)}')"><i class="bi bi-key"></i></button>` : ''}
                         </div>
                     `;
-                });
+                }
                 container.innerHTML = html;
             } catch (error) {
                 console.error('Error loading user selector:', error);
-                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh.</div>';
+                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh the page.</div>';
+                window.showToast('Error loading users: ' + error.message, 'error');
             }
         }
         
@@ -625,7 +632,8 @@
             return div.innerHTML;
         }
         
-        // Request password for selected user
+        // ============ PASSWORD FUNCTIONS ============
+        
         function requestPassword(userId, userName) {
             pendingUserSelection = { id: userId, name: userName };
             document.getElementById('passwordUserName').textContent = userName;
@@ -634,12 +642,11 @@
             modal.show();
         }
         
-        // Verify password and login
         async function verifyPassword() {
             const password = document.getElementById('passwordInput').value;
             
             if (!pendingUserSelection) {
-                showToast('No user selected', 'error');
+                window.showToast('No user selected', 'error');
                 return;
             }
             
@@ -671,24 +678,23 @@
                         updateProfileMenuVisibility();
                         
                         bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
-                        showToast(`Welcome ${tech.name}!`, 'success');
+                        window.showToast(`Welcome ${tech.name}!`, 'success');
                         setTimeout(() => location.reload(), 500);
                     }
                 } else {
-                    showToast(result.error || 'Invalid password', 'error');
+                    window.showToast(result.error || 'Invalid password', 'error');
                     document.getElementById('passwordInput').value = '';
                     document.getElementById('passwordInput').focus();
                 }
             } catch (error) {
                 console.error('Error verifying password:', error);
-                showToast('Error verifying password', 'error');
+                window.showToast('Error verifying password', 'error');
             }
         }
         
-        // Show reset password modal (Team Leader only)
         function showResetPassword(userId, userName) {
             if (!currentUser || !currentUser.canEditTechnicians) {
-                showToast('Only Team Leaders can reset passwords', 'error');
+                window.showToast('Only Team Leaders can reset passwords', 'error');
                 return;
             }
             document.getElementById('resetUserName').textContent = userName;
@@ -698,11 +704,10 @@
             modal.show();
         }
         
-        // Confirm password reset
         async function confirmResetPassword() {
             const newPassword = document.getElementById('resetPasswordInput').value;
             if (!newPassword || newPassword.trim() === '') {
-                showToast('Please enter a new password', 'error');
+                window.showToast('Please enter a new password', 'error');
                 return;
             }
             
@@ -719,21 +724,20 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showToast('Password reset successfully', 'success');
+                    window.showToast('Password reset successfully', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
                 } else {
-                    showToast(result.error || 'Failed to reset password', 'error');
+                    window.showToast(result.error || 'Failed to reset password', 'error');
                 }
             } catch (error) {
                 console.error('Error resetting password:', error);
-                showToast('Error resetting password', 'error');
+                window.showToast('Error resetting password', 'error');
             }
         }
         
-        // Show Change Password modal
         function showChangePasswordModal() {
             if (!currentUser || !currentUser.id) {
-                showToast('Please select a user first', 'error');
+                window.showToast('Please select a user first', 'error');
                 return;
             }
             document.getElementById('changePasswordUserName').textContent = currentUser.name;
@@ -744,29 +748,28 @@
             modal.show();
         }
         
-        // Submit password change
         async function submitChangePassword() {
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmNewPassword').value;
             
             if (!currentPassword) {
-                showToast('Please enter current password', 'error');
+                window.showToast('Please enter current password', 'error');
                 return;
             }
             
             if (!newPassword) {
-                showToast('Please enter new password', 'error');
+                window.showToast('Please enter new password', 'error');
                 return;
             }
             
             if (newPassword !== confirmPassword) {
-                showToast('New passwords do not match', 'error');
+                window.showToast('New passwords do not match', 'error');
                 return;
             }
             
             if (newPassword.length < 4) {
-                showToast('Password must be at least 4 characters', 'error');
+                window.showToast('Password must be at least 4 characters', 'error');
                 return;
             }
             
@@ -784,18 +787,17 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showToast('Password changed successfully!', 'success');
+                    window.showToast('Password changed successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
                 } else {
-                    showToast(result.error || 'Failed to change password', 'error');
+                    window.showToast(result.error || 'Failed to change password', 'error');
                 }
             } catch (error) {
                 console.error('Error changing password:', error);
-                showToast('Error changing password', 'error');
+                window.showToast('Error changing password', 'error');
             }
         }
         
-        // Logout function
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 clearUserStorage();
@@ -805,10 +807,8 @@
         
         // ============ PERMISSION CHECK FUNCTIONS ============
         
-        // Get current user (exposed globally)
         window.getCurrentUser = function() {
             if (!currentUser) {
-                // Try to load from storage again
                 const userId = localStorage.getItem('userId');
                 const userName = localStorage.getItem('userName');
                 const userRole = localStorage.getItem('userRole');
@@ -839,7 +839,6 @@
             return user.canEditTechnicians === true;
         };
         
-        // Check management access
         function checkManagementAccess() {
             const canEdit = window.canEditTechnicians();
             const techniciansNav = document.getElementById('techniciansNavLink');
@@ -848,7 +847,6 @@
             }
         }
         
-        // Check team leader access
         function checkTeamLeaderAccess() {
             const isAuth = window.isTeamLeader();
             const teamLeaderNav = document.getElementById('teamLeaderNav');
@@ -857,7 +855,6 @@
             }
         }
         
-        // Highlight active nav link
         function highlightActiveNav() {
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.navbar .nav-link');
@@ -923,7 +920,6 @@
         
         // ============ INITIALIZATION ============
         
-        // Initialize everything - called when DOM is ready
         async function initialize() {
             console.log('=== Initializing base.html ===');
             console.log('Current path:', window.location.pathname);
@@ -931,7 +927,7 @@
             // First, load user from storage
             initUserFromStorage();
             
-            // Then load user selector
+            // Then load user selector (this will show the dropdown options)
             await loadUserSelector();
             
             // Check permissions and update UI
