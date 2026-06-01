@@ -137,6 +137,9 @@
     .action-buttons .btn {
         margin: 0 2px;
     }
+    .team-leader-only {
+        border-left: 3px solid #ffc107;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -146,8 +149,14 @@
     </button>
 </div>
 
+<!-- Permission Notice - Only visible to non-team-leaders -->
 <div id="permissionNote" style="display: none;" class="permission-note">
     <i class="bi bi-lock"></i> <strong>View Only Mode</strong> - Only authorized Team Leaders can add, edit, or delete technicians.
+</div>
+
+<!-- Team Leader Notice - Visible to Team Leader -->
+<div id="teamLeaderNote" style="display: none;" class="permission-note" style="background-color: #e8f5e9; border-left-color: #28a745;">
+    <i class="bi bi-star-fill"></i> <strong>Team Leader Access</strong> - You have full access to add, edit, and delete technicians.
 </div>
 
 <!-- Filter by Specialization -->
@@ -178,8 +187,8 @@
                         <th>Name</th>
                         <th>Role</th>
                         <th>Specializations</th>
-                        <th>Authorized</th>
-                        <th>Can Edit Techs</th>
+                        <th>Authorized<br><small>(Team Leader)</small></th>
+                        <th>Can Edit Techs<br><small>(Management)</small></th>
                         <th>Phone</th>
                         <th>Email</th>
                         <th style="width: 100px;">Actions</th>
@@ -209,10 +218,11 @@
                     <div class="mb-3">
                         <label class="form-label">Employee ID *</label>
                         <input type="text" class="form-control" id="employeeId" required placeholder="e.g., TECH001">
+                        <small class="text-muted">Unique identifier (also default password)</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Full Name *</label>
-                        <input type="text" class="form-control" id="techName" required>
+                        <input type="text" class="form-control" id="techName" required placeholder="e.g., Haji Ali bin Haji Omar">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Role *</label>
@@ -228,36 +238,46 @@
                             <label><input type="checkbox" value="electricity" class="spec-checkbox"> <i class="bi bi-lightning-charge"></i> Electricity</label>
                             <label><input type="checkbox" value="telephone" class="spec-checkbox"> <i class="bi bi-telephone"></i> Telephone</label>
                         </div>
+                        <small class="text-muted">Select all areas this technician is qualified for</small>
                     </div>
                     <div class="mb-3">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="isAuthorized">
-                            <label class="form-check-label fw-bold">Authorized Team Leader</label>
+                            <input class="form-check-input" type="checkbox" id="isAuthorized" style="width: 40px; height: 20px;">
+                            <label class="form-check-label fw-bold" for="isAuthorized">
+                                Authorized Team Leader
+                            </label>
                         </div>
+                        <small class="text-muted">Can acknowledge reports</small>
                     </div>
                     <div class="mb-3">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="canEditTechnicians">
-                            <label class="form-check-label fw-bold">Can Edit Technicians</label>
+                            <input class="form-check-input" type="checkbox" id="canEditTechnicians" style="width: 40px; height: 20px;">
+                            <label class="form-check-label fw-bold" for="canEditTechnicians">
+                                Can Edit Technicians
+                            </label>
                         </div>
+                        <small class="text-muted">Can add/edit/delete technicians</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
                         <input type="password" class="form-control" id="techPassword" placeholder="Leave blank to use Employee ID">
+                        <small class="text-muted">Minimum 4 characters</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone Number</label>
-                        <input type="text" class="form-control" id="techPhone">
+                        <input type="text" class="form-control" id="techPhone" placeholder="e.g., 8881234">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" id="techEmail">
+                        <input type="email" class="form-control" id="techEmail" placeholder="e.g., name@moe.gov.bn">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveTechnician()">Save Technician</button>
+                <button type="button" class="btn btn-primary" onclick="saveTechnician()">
+                    <i class="bi bi-save"></i> Save Technician
+                </button>
             </div>
         </div>
     </div>
@@ -266,28 +286,33 @@
 <script>
     let allTechnicians = [];
     let currentFilter = 'all';
-    let canEdit = false;
+    let isTeamLeader = false;
     
-    // SIMPLE: Get user from localStorage (same as water_reports.html does)
+    // Check if current user is Team Leader (can edit)
     function checkPermission() {
-        // Just read from localStorage - don't try to manage users
+        // Read from localStorage
         const userId = localStorage.getItem('userId');
         const userName = localStorage.getItem('userName');
+        const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
         const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
         
-        console.log('Technicians page - User:', userName, 'Can Edit:', canEditTechnicians);
+        console.log('Technicians page - User:', userName, 'Is Authorized:', isAuthorized, 'Can Edit:', canEditTechnicians);
         
-        canEdit = canEditTechnicians;
+        // Team Leader can edit technicians if they have canEditTechnicians permission
+        isTeamLeader = canEditTechnicians;
         
         const addBtn = document.getElementById('addTechBtn');
         const permissionNote = document.getElementById('permissionNote');
+        const teamLeaderNote = document.getElementById('teamLeaderNote');
         
-        if (!canEdit) {
+        if (!isTeamLeader) {
             if (addBtn) addBtn.style.display = 'none';
             if (permissionNote) permissionNote.style.display = 'block';
+            if (teamLeaderNote) teamLeaderNote.style.display = 'none';
         } else {
             if (addBtn) addBtn.style.display = 'inline-block';
             if (permissionNote) permissionNote.style.display = 'none';
+            if (teamLeaderNote) teamLeaderNote.style.display = 'block';
         }
     }
     
@@ -295,10 +320,12 @@
         try {
             const response = await fetch('/api/technicians');
             allTechnicians = await response.json();
+            console.log('Loaded technicians:', allTechnicians.length);
             applyFilter();
             checkPermission();
         } catch (error) {
-            document.getElementById('techniciansTable').innerHTML = '<td><td colspan="10" class="text-center text-danger">Error loading technicians</td</tr>';
+            console.error('Error loading technicians:', error);
+            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh.</td</tr>';
         }
     }
     
@@ -345,6 +372,7 @@
         
         let rowNum = 1;
         tbody.innerHTML = technicians.map((tech) => {
+            // Parse specializations
             let specs = tech.specializations;
             if (typeof specs === 'string') try { specs = JSON.parse(specs); } catch(e) { specs = []; }
             if (!Array.isArray(specs)) specs = [];
@@ -355,12 +383,17 @@
             const authBadge = tech.is_authorized ? '<span class="authorized-badge">✓ Authorized</span>' : '<span class="unauthorized-badge">✗ Not Authorized</span>';
             const canEditBadge = tech.can_edit_technicians ? '<span class="can-edit-badge">✓ Can Edit Techs</span>' : '<span class="unauthorized-badge">✗ View Only</span>';
             
+            // Action buttons - ONLY show if current user is Team Leader
             let actions = '';
-            if (canEdit) {
+            if (isTeamLeader) {
                 actions = `
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})" title="Edit Role & Authorization">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})" title="Delete Technician">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
                 `;
             } else {
@@ -371,36 +404,44 @@
                 <tr>
                     <td class="text-center"><strong>${rowNum++}</strong></td>
                     <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
-                    <td><strong>${escapeHtml(tech.name)}</strong></br><small>ID: ${tech.id}</small></td>
-                    <td>${roleBadge}</td>
-                    <td>${specBadges || '-'}</br><small>Qualified Areas</small></td>
-                    <td>${authBadge}</br><small>Team Leader</small></td>
-                    <td>${canEditBadge}</br><small>Tech Management</small></td>
+                    <td><strong>${escapeHtml(tech.name)}</strong><br><small class="text-muted">ID: ${tech.id}</small></td>
+                    <td>${roleBadge}</br><small>${tech.role === 'senior_technician' ? 'Senior' : 'Regular'}</small></td>
+                    <td>${specBadges || '<span class="text-muted">-</span>'}</br><small>Qualified Areas</small></td>
+                    <td>${authBadge}</br><small>Can Acknowledge</small></td>
+                    <td>${canEditBadge}</br><small>Can Manage Techs</small></td>
                     <td>${escapeHtml(tech.phone || '-')}</br><small>Contact</small></td>
                     <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
-                    <td class="text-nowrap">${actions}</br><small>Actions</small></td>
+                    <td class="text-nowrap">${actions}</br><small>${isTeamLeader ? 'Team Leader Actions' : 'View Only'}</small></td>
                 </tr>
             `;
         }).join('');
     }
     
     function showAddTechModal() {
-        if (!canEdit) { if (window.showToast) window.showToast('No permission to add technicians', 'error'); return; }
+        if (!isTeamLeader) { 
+            if (window.showToast) window.showToast('Only Team Leaders can add technicians', 'error'); 
+            return; 
+        }
         document.getElementById('techModalTitle').innerHTML = '<i class="bi bi-person-plus"></i> Add Technician';
         document.getElementById('techForm').reset();
         document.getElementById('techId').value = '';
         document.getElementById('isAuthorized').checked = false;
         document.getElementById('canEditTechnicians').checked = false;
         document.querySelectorAll('.spec-checkbox').forEach(cb => cb.checked = false);
-        document.getElementById('employeeId').value = `TECH${String(allTechnicians.length + 1).padStart(3, '0')}`;
+        // Suggest next employee ID
+        const nextNum = String(allTechnicians.length + 1).padStart(3, '0');
+        document.getElementById('employeeId').value = `TECH${nextNum}`;
         new bootstrap.Modal(document.getElementById('techModal')).show();
     }
     
     async function editTechnician(id) {
-        if (!canEdit) { if (window.showToast) window.showToast('No permission to edit', 'error'); return; }
+        if (!isTeamLeader) { 
+            if (window.showToast) window.showToast('Only Team Leaders can edit technicians', 'error'); 
+            return; 
+        }
         const tech = allTechnicians.find(t => t.id === id);
         if (tech) {
-            document.getElementById('techModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technician';
+            document.getElementById('techModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technician - Role & Authorization';
             document.getElementById('techId').value = tech.id;
             document.getElementById('employeeId').value = tech.employee_id || '';
             document.getElementById('techName').value = tech.name || '';
@@ -411,6 +452,7 @@
             document.getElementById('canEditTechnicians').checked = tech.can_edit_technicians || false;
             document.getElementById('techPassword').value = '';
             
+            // Parse specializations
             let specs = tech.specializations;
             if (typeof specs === 'string') try { specs = JSON.parse(specs); } catch(e) { specs = []; }
             if (!Array.isArray(specs)) specs = [];
@@ -421,7 +463,10 @@
     }
     
     async function saveTechnician() {
-        if (!canEdit) { if (window.showToast) window.showToast('No permission to save', 'error'); return; }
+        if (!isTeamLeader) { 
+            if (window.showToast) window.showToast('Only Team Leaders can save changes', 'error'); 
+            return; 
+        }
         
         const id = document.getElementById('techId').value;
         const name = document.getElementById('techName').value.trim();
@@ -436,52 +481,71 @@
         if (specializations.length === 0) { if (window.showToast) window.showToast('Select at least one specialization', 'error'); return; }
         
         const data = {
-            name, role: document.getElementById('techRole').value, employee_id: employeeId,
-            specializations, is_authorized: document.getElementById('isAuthorized').checked,
+            name: name,
+            role: document.getElementById('techRole').value,
+            employee_id: employeeId,
+            specializations: specializations,
+            is_authorized: document.getElementById('isAuthorized').checked,
             can_edit_technicians: document.getElementById('canEditTechnicians').checked,
-            phone: document.getElementById('techPhone').value.trim(), email: document.getElementById('techEmail').value.trim(),
+            phone: document.getElementById('techPhone').value.trim(),
+            email: document.getElementById('techEmail').value.trim(),
             password: password || null
         };
         
         try {
             let response;
             if (id) {
-                response = await fetch(`/api/technicians/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                response = await fetch(`/api/technicians/${id}`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(data) 
+                });
             } else {
-                response = await fetch('/api/technicians', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                response = await fetch('/api/technicians', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(data) 
+                });
             }
             const result = await response.json();
             if (result.success) {
-                if (window.showToast) window.showToast(id ? 'Technician updated' : 'Technician added');
+                if (window.showToast) window.showToast(id ? 'Technician updated successfully' : 'Technician added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('techModal')).hide();
                 loadTechnicians();
             } else {
                 if (window.showToast) window.showToast(result.error || 'Failed to save', 'error');
             }
         } catch (error) {
+            console.error('Error saving technician:', error);
             if (window.showToast) window.showToast('Error saving technician', 'error');
         }
     }
     
     async function deleteTechnician(id) {
-        if (!canEdit) { if (window.showToast) window.showToast('No permission to delete', 'error'); return; }
-        if (confirm('Delete this technician? This cannot be undone.')) {
+        if (!isTeamLeader) { 
+            if (window.showToast) window.showToast('Only Team Leaders can delete technicians', 'error'); 
+            return; 
+        }
+        
+        const tech = allTechnicians.find(t => t.id === id);
+        if (confirm(`⚠️ Are you sure you want to delete "${tech?.name}"?\n\nThis action cannot be undone. All reports assigned to this technician will be affected.`)) {
             try {
                 const response = await fetch(`/api/technicians/${id}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    if (window.showToast) window.showToast('Technician deleted');
+                    if (window.showToast) window.showToast('Technician deleted successfully');
                     loadTechnicians();
                 } else {
                     if (window.showToast) window.showToast(result.error || 'Cannot delete technician with assigned reports', 'error');
                 }
             } catch (error) {
+                console.error('Error deleting technician:', error);
                 if (window.showToast) window.showToast('Error deleting technician', 'error');
             }
         }
     }
     
-    // Just load technicians - don't do anything else that might interfere with user display
+    // Initialize
     loadTechnicians();
 </script>
 {% endblock %}
