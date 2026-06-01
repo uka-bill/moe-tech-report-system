@@ -457,13 +457,69 @@
         let currentUser = null;
         let allTechnicians = [];
         let pendingUserSelection = null;
-        let currentUserCanEditTechnicians = false;
+        
+        // Initialize user from localStorage on page load
+        function initUserFromStorage() {
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            const userRole = localStorage.getItem('userRole');
+            const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
+            const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
+            
+            if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+                currentUser = {
+                    id: userId,
+                    name: userName,
+                    role: userRole || 'technician',
+                    isAuthorized: isAuthorized,
+                    canEditTechnicians: canEditTechnicians
+                };
+                document.getElementById('currentUserName').textContent = userName;
+                console.log('User loaded from storage:', currentUser);
+                return true;
+            } else {
+                console.log('No user found in storage');
+                document.getElementById('currentUserName').textContent = 'Select User';
+                return false;
+            }
+        }
+        
+        // Save user to localStorage
+        function saveUserToStorage(user) {
+            if (user && user.id) {
+                localStorage.setItem('userId', user.id);
+                localStorage.setItem('userName', user.name);
+                localStorage.setItem('userRole', user.role);
+                localStorage.setItem('isAuthorized', user.isAuthorized);
+                localStorage.setItem('canEditTechnicians', user.canEditTechnicians);
+                console.log('User saved to storage:', user);
+            }
+        }
+        
+        // Clear user from storage (logout)
+        function clearUserStorage() {
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('isAuthorized');
+            localStorage.removeItem('canEditTechnicians');
+            currentUser = null;
+            document.getElementById('currentUserName').textContent = 'Select User';
+            console.log('User cleared from storage');
+        }
         
         // Load technicians and populate user selector
         async function loadUserSelector() {
             try {
+                console.log('Loading technicians for user selector...');
                 const response = await fetch('/api/technicians');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 allTechnicians = await response.json();
+                console.log('Loaded technicians:', allTechnicians);
                 
                 const container = document.getElementById('userListContainer');
                 if (!allTechnicians || allTechnicians.length === 0) {
@@ -475,21 +531,22 @@
                 allTechnicians.forEach(tech => {
                     const isSelected = currentUser && currentUser.id == tech.id;
                     const roleIcon = tech.role === 'senior_technician' ? '⭐' : '👤';
+                    const isAuthorizedBadge = tech.is_authorized ? '<span class="badge bg-success ms-1">TL</span>' : '';
                     html += `
                         <div class="dropdown-item d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
                             <div>
-                                <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(tech.name)}
+                                <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(tech.name)} ${isAuthorizedBadge}
                                 <br><small class="text-muted">${tech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
                             </div>
-                            ${currentUser && currentUser.id == tech.id ? '<span class="badge bg-success">Active</span>' : ''}
+                            ${isSelected ? '<span class="badge bg-success">Active</span>' : ''}
                             ${currentUser && currentUser.canEditTechnicians ? `<button class="btn btn-sm btn-outline-warning ms-2" onclick="event.stopPropagation(); showResetPassword('${tech.id}', '${escapeHtml(tech.name)}')"><i class="bi bi-key"></i></button>` : ''}
                         </div>
                     `;
                 });
                 container.innerHTML = html;
             } catch (error) {
-                console.error('Error loading technicians:', error);
-                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users</div>';
+                console.error('Error loading user selector:', error);
+                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh.</div>';
             }
         }
         
@@ -531,7 +588,7 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Login successful
+                    // Find the full technician data
                     const tech = allTechnicians.find(t => t.id == pendingUserSelection.id);
                     if (tech) {
                         currentUser = {
@@ -543,11 +600,7 @@
                         };
                         
                         // Save to localStorage
-                        localStorage.setItem('userId', tech.id);
-                        localStorage.setItem('userName', tech.name);
-                        localStorage.setItem('userRole', tech.role);
-                        localStorage.setItem('isAuthorized', tech.is_authorized || false);
-                        localStorage.setItem('canEditTechnicians', tech.can_edit_technicians || false);
+                        saveUserToStorage(currentUser);
                         
                         document.getElementById('currentUserName').textContent = tech.name;
                         
@@ -570,8 +623,7 @@
         
         // Show reset password modal (Team Leader only)
         function showResetPassword(userId, userName) {
-            const currentUserCheck = getCurrentUser();
-            if (!currentUserCheck.canEditTechnicians) {
+            if (!currentUser || !currentUser.canEditTechnicians) {
                 showToast('Only Team Leaders can reset passwords', 'error');
                 return;
             }
@@ -614,66 +666,54 @@
             }
         }
         
-        // Get current user
-        function getCurrentUser() {
+        // Get current user (exposed globally)
+        window.getCurrentUser = function() {
             if (!currentUser) {
-                currentUser = {
-                    id: localStorage.getItem('userId'),
-                    name: localStorage.getItem('userName'),
-                    role: localStorage.getItem('userRole'),
-                    isAuthorized: localStorage.getItem('isAuthorized') === 'true',
-                    canEditTechnicians: localStorage.getItem('canEditTechnicians') === 'true'
-                };
+                const userId = localStorage.getItem('userId');
+                const userName = localStorage.getItem('userName');
+                const userRole = localStorage.getItem('userRole');
+                const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
+                const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
+                
+                if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+                    currentUser = {
+                        id: userId,
+                        name: userName,
+                        role: userRole || 'technician',
+                        isAuthorized: isAuthorized,
+                        canEditTechnicians: canEditTechnicians
+                    };
+                }
             }
-            return currentUser;
-        }
+            return currentUser || { id: null, name: null, role: 'technician', isAuthorized: false, canEditTechnicians: false };
+        };
         
-        function isTeamLeader() {
-            const user = getCurrentUser();
+        window.isTeamLeader = function() {
+            const user = window.getCurrentUser();
             return user.isAuthorized === true;
-        }
+        };
         
-        function canEditTechnicians() {
-            const user = getCurrentUser();
+        window.canEditTechnicians = function() {
+            const user = window.getCurrentUser();
             return user.canEditTechnicians === true;
-        }
+        };
         
         // Check management access
         function checkManagementAccess() {
-            const canEdit = canEditTechnicians();
+            const canEdit = window.canEditTechnicians();
             const techniciansNav = document.getElementById('techniciansNavLink');
             
             if (techniciansNav) {
-                if (!canEdit) {
-                    techniciansNav.style.display = 'none';
-                } else {
-                    techniciansNav.style.display = 'block';
-                }
+                techniciansNav.style.display = canEdit ? 'block' : 'none';
             }
         }
         
         // Check team leader access
         function checkTeamLeaderAccess() {
-            const isAuth = isTeamLeader();
+            const isAuth = window.isTeamLeader();
             const teamLeaderNav = document.getElementById('teamLeaderNav');
             if (teamLeaderNav) {
-                if (!isAuth) {
-                    teamLeaderNav.style.display = 'none';
-                } else {
-                    teamLeaderNav.style.display = 'block';
-                }
-            }
-        }
-        
-        // Initialize user from localStorage
-        function initUser() {
-            const userId = localStorage.getItem('userId');
-            const userName = localStorage.getItem('userName');
-            
-            if (userId && userName) {
-                document.getElementById('currentUserName').textContent = userName;
-            } else {
-                document.getElementById('currentUserName').textContent = 'Select User';
+                teamLeaderNav.style.display = isAuth ? 'block' : 'none';
             }
         }
         
@@ -693,20 +733,8 @@
             });
         }
         
-        // Initialize everything
-        async function initialize() {
-            initUser();
-            await loadUserSelector();
-            checkManagementAccess();
-            checkTeamLeaderAccess();
-            highlightActiveNav();
-        }
-        
-        // Run initialization
-        initialize();
-        
-        // Global functions for templates
-        function showToast(message, type = 'success') {
+        // Show toast notification
+        window.showToast = function(message, type = 'success') {
             let toastContainer = document.getElementById('toast-container');
             if (!toastContainer) {
                 toastContainer = document.createElement('div');
@@ -729,9 +757,9 @@
             const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
             bsToast.show();
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
-        }
+        };
         
-        function formatDate(dateString) {
+        window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
             date.setHours(date.getHours() + 8);
@@ -743,14 +771,28 @@
                 minute: '2-digit',
                 second: '2-digit'
             });
-        }
+        };
         
-        function formatDateOnly(dateString) {
+        window.formatDateOnly = function(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
             date.setHours(date.getHours() + 8);
             return date.toLocaleDateString('en-GB');
+        };
+        
+        // Initialize everything
+        async function initialize() {
+            console.log('Initializing base.html...');
+            initUserFromStorage();
+            await loadUserSelector();
+            checkManagementAccess();
+            checkTeamLeaderAccess();
+            highlightActiveNav();
+            console.log('Initialization complete. Current user:', window.getCurrentUser());
         }
+        
+        // Run initialization when DOM is ready
+        document.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
 </html>
