@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<script>
-    // Ensure user is loaded from storage before anything else
-    (function() {
-        const userId = localStorage.getItem('userId');
-        const userName = localStorage.getItem('userName');
-        if (userId && userName && userId !== 'null' && userId !== 'undefined') {
-            console.log('Technicians Page - User loaded:', userName, 'ID:', userId);
-        } else {
-            console.log('Technicians Page - No user found in storage');
-        }
-    })();
-</script>
-
 <style>
     .specialization-badge {
         display: inline-block;
@@ -144,11 +131,23 @@
         border-radius: 8px;
         margin-bottom: 20px;
     }
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> Technicians Management</h2>
-    <button class="btn btn-primary" id="addTechBtn" onclick="showAddTechModal()">
+    <button class="btn btn-primary" id="addTechBtn" style="display: none;" onclick="showAddTechModal()">
         <i class="bi bi-plus-circle"></i> Add Technician
     </button>
 </div>
@@ -310,9 +309,46 @@
     let currentFilter = 'all';
     let canEdit = false;
     
-    // Check if current user can edit technicians using global user
+    // Function to get current user from localStorage directly (fallback if window.getCurrentUser not available)
+    function getLocalUser() {
+        try {
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
+            const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
+            
+            if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+                return {
+                    id: userId,
+                    name: userName,
+                    canEditTechnicians: canEditTechnicians,
+                    isAuthorized: isAuthorized
+                };
+            }
+        } catch (e) {
+            console.error('Error getting user from localStorage:', e);
+        }
+        return null;
+    }
+    
+    // Check if current user can edit technicians
     function checkEditPermission() {
-        const user = window.getCurrentUser();
+        // Try to get user from global function first, then from localStorage directly
+        let user = null;
+        try {
+            if (typeof window.getCurrentUser === 'function') {
+                user = window.getCurrentUser();
+                console.log('Got user from window.getCurrentUser():', user);
+            }
+        } catch (e) {
+            console.log('window.getCurrentUser not available, using localStorage directly');
+        }
+        
+        if (!user || !user.id) {
+            user = getLocalUser();
+            console.log('Got user from localStorage directly:', user);
+        }
+        
         canEdit = user && user.canEditTechnicians === true;
         
         const addButton = document.getElementById('addTechBtn');
@@ -345,7 +381,7 @@
             checkEditPermission();
         } catch (error) {
             console.error('Error loading technicians:', error);
-            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh the page.</td</tr>';
+            document.getElementById('techniciansTable').innerHTML = '<td><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh the page.</td<tr>';
             if (window.showToast) window.showToast('Error loading technicians', 'error');
         }
     }
@@ -383,6 +419,13 @@
         }
         
         displayTechnicians(filtered);
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function displayTechnicians(technicians) {
@@ -434,26 +477,19 @@
             
             return `
                 <tr>
-                    <td><strong>${tech.id}</strong></td>
-                    <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
-                    <td><strong>${escapeHtml(tech.name)}</strong></td>
-                    <td>${roleBadge}<br><small>ID: ${tech.id}</small></td>
-                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}<br><small>Areas</small></td>
-                    <td>${authBadge}<br><small>Team Leader</small></td>
-                    <td>${canEditBadge}<br><small>Tech Management</small></td>
-                    <td>${escapeHtml(tech.phone || '-')}<br><small>Contact</small></td>
-                    <td>${escapeHtml(tech.email || '-')}<br><small>Email</small></td>
+                    <td><strong>${tech.id}</strong></br><small>DB ID</small></td>
+                    <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></br><small>Emp ID</small></td>
+                    <td><strong>${escapeHtml(tech.name)}</strong></br><small>Name</small></td>
+                    <td>${roleBadge}</br><small>${tech.role === 'senior_technician' ? 'Senior' : 'Tech'}</small></td>
+                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</br><small>Qualified Areas</small></td>
+                    <td>${authBadge}</br><small>Team Leader</small></td>
+                    <td>${canEditBadge}</br><small>Tech Management</small></td>
+                    <td>${escapeHtml(tech.phone || '-')}</br><small>Contact</small></td>
+                    <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
                     <td class="text-nowrap">${actionButtons}</td>
                 </tr>
             `;
         }).join('');
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     function showAddTechModal() {
@@ -573,7 +609,7 @@
             password: password || null
         };
         
-        console.log('Saving technician...');
+        console.log('Saving technician...', data.name);
         
         try {
             let response;
@@ -630,10 +666,30 @@
         }
     }
     
-    // Initialize on page load
+    // Initialize on page load - wait for DOM and ensure base.html is ready
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Technicians page DOM loaded');
-        loadTechnicians();
+        console.log('Technicians page DOM loaded, initializing...');
+        
+        // Small delay to ensure base.html scripts have run
+        setTimeout(function() {
+            checkEditPermission();
+            loadTechnicians();
+        }, 100);
     });
+    
+    // Also try immediately if DOM is already loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                checkEditPermission();
+                loadTechnicians();
+            }, 100);
+        });
+    } else {
+        setTimeout(function() {
+            checkEditPermission();
+            loadTechnicians();
+        }, 100);
+    }
 </script>
 {% endblock %}
