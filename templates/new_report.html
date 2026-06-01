@@ -153,35 +153,7 @@
                 </div>
             </div>
             
-            <!-- Reference Information Section - MOVED TO TOP -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-file-text"></i> Reference Information (Optional)
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Type</label>
-                        <select class="form-select" id="referenceType">
-                            <option value="">Select Reference Type</option>
-                            <option value="memo">📝 Memo</option>
-                            <option value="minute">📋 Minute</option>
-                            <option value="letter">✉️ Letter</option>
-                            <option value="email">📧 Email</option>
-                            <option value="other">📄 Other</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Number</label>
-                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Reference Date</label>
-                        <input type="date" class="form-control" id="referenceDate">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Priority Section -->
+            <!-- 1. PRIORITY LEVEL SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-exclamation-triangle"></i> Priority Level
@@ -228,7 +200,58 @@
                 </div>
             </div>
             
-            <!-- Account Details Section -->
+            <!-- 2. LOCATION INFORMATION SECTION -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="bi bi-geo-alt"></i> Location Information
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Entity Type *</label>
+                        <select class="form-select" id="entityType" required>
+                            <option value="">Select Entity Type</option>
+                            <option value="school">🏫 School</option>
+                            <option value="department">🏢 Department</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Entity Name *</label>
+                        <select class="form-select" id="entityId" required disabled>
+                            <option value="">Select Entity Type First</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 3. REFERENCE INFORMATION SECTION (removed "Optional" wording) -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="bi bi-file-text"></i> Reference Information
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Type</label>
+                        <select class="form-select" id="referenceType">
+                            <option value="">Select Reference Type</option>
+                            <option value="memo">📝 Memo</option>
+                            <option value="minute">📋 Minute</option>
+                            <option value="letter">✉️ Letter</option>
+                            <option value="email">📧 Email</option>
+                            <option value="other">📄 Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Reference Date</label>
+                        <input type="date" class="form-control" id="referenceDate">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 4. ACCOUNT DETAILS SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-receipt"></i> Account Details
@@ -265,30 +288,7 @@
                 </div>
             </div>
             
-            <!-- Location Section -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-geo-alt"></i> Location Information
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Entity Type *</label>
-                        <select class="form-select" id="entityType" required>
-                            <option value="">Select Entity Type</option>
-                            <option value="school">🏫 School</option>
-                            <option value="department">🏢 Department</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Entity Name *</label>
-                        <select class="form-select" id="entityId" required disabled>
-                            <option value="">Select Entity Type First</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Problem Details Section -->
+            <!-- 5. PROBLEM DETAILS SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-chat-left-text"></i> Problem Details
@@ -343,10 +343,10 @@
                 </div>
             </div>
             
-            <!-- Images Section -->
+            <!-- 6. UPLOAD IMAGES SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
-                    <i class="bi bi-images"></i> Upload Images (Optional)
+                    <i class="bi bi-images"></i> Upload Images
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-12">
@@ -357,10 +357,10 @@
                 </div>
             </div>
             
-            <!-- Technician Notes -->
+            <!-- 7. ADDITIONAL REPORT NOTES SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
-                    <i class="bi bi-journal-text"></i> Technician's Report Notes
+                    <i class="bi bi-journal-text"></i> Additional Report Notes
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-12">
