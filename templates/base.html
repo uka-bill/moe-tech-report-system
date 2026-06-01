@@ -310,6 +310,9 @@
         .dropdown-item.active-user {
             background-color: var(--secondary-color);
         }
+        #currentUserName {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -392,6 +395,10 @@
             </div>
         </div>
     </nav>
+    
+    <!-- Hidden field to store user ID for persistence -->
+    <input type="hidden" id="hiddenUserId" value="">
+    <input type="hidden" id="hiddenUserName" value="">
     
     <!-- Main Content -->
     <div class="container-fluid">
@@ -514,8 +521,6 @@
             const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
             const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
             
-            console.log('initUserFromStorage - userId:', userId, 'userName:', userName);
-            
             if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
                 currentUser = {
                     id: userId,
@@ -524,19 +529,15 @@
                     isAuthorized: isAuthorized,
                     canEditTechnicians: canEditTechnicians
                 };
-                const userNameSpan = document.getElementById('currentUserName');
-                if (userNameSpan) {
-                    userNameSpan.textContent = userName;
-                }
+                document.getElementById('currentUserName').textContent = userName;
+                // Also set hidden fields
+                document.getElementById('hiddenUserId').value = userId;
+                document.getElementById('hiddenUserName').value = userName;
                 console.log('User loaded from storage:', currentUser);
                 updateProfileMenuVisibility();
                 return true;
             } else {
-                console.log('No user found in storage');
-                const userNameSpan = document.getElementById('currentUserName');
-                if (userNameSpan) {
-                    userNameSpan.textContent = 'Select User';
-                }
+                document.getElementById('currentUserName').textContent = 'Select User';
                 updateProfileMenuVisibility();
                 return false;
             }
@@ -549,6 +550,8 @@
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('isAuthorized', user.isAuthorized);
                 localStorage.setItem('canEditTechnicians', user.canEditTechnicians);
+                document.getElementById('hiddenUserId').value = user.id;
+                document.getElementById('hiddenUserName').value = user.name;
                 console.log('User saved to storage:', user);
             }
         }
@@ -560,10 +563,9 @@
             localStorage.removeItem('isAuthorized');
             localStorage.removeItem('canEditTechnicians');
             currentUser = null;
-            const userNameSpan = document.getElementById('currentUserName');
-            if (userNameSpan) {
-                userNameSpan.textContent = 'Select User';
-            }
+            document.getElementById('currentUserName').textContent = 'Select User';
+            document.getElementById('hiddenUserId').value = '';
+            document.getElementById('hiddenUserName').value = '';
             updateProfileMenuVisibility();
             console.log('User cleared from storage');
         }
@@ -583,15 +585,13 @@
         
         async function loadUserSelector() {
             try {
-                console.log('Loading technicians for user selector...');
                 const response = await fetch('/api/technicians');
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
                 
                 allTechnicians = await response.json();
-                console.log('Loaded technicians:', allTechnicians.length);
                 
                 const container = document.getElementById('userListContainer');
                 if (!allTechnicians || allTechnicians.length === 0) {
@@ -607,7 +607,7 @@
                     const activeBadge = isSelected ? '<span class="badge bg-success float-end">Active</span>' : '';
                     
                     html += `
-                        <div class="dropdown-item d-flex justify-content-between align-items-center ${isSelected ? 'active-user' : ''}" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
+                        <div class="dropdown-item d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
                             <div>
                                 <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(tech.name)} ${isAuthorizedBadge}
                                 <br><small class="text-muted">${tech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
@@ -620,8 +620,7 @@
                 container.innerHTML = html;
             } catch (error) {
                 console.error('Error loading user selector:', error);
-                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh the page.</div>';
-                window.showToast('Error loading users: ' + error.message, 'error');
+                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh.</div>';
             }
         }
         
@@ -646,7 +645,7 @@
             const password = document.getElementById('passwordInput').value;
             
             if (!pendingUserSelection) {
-                window.showToast('No user selected', 'error');
+                showToast('No user selected', 'error');
                 return;
             }
             
@@ -678,23 +677,23 @@
                         updateProfileMenuVisibility();
                         
                         bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
-                        window.showToast(`Welcome ${tech.name}!`, 'success');
+                        showToast(`Welcome ${tech.name}!`, 'success');
                         setTimeout(() => location.reload(), 500);
                     }
                 } else {
-                    window.showToast(result.error || 'Invalid password', 'error');
+                    showToast(result.error || 'Invalid password', 'error');
                     document.getElementById('passwordInput').value = '';
                     document.getElementById('passwordInput').focus();
                 }
             } catch (error) {
                 console.error('Error verifying password:', error);
-                window.showToast('Error verifying password', 'error');
+                showToast('Error verifying password', 'error');
             }
         }
         
         function showResetPassword(userId, userName) {
             if (!currentUser || !currentUser.canEditTechnicians) {
-                window.showToast('Only Team Leaders can reset passwords', 'error');
+                showToast('Only Team Leaders can reset passwords', 'error');
                 return;
             }
             document.getElementById('resetUserName').textContent = userName;
@@ -707,7 +706,7 @@
         async function confirmResetPassword() {
             const newPassword = document.getElementById('resetPasswordInput').value;
             if (!newPassword || newPassword.trim() === '') {
-                window.showToast('Please enter a new password', 'error');
+                showToast('Please enter a new password', 'error');
                 return;
             }
             
@@ -724,20 +723,20 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    window.showToast('Password reset successfully', 'success');
+                    showToast('Password reset successfully', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
                 } else {
-                    window.showToast(result.error || 'Failed to reset password', 'error');
+                    showToast(result.error || 'Failed to reset password', 'error');
                 }
             } catch (error) {
                 console.error('Error resetting password:', error);
-                window.showToast('Error resetting password', 'error');
+                showToast('Error resetting password', 'error');
             }
         }
         
         function showChangePasswordModal() {
             if (!currentUser || !currentUser.id) {
-                window.showToast('Please select a user first', 'error');
+                showToast('Please select a user first', 'error');
                 return;
             }
             document.getElementById('changePasswordUserName').textContent = currentUser.name;
@@ -754,22 +753,22 @@
             const confirmPassword = document.getElementById('confirmNewPassword').value;
             
             if (!currentPassword) {
-                window.showToast('Please enter current password', 'error');
+                showToast('Please enter current password', 'error');
                 return;
             }
             
             if (!newPassword) {
-                window.showToast('Please enter new password', 'error');
+                showToast('Please enter new password', 'error');
                 return;
             }
             
             if (newPassword !== confirmPassword) {
-                window.showToast('New passwords do not match', 'error');
+                showToast('New passwords do not match', 'error');
                 return;
             }
             
             if (newPassword.length < 4) {
-                window.showToast('Password must be at least 4 characters', 'error');
+                showToast('Password must be at least 4 characters', 'error');
                 return;
             }
             
@@ -787,14 +786,14 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    window.showToast('Password changed successfully!', 'success');
+                    showToast('Password changed successfully!', 'success');
                     bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
                 } else {
-                    window.showToast(result.error || 'Failed to change password', 'error');
+                    showToast(result.error || 'Failed to change password', 'error');
                 }
             } catch (error) {
                 console.error('Error changing password:', error);
-                window.showToast('Error changing password', 'error');
+                showToast('Error changing password', 'error');
             }
         }
         
@@ -872,7 +871,7 @@
         
         // ============ TOAST NOTIFICATION ============
         
-        window.showToast = function(message, type = 'success') {
+        function showToast(message, type = 'success') {
             let toastContainer = document.getElementById('toast-container');
             if (!toastContainer) {
                 toastContainer = document.createElement('div');
@@ -895,8 +894,9 @@
             const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
             bsToast.show();
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
-        };
+        }
         
+        window.showToast = showToast;
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
@@ -922,12 +922,11 @@
         
         async function initialize() {
             console.log('=== Initializing base.html ===');
-            console.log('Current path:', window.location.pathname);
             
             // First, load user from storage
             initUserFromStorage();
             
-            // Then load user selector (this will show the dropdown options)
+            // Then load user selector
             await loadUserSelector();
             
             // Check permissions and update UI
@@ -935,15 +934,11 @@
             checkTeamLeaderAccess();
             highlightActiveNav();
             
-            console.log('Initialization complete. Current user:', currentUser);
+            console.log('Initialization complete. Current user ID:', currentUser?.id);
         }
         
-        // Run initialization when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initialize);
-        } else {
-            initialize();
-        }
+        // Run initialization immediately
+        initialize();
     </script>
 </body>
 </html>
