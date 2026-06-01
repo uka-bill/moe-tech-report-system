@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    (function() {
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName');
+        if (userId && userName && userId !== 'null') {
+            console.log('All Reports - User loaded:', userName);
+        }
+    })();
+</script>
+
 <style>
     .filter-card {
         background: white;
@@ -37,49 +47,54 @@
         font-size: 12px;
         font-weight: 500;
     }
-    .type-water {
-        background-color: #e3f2fd;
-        color: #1976d2;
-    }
-    .type-electricity {
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-    .type-telephone {
-        background-color: #e8f5e9;
-        color: #388e3c;
-    }
+    .type-water { background-color: #e3f2fd; color: #1976d2; }
+    .type-electricity { background-color: #fff3e0; color: #f57c00; }
+    .type-telephone { background-color: #e8f5e9; color: #388e3c; }
     .priority-badge {
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 11px;
         font-weight: 500;
     }
-    .priority-high {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-    .priority-medium {
-        background-color: #fff3cd;
-        color: #856404;
-    }
-    .priority-low {
-        background-color: #d4edda;
-        color: #155724;
-    }
+    .priority-high { background-color: #f8d7da; color: #721c24; }
+    .priority-medium { background-color: #fff3cd; color: #856404; }
+    .priority-low { background-color: #d4edda; color: #155724; }
     .status-badge {
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 11px;
         font-weight: 500;
     }
-    .status-pending {
-        background-color: #fff3cd;
-        color: #856404;
+    .status-pending { background-color: #fff3cd; color: #856404; }
+    .status-acknowledged { background-color: #d4edda; color: #155724; }
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-left: 8px;
     }
-    .status-acknowledged {
-        background-color: #d4edda;
-        color: #155724;
+    .filter-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .stats-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    .image-preview {
+        width: 100px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+        cursor: pointer;
     }
     .comment-section {
         background-color: #f8f5fc;
@@ -100,25 +115,12 @@
         color: var(--primary-dark);
         font-size: 12px;
     }
-    .comment-date {
-        font-size: 10px;
-        color: #999;
-        margin-left: 10px;
-    }
-    .comment-text {
-        margin-top: 5px;
-        font-size: 13px;
-    }
     .btn-acknowledge {
         background-color: #28a745;
         color: white;
         border: none;
         padding: 8px 20px;
         border-radius: 5px;
-        font-size: 14px;
-    }
-    .btn-acknowledge:hover {
-        background-color: #218838;
     }
     .btn-add-comment {
         background-color: #6c757d;
@@ -128,49 +130,24 @@
         border-radius: 5px;
         font-size: 12px;
     }
-    .btn-add-comment:hover {
-        background-color: #5a6268;
-    }
-    .image-preview {
-        width: 100px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 5px;
-        cursor: pointer;
-        margin: 2px;
-    }
-    .filter-select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
-    .stats-badge {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-check2-square"></i> Team Leader - Report Review</h2>
+    <h2><i class="bi bi-archive"></i> All Reports</h2>
     <div class="stats-badge">
         <i class="bi bi-envelope"></i> Pending Review: <span id="pendingCount">0</span>
     </div>
 </div>
 
-<!-- Filter Section -->
 <div class="filter-card">
     <div class="row">
         <div class="col-md-3">
             <label class="form-label fw-bold">Report Type</label>
             <select class="filter-select" id="filterType" onchange="loadReports()">
-                <option value="all">All Reports</option>
-                <option value="water">💧 Water Reports</option>
-                <option value="electricity">⚡ Electricity Reports</option>
-                <option value="telephone">📞 Telephone Reports</option>
+                <option value="all">All Types</option>
+                <option value="water">💧 Water</option>
+                <option value="electricity">⚡ Electricity</option>
+                <option value="telephone">📞 Telephone</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -196,7 +173,6 @@
     </div>
 </div>
 
-<!-- Reports List -->
 <div id="reportsContainer">
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
@@ -204,71 +180,56 @@
     </div>
 </div>
 
-<!-- Report Detail Modal -->
+<!-- Modals (same structure) -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Report Details</h5>
+                <h5 class="modal-title">Report Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="modalBody">Loading...</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">
-                    <i class="bi bi-printer"></i> Print
-                </button>
-                <button type="button" class="btn btn-warning" onclick="editReport()">
-                    <i class="bi bi-pencil"></i> Edit
-                </button>
+                <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
+                <button type="button" class="btn btn-warning" onclick="editReport()">Edit</button>
+                <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Acknowledge Modal -->
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge & Review Report</h5>
+                <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Team Leader's Comments / Findings</label>
-                    <textarea class="form-control" id="acknowledgeComment" rows="5" placeholder="Enter your review, comments, feedback for the technician..."></textarea>
-                </div>
+                <textarea class="form-control" id="acknowledgeComment" rows="5" placeholder="Enter your review comments..."></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="submitAcknowledge()">
-                    <i class="bi bi-check2-square"></i> Acknowledge & Close
-                </button>
+                <button type="button" class="btn btn-success" onclick="submitAcknowledge()">Acknowledge</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Add Comment Modal -->
 <div class="modal fade" id="commentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-chat-dots"></i> Add Comment</h5>
+                <h5 class="modal-title">Add Comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label">Your Comment / Feedback</label>
-                    <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment..."></textarea>
-                </div>
+                <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment..."></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitComment()">
-                    <i class="bi bi-save"></i> Add Comment
-                </button>
+                <button type="button" class="btn btn-primary" onclick="submitComment()">Add Comment</button>
             </div>
         </div>
     </div>
@@ -277,8 +238,13 @@
 <script>
     let currentReport = null;
     let currentReportId = null;
-    let allTechnicians = [];
-    let isTeamLeader = true;
+    let isTeamLeader = false;
+    
+    function checkUserRole() {
+        const user = window.getCurrentUser();
+        isTeamLeader = user && user.isAuthorized === true;
+        console.log('All Reports - User:', user?.name, 'Is Team Leader:', isTeamLeader);
+    }
     
     function getImageUrl(imgPath) {
         if (!imgPath) return '';
@@ -290,10 +256,7 @@
         if (!dateString) return '-';
         const date = new Date(dateString);
         date.setHours(date.getHours() + 8);
-        return date.toLocaleString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        });
+        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
     
     function formatDateOnly(dateString) {
@@ -313,16 +276,14 @@
     async function loadTechniciansForFilter() {
         try {
             const response = await fetch('/api/technicians');
-            allTechnicians = await response.json();
+            const techs = await response.json();
             const select = document.getElementById('filterTechnician');
             let options = '<option value="all">All Technicians</option>';
-            allTechnicians.forEach(tech => {
+            techs.forEach(tech => {
                 options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${tech.name}</option>`;
             });
             select.innerHTML = options;
-        } catch (error) {
-            console.error('Error loading technicians:', error);
-        }
+        } catch (error) {}
     }
     
     async function loadReports() {
@@ -340,16 +301,13 @@
             const response = await fetch(url);
             let reports = await response.json();
             
-            if (technicianId !== 'all') {
-                reports = reports.filter(r => r.technician_id == technicianId);
-            }
+            if (technicianId !== 'all') reports = reports.filter(r => r.technician_id == technicianId);
             if (status !== 'all') {
                 if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
                 if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
             }
             
-            const pending = reports.filter(r => !r.team_leader_acknowledged).length;
-            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
             
             if (reports.length === 0) {
                 container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size:48px;color:#ccc;"></i><p>No reports found</p></div>';
@@ -358,21 +316,28 @@
             
             displayReports(reports);
         } catch (error) {
-            console.error('Error:', error);
             container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>';
         }
     }
     
+    function canDeleteReport(report) {
+        const user = window.getCurrentUser();
+        if (user && user.canEditTechnicians) return true;
+        return report.technician_id == user?.id;
+    }
+    
     function displayReports(reports) {
         const container = document.getElementById('reportsContainer');
+        const user = window.getCurrentUser();
         
         container.innerHTML = reports.map(report => {
-            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const typeClass = `type-${report.report_type}`;
+            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const priorityClass = `priority-${report.priority}`;
             const isAcknowledged = report.team_leader_acknowledged;
             const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
+            const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
             
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
@@ -396,8 +361,8 @@
                         <div class="col-md-4 text-end">
                             <div><i class="bi bi-person"></i> Submitted by: <strong>${escapeHtml(report.technician_name || 'Unknown')}</strong></div>
                             <div class="small text-muted"><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
-                            ${report.action_taken ? `<div class="small text-success mt-1"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
-                            ${report.comments && report.comments.length > 0 ? `<div class="small text-primary"><i class="bi bi-chat-dots"></i> ${report.comments.length} comment(s)</div>` : ''}
+                            ${report.action_taken ? `<div class="small text-success"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
+                            ${canDelete ? `<button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -416,66 +381,36 @@
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
-            showToast('Error loading report', 'error');
+            window.showToast('Error loading report', 'error');
         }
     }
     
     function displayReportModal() {
         const report = currentReport;
-        const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-        const typeName = report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1);
         const priorityClass = `priority-${report.priority}`;
+        const typeClass = `type-${report.report_type}`;
+        const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const isAcknowledged = report.team_leader_acknowledged;
+        const user = window.getCurrentUser();
+        const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
+        
+        document.getElementById('deleteBtn').style.display = canDelete ? 'inline-block' : 'none';
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `
-                <div class="mt-3">
-                    <strong><i class="bi bi-images"></i> Attached Images:</strong>
-                    <div class="d-flex flex-wrap gap-2 mt-2">
-                        ${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}
-                    </div>
-                </div>
-            `;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `
-                <div class="comment-section">
-                    <h6><i class="bi bi-chat-dots"></i> Comments & Discussion</h6>
-                    ${report.comments.map(c => `
-                        <div class="comment-item">
-                            <div>
-                                <span class="comment-author">${escapeHtml(c.author)}</span>
-                                <span class="comment-date">${formatDate(c.created_at)}</span>
-                            </div>
-                            <div class="comment-text">${escapeHtml(c.text)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><span class="comment-author">${escapeHtml(c.author)}</span><span class="comment-date">${formatDate(c.created_at)}</span><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle"></i> <strong>Report Acknowledged</strong><br>
-                    By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
-                    Date: ${formatDate(report.team_leader_acknowledged_at)}<br>
-                    <strong>Comments:</strong> ${escapeHtml(report.team_leader_notes || 'No notes')}
-                </div>
-            `;
-        } else {
-            acknowledgmentHtml = `
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i> This report is pending your review.
-                    <button class="btn btn-acknowledge mt-2 w-100" onclick="showAcknowledgeModal()">
-                        <i class="bi bi-check2-square"></i> Acknowledge & Complete Review
-                    </button>
-                </div>
-            `;
+            acknowledgmentHtml = `<div class="alert alert-success"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+        } else if (isTeamLeader) {
+            acknowledgmentHtml = `<div class="alert alert-warning"><button class="btn btn-acknowledge w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
         }
         
         const html = `
@@ -483,49 +418,25 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <strong>Report #:</strong> ${report.utility_number || report.id}<br>
-                        <strong>Type:</strong> ${typeName} ${typeIcon}<br>
+                        <strong>Type:</strong> <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span><br>
                         <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
                         <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
                     </div>
                     <div class="col-md-6">
-                        <strong>Status:</strong> ${isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review'}<br>
+                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
                         <strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br>
                         <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
                     </div>
                 </div>
-                
                 <hr>
-                
-                <div class="mb-3">
-                    <h6><i class="bi bi-chat-left-text"></i> Problem / Issue</h6>
-                    <p><strong>Problem Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
-                    <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
-                </div>
-                
-                ${report.action_taken ? `
-                <div class="mb-3">
-                    <h6><i class="bi bi-tools"></i> Action Taken by Technician</h6>
-                    <p>${escapeHtml(report.action_taken)}</p>
-                </div>
-                ` : ''}
-                
-                ${report.technician_notes ? `
-                <div class="mb-3">
-                    <h6><i class="bi bi-journal-text"></i> Technician's Notes</h6>
-                    <p>${escapeHtml(report.technician_notes)}</p>
-                </div>
-                ` : ''}
-                
-                ${report.account_number ? `<div><strong>Account Number:</strong> ${escapeHtml(report.account_number)}</div>` : ''}
-                ${report.meter_number ? `<div><strong>Meter Number:</strong> ${escapeHtml(report.meter_number)}</div>` : ''}
-                ${report.phone_number ? `<div><strong>Phone Number:</strong> ${escapeHtml(report.phone_number)}</div>` : ''}
-                
+                <h6>Problem / Issue</h6>
+                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
+                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
+                ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
+                ${report.technician_notes ? `<h6>Technician's Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
                 ${imagesHtml}
-                
                 ${commentsHtml}
-                
                 ${acknowledgmentHtml}
-                
                 <div class="mt-3">
                     <button class="btn btn-add-comment" onclick="showAddCommentModal()">
                         <i class="bi bi-chat-dots"></i> Add Comment
@@ -533,124 +444,46 @@
                 </div>
             </div>
         `;
-        
-        document.getElementById('modalTitle').innerHTML = `<i class="bi bi-file-text"></i> Report #${report.id} - ${typeName} Issue`;
         document.getElementById('modalBody').innerHTML = html;
     }
     
-    function showAcknowledgeModal() {
-        document.getElementById('acknowledgeComment').value = '';
-        new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
-    }
-    
+    function showAcknowledgeModal() { document.getElementById('acknowledgeComment').value = ''; new bootstrap.Modal(document.getElementById('acknowledgeModal')).show(); }
     async function submitAcknowledge() {
         const comment = document.getElementById('acknowledgeComment').value;
         const userId = localStorage.getItem('userId');
-        
-        if (!userId) {
-            showToast('Please ensure you are logged in as Team Leader', 'error');
-            return;
-        }
-        
         try {
-            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    team_leader_id: parseInt(userId),
-                    team_leader_notes: comment
-                })
-            });
+            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment }) });
             const data = await response.json();
-            if (data.success) {
-                showToast('Report acknowledged successfully');
-                bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
-                loadReports();
-                openReportDetail(currentReportId);
-            } else {
-                showToast(data.error || 'Failed to acknowledge', 'error');
-            }
-        } catch (error) {
-            showToast('Error acknowledging report', 'error');
-        }
+            if (data.success) { window.showToast('Report acknowledged'); bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); loadReports(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
-    
-    function showAddCommentModal() {
-        document.getElementById('newComment').value = '';
-        new bootstrap.Modal(document.getElementById('commentModal')).show();
-    }
-    
+    function showAddCommentModal() { document.getElementById('newComment').value = ''; new bootstrap.Modal(document.getElementById('commentModal')).show(); }
     async function submitComment() {
         const comment = document.getElementById('newComment').value;
-        const userId = localStorage.getItem('userId');
-        const userName = localStorage.getItem('userName') || 'Team Leader';
-        
-        if (!comment.trim()) {
-            showToast('Please enter a comment', 'error');
-            return;
-        }
-        
+        const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
+        if (!comment.trim()) return window.showToast('Enter a comment', 'error');
         try {
             let comments = currentReport.comments || [];
-            comments.push({
-                author: userName,
-                text: comment,
-                created_at: new Date().toISOString()
-            });
-            
-            const response = await fetch(`/api/technical-reports/${currentReportId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comments: comments })
-            });
-            
+            comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comments: comments }) });
             const data = await response.json();
-            if (data.success) {
-                showToast('Comment added');
-                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
-                openReportDetail(currentReportId);
-            } else {
-                showToast('Failed to add comment', 'error');
-            }
-        } catch (error) {
-            showToast('Error adding comment', 'error');
-        }
+            if (data.success) { window.showToast('Comment added'); bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
-    
-    function editReport() {
-        window.location.href = `/reports?id=${currentReportId}&edit=true`;
+    async function deleteReportDirect(id) {
+        if (!confirm('Are you sure you want to delete this report?')) return;
+        try {
+            const response = await fetch(`/api/technical-reports/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) { window.showToast('Report deleted'); loadReports(); bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); }
+            else { window.showToast(data.error || 'Cannot delete', 'error'); }
+        } catch (error) { window.showToast('Error deleting', 'error'); }
     }
+    function deleteReport() { deleteReportDirect(currentReportId); }
+    function editReport() { window.location.href = `/reports?id=${currentReportId}&edit=true`; }
+    function printReport() { window.print(); }
     
-    function printReport() {
-        if (currentReport) {
-            const printWindow = window.open('', '_blank', 'width=800,600');
-            printWindow.document.write(`
-                <!DOCTYPE html><html><head><title>Report #${currentReport.id}</title>
-                <style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;}</style>
-                </head><body>
-                <div class="header"><h2>Ministry of Education, Brunei</h2><h3>Technical Report</h3></div>
-                <p><strong>Report #:</strong> ${currentReport.utility_number || currentReport.id}</p>
-                <p><strong>Type:</strong> ${currentReport.report_type}</p>
-                <p><strong>Technician:</strong> ${currentReport.technician_name || 'Unknown'}</p>
-                <p><strong>Location:</strong> ${currentReport.entity_name || currentReport.entity_type}</p>
-                <p><strong>Problem:</strong> ${currentReport.problem_type || '-'}</p>
-                <p><strong>Description:</strong> ${currentReport.complaint_details || '-'}</p>
-                ${currentReport.action_taken ? `<p><strong>Action Taken:</strong> ${currentReport.action_taken}</p>` : ''}
-                <p><strong>Submitted:</strong> ${formatDate(currentReport.created_at)}</p>
-                <hr><p class="footer">Official MOE Technical Report</p>
-                <script>window.print();<\/script>
-                </body></html>
-            `);
-            printWindow.document.close();
-        }
-    }
-    
-    async function init() {
-        await loadTechniciansForFilter();
-        await loadReports();
-        setInterval(loadReports, 30000);
-    }
-    
+    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
     init();
 </script>
 {% endblock %}
