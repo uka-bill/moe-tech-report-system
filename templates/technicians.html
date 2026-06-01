@@ -131,23 +131,17 @@
         border-radius: 8px;
         margin-bottom: 20px;
     }
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255,255,255,0.9);
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .action-buttons {
+        white-space: nowrap;
+    }
+    .action-buttons .btn {
+        margin: 0 2px;
     }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> Technicians Management</h2>
-    <button class="btn btn-primary" id="addTechBtn" style="display: none;" onclick="showAddTechModal()">
+    <button class="btn btn-primary" id="addTechBtn" onclick="showAddTechModal()">
         <i class="bi bi-plus-circle"></i> Add Technician
     </button>
 </div>
@@ -180,7 +174,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">ID</th>
+                        <th style="width: 50px;">#</th>
                         <th>Employee ID</th>
                         <th>Name</th>
                         <th>Role</th>
@@ -309,7 +303,7 @@
     let currentFilter = 'all';
     let canEdit = false;
     
-    // Function to get current user from localStorage directly (fallback if window.getCurrentUser not available)
+    // Function to get current user from localStorage directly
     function getLocalUser() {
         try {
             const userId = localStorage.getItem('userId');
@@ -333,28 +327,21 @@
     
     // Check if current user can edit technicians
     function checkEditPermission() {
-        // Try to get user from global function first, then from localStorage directly
         let user = null;
         try {
             if (typeof window.getCurrentUser === 'function') {
                 user = window.getCurrentUser();
-                console.log('Got user from window.getCurrentUser():', user);
             }
-        } catch (e) {
-            console.log('window.getCurrentUser not available, using localStorage directly');
-        }
+        } catch (e) {}
         
         if (!user || !user.id) {
             user = getLocalUser();
-            console.log('Got user from localStorage directly:', user);
         }
         
         canEdit = user && user.canEditTechnicians === true;
         
         const addButton = document.getElementById('addTechBtn');
         const permissionNote = document.getElementById('permissionNote');
-        
-        console.log('Technicians Page - Edit permission:', canEdit, 'User:', user?.name);
         
         if (!canEdit) {
             if (addButton) addButton.style.display = 'none';
@@ -368,7 +355,6 @@
     
     async function loadTechnicians() {
         try {
-            console.log('Loading technicians list...');
             const response = await fetch('/api/technicians');
             
             if (!response.ok) {
@@ -381,7 +367,7 @@
             checkEditPermission();
         } catch (error) {
             console.error('Error loading technicians:', error);
-            document.getElementById('techniciansTable').innerHTML = '<td><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh the page.</td<tr>';
+            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh the page.</td</tr>';
             if (window.showToast) window.showToast('Error loading technicians', 'error');
         }
     }
@@ -435,6 +421,9 @@
             return;
         }
         
+        // Create a row number counter
+        let rowNum = 1;
+        
         tbody.innerHTML = technicians.map((tech) => {
             // Parse specializations
             let specializations = tech.specializations;
@@ -465,28 +454,38 @@
                 ? '<span class="can-edit-badge">✓ Can Edit Techs</span>' 
                 : '<span class="unauthorized-badge">✗ View Only</span>';
             
-            // Show action buttons only if user has permission to edit
-            const actionButtons = canEdit ? `
-                <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})" title="Edit">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})" title="Delete">
-                    <i class="bi bi-trash"></i>
-                </button>
-            ` : '<span class="text-muted">-</span>';
+            // Create action buttons HTML
+            let actionButtonsHtml = '';
+            if (canEdit) {
+                actionButtonsHtml = `
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                actionButtonsHtml = '<span class="text-muted">-</span>';
+            }
+            
+            // Build the row - using proper sequential numbering
+            const rowNumber = rowNum++;
             
             return `
                 <tr>
-                    <td><strong>${tech.id}</strong></br><small>DB ID</small></td>
-                    <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></br><small>Emp ID</small></td>
-                    <td><strong>${escapeHtml(tech.name)}</strong></br><small>Name</small></td>
-                    <td>${roleBadge}</br><small>${tech.role === 'senior_technician' ? 'Senior' : 'Tech'}</small></td>
-                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</br><small>Qualified Areas</small></td>
-                    <td>${authBadge}</br><small>Team Leader</small></td>
-                    <td>${canEditBadge}</br><small>Tech Management</small></td>
-                    <td>${escapeHtml(tech.phone || '-')}</br><small>Contact</small></td>
-                    <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
-                    <td class="text-nowrap">${actionButtons}</td>
+                    <td class="text-center"><strong>${rowNumber}</strong></td>
+                    <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
+                    <td><strong>${escapeHtml(tech.name)}</strong></td>
+                    <td>${roleBadge}</td>
+                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</td>
+                    <td>${authBadge}</td>
+                    <td>${canEditBadge}</td>
+                    <td>${escapeHtml(tech.phone || '-')}</td>
+                    <td>${escapeHtml(tech.email || '-')}</td>
+                    <td>${actionButtonsHtml}</td>
                 </tr>
             `;
         }).join('');
@@ -666,30 +665,13 @@
         }
     }
     
-    // Initialize on page load - wait for DOM and ensure base.html is ready
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Technicians page DOM loaded, initializing...');
-        
-        // Small delay to ensure base.html scripts have run
+        console.log('Technicians page initializing...');
         setTimeout(function() {
             checkEditPermission();
             loadTechnicians();
         }, 100);
     });
-    
-    // Also try immediately if DOM is already loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                checkEditPermission();
-                loadTechnicians();
-            }, 100);
-        });
-    } else {
-        setTimeout(function() {
-            checkEditPermission();
-            loadTechnicians();
-        }, 100);
-    }
 </script>
 {% endblock %}
