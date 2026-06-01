@@ -1,0 +1,1001 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .map-container {
+        position: relative;
+        width: 100%;
+        min-height: 400px;
+        background-color: #f0f0f0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .map-image {
+        width: 100%;
+        height: auto;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .map-image:hover {
+        transform: scale(1.01);
+    }
+    .location-marker {
+        position: absolute;
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+    }
+    .marker-water {
+        background-color: #2196F3;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        border: 2px solid white;
+    }
+    .marker-electricity {
+        background-color: #FF9800;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        border: 2px solid white;
+    }
+    .marker-telephone {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        border: 2px solid white;
+    }
+    .location-card {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-left: 4px solid var(--primary-color);
+        transition: all 0.2s;
+    }
+    .location-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .location-type-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+    .type-water {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    .type-electricity {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+    .type-telephone {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    .image-preview {
+        max-width: 200px;
+        max-height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 5px;
+        border: 2px solid var(--primary-light);
+    }
+    .image-preview:hover {
+        transform: scale(1.05);
+        border-color: var(--primary-color);
+    }
+    .info-row {
+        display: flex;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+    .info-label {
+        width: 100px;
+        font-weight: bold;
+        color: #555;
+    }
+    .info-value {
+        flex: 1;
+        color: #333;
+    }
+    .btn-add-location {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 100;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .entity-selector {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .tab-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+    }
+    .tab-btn {
+        padding: 8px 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.2s;
+    }
+    .tab-btn.active {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+    }
+    .tab-content {
+        display: none;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    .coordinates-input {
+        font-family: monospace;
+        font-size: 12px;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-map"></i> Mapping & Profiling</h2>
+    <button class="btn btn-primary" onclick="showAddImageModal()">
+        <i class="bi bi-image"></i> Upload Map Image
+    </button>
+</div>
+
+<!-- Entity Selector -->
+<div class="entity-selector">
+    <div class="row">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Entity Type</label>
+            <select class="form-select" id="entityType" onchange="loadEntityData()">
+                <option value="">Select Entity Type</option>
+                <option value="school">🏫 School</option>
+                <option value="department">🏢 Department</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Entity Name</label>
+            <select class="form-select" id="entityId" disabled onchange="loadEntityData()">
+                <option value="">Select Entity Type First</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-buttons">
+    <button class="tab-btn active" onclick="switchTab('locations')">📍 Location Markers</button>
+    <button class="tab-btn" onclick="switchTab('map')">🗺️ Map View</button>
+    <button class="tab-btn" onclick="switchTab('images')">🖼️ Map Images</button>
+</div>
+
+<!-- Locations Tab -->
+<div id="locationsTab" class="tab-content active">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="bi bi-geo-alt"></i> Registered Locations</h5>
+                <button class="btn btn-sm btn-success" onclick="showAddLocationModal()">
+                    <i class="bi bi-plus-circle"></i> Add Location
+                </button>
+            </div>
+            <div id="locationsList">
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-map" style="font-size: 48px;"></i>
+                    <p>Select a school or department to view locations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map View Tab -->
+<div id="mapTab" class="tab-content">
+    <div class="map-container" id="mapContainer">
+        <div class="text-center py-5">
+            <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
+            <p>Upload a map image first, then click on the image to add markers</p>
+        </div>
+    </div>
+    <div class="text-center mt-2">
+        <small class="text-muted">Tip: Upload a Google Maps screenshot, then click on the image to add location markers</small>
+    </div>
+</div>
+
+<!-- Images Tab -->
+<div id="imagesTab" class="tab-content">
+    <div class="row" id="imagesList">
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-images" style="font-size: 48px;"></i>
+            <p>No map images uploaded yet</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Location Modal -->
+<div class="modal fade" id="addLocationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-geo-alt"></i> Add Location Marker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    <input type="hidden" id="locationId">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Location Type *</label>
+                            <select class="form-select" id="locationType" required>
+                                <option value="">Select Type</option>
+                                <option value="water_meter">💧 Water Meter</option>
+                                <option value="electricity_meter">⚡ Electricity Meter</option>
+                                <option value="telephone_set">📞 Telephone Set</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Coordinates</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control coordinates-input" id="coordinates" placeholder="Click on image to set coordinates">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearCoordinates()">Clear</button>
+                            </div>
+                            <small class="text-muted">X: <span id="coordX">-</span>, Y: <span id="coordY">-</span></small>
+                        </div>
+                    </div>
+                    <div id="waterFields" class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control" id="accountNumber" placeholder="e.g., W-12345">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Meter Number</label>
+                            <input type="text" class="form-control" id="meterNumber" placeholder="e.g., MTR-12345">
+                        </div>
+                    </div>
+                    <div id="electricityFields" class="row mb-3" style="display: none;">
+                        <div class="col-md-6">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control" id="electricityAccountNumber" placeholder="e.g., E-12345">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Meter Number</label>
+                            <input type="text" class="form-control" id="electricityMeterNumber" placeholder="e.g., MET-12345">
+                        </div>
+                    </div>
+                    <div id="telephoneFields" class="row mb-3" style="display: none;">
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 2380000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" class="form-control" id="telephoneAccountNumber" placeholder="e.g., T-12345">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description / Notes</label>
+                        <textarea class="form-control" id="locationDescription" rows="2" placeholder="Additional information about this location..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="locationAddress" placeholder="Physical address of this location">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveLocation()">Save Location</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Image Modal -->
+<div class="modal fade" id="addImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-image"></i> Upload Map Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Upload Google Maps Screenshot</label>
+                        <input type="file" class="form-control" id="mapImageUpload" accept="image/*" required>
+                        <small class="text-muted">Upload a screenshot from Google Maps showing the location of water meters, electricity meters, or telephone sets</small>
+                    </div>
+                    <div id="imagePreview" class="text-center" style="display: none;">
+                        <img id="uploadPreview" class="img-fluid rounded" style="max-height: 300px;">
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="imageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadMapImage()">Upload Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Location Modal -->
+<div class="modal fade" id="viewLocationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Location Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewLocationContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="editCurrentLocation()">Edit</button>
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentLocation()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Image Modal -->
+<div class="modal fade" id="viewImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Map Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="viewImageSrc" src="" class="img-fluid rounded" style="max-height: 70vh;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentImage()">Delete Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLocations = [];
+    let currentImages = [];
+    let currentEntityId = null;
+    let currentEntityType = null;
+    let currentLocation = null;
+    let currentImageId = null;
+    let mapImageUrl = null;
+    let markers = [];
+    let clickCoordinates = { x: null, y: null };
+    
+    // Load schools and departments
+    async function loadSchools() {
+        try {
+            const response = await fetch('/api/schools');
+            return await response.json();
+        } catch { return []; }
+    }
+    
+    async function loadDepartments() {
+        try {
+            const response = await fetch('/api/departments');
+            return await response.json();
+        } catch { return []; }
+    }
+    
+    // Load entity data when selection changes
+    document.getElementById('entityType').addEventListener('change', async function() {
+        const entitySelect = document.getElementById('entityId');
+        if (this.value === 'school') {
+            const schools = await loadSchools();
+            entitySelect.innerHTML = '<option value="">Select School</option>' + 
+                schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            entitySelect.disabled = false;
+        } else if (this.value === 'department') {
+            const departments = await loadDepartments();
+            entitySelect.innerHTML = '<option value="">Select Department</option>' + 
+                departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+            entitySelect.disabled = false;
+        } else {
+            entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
+            entitySelect.disabled = true;
+        }
+    });
+    
+    async function loadEntityData() {
+        currentEntityType = document.getElementById('entityType').value;
+        currentEntityId = document.getElementById('entityId').value;
+        
+        if (!currentEntityType || !currentEntityId) {
+            return;
+        }
+        
+        // Load locations
+        await loadLocations();
+        
+        // Load images
+        await loadImages();
+        
+        // Update map view if there's an image
+        if (mapImageUrl) {
+            updateMapView();
+        }
+    }
+    
+    async function loadLocations() {
+        if (!currentEntityType || !currentEntityId) return;
+        
+        try {
+            const response = await fetch(`/api/mapping/locations?entity_type=${currentEntityType}&entity_id=${currentEntityId}`);
+            currentLocations = await response.json();
+            displayLocations();
+            updateMapMarkers();
+        } catch (error) {
+            console.error('Error loading locations:', error);
+        }
+    }
+    
+    function displayLocations() {
+        const container = document.getElementById('locationsList');
+        if (!currentLocations || currentLocations.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-geo-alt" style="font-size: 48px;"></i>
+                    <p>No locations registered yet. Click "Add Location" to add water meters, electricity meters, or telephone sets.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = currentLocations.map(loc => {
+            const typeClass = loc.location_type === 'water_meter' ? 'type-water' : 
+                            (loc.location_type === 'electricity_meter' ? 'type-electricity' : 'type-telephone');
+            const typeIcon = loc.location_type === 'water_meter' ? '💧' : 
+                            (loc.location_type === 'electricity_meter' ? '⚡' : '📞');
+            const typeName = loc.location_type === 'water_meter' ? 'Water Meter' : 
+                            (loc.location_type === 'electricity_meter' ? 'Electricity Meter' : 'Telephone Set');
+            
+            return `
+                <div class="location-card" onclick="viewLocation(${loc.id})">
+                    <div>
+                        <span class="location-type-badge ${typeClass}">${typeIcon} ${typeName}</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Account:</div>
+                        <div class="info-value">${escapeHtml(loc.account_number || '-')}</div>
+                    </div>
+                    ${loc.meter_number ? `
+                    <div class="info-row">
+                        <div class="info-label">Meter No:</div>
+                        <div class="info-value">${escapeHtml(loc.meter_number)}</div>
+                    </div>
+                    ` : ''}
+                    ${loc.phone_number ? `
+                    <div class="info-row">
+                        <div class="info-label">Phone No:</div>
+                        <div class="info-value">${escapeHtml(loc.phone_number)}</div>
+                    </div>
+                    ` : ''}
+                    ${loc.address ? `
+                    <div class="info-row">
+                        <div class="info-label">Address:</div>
+                        <div class="info-value">${escapeHtml(loc.address)}</div>
+                    </div>
+                    ` : ''}
+                    ${loc.description ? `
+                    <div class="info-row">
+                        <div class="info-label">Notes:</div>
+                        <div class="info-value">${escapeHtml(loc.description)}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function updateMapMarkers() {
+        // This function would update markers on a real map
+        // For now, we'll just store the data for when we have an image
+        console.log('Markers to display:', currentLocations.length);
+    }
+    
+    async function loadImages() {
+        if (!currentEntityType || !currentEntityId) return;
+        
+        try {
+            const response = await fetch(`/api/mapping/images?entity_type=${currentEntityType}&entity_id=${currentEntityId}`);
+            currentImages = await response.json();
+            displayImages();
+            
+            // Set the first image as the map image
+            if (currentImages.length > 0 && currentImages[0].image_url) {
+                mapImageUrl = currentImages[0].image_url;
+                updateMapView();
+            }
+        } catch (error) {
+            console.error('Error loading images:', error);
+        }
+    }
+    
+    function displayImages() {
+        const container = document.getElementById('imagesList');
+        if (!currentImages || currentImages.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-images" style="font-size: 48px;"></i>
+                    <p>No map images uploaded yet. Click "Upload Map Image" to add Google Maps screenshots.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = currentImages.map(img => `
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <img src="${img.image_url}" class="card-img-top" style="height: 200px; object-fit: cover; cursor: pointer;" onclick="viewImage('${img.image_url}', ${img.id})">
+                    <div class="card-body">
+                        <p class="card-text small">${escapeHtml(img.description || 'No description')}</p>
+                        <small class="text-muted">Uploaded: ${formatDateOnly(img.uploaded_at)}</small>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteImage(${img.id})">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function updateMapView() {
+        const container = document.getElementById('mapContainer');
+        if (!mapImageUrl) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
+                    <p>Upload a map image first, then click on the image to add markers</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <img src="${mapImageUrl}" class="map-image" id="mapImage" style="width: 100%; height: auto;" onclick="getClickCoordinates(event)">
+                <div id="markersContainer"></div>
+            </div>
+        `;
+        
+        // Add markers
+        const markersContainer = document.getElementById('markersContainer');
+        if (markersContainer && currentLocations) {
+            markersContainer.innerHTML = currentLocations.map(loc => {
+                if (loc.latitude && loc.longitude) {
+                    const typeClass = loc.location_type === 'water_meter' ? 'marker-water' : 
+                                    (loc.location_type === 'electricity_meter' ? 'marker-electricity' : 'marker-telephone');
+                    const typeIcon = loc.location_type === 'water_meter' ? '💧' : 
+                                    (loc.location_type === 'electricity_meter' ? '⚡' : '📞');
+                    return `
+                        <div class="location-marker ${typeClass}" 
+                             style="left: ${loc.longitude}%; top: ${loc.latitude}%;"
+                             onclick="viewLocation(${loc.id})"
+                             title="${loc.location_type}">
+                            ${typeIcon}
+                        </div>
+                    `;
+                }
+                return '';
+            }).join('');
+        }
+    }
+    
+    function getClickCoordinates(event) {
+        const img = document.getElementById('mapImage');
+        if (!img) return;
+        
+        const rect = img.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        
+        clickCoordinates = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+        
+        document.getElementById('coordX').textContent = clickCoordinates.x;
+        document.getElementById('coordY').textContent = clickCoordinates.y;
+        document.getElementById('coordinates').value = `X: ${clickCoordinates.x}%, Y: ${clickCoordinates.y}%`;
+        
+        showToast(`Coordinates set: X=${clickCoordinates.x}%, Y=${clickCoordinates.y}%`);
+        
+        // Auto-show add location modal
+        showAddLocationModal();
+    }
+    
+    function clearCoordinates() {
+        clickCoordinates = { x: null, y: null };
+        document.getElementById('coordX').textContent = '-';
+        document.getElementById('coordY').textContent = '-';
+        document.getElementById('coordinates').value = '';
+    }
+    
+    function showAddLocationModal() {
+        if (!currentEntityType || !currentEntityId) {
+            showToast('Please select a school or department first', 'error');
+            return;
+        }
+        
+        document.getElementById('locationForm').reset();
+        document.getElementById('locationId').value = '';
+        document.getElementById('waterFields').style.display = 'flex';
+        document.getElementById('electricityFields').style.display = 'none';
+        document.getElementById('telephoneFields').style.display = 'none';
+        clearCoordinates();
+        
+        new bootstrap.Modal(document.getElementById('addLocationModal')).show();
+    }
+    
+    function updateLocationFields() {
+        const type = document.getElementById('locationType').value;
+        document.getElementById('waterFields').style.display = 'none';
+        document.getElementById('electricityFields').style.display = 'none';
+        document.getElementById('telephoneFields').style.display = 'none';
+        
+        if (type === 'water_meter') {
+            document.getElementById('waterFields').style.display = 'flex';
+        } else if (type === 'electricity_meter') {
+            document.getElementById('electricityFields').style.display = 'flex';
+        } else if (type === 'telephone_set') {
+            document.getElementById('telephoneFields').style.display = 'flex';
+        }
+    }
+    
+    document.getElementById('locationType').addEventListener('change', updateLocationFields);
+    
+    async function saveLocation() {
+        const id = document.getElementById('locationId').value;
+        const locationType = document.getElementById('locationType').value;
+        
+        if (!locationType) {
+            showToast('Please select location type', 'error');
+            return;
+        }
+        
+        let accountNumber = '';
+        let meterNumber = '';
+        let phoneNumber = '';
+        
+        if (locationType === 'water_meter') {
+            accountNumber = document.getElementById('accountNumber').value;
+            meterNumber = document.getElementById('meterNumber').value;
+        } else if (locationType === 'electricity_meter') {
+            accountNumber = document.getElementById('electricityAccountNumber').value;
+            meterNumber = document.getElementById('electricityMeterNumber').value;
+        } else if (locationType === 'telephone_set') {
+            phoneNumber = document.getElementById('phoneNumber').value;
+            accountNumber = document.getElementById('telephoneAccountNumber').value;
+        }
+        
+        const data = {
+            entity_type: currentEntityType,
+            entity_id: parseInt(currentEntityId),
+            location_type: locationType,
+            account_number: accountNumber,
+            meter_number: meterNumber,
+            phone_number: phoneNumber,
+            description: document.getElementById('locationDescription').value,
+            address: document.getElementById('locationAddress').value,
+            latitude: clickCoordinates.y,
+            longitude: clickCoordinates.x,
+            created_by: localStorage.getItem('userId')
+        };
+        
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`/api/mapping/locations/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetch('/api/mapping/locations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            
+            const result = await response.json();
+            if (result.success) {
+                showToast(id ? 'Location updated' : 'Location added');
+                bootstrap.Modal.getInstance(document.getElementById('addLocationModal')).hide();
+                await loadLocations();
+                updateMapView();
+            } else {
+                showToast(result.error || 'Failed to save', 'error');
+            }
+        } catch (error) {
+            showToast('Error saving location', 'error');
+        }
+    }
+    
+    async function viewLocation(id) {
+        const location = currentLocations.find(l => l.id === id);
+        if (!location) return;
+        
+        currentLocation = location;
+        const typeName = location.location_type === 'water_meter' ? 'Water Meter' : 
+                        (location.location_type === 'electricity_meter' ? 'Electricity Meter' : 'Telephone Set');
+        const typeIcon = location.location_type === 'water_meter' ? '💧' : 
+                        (location.location_type === 'electricity_meter' ? '⚡' : '📞');
+        
+        const html = `
+            <div class="mb-3">
+                <strong>Type:</strong> ${typeIcon} ${typeName}<br>
+                <strong>Account Number:</strong> ${escapeHtml(location.account_number || '-')}<br>
+                ${location.meter_number ? `<strong>Meter Number:</strong> ${escapeHtml(location.meter_number)}<br>` : ''}
+                ${location.phone_number ? `<strong>Phone Number:</strong> ${escapeHtml(location.phone_number)}<br>` : ''}
+                ${location.address ? `<strong>Address:</strong> ${escapeHtml(location.address)}<br>` : ''}
+                ${location.description ? `<strong>Notes:</strong> ${escapeHtml(location.description)}<br>` : ''}
+                ${location.latitude ? `<strong>Map Position:</strong> X: ${location.longitude}%, Y: ${location.latitude}%<br>` : ''}
+            </div>
+        `;
+        
+        document.getElementById('viewLocationContent').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('viewLocationModal')).show();
+    }
+    
+    function editCurrentLocation() {
+        if (!currentLocation) return;
+        
+        bootstrap.Modal.getInstance(document.getElementById('viewLocationModal')).hide();
+        
+        document.getElementById('locationId').value = currentLocation.id;
+        document.getElementById('locationType').value = currentLocation.location_type;
+        document.getElementById('locationDescription').value = currentLocation.description || '';
+        document.getElementById('locationAddress').value = currentLocation.address || '';
+        
+        updateLocationFields();
+        
+        if (currentLocation.location_type === 'water_meter') {
+            document.getElementById('accountNumber').value = currentLocation.account_number || '';
+            document.getElementById('meterNumber').value = currentLocation.meter_number || '';
+        } else if (currentLocation.location_type === 'electricity_meter') {
+            document.getElementById('electricityAccountNumber').value = currentLocation.account_number || '';
+            document.getElementById('electricityMeterNumber').value = currentLocation.meter_number || '';
+        } else if (currentLocation.location_type === 'telephone_set') {
+            document.getElementById('phoneNumber').value = currentLocation.phone_number || '';
+            document.getElementById('telephoneAccountNumber').value = currentLocation.account_number || '';
+        }
+        
+        if (currentLocation.latitude && currentLocation.longitude) {
+            clickCoordinates = { x: currentLocation.longitude, y: currentLocation.latitude };
+            document.getElementById('coordX').textContent = clickCoordinates.x;
+            document.getElementById('coordY').textContent = clickCoordinates.y;
+            document.getElementById('coordinates').value = `X: ${clickCoordinates.x}%, Y: ${clickCoordinates.y}%`;
+        }
+        
+        new bootstrap.Modal(document.getElementById('addLocationModal')).show();
+    }
+    
+    async function deleteCurrentLocation() {
+        if (!currentLocation) return;
+        
+        if (confirm(`Delete this ${currentLocation.location_type}?`)) {
+            try {
+                const response = await fetch(`/api/mapping/locations/${currentLocation.id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Location deleted');
+                    bootstrap.Modal.getInstance(document.getElementById('viewLocationModal')).hide();
+                    await loadLocations();
+                    updateMapView();
+                } else {
+                    showToast(result.error || 'Failed to delete', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting location', 'error');
+            }
+        }
+    }
+    
+    function showAddImageModal() {
+        if (!currentEntityType || !currentEntityId) {
+            showToast('Please select a school or department first', 'error');
+            return;
+        }
+        
+        document.getElementById('imageForm').reset();
+        document.getElementById('imagePreview').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('addImageModal')).show();
+    }
+    
+    document.getElementById('mapImageUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('uploadPreview').src = event.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    async function uploadMapImage() {
+        const fileInput = document.getElementById('mapImageUpload');
+        const description = document.getElementById('imageDescription').value;
+        
+        if (!fileInput.files[0]) {
+            showToast('Please select an image', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        
+        try {
+            const uploadResponse = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            const uploadData = await uploadResponse.json();
+            
+            if (uploadData.success) {
+                const imageData = {
+                    entity_type: currentEntityType,
+                    entity_id: parseInt(currentEntityId),
+                    image_url: uploadData.image_url,
+                    description: description,
+                    uploaded_by: localStorage.getItem('userId')
+                };
+                
+                const saveResponse = await fetch('/api/mapping/images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(imageData)
+                });
+                
+                const saveResult = await saveResponse.json();
+                if (saveResult.success) {
+                    showToast('Map image uploaded successfully');
+                    bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
+                    await loadImages();
+                } else {
+                    showToast('Failed to save image record', 'error');
+                }
+            } else {
+                showToast('Failed to upload image', 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            showToast('Error uploading image', 'error');
+        }
+    }
+    
+    function viewImage(url, id) {
+        currentImageId = id;
+        document.getElementById('viewImageSrc').src = url;
+        new bootstrap.Modal(document.getElementById('viewImageModal')).show();
+    }
+    
+    async function deleteCurrentImage() {
+        if (!currentImageId) return;
+        
+        if (confirm('Delete this map image?')) {
+            try {
+                const response = await fetch(`/api/mapping/images/${currentImageId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Image deleted');
+                    bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
+                    await loadImages();
+                } else {
+                    showToast('Failed to delete', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting image', 'error');
+            }
+        }
+    }
+    
+    function deleteImage(id) {
+        if (confirm('Delete this map image?')) {
+            // Implement delete API call
+            showToast('Image deleted (API integration needed)', 'info');
+        }
+    }
+    
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        if (tab === 'locations') {
+            document.querySelector('.tab-btn').classList.add('active');
+            document.getElementById('locationsTab').classList.add('active');
+        } else if (tab === 'map') {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('mapTab').classList.add('active');
+            if (mapImageUrl) updateMapView();
+        } else if (tab === 'images') {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            document.getElementById('imagesTab').classList.add('active');
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
+    }
+    
+    // Make functions global for onclick
+    window.showAddLocationModal = showAddLocationModal;
+    window.saveLocation = saveLocation;
+    window.viewLocation = viewLocation;
+    window.editCurrentLocation = editCurrentLocation;
+    window.deleteCurrentLocation = deleteCurrentLocation;
+    window.showAddImageModal = showAddImageModal;
+    window.uploadMapImage = uploadMapImage;
+    window.viewImage = viewImage;
+    window.deleteCurrentImage = deleteCurrentImage;
+    window.deleteImage = deleteImage;
+    window.switchTab = switchTab;
+    window.getClickCoordinates = getClickCoordinates;
+    window.clearCoordinates = clearCoordinates;
+    window.loadEntityData = loadEntityData;
+</script>
+{% endblock %}
