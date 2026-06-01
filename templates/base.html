@@ -301,15 +301,6 @@
             right: 20px;
             z-index: 9999;
         }
-        
-        .password-modal {
-            backdrop-filter: blur(5px);
-        }
-        .password-input {
-            font-family: monospace;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-        }
     </style>
 </head>
 <body>
@@ -375,6 +366,17 @@
                                     <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
                                 </div>
                             </li>
+                            <li><hr class="dropdown-divider" id="profileDivider" style="display: none;"></li>
+                            <li id="changePasswordItem" style="display: none;">
+                                <a class="dropdown-item" href="#" onclick="showChangePasswordModal()">
+                                    <i class="bi bi-key"></i> Change Password
+                                </a>
+                            </li>
+                            <li id="logoutItem" style="display: none;">
+                                <a class="dropdown-item text-danger" href="#" onclick="logout()">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -411,7 +413,7 @@
                         <i class="bi bi-person-circle" style="font-size: 48px; color: var(--primary-color);"></i>
                         <h6 id="passwordUserName" class="mt-2">User Name</h6>
                     </div>
-                    <input type="password" class="form-control password-input" id="passwordInput" placeholder="Enter password" autocomplete="off">
+                    <input type="password" class="form-control" id="passwordInput" placeholder="Enter password" autocomplete="off">
                     <small class="text-muted d-block mt-2">Default password is your Employee ID (e.g., TECH001)</small>
                 </div>
                 <div class="modal-footer">
@@ -438,12 +440,48 @@
                         <h6 id="resetUserName" class="mt-2">User Name</h6>
                     </div>
                     <input type="text" class="form-control" id="resetPasswordInput" placeholder="New password" autocomplete="off">
-                    <small class="text-muted d-block mt-2">Password will be set to this value. User can change it later in profile.</small>
+                    <small class="text-muted d-block mt-2">Password will be set to this value.</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-warning" onclick="confirmResetPassword()">
                         <i class="bi bi-arrow-repeat"></i> Reset Password
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 48px; color: var(--primary-color);"></i>
+                        <h6 id="changePasswordUserName" class="mt-2">User Name</h6>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" placeholder="Enter current password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="Enter new password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmNewPassword" placeholder="Confirm new password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitChangePassword()">
+                        <i class="bi bi-save"></i> Update Password
                     </button>
                 </div>
             </div>
@@ -476,10 +514,12 @@
                 };
                 document.getElementById('currentUserName').textContent = userName;
                 console.log('User loaded from storage:', currentUser);
+                updateProfileMenuVisibility();
                 return true;
             } else {
                 console.log('No user found in storage');
                 document.getElementById('currentUserName').textContent = 'Select User';
+                updateProfileMenuVisibility();
                 return false;
             }
         }
@@ -496,7 +536,7 @@
             }
         }
         
-        // Clear user from storage (logout)
+        // Clear user from storage
         function clearUserStorage() {
             localStorage.removeItem('userId');
             localStorage.removeItem('userName');
@@ -505,7 +545,20 @@
             localStorage.removeItem('canEditTechnicians');
             currentUser = null;
             document.getElementById('currentUserName').textContent = 'Select User';
+            updateProfileMenuVisibility();
             console.log('User cleared from storage');
+        }
+        
+        // Update profile menu visibility
+        function updateProfileMenuVisibility() {
+            const changePasswordItem = document.getElementById('changePasswordItem');
+            const logoutItem = document.getElementById('logoutItem');
+            const profileDivider = document.getElementById('profileDivider');
+            const hasUser = currentUser && currentUser.id;
+            
+            if (changePasswordItem) changePasswordItem.style.display = hasUser ? 'block' : 'none';
+            if (logoutItem) logoutItem.style.display = hasUser ? 'block' : 'none';
+            if (profileDivider) profileDivider.style.display = hasUser ? 'block' : 'none';
         }
         
         // Load technicians and populate user selector
@@ -588,7 +641,6 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Find the full technician data
                     const tech = allTechnicians.find(t => t.id == pendingUserSelection.id);
                     if (tech) {
                         currentUser = {
@@ -599,15 +651,12 @@
                             canEditTechnicians: tech.can_edit_technicians || false
                         };
                         
-                        // Save to localStorage
                         saveUserToStorage(currentUser);
-                        
                         document.getElementById('currentUserName').textContent = tech.name;
+                        updateProfileMenuVisibility();
                         
                         bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
                         showToast(`Welcome ${tech.name}!`, 'success');
-                        
-                        // Reload page to apply permissions
                         setTimeout(() => location.reload(), 500);
                     }
                 } else {
@@ -666,6 +715,79 @@
             }
         }
         
+        // Show Change Password modal
+        function showChangePasswordModal() {
+            if (!currentUser || !currentUser.id) {
+                showToast('Please select a user first', 'error');
+                return;
+            }
+            document.getElementById('changePasswordUserName').textContent = currentUser.name;
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+            modal.show();
+        }
+        
+        // Submit password change
+        async function submitChangePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmNewPassword').value;
+            
+            if (!currentPassword) {
+                showToast('Please enter current password', 'error');
+                return;
+            }
+            
+            if (!newPassword) {
+                showToast('Please enter new password', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('New passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 4) {
+                showToast('Password must be at least 4 characters', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/technicians/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        technician_id: currentUser.id,
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Password changed successfully!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+                } else {
+                    showToast(result.error || 'Failed to change password', 'error');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showToast('Error changing password', 'error');
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                clearUserStorage();
+                location.reload();
+            }
+        }
+        
         // Get current user (exposed globally)
         window.getCurrentUser = function() {
             if (!currentUser) {
@@ -683,6 +805,7 @@
                         isAuthorized: isAuthorized,
                         canEditTechnicians: canEditTechnicians
                     };
+                    updateProfileMenuVisibility();
                 }
             }
             return currentUser || { id: null, name: null, role: 'technician', isAuthorized: false, canEditTechnicians: false };
@@ -702,7 +825,6 @@
         function checkManagementAccess() {
             const canEdit = window.canEditTechnicians();
             const techniciansNav = document.getElementById('techniciansNavLink');
-            
             if (techniciansNav) {
                 techniciansNav.style.display = canEdit ? 'block' : 'none';
             }
