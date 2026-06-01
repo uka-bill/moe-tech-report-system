@@ -301,18 +301,6 @@
             right: 20px;
             z-index: 9999;
         }
-        
-        /* User selector styles */
-        .user-active-badge {
-            font-size: 10px;
-            margin-left: 5px;
-        }
-        .dropdown-item.active-user {
-            background-color: var(--secondary-color);
-        }
-        #currentUserName {
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -395,10 +383,6 @@
             </div>
         </div>
     </nav>
-    
-    <!-- Hidden field to store user ID for persistence -->
-    <input type="hidden" id="hiddenUserId" value="">
-    <input type="hidden" id="hiddenUserName" value="">
     
     <!-- Main Content -->
     <div class="container-fluid">
@@ -514,12 +498,15 @@
         
         // ============ USER PERSISTENCE FUNCTIONS ============
         
+        // Initialize user from localStorage (called on EVERY page load)
         function initUserFromStorage() {
             const userId = localStorage.getItem('userId');
             const userName = localStorage.getItem('userName');
             const userRole = localStorage.getItem('userRole');
             const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
             const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
+            
+            console.log('initUserFromStorage - userId:', userId, 'userName:', userName);
             
             if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
                 currentUser = {
@@ -529,20 +516,25 @@
                     isAuthorized: isAuthorized,
                     canEditTechnicians: canEditTechnicians
                 };
-                document.getElementById('currentUserName').textContent = userName;
-                // Also set hidden fields
-                document.getElementById('hiddenUserId').value = userId;
-                document.getElementById('hiddenUserName').value = userName;
-                console.log('User loaded from storage:', currentUser);
+                const userNameSpan = document.getElementById('currentUserName');
+                if (userNameSpan) {
+                    userNameSpan.textContent = userName;
+                }
+                console.log('User loaded from storage:', currentUser.name);
                 updateProfileMenuVisibility();
                 return true;
             } else {
-                document.getElementById('currentUserName').textContent = 'Select User';
+                console.log('No user found in storage');
+                const userNameSpan = document.getElementById('currentUserName');
+                if (userNameSpan) {
+                    userNameSpan.textContent = 'Select User';
+                }
                 updateProfileMenuVisibility();
                 return false;
             }
         }
         
+        // Save user to localStorage
         function saveUserToStorage(user) {
             if (user && user.id) {
                 localStorage.setItem('userId', user.id);
@@ -550,12 +542,11 @@
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('isAuthorized', user.isAuthorized);
                 localStorage.setItem('canEditTechnicians', user.canEditTechnicians);
-                document.getElementById('hiddenUserId').value = user.id;
-                document.getElementById('hiddenUserName').value = user.name;
-                console.log('User saved to storage:', user);
+                console.log('User saved to storage:', user.name);
             }
         }
         
+        // Clear user from storage
         function clearUserStorage() {
             localStorage.removeItem('userId');
             localStorage.removeItem('userName');
@@ -563,9 +554,10 @@
             localStorage.removeItem('isAuthorized');
             localStorage.removeItem('canEditTechnicians');
             currentUser = null;
-            document.getElementById('currentUserName').textContent = 'Select User';
-            document.getElementById('hiddenUserId').value = '';
-            document.getElementById('hiddenUserName').value = '';
+            const userNameSpan = document.getElementById('currentUserName');
+            if (userNameSpan) {
+                userNameSpan.textContent = 'Select User';
+            }
             updateProfileMenuVisibility();
             console.log('User cleared from storage');
         }
@@ -678,7 +670,7 @@
                         
                         bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
                         showToast(`Welcome ${tech.name}!`, 'success');
-                        setTimeout(() => location.reload(), 500);
+                        location.reload();
                     }
                 } else {
                     showToast(result.error || 'Invalid password', 'error');
@@ -897,6 +889,7 @@
         }
         
         window.showToast = showToast;
+        
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
@@ -921,7 +914,8 @@
         // ============ INITIALIZATION ============
         
         async function initialize() {
-            console.log('=== Initializing base.html ===');
+            console.log('=== Base.html initializing ===');
+            console.log('Current path:', window.location.pathname);
             
             // First, load user from storage
             initUserFromStorage();
@@ -934,7 +928,7 @@
             checkTeamLeaderAccess();
             highlightActiveNav();
             
-            console.log('Initialization complete. Current user ID:', currentUser?.id);
+            console.log('Initialization complete. Current user:', currentUser?.name);
         }
         
         // Run initialization immediately
