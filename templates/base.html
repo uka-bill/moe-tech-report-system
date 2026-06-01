@@ -496,7 +496,9 @@
         let allTechnicians = [];
         let pendingUserSelection = null;
         
-        // Initialize user from localStorage on page load
+        // ============ USER PERSISTENCE FUNCTIONS ============
+        
+        // Initialize user from localStorage on page load (called IMMEDIATELY)
         function initUserFromStorage() {
             const userId = localStorage.getItem('userId');
             const userName = localStorage.getItem('userName');
@@ -504,7 +506,9 @@
             const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
             const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
             
-            if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+            console.log('initUserFromStorage - userId:', userId, 'userName:', userName);
+            
+            if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
                 currentUser = {
                     id: userId,
                     name: userName,
@@ -512,13 +516,19 @@
                     isAuthorized: isAuthorized,
                     canEditTechnicians: canEditTechnicians
                 };
-                document.getElementById('currentUserName').textContent = userName;
+                const userNameSpan = document.getElementById('currentUserName');
+                if (userNameSpan) {
+                    userNameSpan.textContent = userName;
+                }
                 console.log('User loaded from storage:', currentUser);
                 updateProfileMenuVisibility();
                 return true;
             } else {
                 console.log('No user found in storage');
-                document.getElementById('currentUserName').textContent = 'Select User';
+                const userNameSpan = document.getElementById('currentUserName');
+                if (userNameSpan) {
+                    userNameSpan.textContent = 'Select User';
+                }
                 updateProfileMenuVisibility();
                 return false;
             }
@@ -544,7 +554,10 @@
             localStorage.removeItem('isAuthorized');
             localStorage.removeItem('canEditTechnicians');
             currentUser = null;
-            document.getElementById('currentUserName').textContent = 'Select User';
+            const userNameSpan = document.getElementById('currentUserName');
+            if (userNameSpan) {
+                userNameSpan.textContent = 'Select User';
+            }
             updateProfileMenuVisibility();
             console.log('User cleared from storage');
         }
@@ -554,12 +567,14 @@
             const changePasswordItem = document.getElementById('changePasswordItem');
             const logoutItem = document.getElementById('logoutItem');
             const profileDivider = document.getElementById('profileDivider');
-            const hasUser = currentUser && currentUser.id;
+            const hasUser = currentUser && currentUser.id && currentUser.id !== 'null';
             
             if (changePasswordItem) changePasswordItem.style.display = hasUser ? 'block' : 'none';
             if (logoutItem) logoutItem.style.display = hasUser ? 'block' : 'none';
             if (profileDivider) profileDivider.style.display = hasUser ? 'block' : 'none';
         }
+        
+        // ============ USER SELECTOR FUNCTIONS ============
         
         // Load technicians and populate user selector
         async function loadUserSelector() {
@@ -572,7 +587,7 @@
                 }
                 
                 allTechnicians = await response.json();
-                console.log('Loaded technicians:', allTechnicians);
+                console.log('Loaded technicians:', allTechnicians.length);
                 
                 const container = document.getElementById('userListContainer');
                 if (!allTechnicians || allTechnicians.length === 0) {
@@ -788,16 +803,19 @@
             }
         }
         
+        // ============ PERMISSION CHECK FUNCTIONS ============
+        
         // Get current user (exposed globally)
         window.getCurrentUser = function() {
             if (!currentUser) {
+                // Try to load from storage again
                 const userId = localStorage.getItem('userId');
                 const userName = localStorage.getItem('userName');
                 const userRole = localStorage.getItem('userRole');
                 const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
                 const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
                 
-                if (userId && userName && userId !== 'null' && userId !== 'undefined') {
+                if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
                     currentUser = {
                         id: userId,
                         name: userName,
@@ -855,7 +873,8 @@
             });
         }
         
-        // Show toast notification
+        // ============ TOAST NOTIFICATION ============
+        
         window.showToast = function(message, type = 'success') {
             let toastContainer = document.getElementById('toast-container');
             if (!toastContainer) {
@@ -902,19 +921,33 @@
             return date.toLocaleDateString('en-GB');
         };
         
-        // Initialize everything
+        // ============ INITIALIZATION ============
+        
+        // Initialize everything - called when DOM is ready
         async function initialize() {
-            console.log('Initializing base.html...');
+            console.log('=== Initializing base.html ===');
+            console.log('Current path:', window.location.pathname);
+            
+            // First, load user from storage
             initUserFromStorage();
+            
+            // Then load user selector
             await loadUserSelector();
+            
+            // Check permissions and update UI
             checkManagementAccess();
             checkTeamLeaderAccess();
             highlightActiveNav();
-            console.log('Initialization complete. Current user:', window.getCurrentUser());
+            
+            console.log('Initialization complete. Current user:', currentUser);
         }
         
         // Run initialization when DOM is ready
-        document.addEventListener('DOMContentLoaded', initialize);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
     </script>
 </body>
 </html>
