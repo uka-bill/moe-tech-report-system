@@ -301,6 +301,20 @@
             right: 20px;
             z-index: 9999;
         }
+        
+        .user-selector {
+            background-color: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 5px 10px;
+        }
+        .user-selector select {
+            background-color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -353,9 +367,9 @@
                             <i class="bi bi-check2-square"></i> Team Leader
                         </a>
                     </li>
-                    <!-- User Selector Dropdown -->
+                    <!-- User Selector -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="userDropdownToggle">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> <span id="currentUserName">Select User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" id="userSelectorMenu">
@@ -366,17 +380,8 @@
                                     <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
                                 </div>
                             </li>
-                            <li><hr class="dropdown-divider" id="profileDivider" style="display: none;"></li>
-                            <li id="changePasswordItem" style="display: none;">
-                                <a class="dropdown-item" href="#" onclick="showChangePasswordModal()">
-                                    <i class="bi bi-key"></i> Change Password
-                                </a>
-                            </li>
-                            <li id="logoutItem" style="display: none;">
-                                <a class="dropdown-item text-danger" href="#" onclick="logout()">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                </a>
-                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -414,75 +419,11 @@
                         <h6 id="passwordUserName" class="mt-2">User Name</h6>
                     </div>
                     <input type="password" class="form-control" id="passwordInput" placeholder="Enter password" autocomplete="off">
-                    <small class="text-muted d-block mt-2">Default password is your Employee ID (e.g., TECH001)</small>
+                    <small class="text-muted">Default password is your Employee ID (e.g., TECH001)</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="verifyPassword()">
-                        <i class="bi bi-unlock"></i> Unlock
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Reset Password Modal -->
-    <div class="modal fade" id="resetPasswordModal" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-key"></i> Reset Password</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <i class="bi bi-person" style="font-size: 48px; color: var(--primary-color);"></i>
-                        <h6 id="resetUserName" class="mt-2">User Name</h6>
-                    </div>
-                    <input type="text" class="form-control" id="resetPasswordInput" placeholder="New password" autocomplete="off">
-                    <small class="text-muted d-block mt-2">Password will be set to this value.</small>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-warning" onclick="confirmResetPassword()">
-                        <i class="bi bi-arrow-repeat"></i> Reset Password
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Change Password Modal -->
-    <div class="modal fade" id="changePasswordModal" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-key"></i> Change Password</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center mb-3">
-                        <i class="bi bi-person-circle" style="font-size: 48px; color: var(--primary-color);"></i>
-                        <h6 id="changePasswordUserName" class="mt-2">User Name</h6>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Current Password</label>
-                        <input type="password" class="form-control" id="currentPassword" placeholder="Enter current password">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">New Password</label>
-                        <input type="password" class="form-control" id="newPassword" placeholder="Enter new password">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" id="confirmNewPassword" placeholder="Confirm new password">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitChangePassword()">
-                        <i class="bi bi-save"></i> Update Password
-                    </button>
+                    <button type="button" class="btn btn-primary" onclick="verifyPassword()">Unlock</button>
                 </div>
             </div>
         </div>
@@ -491,128 +432,39 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // ============ GLOBAL VARIABLES ============
-        let currentUser = null;
-        let allTechnicians = [];
-        let pendingUserSelection = null;
+        let allUsers = [];
+        let pendingUser = null;
         
-        // ============ USER PERSISTENCE FUNCTIONS ============
-        
-        // Initialize user from localStorage (called on EVERY page load)
-        function initUserFromStorage() {
-            const userId = localStorage.getItem('userId');
-            const userName = localStorage.getItem('userName');
-            const userRole = localStorage.getItem('userRole');
-            const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
-            const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
-            
-            console.log('initUserFromStorage - userId:', userId, 'userName:', userName);
-            
-            if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
-                currentUser = {
-                    id: userId,
-                    name: userName,
-                    role: userRole || 'technician',
-                    isAuthorized: isAuthorized,
-                    canEditTechnicians: canEditTechnicians
-                };
-                const userNameSpan = document.getElementById('currentUserName');
-                if (userNameSpan) {
-                    userNameSpan.textContent = userName;
-                }
-                console.log('User loaded from storage:', currentUser.name);
-                updateProfileMenuVisibility();
-                return true;
-            } else {
-                console.log('No user found in storage');
-                const userNameSpan = document.getElementById('currentUserName');
-                if (userNameSpan) {
-                    userNameSpan.textContent = 'Select User';
-                }
-                updateProfileMenuVisibility();
-                return false;
-            }
-        }
-        
-        // Save user to localStorage
-        function saveUserToStorage(user) {
-            if (user && user.id) {
-                localStorage.setItem('userId', user.id);
-                localStorage.setItem('userName', user.name);
-                localStorage.setItem('userRole', user.role);
-                localStorage.setItem('isAuthorized', user.isAuthorized);
-                localStorage.setItem('canEditTechnicians', user.canEditTechnicians);
-                console.log('User saved to storage:', user.name);
-            }
-        }
-        
-        // Clear user from storage
-        function clearUserStorage() {
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('isAuthorized');
-            localStorage.removeItem('canEditTechnicians');
-            currentUser = null;
-            const userNameSpan = document.getElementById('currentUserName');
-            if (userNameSpan) {
-                userNameSpan.textContent = 'Select User';
-            }
-            updateProfileMenuVisibility();
-            console.log('User cleared from storage');
-        }
-        
-        function updateProfileMenuVisibility() {
-            const changePasswordItem = document.getElementById('changePasswordItem');
-            const logoutItem = document.getElementById('logoutItem');
-            const profileDivider = document.getElementById('profileDivider');
-            const hasUser = currentUser && currentUser.id && currentUser.id !== 'null';
-            
-            if (changePasswordItem) changePasswordItem.style.display = hasUser ? 'block' : 'none';
-            if (logoutItem) logoutItem.style.display = hasUser ? 'block' : 'none';
-            if (profileDivider) profileDivider.style.display = hasUser ? 'block' : 'none';
-        }
-        
-        // ============ USER SELECTOR FUNCTIONS ============
-        
-        async function loadUserSelector() {
+        // Load users for selector
+        async function loadUsers() {
             try {
                 const response = await fetch('/api/technicians');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                allTechnicians = await response.json();
+                allUsers = await response.json();
                 
                 const container = document.getElementById('userListContainer');
-                if (!allTechnicians || allTechnicians.length === 0) {
-                    container.innerHTML = '<div class="text-center py-2 text-muted">No technicians found.</div>';
+                if (!allUsers || allUsers.length === 0) {
+                    container.innerHTML = '<div class="text-center py-2 text-muted">No users found</div>';
                     return;
                 }
                 
                 let html = '';
-                for (const tech of allTechnicians) {
-                    const isSelected = currentUser && currentUser.id == tech.id;
-                    const roleIcon = tech.role === 'senior_technician' ? '⭐' : '👤';
-                    const isAuthorizedBadge = tech.is_authorized ? '<span class="badge bg-success ms-1">TL</span>' : '';
-                    const activeBadge = isSelected ? '<span class="badge bg-success float-end">Active</span>' : '';
-                    
+                const currentUserId = localStorage.getItem('userId');
+                
+                for (const user of allUsers) {
+                    const isActive = currentUserId == user.id;
+                    const roleIcon = user.role === 'senior_technician' ? '⭐' : '👤';
                     html += `
-                        <div class="dropdown-item d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="requestPassword('${tech.id}', '${escapeHtml(tech.name)}')">
-                            <div>
-                                <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(tech.name)} ${isAuthorizedBadge}
-                                <br><small class="text-muted">${tech.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
-                            </div>
-                            ${activeBadge}
-                            ${currentUser && currentUser.canEditTechnicians ? `<button class="btn btn-sm btn-outline-warning ms-2" onclick="event.stopPropagation(); showResetPassword('${tech.id}', '${escapeHtml(tech.name)}')"><i class="bi bi-key"></i></button>` : ''}
-                        </div>
+                        <a class="dropdown-item ${isActive ? 'active' : ''}" href="#" onclick="selectUser(${user.id}, '${escapeHtml(user.name)}', '${user.role}', ${user.is_authorized || false}, ${user.can_edit_technicians || false}); return false;">
+                            <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(user.name)}
+                            ${isActive ? ' ✓' : ''}
+                            <br><small class="text-muted">${user.role === 'senior_technician' ? 'Senior Technician' : 'Technician'}</small>
+                        </a>
                     `;
                 }
                 container.innerHTML = html;
             } catch (error) {
-                console.error('Error loading user selector:', error);
-                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users. Please refresh.</div>';
+                console.error('Error loading users:', error);
+                document.getElementById('userListContainer').innerHTML = '<div class="text-center py-2 text-danger">Error loading users</div>';
             }
         }
         
@@ -623,235 +475,103 @@
             return div.innerHTML;
         }
         
-        // ============ PASSWORD FUNCTIONS ============
-        
-        function requestPassword(userId, userName) {
-            pendingUserSelection = { id: userId, name: userName };
-            document.getElementById('passwordUserName').textContent = userName;
+        function selectUser(id, name, role, isAuthorized, canEdit) {
+            pendingUser = { id, name, role, isAuthorized, canEdit };
+            document.getElementById('passwordUserName').textContent = name;
             document.getElementById('passwordInput').value = '';
-            const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('passwordModal')).show();
         }
         
         async function verifyPassword() {
             const password = document.getElementById('passwordInput').value;
-            
-            if (!pendingUserSelection) {
-                showToast('No user selected', 'error');
-                return;
-            }
+            if (!pendingUser) return;
             
             try {
                 const response = await fetch('/api/technicians/verify-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        technician_id: pendingUserSelection.id,
-                        password: password
-                    })
+                    body: JSON.stringify({ technician_id: pendingUser.id, password: password })
                 });
-                
                 const result = await response.json();
                 
                 if (result.success) {
-                    const tech = allTechnicians.find(t => t.id == pendingUserSelection.id);
-                    if (tech) {
-                        currentUser = {
-                            id: tech.id,
-                            name: tech.name,
-                            role: tech.role,
-                            isAuthorized: tech.is_authorized || false,
-                            canEditTechnicians: tech.can_edit_technicians || false
-                        };
-                        
-                        saveUserToStorage(currentUser);
-                        document.getElementById('currentUserName').textContent = tech.name;
-                        updateProfileMenuVisibility();
-                        
-                        bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
-                        showToast(`Welcome ${tech.name}!`, 'success');
-                        location.reload();
-                    }
+                    localStorage.setItem('userId', pendingUser.id);
+                    localStorage.setItem('userName', pendingUser.name);
+                    localStorage.setItem('userRole', pendingUser.role);
+                    localStorage.setItem('isAuthorized', pendingUser.isAuthorized);
+                    localStorage.setItem('canEditTechnicians', pendingUser.canEdit);
+                    
+                    document.getElementById('currentUserName').textContent = pendingUser.name;
+                    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                    showToast(`Welcome ${pendingUser.name}!`);
+                    setTimeout(() => location.reload(), 500);
                 } else {
-                    showToast(result.error || 'Invalid password', 'error');
+                    showToast('Invalid password', 'error');
                     document.getElementById('passwordInput').value = '';
-                    document.getElementById('passwordInput').focus();
                 }
             } catch (error) {
-                console.error('Error verifying password:', error);
                 showToast('Error verifying password', 'error');
             }
         }
         
-        function showResetPassword(userId, userName) {
-            if (!currentUser || !currentUser.canEditTechnicians) {
-                showToast('Only Team Leaders can reset passwords', 'error');
-                return;
-            }
-            document.getElementById('resetUserName').textContent = userName;
-            document.getElementById('resetPasswordInput').value = '';
-            window.resetUserId = userId;
-            const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
-            modal.show();
-        }
-        
-        async function confirmResetPassword() {
-            const newPassword = document.getElementById('resetPasswordInput').value;
-            if (!newPassword || newPassword.trim() === '') {
-                showToast('Please enter a new password', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/technicians/reset-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        technician_id: window.resetUserId,
-                        new_password: newPassword
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('Password reset successfully', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
-                } else {
-                    showToast(result.error || 'Failed to reset password', 'error');
-                }
-            } catch (error) {
-                console.error('Error resetting password:', error);
-                showToast('Error resetting password', 'error');
-            }
-        }
-        
-        function showChangePasswordModal() {
-            if (!currentUser || !currentUser.id) {
-                showToast('Please select a user first', 'error');
-                return;
-            }
-            document.getElementById('changePasswordUserName').textContent = currentUser.name;
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmNewPassword').value = '';
-            const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
-            modal.show();
-        }
-        
-        async function submitChangePassword() {
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmNewPassword').value;
-            
-            if (!currentPassword) {
-                showToast('Please enter current password', 'error');
-                return;
-            }
-            
-            if (!newPassword) {
-                showToast('Please enter new password', 'error');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showToast('New passwords do not match', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 4) {
-                showToast('Password must be at least 4 characters', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/technicians/change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        technician_id: currentUser.id,
-                        current_password: currentPassword,
-                        new_password: newPassword
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('Password changed successfully!', 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
-                } else {
-                    showToast(result.error || 'Failed to change password', 'error');
-                }
-            } catch (error) {
-                console.error('Error changing password:', error);
-                showToast('Error changing password', 'error');
-            }
-        }
-        
         function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                clearUserStorage();
-                location.reload();
+            localStorage.clear();
+            location.reload();
+        }
+        
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+            container.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+        
+        // Global functions for other pages
+        window.getCurrentUser = () => ({
+            id: localStorage.getItem('userId'),
+            name: localStorage.getItem('userName'),
+            role: localStorage.getItem('userRole'),
+            isAuthorized: localStorage.getItem('isAuthorized') === 'true',
+            canEditTechnicians: localStorage.getItem('canEditTechnicians') === 'true'
+        });
+        
+        window.isTeamLeader = () => localStorage.getItem('isAuthorized') === 'true';
+        window.canEditTechnicians = () => localStorage.getItem('canEditTechnicians') === 'true';
+        window.showToast = showToast;
+        
+        // Load user from storage on page load
+        function loadStoredUser() {
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            if (userId && userName && userId !== 'null') {
+                document.getElementById('currentUserName').textContent = userName;
             }
         }
         
-        // ============ PERMISSION CHECK FUNCTIONS ============
-        
-        window.getCurrentUser = function() {
-            if (!currentUser) {
-                const userId = localStorage.getItem('userId');
-                const userName = localStorage.getItem('userName');
-                const userRole = localStorage.getItem('userRole');
-                const isAuthorized = localStorage.getItem('isAuthorized') === 'true';
-                const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
-                
-                if (userId && userName && userId !== 'null' && userId !== 'undefined' && userId !== '') {
-                    currentUser = {
-                        id: userId,
-                        name: userName,
-                        role: userRole || 'technician',
-                        isAuthorized: isAuthorized,
-                        canEditTechnicians: canEditTechnicians
-                    };
-                    updateProfileMenuVisibility();
-                }
-            }
-            return currentUser || { id: null, name: null, role: 'technician', isAuthorized: false, canEditTechnicians: false };
-        };
-        
-        window.isTeamLeader = function() {
-            const user = window.getCurrentUser();
-            return user.isAuthorized === true;
-        };
-        
-        window.canEditTechnicians = function() {
-            const user = window.getCurrentUser();
-            return user.canEditTechnicians === true;
-        };
-        
-        function checkManagementAccess() {
+        function checkPermissions() {
             const canEdit = window.canEditTechnicians();
-            const techniciansNav = document.getElementById('techniciansNavLink');
-            if (techniciansNav) {
-                techniciansNav.style.display = canEdit ? 'block' : 'none';
-            }
-        }
-        
-        function checkTeamLeaderAccess() {
-            const isAuth = window.isTeamLeader();
+            const techniciansLink = document.getElementById('techniciansNavLink');
             const teamLeaderNav = document.getElementById('teamLeaderNav');
-            if (teamLeaderNav) {
-                teamLeaderNav.style.display = isAuth ? 'block' : 'none';
-            }
+            const isAuth = window.isTeamLeader();
+            
+            if (techniciansLink) techniciansLink.style.display = canEdit ? 'block' : 'none';
+            if (teamLeaderNav) teamLeaderNav.style.display = isAuth ? 'block' : 'none';
         }
         
         function highlightActiveNav() {
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.navbar .nav-link');
-            navLinks.forEach(link => {
+            document.querySelectorAll('.navbar .nav-link').forEach(link => {
                 const href = link.getAttribute('href');
-                if (href && href !== '#' && href !== '/logout') {
+                if (href && href !== '#') {
                     if (currentPath === href || (href === '/dashboard' && currentPath === '/')) {
                         link.classList.add('active');
                     } else {
@@ -861,47 +581,16 @@
             });
         }
         
-        // ============ TOAST NOTIFICATION ============
-        
-        function showToast(message, type = 'success') {
-            let toastContainer = document.getElementById('toast-container');
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.id = 'toast-container';
-                document.body.appendChild(toastContainer);
-            }
-            
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            `;
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-            bsToast.show();
-            toast.addEventListener('hidden.bs.toast', () => toast.remove());
-        }
-        
-        window.showToast = showToast;
+        loadStoredUser();
+        loadUsers();
+        checkPermissions();
+        highlightActiveNav();
         
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const date = new Date(dateString);
             date.setHours(date.getHours() + 8);
-            return date.toLocaleString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+            return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         };
         
         window.formatDateOnly = function(dateString) {
@@ -910,29 +599,6 @@
             date.setHours(date.getHours() + 8);
             return date.toLocaleDateString('en-GB');
         };
-        
-        // ============ INITIALIZATION ============
-        
-        async function initialize() {
-            console.log('=== Base.html initializing ===');
-            console.log('Current path:', window.location.pathname);
-            
-            // First, load user from storage
-            initUserFromStorage();
-            
-            // Then load user selector
-            await loadUserSelector();
-            
-            // Check permissions and update UI
-            checkManagementAccess();
-            checkTeamLeaderAccess();
-            highlightActiveNav();
-            
-            console.log('Initialization complete. Current user:', currentUser?.name);
-        }
-        
-        // Run initialization immediately
-        initialize();
     </script>
 </body>
 </html>
