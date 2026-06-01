@@ -155,6 +155,11 @@ def my_reports():
 def team_leader():
     return render_template('team_leader.html')
 
+@app.route('/mapping')
+def mapping_page():
+    """Mapping and Profiling page"""
+    return render_template('mapping.html')
+
 # ============ TECHNICIAN API ============
 
 @app.route('/api/technicians', methods=['GET'])
@@ -845,6 +850,231 @@ def track_print(report_id):
     except Exception as e:
         app.logger.error(f"Error tracking print: {e}")
         return jsonify({'success': False}), 500
+
+# ============ MAPPING AND PROFILING API ============
+
+@app.route('/api/mapping/locations', methods=['GET'])
+def get_mapping_locations():
+    """Get all mapping locations for an entity"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        entity_type = request.args.get('entity_type')
+        entity_id = request.args.get('entity_id')
+        
+        query = supabase.table("mapping_locations").select("*")
+        
+        if entity_type:
+            query = query.eq("entity_type", entity_type)
+        if entity_id:
+            query = query.eq("entity_id", int(entity_id))
+        
+        response = query.order("location_type", desc=False).execute()
+        
+        # Get entity names
+        locations = []
+        if response.data:
+            for loc in response.data:
+                loc_dict = dict(loc)
+                if loc_dict['entity_type'] == 'school':
+                    entity = supabase.table("schools").select("name").eq("id", loc_dict['entity_id']).execute()
+                    if entity.data:
+                        loc_dict['entity_name'] = entity.data[0]['name']
+                else:
+                    entity = supabase.table("departments").select("name").eq("id", loc_dict['entity_id']).execute()
+                    if entity.data:
+                        loc_dict['entity_name'] = entity.data[0]['name']
+                locations.append(loc_dict)
+        
+        return jsonify(locations)
+    except Exception as e:
+        app.logger.error(f"Error getting mapping locations: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/mapping/locations', methods=['POST'])
+def create_mapping_location():
+    """Create a new mapping location"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        
+        location_data = {
+            "entity_type": data.get('entity_type'),
+            "entity_id": int(data.get('entity_id')),
+            "location_type": data.get('location_type'),
+            "account_number": data.get('account_number', ''),
+            "meter_number": data.get('meter_number', ''),
+            "phone_number": data.get('phone_number', ''),
+            "description": data.get('description', ''),
+            "latitude": data.get('latitude'),
+            "longitude": data.get('longitude'),
+            "address": data.get('address', ''),
+            "image_url": data.get('image_url', ''),
+            "created_by": data.get('created_by'),
+            "created_at": get_brunei_time_iso(),
+            "updated_at": get_brunei_time_iso()
+        }
+        
+        response = supabase.table("mapping_locations").insert(location_data).execute()
+        
+        if response.data:
+            app.logger.info(f"Mapping location created: {response.data[0]['id']}")
+            return jsonify({'success': True, 'data': response.data[0]})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to create location'}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error creating mapping location: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/mapping/locations/<int:location_id>', methods=['PUT'])
+def update_mapping_location(location_id):
+    """Update a mapping location"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        update_data = {}
+        
+        allowed_fields = ['account_number', 'meter_number', 'phone_number', 'description', 
+                         'latitude', 'longitude', 'address', 'image_url']
+        
+        for field in allowed_fields:
+            if field in data:
+                update_data[field] = data[field]
+        
+        update_data['updated_at'] = get_brunei_time_iso()
+        
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+        
+        response = supabase.table("mapping_locations").update(update_data).eq("id", location_id).execute()
+        
+        if response.data:
+            return jsonify({'success': True, 'data': response.data[0]})
+        else:
+            return jsonify({'success': False, 'error': 'Location not found'}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error updating mapping location: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/mapping/locations/<int:location_id>', methods=['DELETE'])
+def delete_mapping_location(location_id):
+    """Delete a mapping location"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        response = supabase.table("mapping_locations").delete().eq("id", location_id).execute()
+        
+        if response.data:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Location not found'}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error deleting mapping location: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/mapping/images', methods=['GET'])
+def get_mapping_images():
+    """Get all mapping images for an entity"""
+    try:
+        if not supabase:
+            return jsonify([]), 500
+        
+        entity_type = request.args.get('entity_type')
+        entity_id = request.args.get('entity_id')
+        
+        query = supabase.table("mapping_images").select("*")
+        
+        if entity_type:
+            query = query.eq("entity_type", entity_type)
+        if entity_id:
+            query = query.eq("entity_id", int(entity_id))
+        
+        response = query.order("uploaded_at", desc=True).execute()
+        
+        images = []
+        if response.data:
+            for img in response.data:
+                img_dict = dict(img)
+                # Don't send full base64 data in list, only URL
+                if img_dict.get('image_data_base64'):
+                    img_dict['image_data_base64'] = None
+                images.append(img_dict)
+        
+        return jsonify(images)
+    except Exception as e:
+        app.logger.error(f"Error getting mapping images: {e}")
+        return jsonify([]), 500
+
+@app.route('/api/mapping/images', methods=['POST'])
+def create_mapping_image():
+    """Create a new mapping image record"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        
+        image_data = {
+            "entity_type": data.get('entity_type'),
+            "entity_id": int(data.get('entity_id')),
+            "image_url": data.get('image_url'),
+            "description": data.get('description', ''),
+            "uploaded_by": data.get('uploaded_by'),
+            "uploaded_at": get_brunei_time_iso()
+        }
+        
+        response = supabase.table("mapping_images").insert(image_data).execute()
+        
+        if response.data:
+            app.logger.info(f"Mapping image created: {response.data[0]['id']}")
+            return jsonify({'success': True, 'data': response.data[0]})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to save image record'}), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error creating mapping image: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/mapping/images/<int:image_id>', methods=['DELETE'])
+def delete_mapping_image(image_id):
+    """Delete a mapping image"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        # Get the image record first to get the file path
+        image_response = supabase.table("mapping_images").select("image_url").eq("id", image_id).execute()
+        
+        if image_response.data and image_response.data[0].get('image_url'):
+            # Extract filename from URL and delete the physical file
+            image_url = image_response.data[0]['image_url']
+            # Remove /api/images/ prefix to get filename
+            filename = image_url.replace('/api/images/', '')
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                app.logger.info(f"Deleted image file: {filepath}")
+        
+        # Delete the database record
+        response = supabase.table("mapping_images").delete().eq("id", image_id).execute()
+        
+        if response.data:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Image not found'}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error deleting mapping image: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ IMAGE UPLOAD ============
 
