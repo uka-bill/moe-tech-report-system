@@ -299,22 +299,17 @@
 </div>
 
 <script>
-    // Simple function to get user from localStorage
-    function getStoredUser() {
-        const userId = localStorage.getItem('userId');
-        const userName = localStorage.getItem('userName');
-        const canEdit = localStorage.getItem('canEditTechnicians') === 'true';
-        return { id: userId, name: userName, canEdit: canEdit };
-    }
-    
-    let allTechnicians = [];
-    let currentFilter = 'all';
+    // Get user from localStorage directly
     let canEdit = false;
     
-    // Check edit permission from localStorage
-    function checkEditPermission() {
-        const user = getStoredUser();
-        canEdit = user.canEdit === true;
+    function checkUserPermission() {
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName');
+        const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
+        
+        console.log('Technicians page - User:', userName, 'Can Edit:', canEditTechnicians);
+        
+        canEdit = canEditTechnicians;
         
         const addButton = document.getElementById('addTechBtn');
         const permissionNote = document.getElementById('permissionNote');
@@ -326,18 +321,20 @@
             if (addButton) addButton.style.display = 'inline-block';
             if (permissionNote) permissionNote.style.display = 'none';
         }
-        return canEdit;
     }
+    
+    let allTechnicians = [];
+    let currentFilter = 'all';
     
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
             allTechnicians = await response.json();
+            console.log('Loaded technicians:', allTechnicians.length);
             applyFilter();
-            checkEditPermission();
         } catch (error) {
             console.error('Error loading technicians:', error);
-            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians</td</tr>';
+            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh.</td</tr>';
         }
     }
     
@@ -386,13 +383,14 @@
     function displayTechnicians(technicians) {
         const tbody = document.getElementById('techniciansTable');
         if (!technicians || technicians.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No technicians found</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No technicians found. Click "Add Technician" to create one.</td</tr>';
             return;
         }
         
         let rowNum = 1;
         
         tbody.innerHTML = technicians.map((tech) => {
+            // Parse specializations
             let specializations = tech.specializations;
             if (typeof specializations === 'string') {
                 try {
@@ -414,13 +412,14 @@
                 : '<span class="role-badge-tech">👤 Technician</span>';
             
             const authBadge = tech.is_authorized 
-                ? '<span class="authorized-badge">✓ Authorized</span>' 
+                ? '<span class="authorized-badge">✓ Authorized Team Leader</span>' 
                 : '<span class="unauthorized-badge">✗ Not Authorized</span>';
             
             const canEditBadge = tech.can_edit_technicians 
-                ? '<span class="can-edit-badge">✓ Can Edit Techs</span>' 
+                ? '<span class="can-edit-badge">✓ Can Edit Technicians</span>' 
                 : '<span class="unauthorized-badge">✗ View Only</span>';
             
+            // Action buttons
             let actionButtonsHtml = '';
             if (canEdit) {
                 actionButtonsHtml = `
@@ -444,12 +443,12 @@
                     <td class="text-center"><strong>${rowNumber}</strong></td>
                     <td><span class="employee-id-badge">${escapeHtml(tech.employee_id || 'N/A')}</span></td>
                     <td><strong>${escapeHtml(tech.name)}</strong></td>
-                    <td>${roleBadge}</br><small>${tech.role === 'senior_technician' ? 'Senior' : 'Tech'}</small></td>
-                    <td>${specBadges || '<span class="text-muted">-</span>'}</td>
+                    <td>${roleBadge}</td>
+                    <td>${specBadges || '<span class="text-muted">No specializations</span>'}</td>
                     <td>${authBadge}</td>
                     <td>${canEditBadge}</td>
-                    <td>${escapeHtml(tech.phone || '-')}</td>
-                    <td>${escapeHtml(tech.email || '-')}</td>
+                    <td>${escapeHtml(tech.phone || '-')}</br><small>Phone</small></td>
+                    <td>${escapeHtml(tech.email || '-')}</br><small>Email</small></td>
                     <td class="text-nowrap">${actionButtonsHtml}</td>
                 </tr>
             `;
@@ -458,7 +457,7 @@
     
     function showAddTechModal() {
         if (!canEdit) {
-            if (window.showToast) window.showToast('No permission to add', 'error');
+            if (window.showToast) window.showToast('You do not have permission to add technicians', 'error');
             return;
         }
         document.getElementById('techModalTitle').innerHTML = '<i class="bi bi-person-plus"></i> Add Technician';
@@ -487,7 +486,7 @@
     
     async function editTechnician(id) {
         if (!canEdit) {
-            if (window.showToast) window.showToast('No permission to edit', 'error');
+            if (window.showToast) window.showToast('You do not have permission to edit technicians', 'error');
             return;
         }
         try {
@@ -525,13 +524,14 @@
                 modal.show();
             }
         } catch (error) {
-            if (window.showToast) window.showToast('Error loading technician', 'error');
+            console.error('Error loading technician:', error);
+            if (window.showToast) window.showToast('Error loading technician details', 'error');
         }
     }
     
     async function saveTechnician() {
         if (!canEdit) {
-            if (window.showToast) window.showToast('No permission to save', 'error');
+            if (window.showToast) window.showToast('You do not have permission to save changes', 'error');
             return;
         }
         
@@ -546,7 +546,7 @@
         });
         
         if (!name) {
-            if (window.showToast) window.showToast('Name is required', 'error');
+            if (window.showToast) window.showToast('Technician name is required', 'error');
             return;
         }
         
@@ -556,7 +556,7 @@
         }
         
         if (specializations.length === 0) {
-            if (window.showToast) window.showToast('Select at least one specialization', 'error');
+            if (window.showToast) window.showToast('Please select at least one specialization', 'error');
             return;
         }
         
@@ -571,6 +571,8 @@
             email: document.getElementById('techEmail').value.trim(),
             password: password || null
         };
+        
+        console.log('Saving technician:', name);
         
         try {
             let response;
@@ -590,47 +592,47 @@
             
             const result = await response.json();
             if (result.success) {
-                if (window.showToast) window.showToast(id ? 'Technician updated' : 'Technician added');
+                if (window.showToast) window.showToast(id ? 'Technician updated successfully' : 'Technician added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('techModal')).hide();
                 loadTechnicians();
             } else {
-                if (window.showToast) window.showToast(result.error || 'Failed to save', 'error');
+                if (window.showToast) window.showToast(result.error || 'Failed to save technician', 'error');
             }
         } catch (error) {
+            console.error('Error saving technician:', error);
             if (window.showToast) window.showToast('Error saving technician', 'error');
         }
     }
     
     async function deleteTechnician(id) {
         if (!canEdit) {
-            if (window.showToast) window.showToast('No permission to delete', 'error');
+            if (window.showToast) window.showToast('You do not have permission to delete technicians', 'error');
             return;
         }
         
-        if (confirm('⚠️ Delete this technician? This cannot be undone.')) {
+        if (confirm('⚠️ Are you sure you want to delete this technician?\n\nThis action cannot be undone.')) {
             try {
                 const response = await fetch(`/api/technicians/${id}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
                 if (result.success) {
-                    if (window.showToast) window.showToast('Technician deleted');
+                    if (window.showToast) window.showToast('Technician deleted successfully');
                     loadTechnicians();
                 } else {
-                    if (window.showToast) window.showToast(result.error || 'Cannot delete', 'error');
+                    if (window.showToast) window.showToast(result.error || 'Cannot delete technician with assigned reports', 'error');
                 }
             } catch (error) {
-                if (window.showToast) window.showToast('Error deleting', 'error');
+                if (window.showToast) window.showToast('Error deleting technician', 'error');
             }
         }
     }
     
-    // Initialize - DO NOT override anything, just load data
+    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Small delay to ensure base.html has loaded user first
-        setTimeout(function() {
-            loadTechnicians();
-        }, 100);
+        console.log('Technicians page initializing...');
+        checkUserPermission();
+        loadTechnicians();
     });
 </script>
 {% endblock %}
