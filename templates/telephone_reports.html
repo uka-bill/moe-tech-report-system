@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    (function() {
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName');
+        if (userId && userName && userId !== 'null') {
+            console.log('Telephone Reports - User loaded:', userName);
+        }
+    })();
+</script>
+
 <style>
     .filter-card {
         background: white;
@@ -139,7 +149,6 @@
     </div>
 </div>
 
-<!-- Filter Section -->
 <div class="filter-card">
     <div class="row">
         <div class="col-md-4">
@@ -165,7 +174,6 @@
     </div>
 </div>
 
-<!-- Reports List -->
 <div id="reportsContainer">
     <div class="text-center py-5">
         <div class="spinner-border text-success" role="status"></div>
@@ -173,7 +181,7 @@
     </div>
 </div>
 
-<!-- Modals (same structure, just copy from water_reports.html) -->
+<!-- Modals (same structure) -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -229,19 +237,41 @@
 </div>
 
 <script>
-    // Same JavaScript as water_reports.html but with telephone-specific colors
-    // Copy the entire script from water_reports.html (the functions are identical)
-    // Just change the API type to 'telephone' in the URL
     let currentReport = null;
     let currentReportId = null;
     let isTeamLeader = false;
     
-    function getImageUrl(imgPath) { if (!imgPath) return ''; if (imgPath.startsWith('http')) return imgPath; return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath); }
-    function formatDate(dateString) { if (!dateString) return '-'; const date = new Date(dateString); date.setHours(date.getHours() + 8); return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-    function formatDateOnly(dateString) { if (!dateString) return '-'; const date = new Date(dateString); date.setHours(date.getHours() + 8); return date.toLocaleDateString('en-GB'); }
-    function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    function checkUserRole() {
+        const user = window.getCurrentUser();
+        isTeamLeader = user && user.isAuthorized === true;
+    }
     
-    async function getCurrentUserInfo() { const userRole = localStorage.getItem('userRole'); isTeamLeader = userRole === 'senior_technician'; }
+    function getImageUrl(imgPath) {
+        if (!imgPath) return '';
+        if (imgPath.startsWith('http')) return imgPath;
+        return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     
     async function loadTechniciansForFilter() {
         try {
@@ -249,7 +279,9 @@
             const techs = await response.json();
             const select = document.getElementById('filterTechnician');
             let options = '<option value="all">All Technicians</option>';
-            techs.forEach(tech => { options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${tech.name}</option>`; });
+            techs.forEach(tech => {
+                options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${tech.name}</option>`;
+            });
             select.innerHTML = options;
         } catch (error) {}
     }
@@ -257,35 +289,52 @@
     async function loadReports() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
+        
         let url = '/api/technical-reports?type=telephone';
+        
         const container = document.getElementById('reportsContainer');
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-success"></div><p>Loading...</p></div>';
+        
         try {
             const response = await fetch(url);
             let reports = await response.json();
+            
             if (technicianId !== 'all') reports = reports.filter(r => r.technician_id == technicianId);
             if (status !== 'all') {
                 if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
                 if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
             }
+            
             document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
-            if (reports.length === 0) { container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size:48px;color:#ccc;"></i><p>No telephone reports found</p></div>'; return; }
+            
+            if (reports.length === 0) {
+                container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size:48px;color:#ccc;"></i><p>No telephone reports found</p></div>';
+                return;
+            }
+            
             displayReports(reports);
-        } catch (error) { container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>'; }
+        } catch (error) {
+            container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>';
+        }
     }
     
-    function canDeleteReport(report) { const userId = localStorage.getItem('userId'); const userRole = localStorage.getItem('userRole'); if (userRole === 'senior_technician') return true; return report.technician_id == userId; }
+    function canDeleteReport(report) {
+        const user = window.getCurrentUser();
+        if (user && user.canEditTechnicians) return true;
+        return report.technician_id == user?.id;
+    }
     
     function displayReports(reports) {
         const container = document.getElementById('reportsContainer');
-        const userId = localStorage.getItem('userId');
-        const userRole = localStorage.getItem('userRole');
+        const user = window.getCurrentUser();
+        
         container.innerHTML = reports.map(report => {
             const priorityClass = `priority-${report.priority}`;
             const isAcknowledged = report.team_leader_acknowledged;
             const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const canDelete = (userRole === 'senior_technician') || (report.technician_id == userId);
+            const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
+            
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
                     <div class="report-header">
@@ -294,7 +343,9 @@
                             <span class="priority-badge ${priorityClass} ms-2">${report.priority.toUpperCase()}</span>
                             ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">🔴 TENDER</span>' : ''}
                         </div>
-                        <div><span class="status-badge ${statusClass}">${statusText}</span></div>
+                        <div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-8">
@@ -325,14 +376,18 @@
                 displayReportModal();
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
-        } catch (error) { showToast('Error loading report', 'error'); }
+        } catch (error) {
+            window.showToast('Error loading report', 'error');
+        }
     }
     
     function displayReportModal() {
         const report = currentReport;
         const priorityClass = `priority-${report.priority}`;
         const isAcknowledged = report.team_leader_acknowledged;
-        const canDelete = (localStorage.getItem('userRole') === 'senior_technician') || (report.technician_id == localStorage.getItem('userId'));
+        const user = window.getCurrentUser();
+        const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
+        
         document.getElementById('deleteBtn').style.display = canDelete ? 'inline-block' : 'none';
         
         let imagesHtml = '';
@@ -373,36 +428,36 @@
         try {
             const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment }) });
             const data = await response.json();
-            if (data.success) { showToast('Report acknowledged'); bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); loadReports(); openReportDetail(currentReportId); }
-        } catch (error) { showToast('Error', 'error'); }
+            if (data.success) { window.showToast('Report acknowledged'); bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); loadReports(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
     function showAddCommentModal() { document.getElementById('newComment').value = ''; new bootstrap.Modal(document.getElementById('commentModal')).show(); }
     async function submitComment() {
         const comment = document.getElementById('newComment').value;
         const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
-        if (!comment.trim()) return showToast('Enter a comment', 'error');
+        if (!comment.trim()) return window.showToast('Enter a comment', 'error');
         try {
             let comments = currentReport.comments || [];
             comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
             const response = await fetch(`/api/technical-reports/${currentReportId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comments: comments }) });
             const data = await response.json();
-            if (data.success) { showToast('Comment added'); bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); openReportDetail(currentReportId); }
-        } catch (error) { showToast('Error', 'error'); }
+            if (data.success) { window.showToast('Comment added'); bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
     async function deleteReportDirect(id) {
-        if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
+        if (!confirm('Are you sure you want to delete this report?')) return;
         try {
             const response = await fetch(`/api/technical-reports/${id}`, { method: 'DELETE' });
             const data = await response.json();
-            if (data.success) { showToast('Report deleted'); loadReports(); bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); }
-            else { showToast(data.error || 'Cannot delete', 'error'); }
-        } catch (error) { showToast('Error deleting', 'error'); }
+            if (data.success) { window.showToast('Report deleted'); loadReports(); bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); }
+            else { window.showToast(data.error || 'Cannot delete', 'error'); }
+        } catch (error) { window.showToast('Error deleting', 'error'); }
     }
     function deleteReport() { deleteReportDirect(currentReportId); }
     function editReport() { window.location.href = `/reports?id=${currentReportId}&edit=true`; }
     function printReport() { window.print(); }
     
-    async function init() { await getCurrentUserInfo(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
+    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
     init();
 </script>
 {% endblock %}
