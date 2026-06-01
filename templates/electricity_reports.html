@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    (function() {
+        const userId = localStorage.getItem('userId');
+        const userName = localStorage.getItem('userName');
+        if (userId && userName && userId !== 'null') {
+            console.log('Electricity Reports - User loaded:', userName);
+        }
+    })();
+</script>
+
 <style>
     .filter-card {
         background: white;
@@ -146,7 +156,6 @@
     </div>
 </div>
 
-<!-- Filter Section -->
 <div class="filter-card">
     <div class="row">
         <div class="col-md-4">
@@ -172,7 +181,6 @@
     </div>
 </div>
 
-<!-- Reports List -->
 <div id="reportsContainer">
     <div class="text-center py-5">
         <div class="spinner-border text-warning" role="status"></div>
@@ -180,7 +188,7 @@
     </div>
 </div>
 
-<!-- Modals (same as water_reports.html) -->
+<!-- Modals (same structure as water_reports.html) -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -240,6 +248,11 @@
     let currentReportId = null;
     let isTeamLeader = false;
     
+    function checkUserRole() {
+        const user = window.getCurrentUser();
+        isTeamLeader = user && user.isAuthorized === true;
+    }
+    
     function getImageUrl(imgPath) {
         if (!imgPath) return '';
         if (imgPath.startsWith('http')) return imgPath;
@@ -265,11 +278,6 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-    
-    async function getCurrentUserInfo() {
-        const userRole = localStorage.getItem('userRole');
-        isTeamLeader = userRole === 'senior_technician';
     }
     
     async function loadTechniciansForFilter() {
@@ -318,23 +326,21 @@
     }
     
     function canDeleteReport(report) {
-        const userId = localStorage.getItem('userId');
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'senior_technician') return true;
-        return report.technician_id == userId;
+        const user = window.getCurrentUser();
+        if (user && user.canEditTechnicians) return true;
+        return report.technician_id == user?.id;
     }
     
     function displayReports(reports) {
         const container = document.getElementById('reportsContainer');
-        const userId = localStorage.getItem('userId');
-        const userRole = localStorage.getItem('userRole');
+        const user = window.getCurrentUser();
         
         container.innerHTML = reports.map(report => {
             const priorityClass = `priority-${report.priority}`;
             const isAcknowledged = report.team_leader_acknowledged;
             const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const canDelete = (userRole === 'senior_technician') || (report.technician_id == userId);
+            const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
             
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
@@ -378,7 +384,7 @@
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
-            showToast('Error loading report', 'error');
+            window.showToast('Error loading report', 'error');
         }
     }
     
@@ -386,176 +392,79 @@
         const report = currentReport;
         const priorityClass = `priority-${report.priority}`;
         const isAcknowledged = report.team_leader_acknowledged;
-        const canDelete = (localStorage.getItem('userRole') === 'senior_technician') || (report.technician_id == localStorage.getItem('userId'));
+        const user = window.getCurrentUser();
+        const canDelete = (user && user.canEditTechnicians) || (report.technician_id == user?.id);
         
         document.getElementById('deleteBtn').style.display = canDelete ? 'inline-block' : 'none';
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `
-                <div class="mt-3">
-                    <strong>Attached Images:</strong>
-                    <div class="d-flex flex-wrap gap-2 mt-2">
-                        ${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}
-                    </div>
-                </div>
-            `;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `
-                <div class="comment-section">
-                    <h6><i class="bi bi-chat-dots"></i> Comments</h6>
-                    ${report.comments.map(c => `
-                        <div class="comment-item">
-                            <span class="comment-author">${escapeHtml(c.author)}</span>
-                            <span class="comment-date">${formatDate(c.created_at)}</span>
-                            <div class="comment-text">${escapeHtml(c.text)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><span class="comment-author">${escapeHtml(c.author)}</span><span class="comment-date">${formatDate(c.created_at)}</span><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>
-                    By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
-                    Date: ${formatDate(report.team_leader_acknowledged_at)}<br>
-                    Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}
-                </div>
-            `;
+            acknowledgmentHtml = `<div class="alert alert-success"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         } else if (isTeamLeader) {
-            acknowledgmentHtml = `
-                <div class="alert alert-warning">
-                    <button class="btn btn-acknowledge w-100" onclick="showAcknowledgeModal()">
-                        <i class="bi bi-check2-square"></i> Acknowledge Report
-                    </button>
-                </div>
-            `;
+            acknowledgmentHtml = `<div class="alert alert-warning"><button class="btn btn-acknowledge w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
         }
         
         const html = `
             <div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Report #:</strong> ${report.utility_number || report.id}<br>
-                        <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
-                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
-                        <strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br>
-                        <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
-                    </div>
-                </div>
-                <hr>
-                <h6>Problem / Issue</h6>
-                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
-                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
+                <div class="row mb-3"><div class="col-md-6"><strong>Report #:</strong> ${report.utility_number || report.id}<br><strong>Submitted:</strong> ${formatDate(report.created_at)}<br><strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span></div>
+                <div class="col-md-6"><strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br><strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br><strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}</div></div>
+                <hr><h6>Problem / Issue</h6><p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p><p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
                 ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
                 ${report.technician_notes ? `<h6>Technician's Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
-                ${imagesHtml}
-                ${commentsHtml}
-                ${acknowledgmentHtml}
-                <div class="mt-3">
-                    <button class="btn btn-add-comment" onclick="showAddCommentModal()">
-                        <i class="bi bi-chat-dots"></i> Add Comment
-                    </button>
-                </div>
+                ${imagesHtml}${commentsHtml}${acknowledgmentHtml}
+                <div class="mt-3"><button class="btn btn-add-comment" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
-        
         document.getElementById('modalBody').innerHTML = html;
     }
     
-    function showAcknowledgeModal() {
-        document.getElementById('acknowledgeComment').value = '';
-        new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
-    }
-    
+    function showAcknowledgeModal() { document.getElementById('acknowledgeComment').value = ''; new bootstrap.Modal(document.getElementById('acknowledgeModal')).show(); }
     async function submitAcknowledge() {
         const comment = document.getElementById('acknowledgeComment').value;
         const userId = localStorage.getItem('userId');
-        
         try {
-            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment })
-            });
+            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment }) });
             const data = await response.json();
-            if (data.success) {
-                showToast('Report acknowledged');
-                bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
-                loadReports();
-                openReportDetail(currentReportId);
-            }
-        } catch (error) {
-            showToast('Error', 'error');
-        }
+            if (data.success) { window.showToast('Report acknowledged'); bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); loadReports(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
-    
-    function showAddCommentModal() {
-        document.getElementById('newComment').value = '';
-        new bootstrap.Modal(document.getElementById('commentModal')).show();
-    }
-    
+    function showAddCommentModal() { document.getElementById('newComment').value = ''; new bootstrap.Modal(document.getElementById('commentModal')).show(); }
     async function submitComment() {
         const comment = document.getElementById('newComment').value;
         const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
-        
-        if (!comment.trim()) return showToast('Enter a comment', 'error');
-        
+        if (!comment.trim()) return window.showToast('Enter a comment', 'error');
         try {
             let comments = currentReport.comments || [];
             comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
-            const response = await fetch(`/api/technical-reports/${currentReportId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comments: comments })
-            });
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comments: comments }) });
             const data = await response.json();
-            if (data.success) {
-                showToast('Comment added');
-                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
-                openReportDetail(currentReportId);
-            }
-        } catch (error) {
-            showToast('Error', 'error');
-        }
+            if (data.success) { window.showToast('Comment added'); bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); openReportDetail(currentReportId); }
+        } catch (error) { window.showToast('Error', 'error'); }
     }
-    
     async function deleteReportDirect(id) {
-        if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
+        if (!confirm('Are you sure you want to delete this report?')) return;
         try {
             const response = await fetch(`/api/technical-reports/${id}`, { method: 'DELETE' });
             const data = await response.json();
-            if (data.success) {
-                showToast('Report deleted');
-                loadReports();
-                bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide();
-            } else {
-                showToast(data.error || 'Cannot delete', 'error');
-            }
-        } catch (error) {
-            showToast('Error deleting', 'error');
-        }
+            if (data.success) { window.showToast('Report deleted'); loadReports(); bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); }
+            else { window.showToast(data.error || 'Cannot delete', 'error'); }
+        } catch (error) { window.showToast('Error deleting', 'error'); }
     }
-    
     function deleteReport() { deleteReportDirect(currentReportId); }
     function editReport() { window.location.href = `/reports?id=${currentReportId}&edit=true`; }
     function printReport() { window.print(); }
     
-    async function init() {
-        await getCurrentUserInfo();
-        await loadTechniciansForFilter();
-        await loadReports();
-        setInterval(loadReports, 30000);
-    }
+    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
     init();
 </script>
 {% endblock %}
