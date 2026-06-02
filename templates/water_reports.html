@@ -242,6 +242,7 @@
     function checkUserRole() {
         const user = window.getCurrentUser();
         isTeamLeader = user && user.isAuthorized === true;
+        console.log('Water Reports - Is Team Leader:', isTeamLeader);
     }
     
     function getImageUrl(imgPath) {
@@ -281,7 +282,9 @@
                 options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${escapeHtml(tech.name)}</option>`;
             });
             select.innerHTML = options;
-        } catch (error) {}
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
     }
     
     async function loadReports() {
@@ -292,12 +295,17 @@
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info"></div><p>Loading water reports...</p></div>';
         
         try {
+            console.log('Fetching water reports...');
             const response = await fetch('/api/technical-reports?type=water');
             
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
             let reports = await response.json();
             if (!reports) reports = [];
+            
+            console.log('Reports received:', reports.length);
             
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
@@ -516,6 +524,7 @@
                 .priority-medium { color: #856404; font-weight: bold; }
                 .priority-low { color: #28a745; font-weight: bold; }
                 .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; }
+                .bg-danger { background-color: #dc3545; color: white; }
                 @media print { body { padding: 0; margin: 0; } .print-container { margin: 0; padding: 20px; } }
             </style>
         </head>
@@ -537,20 +546,21 @@
                 
                 <table>
                     <tr><th>Field</th><th>Details</th></tr>
-                    <tr><td><strong>Entity Type</strong></td><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td><strong>Entity Name</strong></td><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                    ${report.account_number ? `<tr><td><strong>Account Number</strong></td><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><td><strong>Meter Number</strong></td><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><td><strong>Reference</strong></td><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><td><strong>Problem Type</strong></td><td>${escapeHtml(report.problem_type || '-')}</td></tr>
-                    <tr><td><strong>Priority</strong></td><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}</td></tr>
-                    <tr><td><strong>Complaint Details</strong></td><td style="white-space: pre-wrap;">${escapeHtml(report.complaint_details || '-')}</td></tr>
-                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong></td><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td></tr>` : ''}
-                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong></td><td style="white-space: pre-wrap;">${escapeHtml(report.action_taken)}</td></tr>` : ''}
-                    <tr><td><strong>Submitted By</strong></td><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
-                    ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong></td><td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong></td><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
-                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong></td><td>${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 100px; margin: 5px;" onerror="this.style.display='none'">`).join('')}</td></tr>` : ''}
+                    <tr><td><strong>Entity Type</strong>NonNullable<td>${report.entity_type === 'school' ? 'School' : 'Department'}NonNullable
+                    <tr><td><strong>Entity Name</strong>NonNullable<td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
+                    ${report.account_number ? `<tr><td><strong>Account Number</strong>NonNullable<td>${escapeHtml(report.account_number)}NonNullable` : ''}
+                    ${report.meter_number ? `<tr><td><strong>Meter Number</strong>NonNullable<td>${escapeHtml(report.meter_number)}NonNullable` : ''}
+                    ${report.phone_number ? `<tr><td><strong>Phone Number</strong>NonNullable<td>${escapeHtml(report.phone_number)}NonNullable` : ''}
+                    ${report.reference_number ? `<tr><td><strong>Reference</strong>NonNullable<td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
+                    <tr><td><strong>Problem Type</strong>NonNullable<td>${escapeHtml(report.problem_type || '-')}NonNullable
+                    <tr><td><strong>Priority</strong>NonNullable<td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
+                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.complaint_details || '-')}NonNullable
+                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
+                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.action_taken)}NonNullable` : ''}
+                    <tr><td><strong>Submitted By</strong>NonNullable<td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
+                    ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong>NonNullable<td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
+                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
+                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 100px; margin: 5px;" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
                 </table>
                 
                 <div class="footer">
@@ -566,7 +576,14 @@
         </html>`;
     }
     
-    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
-    init();
+    // FIX: Use DOMContentLoaded to ensure page is fully loaded before initializing
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Water Reports page loaded, initializing...');
+        checkUserRole();
+        loadTechniciansForFilter().then(() => {
+            loadReports();
+        });
+        setInterval(loadReports, 30000);
+    });
 </script>
 {% endblock %}
