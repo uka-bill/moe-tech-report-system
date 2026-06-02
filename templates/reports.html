@@ -112,15 +112,6 @@
         color: #999;
         margin-left: 10px;
     }
-    .btn-edit-disabled {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        cursor: not-allowed;
-    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -183,7 +174,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
-                <button type="button" class="btn btn-warning" id="editReportBtn" onclick="editReport()">Edit</button>
+                <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
             </div>
         </div>
     </div>
@@ -212,12 +203,11 @@
     let currentReport = null;
     let currentReportId = null;
     let isTeamLeader = false;
-    let currentUserId = null;
+    let currentUser = null;
     
     function checkUserRole() {
-        const user = window.getCurrentUser();
-        isTeamLeader = user && user.isAuthorized === true;
-        currentUserId = user ? user.id : null;
+        currentUser = window.getCurrentUser();
+        isTeamLeader = currentUser && currentUser.isAuthorized === true;
         console.log('All Reports - Is Team Leader:', isTeamLeader);
     }
     
@@ -367,21 +357,11 @@
             currentReport = reports.find(r => r.id === id);
             if (currentReport) {
                 displayReportModal();
-                
-                // Show/hide edit button based on whether report is acknowledged
-                const editBtn = document.getElementById('editReportBtn');
-                if (currentReport.team_leader_acknowledged) {
-                    editBtn.innerHTML = '<i class="bi bi-lock"></i> Cannot Edit (Acknowledged)';
-                    editBtn.classList.remove('btn-warning');
-                    editBtn.classList.add('btn-secondary');
-                    editBtn.disabled = true;
-                } else {
-                    editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
-                    editBtn.classList.remove('btn-secondary');
-                    editBtn.classList.add('btn-warning');
-                    editBtn.disabled = false;
+                // Hide edit button if report is acknowledged
+                const editBtn = document.getElementById('editBtn');
+                if (editBtn) {
+                    editBtn.style.display = currentReport.team_leader_acknowledged ? 'none' : 'inline-block';
                 }
-                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -411,8 +391,6 @@
             acknowledgmentHtml = `<div class="alert alert-success mt-3"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         } else if (isTeamLeader) {
             acknowledgmentHtml = `<div class="alert alert-warning mt-3"><button class="btn btn-success w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
-        } else {
-            acknowledgmentHtml = `<div class="alert alert-info mt-3"><i class="bi bi-clock-history"></i> This report is pending review by the Team Leader.</div>`;
         }
         
         const html = `
@@ -473,20 +451,20 @@
     }
     
     function editReport() { 
-        if (currentReportId && currentReport) {
+        if (currentReportId) {
             // Check if report is already acknowledged
-            if (currentReport.team_leader_acknowledged) {
+            if (currentReport && currentReport.team_leader_acknowledged) {
                 window.showToast('This report has already been acknowledged and cannot be edited', 'error');
-                return;
-            }
-            // Check if current user is the owner or admin
-            const user = window.getCurrentUser();
-            if (currentReport.technician_id != user.id && !user.canEditTechnicians) {
-                window.showToast('You are not authorized to edit this report', 'error');
                 return;
             }
             // Redirect to new-report page with edit parameter
             window.location.href = `/new-report?id=${currentReportId}`;
+        } else if (currentReport && currentReport.id) {
+            if (currentReport.team_leader_acknowledged) {
+                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
+                return;
+            }
+            window.location.href = `/new-report?id=${currentReport.id}`;
         } else {
             window.showToast('No report selected', 'error');
         }
