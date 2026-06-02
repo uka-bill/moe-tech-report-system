@@ -95,6 +95,35 @@
         font-size: 13px;
         border-left: 3px solid var(--primary-color);
     }
+    .btn-edit-image {
+        background-color: #ffc107;
+        color: #333;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-right: 5px;
+    }
+    .btn-edit-image:hover {
+        background-color: #e0a800;
+    }
+    .btn-delete-image {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .btn-delete-image:hover {
+        background-color: #c82333;
+    }
+    .image-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -189,6 +218,35 @@
     </div>
 </div>
 
+<!-- Edit Image Modal -->
+<div class="modal fade" id="editImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Image Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editImageForm">
+                    <input type="hidden" id="editImageId">
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Remarks</label>
+                        <textarea class="form-control" id="editImageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveImageEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- View Image Modal -->
 <div class="modal fade" id="viewImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -199,9 +257,11 @@
             </div>
             <div class="modal-body text-center">
                 <img id="viewImageSrc" src="" class="img-fluid rounded" style="max-height: 70vh;">
+                <div id="viewImageDetails" class="mt-3 text-start"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="editImageFromView()">Edit Details</button>
                 <button type="button" class="btn btn-danger" onclick="deleteCurrentImage()">Delete Image</button>
             </div>
         </div>
@@ -213,6 +273,7 @@
     let currentEntityId = null;
     let currentEntityType = null;
     let currentImageId = null;
+    let currentImageData = null;
     let mapImageUrl = null;
     
     // Load schools and departments
@@ -263,10 +324,8 @@
             return;
         }
         
-        // Load images
         await loadImages();
         
-        // Update map view if there's an image
         if (mapImageUrl) {
             updateMapView();
         }
@@ -283,7 +342,6 @@
             currentImages = await response.json();
             displayImages();
             
-            // Set the first image as the map image
             if (currentImages.length > 0 && currentImages[0].image_url) {
                 mapImageUrl = currentImages[0].image_url;
                 updateMapView();
@@ -324,9 +382,14 @@
                         ${img.notes ? `<div class="image-notes"><i class="bi bi-pencil"></i> <strong>Notes:</strong><br>${escapeHtml(img.notes)}</div>` : ''}
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <small class="text-muted"><i class="bi bi-clock"></i> Uploaded: ${formatDateOnly(img.uploaded_at)}</small>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteImage(${img.id})">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
+                            <div class="image-actions">
+                                <button class="btn-edit-image" onclick="event.stopPropagation(); showEditImageModal(${img.id})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn-delete-image" onclick="event.stopPropagation(); deleteImage(${img.id})">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -365,6 +428,44 @@
         document.getElementById('imageForm').reset();
         document.getElementById('imagePreview').style.display = 'none';
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
+    }
+    
+    function showEditImageModal(imageId) {
+        const image = currentImages.find(img => img.id === imageId);
+        if (!image) return;
+        
+        currentImageId = imageId;
+        document.getElementById('editImageId').value = imageId;
+        document.getElementById('editImageDescription').value = image.description || '';
+        document.getElementById('editImageNotes').value = image.notes || '';
+        
+        new bootstrap.Modal(document.getElementById('editImageModal')).show();
+    }
+    
+    async function saveImageEdit() {
+        const imageId = document.getElementById('editImageId').value;
+        const description = document.getElementById('editImageDescription').value;
+        const notes = document.getElementById('editImageNotes').value;
+        
+        try {
+            const response = await fetch(`/api/mapping/images/${imageId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: description, notes: notes })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                showToast('Image details updated successfully');
+                bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
+                await loadImages();
+            } else {
+                showToast(result.error || 'Failed to update', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating image:', error);
+            showToast('Error updating image', 'error');
+        }
     }
     
     document.getElementById('mapImageUpload').addEventListener('change', function(e) {
@@ -433,9 +534,28 @@
     }
     
     function viewImage(url, id) {
+        const image = currentImages.find(img => img.id === id);
         currentImageId = id;
+        currentImageData = image;
         document.getElementById('viewImageSrc').src = url;
+        
+        const detailsHtml = `
+            <div class="card">
+                <div class="card-body">
+                    <p><strong>Description:</strong> ${escapeHtml(image.description || 'No description')}</p>
+                    ${image.notes ? `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>` : ''}
+                    <p class="text-muted"><small>Uploaded: ${formatDateOnly(image.uploaded_at)}</small></p>
+                </div>
+            </div>
+        `;
+        document.getElementById('viewImageDetails').innerHTML = detailsHtml;
+        
         new bootstrap.Modal(document.getElementById('viewImageModal')).show();
+    }
+    
+    function editImageFromView() {
+        bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
+        showEditImageModal(currentImageId);
     }
     
     async function deleteCurrentImage() {
@@ -529,9 +649,12 @@
     window.showAddImageModal = showAddImageModal;
     window.uploadMapImage = uploadMapImage;
     window.viewImage = viewImage;
+    window.editImageFromView = editImageFromView;
     window.deleteCurrentImage = deleteCurrentImage;
     window.deleteImage = deleteImage;
     window.switchTab = switchTab;
     window.loadEntityData = loadEntityData;
+    window.showEditImageModal = showEditImageModal;
+    window.saveImageEdit = saveImageEdit;
 </script>
 {% endblock %}
