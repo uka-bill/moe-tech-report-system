@@ -1028,6 +1028,7 @@ def create_mapping_image():
             "entity_id": int(data.get('entity_id')),
             "image_url": data.get('image_url'),
             "description": data.get('description', ''),
+            "notes": data.get('notes', ''),
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
@@ -1042,6 +1043,36 @@ def create_mapping_image():
             
     except Exception as e:
         app.logger.error(f"Error creating mapping image: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
+def update_mapping_image(image_id):
+    """Update a mapping image (description and notes)"""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        
+        data = request.get_json()
+        update_data = {}
+        
+        allowed_fields = ['description', 'notes']
+        for field in allowed_fields:
+            if field in data:
+                update_data[field] = data[field]
+        
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+        
+        response = supabase.table("mapping_images").update(update_data).eq("id", image_id).execute()
+        
+        if response.data:
+            app.logger.info(f"Mapping image updated: ID {image_id}")
+            return jsonify({'success': True, 'data': response.data[0]})
+        else:
+            return jsonify({'success': False, 'error': 'Image not found'}), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error updating mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['DELETE'])
