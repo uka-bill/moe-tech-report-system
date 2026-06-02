@@ -242,6 +242,7 @@
     function checkUserRole() {
         const user = window.getCurrentUser();
         isTeamLeader = user && user.isAuthorized === true;
+        console.log('Telephone Reports - Is Team Leader:', isTeamLeader);
     }
     
     function getImageUrl(imgPath) {
@@ -281,7 +282,9 @@
                 options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${escapeHtml(tech.name)}</option>`;
             });
             select.innerHTML = options;
-        } catch (error) {}
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
     }
     
     async function loadReports() {
@@ -292,12 +295,17 @@
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-success"></div><p>Loading telephone reports...</p></div>';
         
         try {
+            console.log('Fetching telephone reports...');
             const response = await fetch('/api/technical-reports?type=telephone');
             
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
             let reports = await response.json();
             if (!reports) reports = [];
+            
+            console.log('Reports received:', reports.length);
             
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
@@ -568,7 +576,14 @@
         </html>`;
     }
     
-    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
-    init();
+    // FIX: Use DOMContentLoaded to ensure page is fully loaded before initializing
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Telephone Reports page loaded, initializing...');
+        checkUserRole();
+        loadTechniciansForFilter().then(() => {
+            loadReports();
+        });
+        setInterval(loadReports, 30000);
+    });
 </script>
 {% endblock %}
