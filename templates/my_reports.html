@@ -196,7 +196,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
-                <button type="button" class="btn btn-warning" onclick="editReport()">Edit</button>
+                <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
                 <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
             </div>
         </div>
@@ -278,7 +278,13 @@
         
         try {
             const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             let reports = await response.json();
+            if (!reports) reports = [];
             
             if (status !== 'all') {
                 if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
@@ -302,7 +308,14 @@
             
             displayReports(reports);
         } catch (error) {
-            container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>';
+            console.error('Error loading reports:', error);
+            container.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p>Error loading reports: ${error.message}</p>
+                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                </div>
+            `;
         }
     }
     
@@ -316,6 +329,7 @@
             const isAcknowledged = report.team_leader_acknowledged;
             const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
+            const canEdit = !isAcknowledged; // Can only edit if not acknowledged
             
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
@@ -340,7 +354,7 @@
                             <div><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
                             ${report.action_taken ? `<div class="small text-success"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
                             <div class="mt-2">
-                                <button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>
+                                ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
                                 <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
                             </div>
                         </div>
@@ -358,6 +372,15 @@
             currentReport = reports.find(r => r.id === id);
             if (currentReport) {
                 displayReportModal();
+                // Hide edit button if report is acknowledged
+                const editBtn = document.getElementById('editBtn');
+                const deleteBtn = document.getElementById('deleteBtn');
+                if (editBtn) {
+                    editBtn.style.display = currentReport.team_leader_acknowledged ? 'none' : 'inline-block';
+                }
+                if (deleteBtn) {
+                    deleteBtn.style.display = currentReport.team_leader_acknowledged ? 'none' : 'inline-block';
+                }
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) { 
@@ -449,12 +472,16 @@
     }
     
     function editReportDirect(id) {
-        window.location.href = `/reports?id=${id}&edit=true`;
+        window.location.href = `/new-report?id=${id}`;
     }
     
     function editReport() { 
         if (currentReportId) {
-            window.location.href = `/reports?id=${currentReportId}&edit=true`;
+            if (currentReport && currentReport.team_leader_acknowledged) {
+                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
+                return;
+            }
+            window.location.href = `/new-report?id=${currentReportId}`;
         } else {
             window.showToast('No report selected', 'error');
         }
@@ -478,6 +505,10 @@
     }
     
     function deleteReport() { 
+        if (currentReport && currentReport.team_leader_acknowledged) {
+            window.showToast('This report has already been acknowledged and cannot be deleted', 'error');
+            return;
+        }
         deleteReportDirect(currentReportId); 
     }
     
@@ -545,18 +576,19 @@
                     <tr><th>Field</th><th>Details</th></tr>
                     <tr><td><strong>Entity Type</strong></td><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                     <tr><td><strong>Entity Name</strong></td><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                    ${report.account_number ? `<tr><td><strong>Account Number</strong></td><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><td><strong>Meter Number</strong></td><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
-                    ${report.phone_number ? `<tr><td><strong>Phone Number</strong></td><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
+                    ${report.account_number ? `<tr><td><strong>Account Number</strong></td><td>${escapeHtml(report.account_number)}</td>` : ''}
+                    ${report.meter_number ? `<tr><td><strong>Meter Number</strong></td><td>${escapeHtml(report.meter_number)}</td>` : ''}
+                    ${report.phone_number ? `<tr><td><strong>Phone Number</strong></td><td>${escapeHtml(report.phone_number)}</td>` : ''}
+                    ${report.reference_number ? `<tr><td><strong>Reference</strong></td><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                     <tr><td><strong>Problem Type</strong></td><td>${escapeHtml(report.problem_type || '-')}</td></tr>
                     <tr><td><strong>Priority</strong></td><td class="priority-${report.priority}">${report.priority.toUpperCase()}</td></tr>
                     <tr><td><strong>Status</strong></td><td>${report.team_leader_acknowledged ? '<span class="badge bg-success">Acknowledged</span>' : '<span class="badge bg-warning">Pending Review</span>'}</td></tr>
                     <tr><td><strong>Complaint Details</strong></td><td>${escapeHtml(report.complaint_details || '-')}</td></tr>
-                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong></td><td>${escapeHtml(report.technician_notes)}</td></tr>` : ''}
-                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong></td><td>${escapeHtml(report.action_taken)}</td></tr>` : ''}
+                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong></td><td>${escapeHtml(report.technician_notes)}</td>` : ''}
+                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong></td><td>${escapeHtml(report.action_taken)}</td>` : ''}
                     <tr><td><strong>Submitted By</strong></td><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
-                    ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong></td><td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong></td><td>${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong></td><td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong></td><td>${escapeHtml(report.team_leader_notes)}</td>` : ''}
                 </table>
                 
                 <div class="signatures">
