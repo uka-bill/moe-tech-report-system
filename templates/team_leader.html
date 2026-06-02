@@ -24,11 +24,6 @@
         color: #155724;
         border-left: 3px solid #28a745;
     }
-    .status-pending {
-        background-color: #fff3cd;
-        color: #856404;
-        border-left: 3px solid #ffc107;
-    }
     .btn-acknowledge {
         background-color: #28a745;
         color: white;
@@ -48,39 +43,18 @@
         font-size: 10px;
         margin-left: 5px;
     }
-    .print-area {
-        background: white;
-        padding: 30px;
+    .table-responsive {
+        overflow-x: auto;
     }
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-area, .print-area * {
-            visibility: visible;
-        }
-        .print-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-        }
-        .no-print {
-            display: none !important;
-        }
-        @page {
-            size: A4;
-            margin: 2cm;
-        }
+    .btn-sm {
+        margin: 2px;
     }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-check2-square"></i> Team Leader Dashboard</h2>
     <div>
-        <span class="badge bg-primary p-2 me-2" id="authStatus">Loading...</span>
+        <span class="badge bg-primary p-2 me-2" id="authStatus">Checking...</span>
         <span class="badge bg-danger p-2" id="notificationCount" style="display: none;">
             <i class="bi bi-bell"></i> <span id="pendingReportsCount">0</span> Pending
         </span>
@@ -109,7 +83,7 @@
                     </tr>
                 </thead>
                 <tbody id="pendingAckTable">
-                    <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading reports...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -138,7 +112,7 @@
                     </tr>
                 </thead>
                 <tbody id="unacknowledgedTable">
-                    <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading reports...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -218,7 +192,7 @@
 <script>
     let isAuthorizedUser = false;
     let currentReportId = null;
-    let pendingReports = [];
+    let currentReport = null;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -253,6 +227,8 @@
     
     async function checkAuthorization() {
         const user = window.getCurrentUser();
+        console.log('Team Leader - Current User:', user);
+        
         if (user && user.id) {
             try {
                 const response = await fetch(`/api/technicians/${user.id}/authorization`);
@@ -269,45 +245,59 @@
                     authStatus.classList.remove('bg-primary');
                 }
             } catch (error) {
+                console.error('Error checking authorization:', error);
                 isAuthorizedUser = false;
             }
         }
         loadTeamLeaderData();
-        // Auto refresh every 10 seconds
-        setInterval(loadTeamLeaderData, 10000);
+        setInterval(loadTeamLeaderData, 15000);
     }
     
     async function loadTeamLeaderData() {
         try {
+            console.log('Loading team leader data...');
             const response = await fetch('/api/technical-reports');
-            const reports = await response.json();
             
-            // Filter only unacknowledged reports for team leader dashboard
-            const unacknowledged = reports.filter(r => !r.team_leader_acknowledged);
-            const highPriorityUnack = unacknowledged.filter(r => r.priority === 'high');
-            const acknowledged = reports.filter(r => r.team_leader_acknowledged);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
-            document.getElementById('statTotal').textContent = reports.length;
-            document.getElementById('statPending').textContent = unacknowledged.length;
-            document.getElementById('statAcknowledged').textContent = acknowledged.length;
-            document.getElementById('pendingCount').textContent = unacknowledged.length;
+            const allReports = await response.json();
+            console.log('All reports loaded:', allReports.length);
+            
+            // Filter reports - only show reports that are NOT acknowledged
+            const unacknowledgedReports = allReports.filter(r => !r.team_leader_acknowledged);
+            const highPriorityUnack = unacknowledgedReports.filter(r => r.priority === 'high');
+            const acknowledgedReports = allReports.filter(r => r.team_leader_acknowledged);
+            
+            console.log('Unacknowledged reports:', unacknowledgedReports.length);
+            console.log('High priority unack:', highPriorityUnack.length);
+            
+            // Update statistics
+            document.getElementById('statTotal').textContent = allReports.length;
+            document.getElementById('statPending').textContent = unacknowledgedReports.length;
+            document.getElementById('statAcknowledged').textContent = acknowledgedReports.length;
+            document.getElementById('pendingCount').textContent = unacknowledgedReports.length;
             document.getElementById('highPriorityCount').textContent = highPriorityUnack.length;
             
             // Update notification badge
             const notificationBadge = document.getElementById('notificationCount');
             const pendingSpan = document.getElementById('pendingReportsCount');
-            if (unacknowledged.length > 0) {
+            if (unacknowledgedReports.length > 0) {
                 notificationBadge.style.display = 'inline-block';
-                pendingSpan.textContent = unacknowledged.length;
+                pendingSpan.textContent = unacknowledgedReports.length;
             } else {
                 notificationBadge.style.display = 'none';
             }
             
+            // Display tables
             displayPendingAck(highPriorityUnack);
-            displayUnacknowledged(unacknowledged);
-            pendingReports = unacknowledged;
+            displayUnacknowledged(unacknowledgedReports);
+            
         } catch (error) {
             console.error('Error loading reports:', error);
+            document.getElementById('pendingAckTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td></tr>';
+            document.getElementById('unacknowledgedTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td></tr>';
         }
     }
     
@@ -323,13 +313,13 @@
                 <td>#${report.id}</td>
                 <td><span class="badge ${report.report_type === 'water' ? 'bg-info' : report.report_type === 'electricity' ? 'bg-warning' : 'bg-success'}">${report.report_type}</span></td>
                 <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                <td>${escapeHtml(report.problem_type)}</td>
+                <td>${escapeHtml(report.problem_type || '-')}</td>
                 <td><span class="status-badge priority-high">HIGH</span></td>
                 <td>${escapeHtml(report.technician_name || '-')}</td>
                 <td>${formatDate(report.created_at)}</td>
                 <td>
-                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success me-1" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                    <button class="btn btn-sm btn-info me-1" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
+                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
+                    <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
                     <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
                 </td>
             </tr>
@@ -348,13 +338,13 @@
                 <td>#${report.id}</td>
                 <td><span class="badge ${report.report_type === 'water' ? 'bg-info' : report.report_type === 'electricity' ? 'bg-warning' : 'bg-success'}">${report.report_type}</span></td>
                 <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                <td>${escapeHtml(report.problem_type)}</td>
+                <td>${escapeHtml(report.problem_type || '-')}</td>
                 <td><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></td>
                 <td>${escapeHtml(report.technician_name || '-')}</td>
                 <td>${formatDate(report.created_at)}</td>
                 <td>
-                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success me-1" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                    <button class="btn btn-sm btn-info me-1" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
+                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
+                    <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
                     <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
                 </td>
             </tr>
@@ -396,11 +386,13 @@
                 loadTeamLeaderData();
                 
                 // Close view modal if open
-                bootstrap.Modal.getInstance(document.getElementById('viewReportModal'))?.hide();
+                const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewReportModal'));
+                if (viewModal) viewModal.hide();
             } else {
                 window.showToast(data.error || 'Failed to acknowledge', 'error');
             }
         } catch (error) {
+            console.error('Error acknowledging report:', error);
             window.showToast('Error acknowledging report', 'error');
         }
     }
@@ -410,18 +402,20 @@
         try {
             const response = await fetch('/api/technical-reports');
             const reports = await response.json();
-            const report = reports.find(r => r.id === id);
+            currentReport = reports.find(r => r.id === id);
             
-            if (report) {
-                displayReportInModal(report);
-                // Show/hide acknowledge button based on authorization and current status
+            if (currentReport) {
+                displayReportInModal(currentReport);
                 const ackBtn = document.getElementById('modalAcknowledgeBtn');
                 if (ackBtn) {
-                    ackBtn.style.display = (isAuthorizedUser && !report.team_leader_acknowledged) ? 'inline-block' : 'none';
+                    ackBtn.style.display = (isAuthorizedUser && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
                 new bootstrap.Modal(document.getElementById('viewReportModal')).show();
+            } else {
+                window.showToast('Report not found', 'error');
             }
         } catch (error) {
+            console.error('Error loading report:', error);
             window.showToast('Error loading report details', 'error');
         }
     }
@@ -458,7 +452,7 @@
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
                 <div class="row mb-2"><div class="col-4 fw-bold">Problem Type:</div><div class="col-8">${escapeHtml(report.problem_type)}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></div></div>
+                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div></div>
                 <div class="row mb-2"><div class="col-4 fw-bold">Complaint Details:</div><div class="col-8">${escapeHtml(report.complaint_details)}</div></div>
                 ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
                 ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
@@ -473,7 +467,7 @@
     }
     
     function printCurrentReport() {
-        if (currentReportId) printReport(currentReportId);
+        if (currentReport) printReport(currentReport.id);
     }
     
     async function printReport(id) {
@@ -523,7 +517,6 @@
                 .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; }
                 .bg-success { background-color: #28a745; color: white; }
                 .bg-warning { background-color: #ffc107; color: #333; }
-                .bg-info { background-color: #17a2b8; color: white; }
             </style>
         </head>
         <body>
@@ -547,7 +540,6 @@
                     ${report.account_number ? `<tr><td><strong>Account Number</strong></td><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
                     ${report.meter_number ? `<tr><td><strong>Meter Number</strong></td><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
                     ${report.phone_number ? `<tr><td><strong>Phone Number</strong></td><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><td><strong>Reference</strong></td><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
                     <tr><td><strong>Problem Type</strong></td><td>${escapeHtml(report.problem_type || '-')}</td></tr>
                     <tr><td><strong>Priority</strong></td><td class="priority-${report.priority}">${report.priority.toUpperCase()}</td></tr>
                     <tr><td><strong>Status</strong></td><td>${report.team_leader_acknowledged ? '<span class="badge bg-success">Acknowledged</span>' : '<span class="badge bg-warning">Pending Review</span>'}</td></tr>
@@ -586,7 +578,9 @@
         </html>`;
     }
     
-    // Initial load
-    checkAuthorization();
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuthorization();
+    });
 </script>
 {% endblock %}
