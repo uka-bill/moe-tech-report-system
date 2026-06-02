@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<script>
-    // Ensure user is loaded from storage on page load
-    (function() {
-        const userId = localStorage.getItem('userId');
-        const userName = localStorage.getItem('userName');
-        if (userId && userName && userId !== 'null') {
-            console.log('Water Reports - User loaded:', userName);
-        } else {
-            console.log('Water Reports - No user found');
-        }
-    })();
-</script>
-
 <style>
     .filter-card {
         background: white;
@@ -175,7 +162,6 @@
     </div>
 </div>
 
-<!-- Filter Section -->
 <div class="filter-card">
     <div class="row">
         <div class="col-md-4">
@@ -201,7 +187,6 @@
     </div>
 </div>
 
-<!-- Reports List -->
 <div id="reportsContainer">
     <div class="text-center py-5">
         <div class="spinner-border text-info" role="status"></div>
@@ -271,11 +256,9 @@
     let currentReportId = null;
     let isTeamLeader = false;
     
-    // Check if current user is team leader
     function checkUserRole() {
         const user = window.getCurrentUser();
         isTeamLeader = user && user.isAuthorized === true;
-        console.log('Water Reports - User role:', isTeamLeader ? 'Team Leader' : 'Technician');
     }
     
     function getImageUrl(imgPath) {
@@ -312,32 +295,45 @@
             const select = document.getElementById('filterTechnician');
             let options = '<option value="all">All Technicians</option>';
             techs.forEach(tech => {
-                options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${tech.name}</option>`;
+                options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${escapeHtml(tech.name)}</option>`;
             });
             select.innerHTML = options;
-        } catch (error) {}
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
     }
     
     async function loadReports() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
         
-        let url = '/api/technical-reports?type=water';
-        
         const container = document.getElementById('reportsContainer');
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info"></div><p>Loading...</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info"></div><p>Loading water reports...</p></div>';
         
         try {
-            const response = await fetch(url);
-            let reports = await response.json();
+            const response = await fetch('/api/technical-reports?type=water');
             
-            if (technicianId !== 'all') reports = reports.filter(r => r.technician_id == technicianId);
-            if (status !== 'all') {
-                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
-                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
+            let reports = await response.json();
+            if (!reports) reports = [];
+            
+            if (technicianId !== 'all') {
+                reports = reports.filter(r => r.technician_id == technicianId);
+            }
+            if (status !== 'all') {
+                if (status === 'pending') {
+                    reports = reports.filter(r => !r.team_leader_acknowledged);
+                }
+                if (status === 'acknowledged') {
+                    reports = reports.filter(r => r.team_leader_acknowledged);
+                }
+            }
+            
+            const pendingCount = reports.filter(r => !r.team_leader_acknowledged).length;
+            document.getElementById('pendingCount').textContent = pendingCount;
             
             if (reports.length === 0) {
                 container.innerHTML = `
@@ -353,7 +349,14 @@
             
             displayReports(reports);
         } catch (error) {
-            container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>';
+            console.error('Error loading reports:', error);
+            container.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p>Error loading reports: ${error.message}</p>
+                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                </div>
+            `;
         }
     }
     
@@ -589,12 +592,13 @@
     function editReport() { window.location.href = `/reports?id=${currentReportId}&edit=true`; }
     function printReport() { window.print(); }
     
-    async function init() {
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
         checkUserRole();
-        await loadTechniciansForFilter();
-        await loadReports();
+        loadTechniciansForFilter().then(() => {
+            loadReports();
+        });
         setInterval(loadReports, 30000);
-    }
-    init();
+    });
 </script>
 {% endblock %}
