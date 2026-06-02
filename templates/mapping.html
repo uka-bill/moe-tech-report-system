@@ -138,6 +138,14 @@
         background-color: var(--primary-light);
         font-weight: bold;
     }
+    .debug-info {
+        font-size: 11px;
+        color: #999;
+        margin-top: 10px;
+        padding: 5px;
+        background: #f5f5f5;
+        border-radius: 4px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -312,6 +320,7 @@
             displayEntityList(entitiesList);
         } catch (error) {
             console.error('Error loading entities:', error);
+            document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-danger">Error loading entities</div>';
         }
     }
     
@@ -351,22 +360,46 @@
             }
         });
         
+        // Clear previous images
+        currentImages = [];
+        allMapImages = [];
+        
+        // Load images for selected entity
         await loadImages();
     }
     
     async function loadImages() {
-        if (!currentEntityType || !currentEntityId) return;
+        if (!currentEntityType || !currentEntityId) {
+            console.log('No entity selected');
+            return;
+        }
+        
+        console.log('Loading images for:', currentEntityType, currentEntityId);
         
         try {
             const response = await fetch(`/api/mapping/images?entity_type=${currentEntityType}&entity_id=${currentEntityId}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             currentImages = await response.json();
+            console.log('Images loaded:', currentImages.length);
+            
             displayImages();
             
             allMapImages = currentImages.filter(img => img.image_url);
             updateMapView();
+            
         } catch (error) {
             console.error('Error loading images:', error);
+            document.getElementById('imagesList').innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p>Error loading images: ${error.message}</p>
+                    <button class="btn btn-sm btn-primary" onclick="loadImages()">Retry</button>
+                </div>
+            `;
         }
     }
     
@@ -385,7 +418,7 @@
         container.innerHTML = currentImages.map(img => `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="image-card h-100">
-                    <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})">
+                    <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})" onerror="this.src='https://placehold.co/400x300?text=Image+Not+Found'">
                     <div class="image-card-body">
                         <p class="mb-2"><strong>Description:</strong> ${escapeHtml(img.description || 'No description')}</p>
                         ${img.notes ? `<div class="image-notes"><i class="bi bi-pencil"></i> <strong>Notes:</strong><br>${escapeHtml(img.notes)}</div>` : ''}
@@ -438,7 +471,7 @@
         allMapImages.forEach((img, idx) => {
             carouselHtml += `
                 <div class="carousel-item ${idx === 0 ? 'active' : ''}">
-                    <img src="${img.image_url}" class="d-block w-100 map-image" style="height: 500px; object-fit: contain;" onclick="window.open('${img.image_url}')">
+                    <img src="${img.image_url}" class="d-block w-100 map-image" style="height: 500px; object-fit: contain;" onclick="window.open('${img.image_url}')" onerror="this.src='https://placehold.co/800x500?text=Image+Not+Found'">
                     <div class="carousel-caption d-none d-md-block">
                         <h5>${escapeHtml(img.description || 'Map Image')}</h5>
                         ${img.notes ? `<p>${escapeHtml(img.notes)}</p>` : ''}
@@ -507,6 +540,7 @@
                 window.showToast(result.error || 'Failed to update', 'error');
             }
         } catch (error) {
+            console.error('Error updating image:', error);
             window.showToast('Error updating image', 'error');
         }
     }
@@ -533,42 +567,57 @@
             return;
         }
         
+        if (!currentEntityType || !currentEntityId) {
+            window.showToast('Please select a school or department first', 'error');
+            return;
+        }
+        
         const formData = new FormData();
         formData.append('image', fileInput.files[0]);
         
         try {
-            const uploadResponse = await fetch('/api/upload-image', { method: 'POST', body: formData });
+            // First upload the image file
+            const uploadResponse = await fetch('/api/upload-image', { 
+                method: 'POST', 
+                body: formData 
+            });
             const uploadData = await uploadResponse.json();
             
-            if (uploadData.success) {
-                const imageData = {
-                    entity_type: currentEntityType,
-                    entity_id: parseInt(currentEntityId),
-                    image_url: uploadData.image_url,
-                    description: description,
-                    notes: notes,
-                    uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
-                };
-                
-                const saveResponse = await fetch('/api/mapping/images', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(imageData)
-                });
-                const saveResult = await saveResponse.json();
-                if (saveResult.success) {
-                    window.showToast('Map image uploaded successfully');
-                    bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
-                    await loadImages();
-                } else {
-                    window.showToast('Failed to save image record', 'error');
-                }
+            if (!uploadData.success) {
+                window.showToast('Failed to upload image file', 'error');
+                return;
+            }
+            
+            // Then save the image record to mapping_images table
+            const imageData = {
+                entity_type: currentEntityType,
+                entity_id: parseInt(currentEntityId),
+                image_url: uploadData.image_url,
+                description: description,
+                notes: notes,
+                uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
+            };
+            
+            console.log('Saving image record:', imageData);
+            
+            const saveResponse = await fetch('/api/mapping/images', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(imageData)
+            });
+            const saveResult = await saveResponse.json();
+            
+            if (saveResult.success) {
+                window.showToast('Map image uploaded successfully');
+                bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
+                // Reload images to show the new one
+                await loadImages();
             } else {
-                window.showToast('Failed to upload image', 'error');
+                window.showToast(saveResult.error || 'Failed to save image record', 'error');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
-            window.showToast('Error uploading image', 'error');
+            window.showToast('Error uploading image: ' + error.message, 'error');
         }
     }
     
@@ -610,6 +659,7 @@
                     window.showToast('Failed to delete', 'error');
                 }
             } catch (error) {
+                console.error('Error deleting image:', error);
                 window.showToast('Error deleting image', 'error');
             }
         }
@@ -627,6 +677,7 @@
                     window.showToast('Failed to delete', 'error');
                 }
             } catch (error) {
+                console.error('Error deleting image:', error);
                 window.showToast('Error deleting image', 'error');
             }
         }
@@ -660,13 +711,7 @@
         return date.toLocaleDateString('en-GB');
     }
     
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        date.setHours(date.getHours() + 8);
-        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-    
+    // Make functions global
     window.showAddImageModal = showAddImageModal;
     window.uploadMapImage = uploadMapImage;
     window.viewImage = viewImage;
@@ -679,5 +724,6 @@
     window.selectEntity = selectEntity;
     window.filterEntityList = filterEntityList;
     window.loadEntityList = loadEntityList;
+    window.loadImages = loadImages;
 </script>
 {% endblock %}
