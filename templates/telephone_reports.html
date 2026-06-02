@@ -1,16 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<script>
-    (function() {
-        const userId = localStorage.getItem('userId');
-        const userName = localStorage.getItem('userName');
-        if (userId && userName && userId !== 'null') {
-            console.log('Telephone Reports - User loaded:', userName);
-        }
-    })();
-</script>
-
 <style>
     .filter-card {
         background: white;
@@ -204,7 +194,7 @@
     </div>
 </div>
 
-<!-- Modals -->
+<!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -223,6 +213,7 @@
     </div>
 </div>
 
+<!-- Acknowledge Modal -->
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -241,6 +232,7 @@
     </div>
 </div>
 
+<!-- Add Comment Modal -->
 <div class="modal fade" id="commentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -303,32 +295,45 @@
             const select = document.getElementById('filterTechnician');
             let options = '<option value="all">All Technicians</option>';
             techs.forEach(tech => {
-                options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${tech.name}</option>`;
+                options += `<option value="${tech.id}">${tech.role === 'senior_technician' ? '⭐' : '👤'} ${escapeHtml(tech.name)}</option>`;
             });
             select.innerHTML = options;
-        } catch (error) {}
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
     }
     
     async function loadReports() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
         
-        let url = '/api/technical-reports?type=telephone';
-        
         const container = document.getElementById('reportsContainer');
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-success"></div><p>Loading...</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-success"></div><p>Loading telephone reports...</p></div>';
         
         try {
-            const response = await fetch(url);
-            let reports = await response.json();
+            const response = await fetch('/api/technical-reports?type=telephone');
             
-            if (technicianId !== 'all') reports = reports.filter(r => r.technician_id == technicianId);
-            if (status !== 'all') {
-                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
-                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
+            let reports = await response.json();
+            if (!reports) reports = [];
+            
+            if (technicianId !== 'all') {
+                reports = reports.filter(r => r.technician_id == technicianId);
+            }
+            if (status !== 'all') {
+                if (status === 'pending') {
+                    reports = reports.filter(r => !r.team_leader_acknowledged);
+                }
+                if (status === 'acknowledged') {
+                    reports = reports.filter(r => r.team_leader_acknowledged);
+                }
+            }
+            
+            const pendingCount = reports.filter(r => !r.team_leader_acknowledged).length;
+            document.getElementById('pendingCount').textContent = pendingCount;
             
             if (reports.length === 0) {
                 container.innerHTML = `
@@ -344,7 +349,14 @@
             
             displayReports(reports);
         } catch (error) {
-            container.innerHTML = '<div class="text-center py-5 text-danger">Error loading reports</div>';
+            console.error('Error loading reports:', error);
+            container.innerHTML = `
+                <div class="text-center py-5 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p>Error loading reports: ${error.message}</p>
+                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                </div>
+            `;
         }
     }
     
@@ -422,72 +434,171 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `
+                <div class="mt-3">
+                    <strong>Attached Images:</strong>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        ${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}
+                    </div>
+                </div>
+            `;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><span class="comment-author">${escapeHtml(c.author)}</span><span class="comment-date">${formatDate(c.created_at)}</span><div class="comment-text">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+            commentsHtml = `
+                <div class="comment-section">
+                    <h6><i class="bi bi-chat-dots"></i> Comments</h6>
+                    ${report.comments.map(c => `
+                        <div class="comment-item">
+                            <span class="comment-author">${escapeHtml(c.author)}</span>
+                            <span class="comment-date">${formatDate(c.created_at)}</span>
+                            <div class="comment-text">${escapeHtml(c.text)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
         
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            acknowledgmentHtml = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>
+                    By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
+                    Date: ${formatDate(report.team_leader_acknowledged_at)}<br>
+                    Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}
+                </div>
+            `;
         } else if (isTeamLeader) {
-            acknowledgmentHtml = `<div class="alert alert-warning"><button class="btn btn-acknowledge w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
+            acknowledgmentHtml = `
+                <div class="alert alert-warning">
+                    <button class="btn btn-acknowledge w-100" onclick="showAcknowledgeModal()">
+                        <i class="bi bi-check2-square"></i> Acknowledge Report
+                    </button>
+                </div>
+            `;
         }
         
         const html = `
             <div>
-                <div class="row mb-3"><div class="col-md-6"><strong>Report #:</strong> ${report.utility_number || report.id}<br><strong>Submitted:</strong> ${formatDate(report.created_at)}<br><strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span></div>
-                <div class="col-md-6"><strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br><strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br><strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}</div></div>
-                <hr><h6>Problem / Issue</h6><p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p><p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Report #:</strong> ${report.utility_number || report.id}<br>
+                        <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
+                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
+                        <strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br>
+                        <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
+                    </div>
+                </div>
+                <hr>
+                <h6>Problem / Issue</h6>
+                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
+                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
                 ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
                 ${report.technician_notes ? `<h6>Technician's Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
-                ${imagesHtml}${commentsHtml}${acknowledgmentHtml}
-                <div class="mt-3"><button class="btn btn-add-comment" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
+                ${imagesHtml}
+                ${commentsHtml}
+                ${acknowledgmentHtml}
+                <div class="mt-3">
+                    <button class="btn btn-add-comment" onclick="showAddCommentModal()">
+                        <i class="bi bi-chat-dots"></i> Add Comment
+                    </button>
+                </div>
             </div>
         `;
+        
         document.getElementById('modalBody').innerHTML = html;
     }
     
-    function showAcknowledgeModal() { document.getElementById('acknowledgeComment').value = ''; new bootstrap.Modal(document.getElementById('acknowledgeModal')).show(); }
+    function showAcknowledgeModal() {
+        document.getElementById('acknowledgeComment').value = '';
+        new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
+    }
+    
     async function submitAcknowledge() {
         const comment = document.getElementById('acknowledgeComment').value;
         const userId = localStorage.getItem('userId');
+        
         try {
-            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment }) });
+            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment })
+            });
             const data = await response.json();
-            if (data.success) { window.showToast('Report acknowledged'); bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); loadReports(); openReportDetail(currentReportId); }
-        } catch (error) { window.showToast('Error', 'error'); }
+            if (data.success) {
+                window.showToast('Report acknowledged');
+                bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
+                loadReports();
+                openReportDetail(currentReportId);
+            }
+        } catch (error) {
+            window.showToast('Error', 'error');
+        }
     }
-    function showAddCommentModal() { document.getElementById('newComment').value = ''; new bootstrap.Modal(document.getElementById('commentModal')).show(); }
+    
+    function showAddCommentModal() {
+        document.getElementById('newComment').value = '';
+        new bootstrap.Modal(document.getElementById('commentModal')).show();
+    }
+    
     async function submitComment() {
         const comment = document.getElementById('newComment').value;
         const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
+        
         if (!comment.trim()) return window.showToast('Enter a comment', 'error');
+        
         try {
             let comments = currentReport.comments || [];
             comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
-            const response = await fetch(`/api/technical-reports/${currentReportId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comments: comments }) });
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comments: comments })
+            });
             const data = await response.json();
-            if (data.success) { window.showToast('Comment added'); bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); openReportDetail(currentReportId); }
-        } catch (error) { window.showToast('Error', 'error'); }
+            if (data.success) {
+                window.showToast('Comment added');
+                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
+                openReportDetail(currentReportId);
+            }
+        } catch (error) {
+            window.showToast('Error', 'error');
+        }
     }
+    
     async function deleteReportDirect(id) {
-        if (!confirm('Are you sure you want to delete this report?')) return;
+        if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
         try {
             const response = await fetch(`/api/technical-reports/${id}`, { method: 'DELETE' });
             const data = await response.json();
-            if (data.success) { window.showToast('Report deleted'); loadReports(); bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); }
-            else { window.showToast(data.error || 'Cannot delete', 'error'); }
-        } catch (error) { window.showToast('Error deleting', 'error'); }
+            if (data.success) {
+                window.showToast('Report deleted');
+                loadReports();
+                bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide();
+            } else {
+                window.showToast(data.error || 'Cannot delete', 'error');
+            }
+        } catch (error) {
+            window.showToast('Error deleting', 'error');
+        }
     }
+    
     function deleteReport() { deleteReportDirect(currentReportId); }
     function editReport() { window.location.href = `/reports?id=${currentReportId}&edit=true`; }
     function printReport() { window.print(); }
     
-    async function init() { checkUserRole(); await loadTechniciansForFilter(); await loadReports(); setInterval(loadReports, 30000); }
-    init();
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        checkUserRole();
+        loadTechniciansForFilter().then(() => {
+            loadReports();
+        });
+        setInterval(loadReports, 30000);
+    });
 </script>
 {% endblock %}
