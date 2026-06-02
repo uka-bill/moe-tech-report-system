@@ -155,6 +155,17 @@
         border-radius: 5px;
         font-size: 12px;
     }
+    .empty-reports {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-reports i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -329,7 +340,14 @@
             document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
             
             if (reports.length === 0) {
-                container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size:48px;color:#ccc;"></i><p>No water reports found</p></div>';
+                container.innerHTML = `
+                    <div class="empty-reports">
+                        <i class="bi bi-inbox"></i>
+                        <h4>No Water Reports Found</h4>
+                        <p class="text-muted">There are no water reports matching your filters.</p>
+                        <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                    </div>
+                `;
                 return;
             }
             
