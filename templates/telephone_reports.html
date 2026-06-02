@@ -120,10 +120,22 @@
         margin-top: 15px;
         border-left: 3px solid #4caf50;
     }
+    .comment-item {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+    }
     .comment-author {
         font-weight: bold;
         color: #4caf50;
         font-size: 12px;
+    }
+    .comment-date {
+        font-size: 10px;
+        color: #999;
+        margin-left: 10px;
     }
     .btn-acknowledge {
         background-color: #28a745;
@@ -139,6 +151,17 @@
         padding: 5px 15px;
         border-radius: 5px;
         font-size: 12px;
+    }
+    .empty-reports {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-reports i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 20px;
     }
 </style>
 
@@ -181,7 +204,7 @@
     </div>
 </div>
 
-<!-- Modals (same structure) -->
+<!-- Modals -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -308,7 +331,14 @@
             document.getElementById('pendingCount').textContent = reports.filter(r => !r.team_leader_acknowledged).length;
             
             if (reports.length === 0) {
-                container.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size:48px;color:#ccc;"></i><p>No telephone reports found</p></div>';
+                container.innerHTML = `
+                    <div class="empty-reports">
+                        <i class="bi bi-inbox"></i>
+                        <h4>No Telephone Reports Found</h4>
+                        <p class="text-muted">There are no telephone reports matching your filters.</p>
+                        <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                    </div>
+                `;
                 return;
             }
             
