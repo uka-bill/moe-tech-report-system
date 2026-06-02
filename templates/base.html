@@ -197,22 +197,6 @@
             border-left: 3px solid #28a745;
         }
         
-        .acknowledged-badge {
-            background-color: #28a745;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-        }
-        
-        .unacknowledged-badge {
-            background-color: #dc3545;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-        }
-        
         .table thead th {
             background-color: var(--secondary-color);
             color: var(--primary-dark);
@@ -229,22 +213,6 @@
         
         .table-hover tbody tr:hover {
             background-color: var(--secondary-color);
-        }
-        
-        .image-preview {
-            max-width: 200px;
-            max-height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin: 5px;
-            cursor: pointer;
-            border: 2px solid var(--primary-light);
-            transition: transform 0.2s;
-        }
-        
-        .image-preview:hover {
-            transform: scale(1.05);
-            border-color: var(--primary-color);
         }
         
         footer {
@@ -278,9 +246,6 @@
             .navbar-nav {
                 margin-top: 5px;
             }
-            .navbar-nav .nav-link {
-                padding: 0.3rem 0.8rem;
-            }
             .main-content {
                 padding: 15px;
             }
@@ -289,9 +254,6 @@
         @media (max-width: 768px) {
             .navbar-nav {
                 margin-top: 5px;
-            }
-            .navbar-nav .nav-link {
-                padding: 0.25rem 0.8rem;
             }
             .main-content {
                 padding: 12px;
@@ -339,28 +301,12 @@
             z-index: 9999;
         }
         
-        .user-selector {
-            background-color: rgba(255,255,255,0.15);
-            border-radius: 6px;
-            padding: 3px 8px;
-        }
-        .user-selector select {
-            background-color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 3px 8px;
-            font-size: 0.8rem;
-            margin-left: 6px;
-        }
-        
-        /* Make the user name display more compact */
         #currentUserName {
             font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
-    <!-- Top Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
@@ -414,7 +360,6 @@
                             <i class="bi bi-check2-square"></i> Leader
                         </a>
                     </li>
-                    <!-- User Selector -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> <span id="currentUserName">Select User</span>
@@ -436,14 +381,12 @@
         </div>
     </nav>
     
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="main-content">
             {% block content %}{% endblock %}
         </div>
     </div>
     
-    <!-- Footer -->
     <footer>
         <small>
             <i class="bi bi-building"></i> Ministry of Education, Brunei Darussalam | 
@@ -452,7 +395,6 @@
         </small>
     </footer>
     
-    <!-- Password Modal -->
     <div class="modal fade" id="passwordModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -482,7 +424,6 @@
         let allUsers = [];
         let pendingUser = null;
         
-        // Load users for selector
         async function loadUsers() {
             try {
                 const response = await fetch('/api/technicians');
@@ -582,7 +523,6 @@
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
         }
         
-        // Global functions for other pages
         window.getCurrentUser = () => ({
             id: localStorage.getItem('userId'),
             name: localStorage.getItem('userName'),
@@ -595,7 +535,6 @@
         window.canEditTechnicians = () => localStorage.getItem('canEditTechnicians') === 'true';
         window.showToast = showToast;
         
-        // Load user from storage on page load
         function loadStoredUser() {
             const userId = localStorage.getItem('userId');
             const userName = localStorage.getItem('userName');
