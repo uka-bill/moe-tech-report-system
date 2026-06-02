@@ -164,3 +164,473 @@
 
 <!-- Add Image Modal -->
 <div class="modal fade" id="addImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-image"></i> Upload Map Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Upload Google Maps Screenshot</label>
+                        <input type="file" class="form-control" id="mapImageUpload" accept="image/*" required>
+                        <small class="text-muted">Upload a screenshot from Google Maps</small>
+                    </div>
+                    <div id="imagePreview" class="text-center" style="display: none;">
+                        <img id="uploadPreview" class="img-fluid rounded" style="max-height: 300px;">
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="imageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Remarks</label>
+                        <textarea class="form-control" id="imageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadMapImage()">Upload Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Image Modal -->
+<div class="modal fade" id="editImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Image Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editImageForm">
+                    <input type="hidden" id="editImageId">
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Remarks</label>
+                        <textarea class="form-control" id="editImageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveImageEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Image Modal -->
+<div class="modal fade" id="viewImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Map Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="viewImageSrc" src="" class="img-fluid rounded" style="max-height: 70vh;">
+                <div id="viewImageDetails" class="mt-3 text-start"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="editImageFromView()">Edit Details</button>
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentImage()">Delete Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentImages = [];
+    let currentEntityId = null;
+    let currentEntityType = null;
+    let currentImageId = null;
+    let currentImageData = null;
+    let allMapImages = [];
+    
+    async function loadSchools() {
+        try {
+            const response = await fetch('/api/schools');
+            return await response.json();
+        } catch (error) {
+            return [];
+        }
+    }
+    
+    async function loadDepartments() {
+        try {
+            const response = await fetch('/api/departments');
+            return await response.json();
+        } catch (error) {
+            return [];
+        }
+    }
+    
+    document.getElementById('entityType').addEventListener('change', async function() {
+        const entitySelect = document.getElementById('entityId');
+        if (this.value === 'school') {
+            const schools = await loadSchools();
+            entitySelect.innerHTML = '<option value="">Select School</option>' + 
+                schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            entitySelect.disabled = false;
+        } else if (this.value === 'department') {
+            const departments = await loadDepartments();
+            entitySelect.innerHTML = '<option value="">Select Department</option>' + 
+                departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+            entitySelect.disabled = false;
+        } else {
+            entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
+            entitySelect.disabled = true;
+        }
+    });
+    
+    async function loadEntityData() {
+        currentEntityType = document.getElementById('entityType').value;
+        currentEntityId = document.getElementById('entityId').value;
+        
+        if (!currentEntityType || !currentEntityId) return;
+        
+        await loadImages();
+    }
+    
+    async function loadImages() {
+        if (!currentEntityType || !currentEntityId) return;
+        
+        try {
+            const response = await fetch(`/api/mapping/images?entity_type=${currentEntityType}&entity_id=${currentEntityId}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            currentImages = await response.json();
+            displayImages();
+            
+            allMapImages = currentImages.filter(img => img.image_url);
+            updateMapView();
+        } catch (error) {
+            console.error('Error loading images:', error);
+        }
+    }
+    
+    function displayImages() {
+        const container = document.getElementById('imagesList');
+        if (!currentImages || currentImages.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-images" style="font-size: 48px;"></i>
+                    <p>No map images uploaded yet. Click "Upload Map Image" to add Google Maps screenshots.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = currentImages.map(img => `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="image-card h-100">
+                    <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})">
+                    <div class="image-card-body">
+                        <p class="mb-2"><strong>Description:</strong> ${escapeHtml(img.description || 'No description')}</p>
+                        ${img.notes ? `<div class="image-notes"><i class="bi bi-pencil"></i> <strong>Notes:</strong><br>${escapeHtml(img.notes)}</div>` : ''}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted"><i class="bi bi-clock"></i> Uploaded: ${formatDateOnly(img.uploaded_at)}</small>
+                            <div class="image-actions">
+                                <button class="btn-edit-image" onclick="event.stopPropagation(); showEditImageModal(${img.id})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn-delete-image" onclick="event.stopPropagation(); deleteImage(${img.id})">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function updateMapView() {
+        const container = document.getElementById('mapContainer');
+        if (!allMapImages || allMapImages.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
+                    <p>No map images available. Please upload map images first.</p>
+                    <button class="btn btn-primary mt-2" onclick="showAddImageModal()">
+                        <i class="bi bi-upload"></i> Upload Map Image
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        let carouselHtml = `
+            <div id="mapCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+        `;
+        
+        allMapImages.forEach((img, idx) => {
+            carouselHtml += `<button type="button" data-bs-target="#mapCarousel" data-bs-slide-to="${idx}" class="${idx === 0 ? 'active' : ''}" aria-label="Slide ${idx + 1}"></button>`;
+        });
+        
+        carouselHtml += `
+                </div>
+                <div class="carousel-inner">
+        `;
+        
+        allMapImages.forEach((img, idx) => {
+            carouselHtml += `
+                <div class="carousel-item ${idx === 0 ? 'active' : ''}">
+                    <img src="${img.image_url}" class="d-block w-100 map-image" style="height: 500px; object-fit: contain;" onclick="window.open('${img.image_url}')">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5>${escapeHtml(img.description || 'Map Image')}</h5>
+                        ${img.notes ? `<p>${escapeHtml(img.notes)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        carouselHtml += `
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#mapCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#mapCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">${allMapImages.length} image(s) available. Click on image to view full size.</small>
+            </div>
+        `;
+        
+        container.innerHTML = carouselHtml;
+    }
+    
+    function showAddImageModal() {
+        if (!currentEntityType || !currentEntityId) {
+            showToast('Please select a school or department first', 'error');
+            return;
+        }
+        document.getElementById('imageForm').reset();
+        document.getElementById('imagePreview').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('addImageModal')).show();
+    }
+    
+    function showEditImageModal(imageId) {
+        const image = currentImages.find(img => img.id === imageId);
+        if (!image) return;
+        
+        currentImageId = imageId;
+        document.getElementById('editImageId').value = imageId;
+        document.getElementById('editImageDescription').value = image.description || '';
+        document.getElementById('editImageNotes').value = image.notes || '';
+        new bootstrap.Modal(document.getElementById('editImageModal')).show();
+    }
+    
+    async function saveImageEdit() {
+        const imageId = document.getElementById('editImageId').value;
+        const description = document.getElementById('editImageDescription').value;
+        const notes = document.getElementById('editImageNotes').value;
+        
+        try {
+            const response = await fetch(`/api/mapping/images/${imageId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: description, notes: notes })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Image details updated successfully');
+                bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
+                await loadImages();
+            } else {
+                showToast(result.error || 'Failed to update', 'error');
+            }
+        } catch (error) {
+            showToast('Error updating image', 'error');
+        }
+    }
+    
+    document.getElementById('mapImageUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('uploadPreview').src = event.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    async function uploadMapImage() {
+        const fileInput = document.getElementById('mapImageUpload');
+        const description = document.getElementById('imageDescription').value;
+        const notes = document.getElementById('imageNotes').value;
+        
+        if (!fileInput.files[0]) {
+            showToast('Please select an image', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        
+        try {
+            const uploadResponse = await fetch('/api/upload-image', { method: 'POST', body: formData });
+            const uploadData = await uploadResponse.json();
+            
+            if (uploadData.success) {
+                const imageData = {
+                    entity_type: currentEntityType,
+                    entity_id: parseInt(currentEntityId),
+                    image_url: uploadData.image_url,
+                    description: description,
+                    notes: notes,
+                    uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
+                };
+                
+                const saveResponse = await fetch('/api/mapping/images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(imageData)
+                });
+                const saveResult = await saveResponse.json();
+                if (saveResult.success) {
+                    showToast('Map image uploaded successfully');
+                    bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
+                    await loadImages();
+                } else {
+                    showToast('Failed to save image record', 'error');
+                }
+            } else {
+                showToast('Failed to upload image', 'error');
+            }
+        } catch (error) {
+            showToast('Error uploading image', 'error');
+        }
+    }
+    
+    function viewImage(url, id) {
+        const image = currentImages.find(img => img.id === id);
+        currentImageId = id;
+        currentImageData = image;
+        document.getElementById('viewImageSrc').src = url;
+        
+        const detailsHtml = `
+            <div class="card">
+                <div class="card-body">
+                    <p><strong>Description:</strong> ${escapeHtml(image.description || 'No description')}</p>
+                    ${image.notes ? `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>` : ''}
+                    <p class="text-muted"><small>Uploaded: ${formatDateOnly(image.uploaded_at)}</small></p>
+                </div>
+            </div>
+        `;
+        document.getElementById('viewImageDetails').innerHTML = detailsHtml;
+        new bootstrap.Modal(document.getElementById('viewImageModal')).show();
+    }
+    
+    function editImageFromView() {
+        bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
+        showEditImageModal(currentImageId);
+    }
+    
+    async function deleteCurrentImage() {
+        if (!currentImageId) return;
+        if (confirm('Delete this map image?')) {
+            try {
+                const response = await fetch(`/api/mapping/images/${currentImageId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Image deleted');
+                    bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
+                    await loadImages();
+                } else {
+                    showToast('Failed to delete', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting image', 'error');
+            }
+        }
+    }
+    
+    async function deleteImage(id) {
+        if (confirm('Delete this map image?')) {
+            try {
+                const response = await fetch(`/api/mapping/images/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Image deleted');
+                    await loadImages();
+                } else {
+                    showToast('Failed to delete', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting image', 'error');
+            }
+        }
+    }
+    
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        if (tab === 'map') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('mapTab').classList.add('active');
+            if (allMapImages.length > 0) updateMapView();
+        } else if (tab === 'images') {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('imagesTab').classList.add('active');
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
+    }
+    
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+    
+    window.showAddImageModal = showAddImageModal;
+    window.uploadMapImage = uploadMapImage;
+    window.viewImage = viewImage;
+    window.editImageFromView = editImageFromView;
+    window.deleteCurrentImage = deleteCurrentImage;
+    window.deleteImage = deleteImage;
+    window.switchTab = switchTab;
+    window.loadEntityData = loadEntityData;
+    window.showEditImageModal = showEditImageModal;
+    window.saveImageEdit = saveImageEdit;
+</script>
+{% endblock %}
