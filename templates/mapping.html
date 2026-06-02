@@ -24,6 +24,16 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+    .search-box {
+        margin-bottom: 15px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+    }
     .tab-buttons {
         display: flex;
         gap: 10px;
@@ -108,6 +118,26 @@
     .carousel-caption h5, .carousel-caption p {
         color: white;
     }
+    .entity-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .entity-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        transition: background 0.2s;
+    }
+    .entity-item:hover {
+        background-color: var(--secondary-color);
+    }
+    .entity-item.selected {
+        background-color: var(--primary-light);
+        font-weight: bold;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -121,17 +151,25 @@
     <div class="row">
         <div class="col-md-6">
             <label class="form-label fw-bold">Entity Type</label>
-            <select class="form-select" id="entityType" onchange="loadEntityData()">
+            <select class="form-select" id="entityType" onchange="loadEntityList()">
                 <option value="">Select Entity Type</option>
                 <option value="school">🏫 School</option>
                 <option value="department">🏢 Department</option>
             </select>
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-bold">Entity Name</label>
-            <select class="form-select" id="entityId" disabled onchange="loadEntityData()">
-                <option value="">Select Entity Type First</option>
-            </select>
+            <label class="form-label fw-bold">Search Entity</label>
+            <div class="search-box">
+                <input type="text" id="entitySearch" class="form-control" placeholder="Search by name..." onkeyup="filterEntityList()">
+            </div>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <label class="form-label fw-bold">Select Entity</label>
+            <div id="entityList" class="entity-list">
+                <div class="text-center py-3 text-muted">Select entity type first</div>
+            </div>
         </div>
     </div>
 </div>
@@ -172,6 +210,10 @@
             </div>
             <div class="modal-body">
                 <form id="imageForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Entity Selected:</label>
+                        <p class="form-control-static" id="selectedEntityDisplay">None</p>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Upload Google Maps Screenshot</label>
                         <input type="file" class="form-control" id="mapImageUpload" accept="image/*" required>
@@ -255,48 +297,59 @@
     let currentImageId = null;
     let currentImageData = null;
     let allMapImages = [];
+    let entitiesList = [];
     
-    async function loadSchools() {
-        try {
-            const response = await fetch('/api/schools');
-            return await response.json();
-        } catch (error) {
-            return [];
-        }
-    }
-    
-    async function loadDepartments() {
-        try {
-            const response = await fetch('/api/departments');
-            return await response.json();
-        } catch (error) {
-            return [];
-        }
-    }
-    
-    document.getElementById('entityType').addEventListener('change', async function() {
-        const entitySelect = document.getElementById('entityId');
-        if (this.value === 'school') {
-            const schools = await loadSchools();
-            entitySelect.innerHTML = '<option value="">Select School</option>' + 
-                schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-            entitySelect.disabled = false;
-        } else if (this.value === 'department') {
-            const departments = await loadDepartments();
-            entitySelect.innerHTML = '<option value="">Select Department</option>' + 
-                departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
-            entitySelect.disabled = false;
-        } else {
-            entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
-            entitySelect.disabled = true;
-        }
-    });
-    
-    async function loadEntityData() {
+    async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
-        currentEntityId = document.getElementById('entityId').value;
+        if (!currentEntityType) {
+            document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-muted">Select entity type first</div>';
+            return;
+        }
         
-        if (!currentEntityType || !currentEntityId) return;
+        try {
+            const response = await fetch(`/api/${currentEntityType}s`);
+            entitiesList = await response.json();
+            displayEntityList(entitiesList);
+        } catch (error) {
+            console.error('Error loading entities:', error);
+        }
+    }
+    
+    function displayEntityList(entities) {
+        const container = document.getElementById('entityList');
+        if (!entities || entities.length === 0) {
+            container.innerHTML = '<div class="text-center py-3 text-muted">No entities found</div>';
+            return;
+        }
+        
+        container.innerHTML = entities.map(entity => `
+            <div class="entity-item" data-id="${entity.id}" data-name="${escapeHtml(entity.name)}" onclick="selectEntity(${entity.id}, '${escapeHtml(entity.name)}')">
+                <strong>${escapeHtml(entity.name)}</strong>
+                ${entity.address ? `<br><small class="text-muted">${escapeHtml(entity.address)}</small>` : ''}
+            </div>
+        `).join('');
+    }
+    
+    function filterEntityList() {
+        const searchTerm = document.getElementById('entitySearch').value.toLowerCase();
+        const filtered = entitiesList.filter(entity => 
+            entity.name.toLowerCase().includes(searchTerm) ||
+            (entity.address && entity.address.toLowerCase().includes(searchTerm))
+        );
+        displayEntityList(filtered);
+    }
+    
+    async function selectEntity(id, name) {
+        currentEntityId = id;
+        document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
+        
+        // Highlight selected entity
+        document.querySelectorAll('.entity-item').forEach(item => {
+            item.classList.remove('selected');
+            if (item.dataset.id == id) {
+                item.classList.add('selected');
+            }
+        });
         
         await loadImages();
     }
@@ -415,7 +468,7 @@
     
     function showAddImageModal() {
         if (!currentEntityType || !currentEntityId) {
-            showToast('Please select a school or department first', 'error');
+            window.showToast('Please select a school or department first', 'error');
             return;
         }
         document.getElementById('imageForm').reset();
@@ -447,14 +500,14 @@
             });
             const result = await response.json();
             if (result.success) {
-                showToast('Image details updated successfully');
+                window.showToast('Image details updated successfully');
                 bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
                 await loadImages();
             } else {
-                showToast(result.error || 'Failed to update', 'error');
+                window.showToast(result.error || 'Failed to update', 'error');
             }
         } catch (error) {
-            showToast('Error updating image', 'error');
+            window.showToast('Error updating image', 'error');
         }
     }
     
@@ -476,7 +529,7 @@
         const notes = document.getElementById('imageNotes').value;
         
         if (!fileInput.files[0]) {
-            showToast('Please select an image', 'error');
+            window.showToast('Please select an image', 'error');
             return;
         }
         
@@ -504,17 +557,18 @@
                 });
                 const saveResult = await saveResponse.json();
                 if (saveResult.success) {
-                    showToast('Map image uploaded successfully');
+                    window.showToast('Map image uploaded successfully');
                     bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
                     await loadImages();
                 } else {
-                    showToast('Failed to save image record', 'error');
+                    window.showToast('Failed to save image record', 'error');
                 }
             } else {
-                showToast('Failed to upload image', 'error');
+                window.showToast('Failed to upload image', 'error');
             }
         } catch (error) {
-            showToast('Error uploading image', 'error');
+            console.error('Error uploading image:', error);
+            window.showToast('Error uploading image', 'error');
         }
     }
     
@@ -549,14 +603,14 @@
                 const response = await fetch(`/api/mapping/images/${currentImageId}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Image deleted');
+                    window.showToast('Image deleted');
                     bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
                     await loadImages();
                 } else {
-                    showToast('Failed to delete', 'error');
+                    window.showToast('Failed to delete', 'error');
                 }
             } catch (error) {
-                showToast('Error deleting image', 'error');
+                window.showToast('Error deleting image', 'error');
             }
         }
     }
@@ -567,13 +621,13 @@
                 const response = await fetch(`/api/mapping/images/${id}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    showToast('Image deleted');
+                    window.showToast('Image deleted');
                     await loadImages();
                 } else {
-                    showToast('Failed to delete', 'error');
+                    window.showToast('Failed to delete', 'error');
                 }
             } catch (error) {
-                showToast('Error deleting image', 'error');
+                window.showToast('Error deleting image', 'error');
             }
         }
     }
@@ -606,20 +660,11 @@
         return date.toLocaleDateString('en-GB');
     }
     
-    function showToast(message, type = 'success') {
-        let container = document.getElementById('toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toast-container';
-            document.body.appendChild(container);
-        }
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
-        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
-        container.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-        bsToast.show();
-        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
     
     window.showAddImageModal = showAddImageModal;
@@ -629,8 +674,10 @@
     window.deleteCurrentImage = deleteCurrentImage;
     window.deleteImage = deleteImage;
     window.switchTab = switchTab;
-    window.loadEntityData = loadEntityData;
     window.showEditImageModal = showEditImageModal;
     window.saveImageEdit = saveImageEdit;
+    window.selectEntity = selectEntity;
+    window.filterEntityList = filterEntityList;
+    window.loadEntityList = loadEntityList;
 </script>
 {% endblock %}
