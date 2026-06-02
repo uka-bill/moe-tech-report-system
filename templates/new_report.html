@@ -103,14 +103,18 @@
     .priority-option.selected {
         box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
     }
+    .readonly-field {
+        background-color: #e9ecef;
+        opacity: 0.8;
+    }
 </style>
 
 <div class="card">
-    <div class="card-header">
+    <div class="card-header" id="formTitle">
         <i class="bi bi-plus-circle"></i> Submit New Technical Report
     </div>
     <div class="card-body">
-        <div class="info-box">
+        <div class="info-box" id="instructionBox">
             <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields. Your report will be sent to the Team Leader for review.
         </div>
 
@@ -223,7 +227,7 @@
                 </div>
             </div>
             
-            <!-- 3. REFERENCE INFORMATION SECTION (removed "Optional" wording) -->
+            <!-- 3. REFERENCE INFORMATION SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-file-text"></i> Reference Information
@@ -372,7 +376,7 @@
             <!-- Submit Buttons -->
             <div class="row">
                 <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary btn-lg">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                         <i class="bi bi-send"></i> Submit Report for Review
                     </button>
                     <button type="reset" class="btn btn-secondary" onclick="resetForm()">
@@ -389,6 +393,19 @@
     let uploadedImages = [];
     let currentTechnicianId = null;
     let currentTechnicianName = '';
+    let isEditMode = false;
+    let editReportId = null;
+    
+    // Check if we're in edit mode
+    const urlParams = new URLSearchParams(window.location.search);
+    editReportId = urlParams.get('id');
+    isEditMode = editReportId !== null;
+    
+    if (isEditMode) {
+        document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
+        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. Your changes will be saved.';
+        document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
+    }
     
     function selectPriority(priority) {
         document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
@@ -501,9 +518,9 @@
                     previewDiv.setAttribute('data-image-url', data.image_url);
                     previewDiv.innerHTML = `<img src="${data.image_url}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
-                    showToast('Image uploaded successfully');
+                    window.showToast('Image uploaded successfully');
                 }
-            } catch (error) { showToast('Error uploading image', 'error'); }
+            } catch (error) { window.showToast('Error uploading image', 'error'); }
         }
         document.getElementById('imageUpload').value = '';
     });
@@ -531,7 +548,94 @@
             document.getElementById('priority').disabled = false;
             updateAccountFields('water');
             setReportDateTime();
-            showToast('Form cleared');
+            window.showToast('Form cleared');
+        }
+    }
+    
+    async function loadReportForEdit(id) {
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            const report = reports.find(r => r.id == id);
+            
+            if (!report) {
+                window.showToast('Report not found', 'error');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
+                return;
+            }
+            
+            // Check if report is acknowledged - prevent editing
+            if (report.team_leader_acknowledged) {
+                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
+                return;
+            }
+            
+            // Populate form with report data
+            document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
+            updateAccountFields(report.report_type);
+            
+            // Set entity type and load entities
+            document.getElementById('entityType').value = report.entity_type;
+            const changeEvent = new Event('change');
+            document.getElementById('entityType').dispatchEvent(changeEvent);
+            
+            setTimeout(() => {
+                document.getElementById('entityId').value = report.entity_id;
+            }, 500);
+            
+            document.getElementById('problemType').value = report.problem_type;
+            document.getElementById('complaintDetails').value = report.complaint_details || '';
+            document.getElementById('actionTaken').value = report.action_taken || '';
+            document.getElementById('technicianNotes').value = report.technician_notes || '';
+            document.getElementById('referenceType').value = report.reference_type || '';
+            document.getElementById('referenceNumber').value = report.reference_number || '';
+            document.getElementById('referenceDate').value = report.reference_date || '';
+            
+            // Set priority
+            if (report.priority === 'high') {
+                document.getElementById('priorityHigh').checked = true;
+                selectPriority('high');
+            } else if (report.priority === 'medium') {
+                document.getElementById('priorityMedium').checked = true;
+                selectPriority('medium');
+            } else {
+                document.getElementById('priorityLow').checked = true;
+                selectPriority('low');
+            }
+            
+            document.getElementById('priorityWithTender').checked = report.priority_with_tender || false;
+            if (report.priority_with_tender) {
+                document.getElementById('priorityInfo').style.display = 'block';
+            }
+            
+            // Set account details based on report type
+            if (report.report_type === 'water') {
+                document.getElementById('accountNumber').value = report.account_number || '';
+                document.getElementById('meterNumber').value = report.meter_number || '';
+            } else if (report.report_type === 'electricity') {
+                document.getElementById('electricityAccountNumber').value = report.account_number || '';
+                document.getElementById('electricityMeterNumber').value = report.meter_number || '';
+            } else if (report.report_type === 'telephone') {
+                document.getElementById('phoneNumber').value = report.phone_number || '';
+                document.getElementById('numberOfLines').value = report.number_of_lines || '';
+            }
+            
+            // Load existing images
+            uploadedImages = report.images || [];
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.innerHTML = '';
+            uploadedImages.forEach(imgUrl => {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview-container';
+                previewDiv.setAttribute('data-image-url', imgUrl);
+                previewDiv.innerHTML = `<img src="${imgUrl}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${imgUrl}')">×</button>`;
+                previewContainer.appendChild(previewDiv);
+            });
+            
+        } catch (error) {
+            console.error('Error loading report for edit:', error);
+            window.showToast('Error loading report', 'error');
         }
     }
     
@@ -549,9 +653,9 @@
         if (document.getElementById('priorityMedium').checked) priority = 'medium';
         if (document.getElementById('priorityHigh').checked) priority = 'high';
         
-        if (!entityType || !entityId) { showToast('Please select entity type and name', 'error'); return; }
-        if (!problemType) { showToast('Please select a problem type', 'error'); return; }
-        if (!complaintDetails) { showToast('Please provide complaint details', 'error'); return; }
+        if (!entityType || !entityId) { window.showToast('Please select entity type and name', 'error'); return; }
+        if (!problemType) { window.showToast('Please select a problem type', 'error'); return; }
+        if (!complaintDetails) { window.showToast('Please provide complaint details', 'error'); return; }
         
         const reportData = {
             report_type: reportType,
@@ -571,25 +675,35 @@
             images: uploadedImages,
             reference_type: document.getElementById('referenceType').value,
             reference_number: document.getElementById('referenceNumber').value,
-            reference_date: document.getElementById('referenceDate').value,
-            status: 'pending'
+            reference_date: document.getElementById('referenceDate').value
         };
         
         try {
-            const response = await fetch('/api/technical-reports', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reportData)
-            });
+            let response;
+            if (isEditMode) {
+                response = await fetch(`/api/technical-reports/${editReportId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reportData)
+                });
+            } else {
+                reportData.status = 'pending';
+                response = await fetch('/api/technical-reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reportData)
+                });
+            }
+            
             const data = await response.json();
             if (data.success) {
-                showToast('Report submitted successfully!');
+                window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                showToast(data.error || 'Failed to submit', 'error');
+                window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
             }
         } catch (error) {
-            showToast('Error submitting report', 'error');
+            window.showToast(isEditMode ? 'Error updating report' : 'Error submitting report', 'error');
         }
     });
     
@@ -607,6 +721,10 @@
         setReportDateTime();
         await getCurrentTechnician();
         updateAccountFields('water');
+        
+        if (isEditMode) {
+            await loadReportForEdit(editReportId);
+        }
     }
     init();
 </script>
