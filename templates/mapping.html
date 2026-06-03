@@ -84,6 +84,14 @@
         font-size: 13px;
         border-left: 3px solid var(--primary-color);
     }
+    .account-details {
+        background-color: #e8f5e9;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        font-size: 13px;
+        border-left: 3px solid #4caf50;
+    }
     .btn-edit-image {
         background-color: #ffc107;
         color: #333;
@@ -137,6 +145,27 @@
     .entity-item.selected {
         background-color: var(--primary-light);
         font-weight: bold;
+    }
+    .form-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+    .form-section-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: var(--primary-dark);
+        border-left: 3px solid var(--primary-color);
+        padding-left: 10px;
+    }
+    .account-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .account-row input {
+        flex: 1;
     }
 </style>
 
@@ -226,6 +255,40 @@
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="imageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
+                    
+                    <!-- Account Details Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">💧 Water Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="waterAccountNumber" placeholder="Water Account Number">
+                            <input type="text" class="form-control" id="waterMeterNumber" placeholder="Water Meter Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">⚡ Electricity Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="electricityAccountNumber" placeholder="Electricity Account Number">
+                            <input type="text" class="form-control" id="electricityMeterNumber" placeholder="Electricity Meter Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">📞 Telephone Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="telephoneAccountNumber" placeholder="Telephone Account Number">
+                            <input type="text" class="form-control" id="telephoneNumber" placeholder="Telephone Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">🍽️ Canteen Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="canteenAccountNumber" placeholder="Canteen Account Number">
+                            <input type="text" class="form-control" id="canteenMeterNumber" placeholder="Canteen Meter Number">
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Notes / Remarks</label>
                         <textarea class="form-control" id="imageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
@@ -255,6 +318,40 @@
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
+                    
+                    <!-- Account Details Section for Edit -->
+                    <div class="form-section">
+                        <div class="form-section-title">💧 Water Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="editWaterAccountNumber" placeholder="Water Account Number">
+                            <input type="text" class="form-control" id="editWaterMeterNumber" placeholder="Water Meter Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">⚡ Electricity Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="editElectricityAccountNumber" placeholder="Electricity Account Number">
+                            <input type="text" class="form-control" id="editElectricityMeterNumber" placeholder="Electricity Meter Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">📞 Telephone Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="editTelephoneAccountNumber" placeholder="Telephone Account Number">
+                            <input type="text" class="form-control" id="editTelephoneNumber" placeholder="Telephone Number">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">🍽️ Canteen Account Details</div>
+                        <div class="account-row">
+                            <input type="text" class="form-control" id="editCanteenAccountNumber" placeholder="Canteen Account Number">
+                            <input type="text" class="form-control" id="editCanteenMeterNumber" placeholder="Canteen Meter Number">
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Notes / Remarks</label>
                         <textarea class="form-control" id="editImageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
@@ -352,7 +449,6 @@
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
         
-        // Highlight selected entity
         document.querySelectorAll('.entity-item').forEach(item => {
             item.classList.remove('selected');
             if (item.dataset.id == id) {
@@ -381,7 +477,6 @@
             currentImages = await response.json();
             console.log('Images loaded:', currentImages.length);
             
-            // Fix image URLs
             currentImages = currentImages.map(img => ({
                 ...img,
                 image_url: getFullImageUrl(img.image_url)
@@ -416,28 +511,54 @@
             return;
         }
         
-        container.innerHTML = currentImages.map(img => `
-            <div class="col-md-6 col-lg-4 mb-4">
-                <div class="image-card h-100">
-                    <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})" onerror="this.src='https://placehold.co/400x300?text=Image+Not+Found'">
-                    <div class="image-card-body">
-                        <p class="mb-2"><strong>Description:</strong> ${escapeHtml(img.description || 'No description')}</p>
-                        ${img.notes ? `<div class="image-notes"><i class="bi bi-pencil"></i> <strong>Notes:</strong><br>${escapeHtml(img.notes)}</div>` : ''}
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted"><i class="bi bi-clock"></i> Uploaded: ${formatDateOnly(img.uploaded_at)}</small>
-                            <div class="image-actions">
-                                <button class="btn-edit-image" onclick="event.stopPropagation(); showEditImageModal(${img.id})">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button class="btn-delete-image" onclick="event.stopPropagation(); deleteImage(${img.id})">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
+        container.innerHTML = currentImages.map(img => {
+            let accountDetailsHtml = '';
+            
+            if (img.water_account_number || img.water_meter_number ||
+                img.electricity_account_number || img.electricity_meter_number ||
+                img.telephone_account_number || img.telephone_number ||
+                img.canteen_account_number || img.canteen_meter_number) {
+                accountDetailsHtml = '<div class="account-details"><strong>📍 Account Details:</strong><br>';
+                
+                if (img.water_account_number || img.water_meter_number) {
+                    accountDetailsHtml += `💧 Water: ${img.water_account_number || ''} ${img.water_meter_number ? '/ ' + img.water_meter_number : ''}<br>`;
+                }
+                if (img.electricity_account_number || img.electricity_meter_number) {
+                    accountDetailsHtml += `⚡ Electricity: ${img.electricity_account_number || ''} ${img.electricity_meter_number ? '/ ' + img.electricity_meter_number : ''}<br>`;
+                }
+                if (img.telephone_account_number || img.telephone_number) {
+                    accountDetailsHtml += `📞 Telephone: ${img.telephone_account_number || ''} ${img.telephone_number ? '/ ' + img.telephone_number : ''}<br>`;
+                }
+                if (img.canteen_account_number || img.canteen_meter_number) {
+                    accountDetailsHtml += `🍽️ Canteen: ${img.canteen_account_number || ''} ${img.canteen_meter_number ? '/ ' + img.canteen_meter_number : ''}<br>`;
+                }
+                accountDetailsHtml += '</div>';
+            }
+            
+            return `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="image-card h-100">
+                        <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})" onerror="this.src='https://placehold.co/400x300?text=Image+Not+Found'">
+                        <div class="image-card-body">
+                            <p class="mb-2"><strong>Description:</strong> ${escapeHtml(img.description || 'No description')}</p>
+                            ${accountDetailsHtml}
+                            ${img.notes ? `<div class="image-notes"><i class="bi bi-pencil"></i> <strong>Notes:</strong><br>${escapeHtml(img.notes)}</div>` : ''}
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted"><i class="bi bi-clock"></i> Uploaded: ${formatDateOnly(img.uploaded_at)}</small>
+                                <div class="image-actions">
+                                    <button class="btn-edit-image" onclick="event.stopPropagation(); showEditImageModal(${img.id})">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="btn-delete-image" onclick="event.stopPropagation(); deleteImage(${img.id})">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
     
     function updateMapView() {
@@ -517,20 +638,40 @@
         currentImageId = imageId;
         document.getElementById('editImageId').value = imageId;
         document.getElementById('editImageDescription').value = image.description || '';
+        document.getElementById('editWaterAccountNumber').value = image.water_account_number || '';
+        document.getElementById('editWaterMeterNumber').value = image.water_meter_number || '';
+        document.getElementById('editElectricityAccountNumber').value = image.electricity_account_number || '';
+        document.getElementById('editElectricityMeterNumber').value = image.electricity_meter_number || '';
+        document.getElementById('editTelephoneAccountNumber').value = image.telephone_account_number || '';
+        document.getElementById('editTelephoneNumber').value = image.telephone_number || '';
+        document.getElementById('editCanteenAccountNumber').value = image.canteen_account_number || '';
+        document.getElementById('editCanteenMeterNumber').value = image.canteen_meter_number || '';
         document.getElementById('editImageNotes').value = image.notes || '';
+        
         new bootstrap.Modal(document.getElementById('editImageModal')).show();
     }
     
     async function saveImageEdit() {
         const imageId = document.getElementById('editImageId').value;
-        const description = document.getElementById('editImageDescription').value;
-        const notes = document.getElementById('editImageNotes').value;
+        
+        const updateData = {
+            description: document.getElementById('editImageDescription').value,
+            water_account_number: document.getElementById('editWaterAccountNumber').value,
+            water_meter_number: document.getElementById('editWaterMeterNumber').value,
+            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
+            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
+            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
+            telephone_number: document.getElementById('editTelephoneNumber').value,
+            canteen_account_number: document.getElementById('editCanteenAccountNumber').value,
+            canteen_meter_number: document.getElementById('editCanteenMeterNumber').value,
+            notes: document.getElementById('editImageNotes').value
+        };
         
         try {
             const response = await fetch(`/api/mapping/images/${imageId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description: description, notes: notes })
+                body: JSON.stringify(updateData)
             });
             const result = await response.json();
             if (result.success) {
@@ -563,6 +704,15 @@
         const description = document.getElementById('imageDescription').value;
         const notes = document.getElementById('imageNotes').value;
         
+        const waterAccountNumber = document.getElementById('waterAccountNumber').value;
+        const waterMeterNumber = document.getElementById('waterMeterNumber').value;
+        const electricityAccountNumber = document.getElementById('electricityAccountNumber').value;
+        const electricityMeterNumber = document.getElementById('electricityMeterNumber').value;
+        const telephoneAccountNumber = document.getElementById('telephoneAccountNumber').value;
+        const telephoneNumber = document.getElementById('telephoneNumber').value;
+        const canteenAccountNumber = document.getElementById('canteenAccountNumber').value;
+        const canteenMeterNumber = document.getElementById('canteenMeterNumber').value;
+        
         if (!fileInput.files[0]) {
             window.showToast('Please select an image', 'error');
             return;
@@ -594,6 +744,14 @@
                 image_url: uploadData.image_url,
                 description: description,
                 notes: notes,
+                water_account_number: waterAccountNumber,
+                water_meter_number: waterMeterNumber,
+                electricity_account_number: electricityAccountNumber,
+                electricity_meter_number: electricityMeterNumber,
+                telephone_account_number: telephoneAccountNumber,
+                telephone_number: telephoneNumber,
+                canteen_account_number: canteenAccountNumber,
+                canteen_meter_number: canteenMeterNumber,
                 uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
             };
             
@@ -625,10 +783,33 @@
         currentImageData = image;
         document.getElementById('viewImageSrc').src = url;
         
+        let accountDetailsHtml = '';
+        if (image.water_account_number || image.water_meter_number ||
+            image.electricity_account_number || image.electricity_meter_number ||
+            image.telephone_account_number || image.telephone_number ||
+            image.canteen_account_number || image.canteen_meter_number) {
+            accountDetailsHtml = '<div class="card mt-2"><div class="card-body"><h6>📍 Account Details:</h6>';
+            
+            if (image.water_account_number || image.water_meter_number) {
+                accountDetailsHtml += `<p><strong>💧 Water:</strong> ${image.water_account_number || ''} ${image.water_meter_number ? '/ ' + image.water_meter_number : ''}</p>`;
+            }
+            if (image.electricity_account_number || image.electricity_meter_number) {
+                accountDetailsHtml += `<p><strong>⚡ Electricity:</strong> ${image.electricity_account_number || ''} ${image.electricity_meter_number ? '/ ' + image.electricity_meter_number : ''}</p>`;
+            }
+            if (image.telephone_account_number || image.telephone_number) {
+                accountDetailsHtml += `<p><strong>📞 Telephone:</strong> ${image.telephone_account_number || ''} ${image.telephone_number ? '/ ' + image.telephone_number : ''}</p>`;
+            }
+            if (image.canteen_account_number || image.canteen_meter_number) {
+                accountDetailsHtml += `<p><strong>🍽️ Canteen:</strong> ${image.canteen_account_number || ''} ${image.canteen_meter_number ? '/ ' + image.canteen_meter_number : ''}</p>`;
+            }
+            accountDetailsHtml += '</div></div>';
+        }
+        
         const detailsHtml = `
             <div class="card">
                 <div class="card-body">
                     <p><strong>Description:</strong> ${escapeHtml(image.description || 'No description')}</p>
+                    ${accountDetailsHtml}
                     ${image.notes ? `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>` : ''}
                     <p class="text-muted"><small>Uploaded: ${formatDateOnly(image.uploaded_at)}</small></p>
                 </div>
@@ -709,9 +890,7 @@
         return date.toLocaleDateString('en-GB');
     }
     
-    // Make sure DOM is loaded before initializing
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize any default values
         console.log('Mapping page loaded');
     });
     
