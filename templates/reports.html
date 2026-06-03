@@ -480,15 +480,19 @@
         // Generate print HTML
         const printHtml = generatePrintHTML(report);
         
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
+        // Use a blob URL to avoid browser headers
+        const blob = new Blob([printHtml], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
         
-        // Wait for content to load then trigger print
+        const printWindow = window.open(blobUrl, '_blank');
+        
+        // Clean up the blob URL after printing
         printWindow.onload = function() {
             setTimeout(function() {
                 printWindow.print();
+                setTimeout(function() {
+                    URL.revokeObjectURL(blobUrl);
+                }, 1000);
             }, 500);
         };
     }
@@ -530,14 +534,13 @@
             <title>${reportTypeName} Technical Report #${report.id}</title>
             <meta charset="UTF-8">
             <style>
-                /* Reset all margins and padding */
                 * {
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
                 }
                 
-                /* Hide browser headers and footers */
+                /* Hide browser headers and footers completely */
                 @page {
                     size: A4;
                     margin: 2.54cm 3.17cm;
@@ -556,10 +559,6 @@
                     /* Prevent page breaks inside key elements */
                     table, tr, td, th, .signatures, img, .print-container {
                         page-break-inside: avoid;
-                    }
-                    /* Allow natural page breaks after sections */
-                    .section-break {
-                        page-break-after: avoid;
                     }
                 }
                 
@@ -584,14 +583,14 @@
                     background: white;
                 }
                 
-                /* Header styles with requested department info */
+                /* Header styles */
                 .header {
                     text-align: center;
                     margin-bottom: 30px;
                     padding-bottom: 15px;
                 }
                 .header h2 {
-                    font-size: 14pt;
+                    font-size: 13pt;
                     font-weight: normal;
                     margin: 0;
                     padding: 0;
@@ -623,7 +622,7 @@
                     border: 1px solid #ddd;
                 }
                 
-                /* Table styles - professional look */
+                /* Table styles */
                 table {
                     width: 100%;
                     border-collapse: collapse;
@@ -700,8 +699,7 @@
             <div class="print-container">
                 <div class="header">
                     <h2>Unit Kemudahan Asas</h2>
-                    <h2>Bahagian Kemudahan-Kemudahan</h2>
-                    <h2>Jabatan Pentadbiran Dan Perkhidmatan-Perkhidmatan</h2>
+                    <h2>Department of Administration and Services</h2>
                     <h1>Ministry of Education</h1>
                     <div class="divider"></div>
                     <div class="sub-divider"></div>
