@@ -151,6 +151,7 @@
         padding: 15px;
         background: #f9f9f9;
         border-radius: 8px;
+        border: 1px solid #eee;
     }
     .form-section-title {
         font-weight: bold;
@@ -166,6 +167,13 @@
     }
     .account-row input {
         flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+    .account-row input:focus {
+        border-color: var(--primary-color);
+        outline: none;
     }
 </style>
 
@@ -319,7 +327,6 @@
                         <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
                     
-                    <!-- Account Details Section for Edit -->
                     <div class="form-section">
                         <div class="form-section-title">💧 Water Account Details</div>
                         <div class="account-row">
