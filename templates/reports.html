@@ -566,11 +566,16 @@
                     line-height: 1.5;
                     color: #000;
                 }
+                /* This controls the page margins for ALL pages consistently */
+                @page {
+                    size: A4;
+                    margin: 2.5cm 2.5cm;
+                }
                 .report-container {
                     max-width: 100%;
                     margin: 0 auto;
                     background: white;
-                    padding: 40px 50px;
+                    padding: 0;
                 }
                 .header {
                     text-align: center;
@@ -666,13 +671,15 @@
                     border-top: 1px solid #ddd;
                     padding-top: 15px;
                 }
+                /* Ensure consistent margins when printing */
                 @media print {
                     body {
                         padding: 0;
                         margin: 0;
                     }
                     .report-container {
-                        padding: 40px 50px;
+                        padding: 0;
+                        margin: 0;
                     }
                 }
             </style>
@@ -696,7 +703,7 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}NonNullable
                     <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
                     ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
                     ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
@@ -784,7 +791,7 @@
             document.body.appendChild(tempDiv);
             
             const opt = {
-                margin: [0.7, 0.7, 0.7, 0.7],
+                margin: [0.5, 0.5, 0.5, 0.5],
                 filename: `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, letterRendering: true, useCORS: true },
