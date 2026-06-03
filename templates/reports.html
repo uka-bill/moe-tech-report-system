@@ -113,9 +113,8 @@
         margin-left: 10px;
     }
     
-    /* Print styles - Only show the modal content when printing */
+    /* Print styles - Show only the print container */
     @media print {
-        /* Hide everything except the print container */
         body * {
             visibility: hidden;
         }
@@ -124,23 +123,30 @@
         }
         .print-container {
             display: block !important;
-            position: fixed !important;
+            position: absolute !important;
             top: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            bottom: 0 !important;
             background: white !important;
-            z-index: 99999 !important;
-            overflow: auto !important;
             padding: 20px !important;
+            margin: 0 !important;
+            z-index: 99999 !important;
+            height: auto !important;
+            overflow: visible !important;
         }
         @page {
             size: A4;
             margin: 2.54cm 3.17cm;
         }
+        /* Ensure multi-page content flows properly */
+        .print-container {
+            page-break-after: auto;
+        }
+        table, tr, td, th {
+            page-break-inside: avoid;
+        }
     }
     
-    /* Hidden print container */
     .print-container {
         display: none;
     }
@@ -513,7 +519,7 @@
         }
     }
     
-    function generatePrintContent(report) {
+    function getReportHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -611,12 +617,12 @@
         // Track print
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        // Generate print content and insert into hidden div
-        const printContent = generatePrintContent(report);
+        // Generate print content
+        const printContent = getReportHTML(report);
         const printContainer = document.getElementById('printContainer');
         printContainer.innerHTML = printContent;
         
-        // Trigger browser print dialog
+        // Trigger browser print
         window.print();
     }
     
@@ -631,32 +637,40 @@
         // Track print
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        // Generate print content
-        const printContent = generatePrintContent(report);
-        const printContainer = document.getElementById('printContainer');
-        printContainer.innerHTML = printContent;
+        // Generate HTML content for PDF
+        const reportHTML = getReportHTML(report);
         
-        // Add PDF-specific settings before printing
-        const style = document.createElement('style');
-        style.textContent = `
-            @media print {
-                @page {
-                    size: A4;
-                    margin: 2.54cm 3.17cm;
-                }
-            }
-        `;
-        printContainer.appendChild(style);
+        // Create a temporary div with the content
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = reportHTML;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '0';
+        tempDiv.style.width = '210mm';
+        tempDiv.style.padding = '20px';
+        tempDiv.style.background = 'white';
+        document.body.appendChild(tempDiv);
         
-        // Trigger print - user can choose "Save as PDF" in destination
-        window.print();
+        // Use html2pdf to convert to PDF directly
+        const element = tempDiv;
+        const opt = {
+            margin: [0.8, 0.8, 0.8, 0.8],
+            filename: `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
         
-        // Remove the style after print dialog closes
-        setTimeout(() => {
-            if (printContainer.contains(style)) {
-                printContainer.removeChild(style);
-            }
-        }, 1000);
+        // Use html2pdf to save directly
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Remove temporary div after save
+            document.body.removeChild(tempDiv);
+            window.showToast('PDF saved successfully');
+        }).catch(err => {
+            document.body.removeChild(tempDiv);
+            window.showToast('Error saving PDF', 'error');
+            console.error('PDF Error:', err);
+        });
     }
     
     // Clean up print container after printing
