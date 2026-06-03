@@ -268,19 +268,14 @@
             
             console.log('Reports received:', reports.length);
             
-            // Apply type filter
             if (type !== 'all') {
                 reports = reports.filter(r => r.report_type === type);
                 console.log(`Filtered by type ${type}:`, reports.length);
             }
-            
-            // Apply technician filter
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
                 console.log(`Filtered by technician ${technicianId}:`, reports.length);
             }
-            
-            // Apply status filter
             if (status !== 'all') {
                 if (status === 'pending') {
                     reports = reports.filter(r => !r.team_leader_acknowledged);
@@ -501,34 +496,179 @@
         return `<!DOCTYPE html>
         <html>
         <head>
-            <title>Technical Report #${report.id} - Discussion Copy</title>
+            <title>${reportTypeName} Technical Report #${report.id} - Discussion Copy</title>
+            <meta charset="UTF-8">
             <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: white; }
-                .print-container { max-width: 1000px; margin: 0 auto; background: white; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { color: #9b59b6; margin-bottom: 5px; font-size: 24px; }
-                .header h3 { color: #666; font-weight: normal; font-size: 16px; }
-                .discussion-badge { background-color: #ffc107; color: #333; padding: 5px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 12px; }
-                .divider { border-top: 2px solid #9b59b6; margin: 10px 0; }
-                .report-id { background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
-                th { background-color: #f5f5f5; width: 30%; font-weight: bold; }
-                .footer { text-align: center; margin-top: 40px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-                .priority-high { color: #dc3545; font-weight: bold; }
-                .priority-medium { color: #856404; font-weight: bold; }
-                .priority-low { color: #28a745; font-weight: bold; }
-                .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; }
-                .bg-danger { background-color: #dc3545; color: white; }
-                @media print { body { padding: 0; margin: 0; } .print-container { margin: 0; padding: 20px; } }
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Segoe UI', 'Arial', sans-serif;
+                    background: white;
+                    padding: 20px;
+                    margin: 0;
+                    font-size: 12pt;
+                    line-height: 1.4;
+                    color: #000;
+                }
+                .print-container {
+                    max-width: 1000px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .header h1 {
+                    color: #9b59b6;
+                    margin-bottom: 5px;
+                    font-size: 20pt;
+                }
+                .header h3 {
+                    color: #666;
+                    font-weight: normal;
+                    font-size: 14pt;
+                    margin-bottom: 10px;
+                }
+                .discussion-badge {
+                    background-color: #ffc107;
+                    color: #333;
+                    padding: 5px 15px;
+                    border-radius: 20px;
+                    display: inline-block;
+                    margin-top: 10px;
+                    font-size: 10pt;
+                }
+                .divider {
+                    border-top: 2px solid #9b59b6;
+                    margin: 10px 0;
+                }
+                .report-id {
+                    background: #f8f5fc;
+                    padding: 10px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    font-size: 11pt;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 15px;
+                    page-break-inside: avoid;
+                }
+                th, td {
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                th {
+                    background-color: #f5f5f5;
+                    width: 30%;
+                    font-weight: bold;
+                    font-size: 11pt;
+                }
+                td {
+                    font-size: 11pt;
+                    word-wrap: break-word;
+                    white-space: normal;
+                }
+                td[style*="white-space: pre-wrap"] {
+                    white-space: pre-wrap !important;
+                    word-wrap: break-word !important;
+                    word-break: break-word !important;
+                }
+                img {
+                    max-width: 150px;
+                    max-height: 100px;
+                    margin: 5px;
+                    border: 1px solid #ccc;
+                }
+                .badge {
+                    display: inline-block;
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    font-size: 9pt;
+                }
+                .bg-danger {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                .priority-high {
+                    color: #dc3545;
+                    font-weight: bold;
+                }
+                .priority-medium {
+                    color: #856404;
+                    font-weight: bold;
+                }
+                .priority-low {
+                    color: #28a745;
+                    font-weight: bold;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    font-size: 9pt;
+                    color: #999;
+                    border-top: 1px solid #eee;
+                    padding-top: 15px;
+                }
+                @media print {
+                    body {
+                        padding: 0;
+                        margin: 0;
+                        background: white;
+                    }
+                    .print-container {
+                        margin: 0;
+                        padding: 15px;
+                        max-width: 100%;
+                    }
+                    table {
+                        page-break-inside: avoid;
+                    }
+                    tr {
+                        page-break-inside: avoid;
+                        page-break-after: avoid;
+                    }
+                    img {
+                        page-break-inside: avoid;
+                    }
+                    .priority-high, .priority-medium, .priority-low {
+                        print-color-adjust: exact;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .discussion-badge {
+                        print-color-adjust: exact;
+                        -webkit-print-color-adjust: exact;
+                    }
+                }
+                @media screen and (max-width: 768px) {
+                    body {
+                        padding: 10px;
+                    }
+                    .print-container {
+                        padding: 10px;
+                    }
+                    th, td {
+                        padding: 6px;
+                    }
+                }
             </style>
         </head>
         <body>
             <div class="print-container">
                 <div class="header">
                     <h1>Ministry of Education, Brunei Darussalam</h1>
-                    <h3>Technical Report System</h3>
+                    <h3>Technical Report System - ${reportTypeName}</h3>
                     <div class="discussion-badge">📄 DISCUSSION COPY - FOR REVIEW ONLY</div>
                     <div class="divider"></div>
                 </div>
@@ -550,13 +690,13 @@
                     ${report.reference_number ? `<tr><td><strong>Reference</strong>NonNullable<td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><td><strong>Problem Type</strong>NonNullable<td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><td><strong>Priority</strong>NonNullable<td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.complaint_details || '-')}NonNullable
-                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.action_taken)}NonNullable` : ''}
+                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.complaint_details || '-')}NonNullable
+                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
+                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.action_taken)}NonNullable` : ''}
                     <tr><td><strong>Submitted By</strong>NonNullable<td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
                     ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong>NonNullable<td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
-                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 100px; margin: 5px;" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
+                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
+                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
                 </table>
                 
                 <div class="footer">
@@ -566,13 +706,17 @@
                 </div>
             </div>
             <script>
-                window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1000); };
+                window.onload = function() { 
+                    window.print(); 
+                    setTimeout(function() { 
+                        window.close(); 
+                    }, 1000);
+                };
             <\/script>
         </body>
         </html>`;
     }
     
-    // FIX: Use DOMContentLoaded to ensure page is fully loaded before initializing
     document.addEventListener('DOMContentLoaded', function() {
         console.log('All Reports page loaded, initializing...');
         checkUserRole();
