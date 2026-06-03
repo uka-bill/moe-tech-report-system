@@ -480,8 +480,8 @@
         // Generate print HTML
         const printHtml = generatePrintHTML(report);
         
-        // Create a new window for printing (no toolbars)
-        const printWindow = window.open('', '_blank', 'toolbar=no,menubar=no,scrollbars=yes,resizable=yes,width=800,height=600');
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
         printWindow.document.write(printHtml);
         printWindow.document.close();
         
@@ -507,9 +507,9 @@
         // Images HTML
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = '<div style="margin-top:15px;"><strong>Attached Images:</strong><div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">';
+            imagesHtml = '<div style="margin-top:20px;"><strong>Attached Images:</strong><div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:10px;">';
             report.images.forEach(img => {
-                imagesHtml += `<img src="${img}" style="max-width:150px; max-height:100px; border:1px solid #ccc;">`;
+                imagesHtml += `<img src="${img}" style="max-width:180px; max-height:120px; border:1px solid #ccc; border-radius:4px;">`;
             });
             imagesHtml += '</div></div>';
         }
@@ -517,9 +517,9 @@
         // Comments HTML
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = '<div style="margin-top:15px;"><strong>Comments:</strong><div style="margin-top:10px;">';
+            commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
-                commentsHtml += `<div style="border:1px solid #eee; padding:10px; margin-bottom:10px; border-radius:5px;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#999;">${formatDate(c.created_at)}</small><p style="margin-top:5px;">${escapeHtml(c.text)}</p></div>`;
+                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(c.text)}</p></div>`;
             });
             commentsHtml += '</div></div>';
         }
@@ -530,78 +530,124 @@
             <title>${reportTypeName} Technical Report #${report.id}</title>
             <meta charset="UTF-8">
             <style>
+                /* Reset all margins and padding */
                 * {
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
                 }
-                html, body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    background: white;
-                    height: auto;
+                
+                /* Hide browser headers and footers */
+                @page {
+                    size: A4;
+                    margin: 2.54cm 3.17cm;
                 }
-                body {
-                    font-family: 'Segoe UI', 'Arial', sans-serif;
+                
+                /* Remove default browser print headers */
+                @media print {
+                    @page {
+                        margin: 2.54cm 3.17cm;
+                    }
+                    /* Hide URL, date, page number that browsers add */
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    /* Prevent page breaks inside key elements */
+                    table, tr, td, th, .signatures, img, .print-container {
+                        page-break-inside: avoid;
+                    }
+                    /* Allow natural page breaks after sections */
+                    .section-break {
+                        page-break-after: avoid;
+                    }
+                }
+                
+                /* Main body styles */
+                html, body {
+                    margin: 0;
+                    padding: 0;
                     background: white;
-                    padding: 20px !important;
-                    margin: 0 !important;
+                }
+                
+                body {
+                    font-family: 'Times New Roman', 'Segoe UI', 'Arial', serif;
+                    background: white;
                     font-size: 12pt;
-                    line-height: 1.4;
+                    line-height: 1.5;
                     color: #000;
                 }
+                
                 .print-container {
                     max-width: 100%;
                     margin: 0 auto;
                     background: white;
                 }
+                
+                /* Header styles with requested department info */
                 .header {
                     text-align: center;
-                    margin-bottom: 20px;
-                    padding-bottom: 10px;
-                    border-bottom: 2px solid #9b59b6;
+                    margin-bottom: 30px;
+                    padding-bottom: 15px;
+                }
+                .header h2 {
+                    font-size: 14pt;
+                    font-weight: normal;
+                    margin: 0;
+                    padding: 0;
+                    line-height: 1.4;
                 }
                 .header h1 {
-                    color: #9b59b6;
-                    margin-bottom: 5px;
-                    font-size: 20pt;
+                    font-size: 16pt;
+                    font-weight: bold;
+                    margin: 5px 0;
+                    text-transform: uppercase;
                 }
-                .header h3 {
-                    color: #666;
-                    font-weight: normal;
-                    font-size: 14pt;
+                .header .divider {
+                    border-top: 2px solid #000;
+                    margin: 15px 0 5px 0;
                 }
+                .header .sub-divider {
+                    border-top: 1px solid #000;
+                    margin: 5px 0;
+                }
+                
+                /* Report ID bar */
                 .report-id {
-                    background: #f8f5fc;
-                    padding: 10px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
+                    background: #f5f5f5;
+                    padding: 10px 15px;
+                    margin-bottom: 25px;
                     display: flex;
                     justify-content: space-between;
                     flex-wrap: wrap;
+                    border: 1px solid #ddd;
                 }
+                
+                /* Table styles - professional look */
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 10px;
+                    margin: 15px 0;
                 }
                 th, td {
-                    padding: 10px;
-                    border: 1px solid #ddd;
+                    padding: 10px 12px;
+                    border: 1px solid #aaa;
                     text-align: left;
                     vertical-align: top;
                 }
                 th {
-                    background-color: #f5f5f5;
+                    background-color: #f0f0f0;
                     width: 30%;
                     font-weight: bold;
                 }
+                
+                /* Priority colors */
                 .priority-high {
                     color: #dc3545;
                     font-weight: bold;
                 }
                 .priority-medium {
-                    color: #856404;
+                    color: #d4a000;
                     font-weight: bold;
                 }
                 .priority-low {
@@ -610,19 +656,23 @@
                 }
                 .badge {
                     display: inline-block;
-                    padding: 3px 8px;
+                    padding: 2px 8px;
                     border-radius: 12px;
                     font-size: 10pt;
                 }
                 .bg-danger {
                     background-color: #dc3545;
                     color: white;
+                    padding: 2px 8px;
+                    border-radius: 4px;
                 }
+                
+                /* Signatures section */
                 .signatures {
                     display: flex;
                     justify-content: space-between;
-                    margin-top: 40px;
-                    margin-bottom: 20px;
+                    margin-top: 50px;
+                    margin-bottom: 30px;
                 }
                 .signature-box {
                     text-align: center;
@@ -630,47 +680,32 @@
                 }
                 .signature-line {
                     border-top: 1px solid #000;
-                    margin-top: 40px;
+                    margin-top: 50px;
                     padding-top: 8px;
                     width: 100%;
                 }
+                
+                /* Footer */
                 .footer {
                     text-align: center;
-                    margin-top: 30px;
+                    margin-top: 40px;
                     font-size: 9pt;
-                    color: #999;
-                    border-top: 1px solid #eee;
-                    padding-top: 10px;
-                }
-                @page {
-                    size: A4;
-                    margin: 1cm;
-                }
-                @media print {
-                    html, body {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                    }
-                    body {
-                        padding: 15px !important;
-                    }
-                    table {
-                        page-break-inside: avoid;
-                    }
-                    tr {
-                        page-break-inside: avoid;
-                    }
-                    .signatures {
-                        page-break-inside: avoid;
-                    }
+                    color: #666;
+                    border-top: 1px solid #ddd;
+                    padding-top: 15px;
                 }
             </style>
         </head>
         <body>
             <div class="print-container">
                 <div class="header">
-                    <h1>Ministry of Education, Brunei Darussalam</h1>
-                    <h3>Technical Report System - ${reportTypeName}</h3>
+                    <h2>Unit Kemudahan Asas</h2>
+                    <h2>Bahagian Kemudahan-Kemudahan</h2>
+                    <h2>Jabatan Pentadbiran Dan Perkhidmatan-Perkhidmatan</h2>
+                    <h1>Ministry of Education</h1>
+                    <div class="divider"></div>
+                    <div class="sub-divider"></div>
+                    <h3 style="margin-top:10px;">Technical Report System - ${reportTypeName}</h3>
                 </div>
                 
                 <div class="report-id">
@@ -689,7 +724,7 @@
                     ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}NonNullable
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap; line-height: 1.5;">${complaintDetails}NonNullable
                     ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
                     ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}NonNullable` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
