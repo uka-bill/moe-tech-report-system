@@ -118,6 +118,7 @@
         gap: 10px;
     }
     
+    /* Loading overlay for PDF generation */
     .pdf-loading {
         position: fixed;
         top: 0;
@@ -126,7 +127,7 @@
         height: 100%;
         background: rgba(0,0,0,0.5);
         z-index: 99999;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
     }
@@ -183,6 +184,14 @@
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2">Loading reports...</p>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="pdfLoadingOverlay" class="pdf-loading">
+    <div class="spinner">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 mb-0">Generating PDF...</p>
     </div>
 </div>
 
@@ -258,20 +267,10 @@
     }
     
     function showLoading() {
-        let overlay = document.getElementById('pdfLoadingOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'pdfLoadingOverlay';
-            overlay.className = 'pdf-loading';
-            overlay.innerHTML = `
-                <div class="spinner">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 mb-0">Generating document...</p>
-                </div>
-            `;
-            document.body.appendChild(overlay);
+        const overlay = document.getElementById('pdfLoadingOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
         }
-        overlay.style.display = 'flex';
     }
     
     function hideLoading() {
@@ -561,7 +560,8 @@
                 body {
                     font-family: 'Times New Roman', 'Arial', serif;
                     background: white;
-                    padding: 40px;
+                    padding: 0;
+                    margin: 0;
                     font-size: 12pt;
                     line-height: 1.5;
                     color: #000;
@@ -570,10 +570,11 @@
                     max-width: 100%;
                     margin: 0 auto;
                     background: white;
+                    padding: 40px 50px;
                 }
                 .header {
                     text-align: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 40px;
                     padding-bottom: 15px;
                 }
                 .header h2 {
@@ -585,12 +586,12 @@
                 .header h1 {
                     font-size: 16pt;
                     font-weight: bold;
-                    margin: 5px 0;
+                    margin: 8px 0;
                     text-transform: uppercase;
                 }
                 .header .divider {
                     border-top: 2px solid #000;
-                    margin: 15px 0 5px 0;
+                    margin: 20px 0 8px 0;
                 }
                 .header .sub-divider {
                     border-top: 1px solid #000;
@@ -598,20 +599,21 @@
                 }
                 .report-id {
                     background: #f5f5f5;
-                    padding: 10px 15px;
-                    margin-bottom: 25px;
+                    padding: 12px 18px;
+                    margin-bottom: 30px;
                     display: flex;
                     justify-content: space-between;
                     flex-wrap: wrap;
                     border: 1px solid #ddd;
+                    border-radius: 5px;
                 }
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 15px 0;
+                    margin: 20px 0;
                 }
                 th, td {
-                    padding: 10px 12px;
+                    padding: 12px 15px;
                     border: 1px solid #aaa;
                     text-align: left;
                     vertical-align: top;
@@ -643,8 +645,8 @@
                 .signatures {
                     display: flex;
                     justify-content: space-between;
-                    margin-top: 50px;
-                    margin-bottom: 30px;
+                    margin-top: 60px;
+                    margin-bottom: 40px;
                 }
                 .signature-box {
                     text-align: center;
@@ -658,7 +660,7 @@
                 }
                 .footer {
                     text-align: center;
-                    margin-top: 40px;
+                    margin-top: 50px;
                     font-size: 9pt;
                     color: #666;
                     border-top: 1px solid #ddd;
@@ -668,6 +670,9 @@
                     body {
                         padding: 0;
                         margin: 0;
+                    }
+                    .report-container {
+                        padding: 40px 50px;
                     }
                 }
             </style>
@@ -680,7 +685,7 @@
                     <h1>Ministry of Education</h1>
                     <div class="divider"></div>
                     <div class="sub-divider"></div>
-                    <h3 style="margin-top: 10px;">Technical Report System - ${reportTypeName}</h3>
+                    <h3 style="margin-top: 15px;">Technical Report System - ${reportTypeName}</h3>
                 </div>
                 
                 <div class="report-id">
@@ -692,19 +697,19 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
-                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td><tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}</td></tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
-                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
-                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td>` : ''}
-                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td>` : ''}
+                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
+                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
+                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
+                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}NonNullable
+                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
+                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}NonNullable` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
+                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
                 </table>
                 
                 ${imagesHtml}
@@ -755,7 +760,7 @@
         printWindow.document.close();
     }
     
-    function saveAsPDF() {
+    async function saveAsPDF() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to save', 'error');
             return;
@@ -765,15 +770,37 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const printHtml = getPrintWindowHTML(report);
-        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
+        showLoading();
         
-        // Show instruction
-        setTimeout(() => {
-            window.showToast('In the new window, press Ctrl+P (or Cmd+P) and select "Save as PDF"', 'info');
-        }, 500);
+        try {
+            const reportHTML = getPrintWindowHTML(report);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = reportHTML;
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.width = '210mm';
+            tempDiv.style.background = 'white';
+            document.body.appendChild(tempDiv);
+            
+            const opt = {
+                margin: [0.7, 0.7, 0.7, 0.7],
+                filename: `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, letterRendering: true, useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            
+            await html2pdf().set(opt).from(tempDiv).save();
+            
+            document.body.removeChild(tempDiv);
+            hideLoading();
+            window.showToast('PDF saved successfully');
+        } catch (error) {
+            hideLoading();
+            console.error('PDF Error:', error);
+            window.showToast('Error generating PDF. Please try Print button instead.', 'error');
+        }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
