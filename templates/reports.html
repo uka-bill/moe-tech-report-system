@@ -522,58 +522,63 @@
                     padding: 0;
                     box-sizing: border-box;
                 }
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: white;
+                }
                 body {
                     font-family: 'Segoe UI', 'Arial', sans-serif;
                     background: white;
-                    padding: 20px;
+                    padding: 0;
                     margin: 0;
                     font-size: 12pt;
                     line-height: 1.4;
                     color: #000;
                 }
                 .print-container {
-                    max-width: 1000px;
-                    margin: 0 auto;
+                    max-width: 100%;
+                    margin: 0;
+                    padding: 15px;
                     background: white;
-                    padding: 20px;
                 }
                 .header {
                     text-align: center;
-                    margin-bottom: 20px;
+                    margin-bottom: 15px;
+                    padding-bottom: 5px;
                 }
                 .header h1 {
                     color: #9b59b6;
-                    margin-bottom: 5px;
-                    font-size: 20pt;
+                    margin-bottom: 3px;
+                    font-size: 18pt;
                 }
                 .header h3 {
                     color: #666;
                     font-weight: normal;
-                    font-size: 14pt;
-                    margin-bottom: 10px;
+                    font-size: 12pt;
+                    margin-bottom: 5px;
                 }
                 .divider {
                     border-top: 2px solid #9b59b6;
-                    margin: 10px 0;
+                    margin: 8px 0;
                 }
                 .report-id {
                     background: #f8f5fc;
-                    padding: 10px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
+                    padding: 8px;
+                    border-radius: 6px;
+                    margin-bottom: 15px;
                     display: flex;
                     justify-content: space-between;
                     flex-wrap: wrap;
-                    font-size: 11pt;
+                    font-size: 10pt;
                 }
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 15px;
-                    page-break-inside: avoid;
+                    margin-top: 10px;
                 }
                 th, td {
-                    padding: 10px;
+                    padding: 8px;
                     border: 1px solid #ddd;
                     text-align: left;
                     vertical-align: top;
@@ -582,10 +587,10 @@
                     background-color: #f5f5f5;
                     width: 30%;
                     font-weight: bold;
-                    font-size: 11pt;
+                    font-size: 10pt;
                 }
                 td {
-                    font-size: 11pt;
+                    font-size: 10pt;
                     word-wrap: break-word;
                     white-space: normal;
                 }
@@ -595,16 +600,16 @@
                     word-break: break-word !important;
                 }
                 img {
-                    max-width: 150px;
-                    max-height: 100px;
-                    margin: 5px;
+                    max-width: 140px;
+                    max-height: 90px;
+                    margin: 3px;
                     border: 1px solid #ccc;
                 }
                 .badge {
                     display: inline-block;
-                    padding: 3px 8px;
-                    border-radius: 12px;
-                    font-size: 9pt;
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    font-size: 8pt;
                 }
                 .bg-danger {
                     background-color: #dc3545;
@@ -625,8 +630,7 @@
                 .signatures {
                     display: flex;
                     justify-content: space-between;
-                    margin-top: 40px;
-                    page-break-inside: avoid;
+                    margin-top: 25px;
                 }
                 .signature-box {
                     text-align: center;
@@ -634,60 +638,41 @@
                 }
                 .signature-line {
                     border-top: 1px solid #000;
-                    margin-top: 40px;
-                    padding-top: 8px;
+                    margin-top: 30px;
+                    padding-top: 5px;
                     width: 100%;
                 }
                 .footer {
                     text-align: center;
-                    margin-top: 30px;
-                    font-size: 9pt;
+                    margin-top: 20px;
+                    font-size: 8pt;
                     color: #999;
                     border-top: 1px solid #eee;
-                    padding-top: 15px;
+                    padding-top: 10px;
                 }
                 @page {
                     size: A4;
-                    margin: 1.5cm;
+                    margin: 1cm;
                 }
                 @media print {
-                    body {
-                        padding: 0;
+                    html, body {
                         margin: 0;
-                        background: white;
+                        padding: 0;
+                        height: auto;
                     }
                     .print-container {
-                        margin: 0;
                         padding: 0;
-                        max-width: 100%;
+                        margin: 0;
                     }
                     table {
                         page-break-inside: avoid;
                     }
-                    tr {
-                        page-break-inside: avoid;
-                        page-break-after: avoid;
-                    }
-                    img {
+                    .signatures {
                         page-break-inside: avoid;
                     }
                     .priority-high, .priority-medium, .priority-low {
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
-                    }
-                    .signatures {
-                        page-break-inside: avoid;
-                    }
-                }
-                @media screen and (max-width: 768px) {
-                    body {
-                        padding: 10px;
-                    }
-                    .print-container {
-                        padding: 10px;
-                    }
-                    th, td {
-                        padding: 6px;
                     }
                 }
             </style>
@@ -763,7 +748,6 @@
         loadTechniciansForFilter().then(() => {
             loadReports();
         });
-        // No auto-refresh - user must click Refresh button manually
     });
 </script>
 {% endblock %}
