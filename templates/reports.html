@@ -118,7 +118,6 @@
         gap: 10px;
     }
     
-    /* Loading overlay for PDF generation */
     .pdf-loading {
         position: fixed;
         top: 0;
@@ -127,7 +126,7 @@
         height: 100%;
         background: rgba(0,0,0,0.5);
         z-index: 99999;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: center;
     }
@@ -184,14 +183,6 @@
     <div class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2">Loading reports...</p>
-    </div>
-</div>
-
-<!-- Loading Overlay -->
-<div id="pdfLoadingOverlay" class="pdf-loading">
-    <div class="spinner">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 mb-0">Generating PDF...</p>
     </div>
 </div>
 
@@ -267,10 +258,20 @@
     }
     
     function showLoading() {
-        const overlay = document.getElementById('pdfLoadingOverlay');
-        if (overlay) {
-            overlay.style.display = 'flex';
+        let overlay = document.getElementById('pdfLoadingOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'pdfLoadingOverlay';
+            overlay.className = 'pdf-loading';
+            overlay.innerHTML = `
+                <div class="spinner">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 mb-0">Generating document...</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
         }
+        overlay.style.display = 'flex';
     }
     
     function hideLoading() {
@@ -520,7 +521,7 @@
         }
     }
     
-    function getPDFHTML(report) {
+    function getPrintWindowHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -663,6 +664,12 @@
                     border-top: 1px solid #ddd;
                     padding-top: 15px;
                 }
+                @media print {
+                    body {
+                        padding: 0;
+                        margin: 0;
+                    }
+                }
             </style>
         </head>
         <body>
@@ -685,19 +692,19 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
-                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
-                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `</td><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}NonNullable
-                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}NonNullable` : ''}
-                    <td><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
+                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
+                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
+                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td><tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
+                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td>` : ''}
+                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
@@ -723,6 +730,11 @@
                     <p>Printed on: ${currentDate}</p>
                 </div>
             </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                };
+            <\/script>
         </body>
         </html>`;
     }
@@ -737,13 +749,13 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const printHtml = getPDFHTML(report);
+        const printHtml = getPrintWindowHTML(report);
         const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
         printWindow.document.write(printHtml);
         printWindow.document.close();
     }
     
-    async function saveAsPDF() {
+    function saveAsPDF() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to save', 'error');
             return;
@@ -753,40 +765,15 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        showLoading();
+        const printHtml = getPrintWindowHTML(report);
+        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
         
-        try {
-            // Create a temporary div with the report HTML
-            const reportHTML = getPDFHTML(report);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = reportHTML;
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '0';
-            tempDiv.style.width = '210mm';
-            tempDiv.style.background = 'white';
-            document.body.appendChild(tempDiv);
-            
-            // Use html2pdf to generate and download PDF
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true, useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-            
-            await html2pdf().set(opt).from(tempDiv).save();
-            
-            // Clean up
-            document.body.removeChild(tempDiv);
-            hideLoading();
-            window.showToast('PDF saved successfully');
-        } catch (error) {
-            hideLoading();
-            console.error('PDF Error:', error);
-            window.showToast('Error generating PDF. Please try Print button instead.', 'error');
-        }
+        // Show instruction
+        setTimeout(() => {
+            window.showToast('In the new window, press Ctrl+P (or Cmd+P) and select "Save as PDF"', 'info');
+        }, 500);
     }
     
     document.addEventListener('DOMContentLoaded', function() {
