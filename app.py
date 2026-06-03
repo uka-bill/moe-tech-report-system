@@ -1029,6 +1029,15 @@ def create_mapping_image():
             "image_url": data.get('image_url'),
             "description": data.get('description', ''),
             "notes": data.get('notes', ''),
+            # New account fields
+            "water_account_number": data.get('water_account_number', ''),
+            "water_meter_number": data.get('water_meter_number', ''),
+            "electricity_account_number": data.get('electricity_account_number', ''),
+            "electricity_meter_number": data.get('electricity_meter_number', ''),
+            "telephone_account_number": data.get('telephone_account_number', ''),
+            "telephone_number": data.get('telephone_number', ''),
+            "canteen_account_number": data.get('canteen_account_number', ''),
+            "canteen_meter_number": data.get('canteen_meter_number', ''),
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
@@ -1047,7 +1056,7 @@ def create_mapping_image():
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
 def update_mapping_image(image_id):
-    """Update a mapping image (description and notes)"""
+    """Update a mapping image (description, notes, and account details)"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -1055,7 +1064,12 @@ def update_mapping_image(image_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['description', 'notes']
+        allowed_fields = ['description', 'notes', 
+                          'water_account_number', 'water_meter_number',
+                          'electricity_account_number', 'electricity_meter_number',
+                          'telephone_account_number', 'telephone_number',
+                          'canteen_account_number', 'canteen_meter_number']
+        
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
