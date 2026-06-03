@@ -137,11 +137,13 @@
         margin-bottom: 20px;
     }
     
+    /* Print styles - hide UI elements */
     @media print {
         .no-print, .navbar, footer, .filter-card, .stats-badge, 
         .btn, .btn-primary, .btn-warning, .btn-danger, .btn-secondary,
         .btn-delete, .btn-edit, .btn-acknowledge, .btn-add-comment,
-        .modal-footer button, .modal-header .btn-close {
+        .modal-footer button, .modal-header .btn-close, .card-header,
+        .modal, .modal-backdrop {
             display: none !important;
         }
         body {
@@ -159,6 +161,22 @@
             padding: 0;
             margin: 0;
         }
+        /* Ensure print container shows */
+        .print-report-container {
+            display: block !important;
+        }
+    }
+    
+    /* Hidden print container */
+    .print-report-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        z-index: 9999;
+        padding: 20px;
     }
 </style>
 
@@ -200,6 +218,9 @@
         <p class="mt-2">Loading electricity reports...</p>
     </div>
 </div>
+
+<!-- Hidden Print Container -->
+<div id="printContainer" class="print-report-container"></div>
 
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
@@ -517,29 +538,19 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        // Get the print HTML
+        // Generate print HTML
         const printHtml = generatePrintHTML(report);
         
-        // Create an iframe for printing - this prevents PDF preview navigation bars
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
         
-        const iframeDoc = iframe.contentWindow.document;
-        iframeDoc.open();
-        iframeDoc.write(printHtml);
-        iframeDoc.close();
-        
-        // Print from iframe and then remove it
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        
-        setTimeout(function() {
-            document.body.removeChild(iframe);
-        }, 1000);
+        // Wait for content to load then print
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+        };
     }
     
     function generatePrintHTML(report) {
@@ -558,12 +569,6 @@
                     padding: 0;
                     box-sizing: border-box;
                 }
-                html, body {
-                    margin: 0;
-                    padding: 0;
-                    background: white;
-                    height: auto;
-                }
                 body {
                     font-family: 'Segoe UI', 'Arial', sans-serif;
                     background: white;
@@ -576,7 +581,6 @@
                 .print-container {
                     max-width: 100%;
                     margin: 0 auto;
-                    padding: 0;
                     background: white;
                 }
                 .header {
@@ -687,13 +691,9 @@
                     margin: 1cm;
                 }
                 @media print {
-                    html, body {
-                        margin: 0;
-                        padding: 0;
-                        height: auto;
-                    }
                     body {
                         padding: 0;
+                        margin: 0;
                     }
                     .print-container {
                         padding: 0;
@@ -766,12 +766,6 @@
                     <p>Printed on: ${currentDate}</p>
                 </div>
             </div>
-            <script>
-                // Auto-trigger print when loaded
-                window.onload = function() { 
-                    window.print(); 
-                };
-            <\/script>
         </body>
         </html>`;
     }
