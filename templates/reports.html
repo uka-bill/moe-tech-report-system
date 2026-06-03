@@ -113,36 +113,41 @@
         margin-left: 10px;
     }
     
-    /* Print styles - Only show print-content when printing */
-    .print-only {
-        display: none;
-    }
-    
+    /* Print styles - Only show the modal content when printing */
     @media print {
-        /* Hide everything except print-content */
+        /* Hide everything except the print container */
         body * {
             visibility: hidden;
         }
-        .print-only, .print-only * {
+        .print-container, .print-container * {
             visibility: visible;
         }
-        .print-only {
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: white;
-            padding: 20px;
-            margin: 0;
-            z-index: 99999;
-            overflow: auto;
+        .print-container {
+            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: white !important;
+            z-index: 99999 !important;
+            overflow: auto !important;
+            padding: 20px !important;
         }
         @page {
             size: A4;
             margin: 2.54cm 3.17cm;
         }
+    }
+    
+    /* Hidden print container */
+    .print-container {
+        display: none;
+    }
+    
+    .btn-group-print {
+        display: flex;
+        gap: 10px;
     }
 </style>
 
@@ -195,7 +200,7 @@
 </div>
 
 <!-- Hidden Print Container -->
-<div id="printContainer" class="print-only"></div>
+<div id="printContainer" class="print-container"></div>
 
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
@@ -208,7 +213,14 @@
             <div class="modal-body" id="modalBody">Loading...</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
+                <div class="btn-group-print">
+                    <button type="button" class="btn btn-primary" onclick="printReport()">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveAsPDF()">
+                        <i class="bi bi-file-pdf"></i> Save as PDF
+                    </button>
+                </div>
                 <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
             </div>
         </div>
@@ -548,18 +560,18 @@
                 <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0; width: 30%;">Entity Type</th><td style="border: 1px solid #aaa; padding: 10px;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Entity Name</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                    ${report.account_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Account Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.account_number)}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Meter Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.meter_number)}</td></tr>` : ''}
-                    ${report.phone_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Phone Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Reference</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                    ${report.account_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Account Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.account_number)}</td>` : ''}
+                    ${report.meter_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Meter Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.meter_number)}</td>` : ''}
+                    ${report.phone_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Phone Number</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.phone_number)}</td>` : ''}
+                    ${report.reference_number ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Reference</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Problem Type</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.problem_type || '-')}</td></tr>
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Priority</th><td style="border: 1px solid #aaa; padding: 10px;" class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span style="background:#dc3545; color:white; padding:2px 8px; border-radius:4px;">TENDER</span>' : ''}</td></tr>
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Complaint Details</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${complaintDetails}</td></tr>
-                    ${report.technician_notes ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Technician's Notes</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td></tr>` : ''}
-                    ${report.action_taken ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Action Taken</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    ${report.technician_notes ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Technician's Notes</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td>` : ''}
+                    ${report.action_taken ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Action Taken</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Submitted By</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
-                    ${report.team_leader_acknowledged ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Acknowledged By</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${report.team_leader_notes ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Team Leader Notes</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Acknowledged By</th><td style="border: 1px solid #aaa; padding: 10px;">${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${report.team_leader_notes ? `<tr><th style="border: 1px solid #aaa; padding: 10px; text-align: left; background: #f0f0f0;">Team Leader Notes</th><td style="border: 1px solid #aaa; padding: 10px; white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
@@ -604,9 +616,56 @@
         const printContainer = document.getElementById('printContainer');
         printContainer.innerHTML = printContent;
         
-        // Trigger print
+        // Trigger browser print dialog
         window.print();
     }
+    
+    function saveAsPDF() {
+        if (!currentReport && currentReportId) {
+            window.showToast('No report to save', 'error');
+            return;
+        }
+        
+        const report = currentReport;
+        
+        // Track print
+        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        
+        // Generate print content
+        const printContent = generatePrintContent(report);
+        const printContainer = document.getElementById('printContainer');
+        printContainer.innerHTML = printContent;
+        
+        // Add PDF-specific settings before printing
+        const style = document.createElement('style');
+        style.textContent = `
+            @media print {
+                @page {
+                    size: A4;
+                    margin: 2.54cm 3.17cm;
+                }
+            }
+        `;
+        printContainer.appendChild(style);
+        
+        // Trigger print - user can choose "Save as PDF" in destination
+        window.print();
+        
+        // Remove the style after print dialog closes
+        setTimeout(() => {
+            if (printContainer.contains(style)) {
+                printContainer.removeChild(style);
+            }
+        }, 1000);
+    }
+    
+    // Clean up print container after printing
+    window.onafterprint = function() {
+        const printContainer = document.getElementById('printContainer');
+        if (printContainer) {
+            printContainer.innerHTML = '';
+        }
+    };
     
     document.addEventListener('DOMContentLoaded', function() {
         checkUserRole();
