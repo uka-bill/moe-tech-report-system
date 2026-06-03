@@ -113,28 +113,44 @@
         margin-left: 10px;
     }
     
-    /* Print CSS - Hide all UI elements when printing */
+    /* Print styles - Only show the report content when printing */
     @media print {
-        .no-print, .navbar, footer, .filter-card, .stats-badge, 
+        /* Hide everything except the modal body */
+        .navbar, footer, .filter-card, .stats-badge, 
         .btn, .btn-primary, .btn-warning, .btn-danger, .btn-secondary,
         .btn-delete, .btn-edit, .btn-acknowledge, .btn-add-comment,
-        .modal-footer button, .modal-header .btn-close {
+        .modal-footer, .modal-header .btn-close, .card-header,
+        .modal-backdrop, .report-card, .d-flex, .main-content > *:not(.modal.show) {
             display: none !important;
+        }
+        
+        /* Show only the modal body content */
+        .modal.show {
+            display: block !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 9999;
+        }
+        .modal-dialog {
+            margin: 0;
+            max-width: 100%;
+            width: 100%;
+        }
+        .modal-content {
+            border: none;
+            box-shadow: none;
+        }
+        .modal-body {
+            padding: 20px;
         }
         body {
             background: white;
-            padding: 0;
             margin: 0;
-        }
-        .card, .report-card, .modal-content {
-            box-shadow: none;
-            border: none;
             padding: 0;
-            margin: 0;
-        }
-        .main-content {
-            padding: 0;
-            margin: 0;
         }
     }
 </style>
@@ -416,30 +432,72 @@
             acknowledgmentHtml = `<div class="alert alert-warning mt-3"><button class="btn btn-success w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
         }
         
+        // Format complaint details with bullet points for better readability
+        let complaintDetails = escapeHtml(report.complaint_details || '-');
+        if (complaintDetails.includes('\\n')) {
+            complaintDetails = complaintDetails.split('\\n').map(line => `• ${line}`).join('<br>');
+        }
+        
+        // Format action taken with bullet points
+        let actionTaken = escapeHtml(report.action_taken || '-');
+        if (actionTaken.includes('\\n')) {
+            actionTaken = actionTaken.split('\\n').map(line => `• ${line}`).join('<br>');
+        }
+        
         const html = `
-            <div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Report #:</strong> ${report.utility_number || report.id}<br>
-                        <strong>Type:</strong> <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span><br>
-                        <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
-                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
-                        <strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br>
-                        <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
-                    </div>
+            <div class="report-print-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #9b59b6; margin-bottom: 5px;">Ministry of Education, Brunei Darussalam</h2>
+                    <h4 style="color: #666;">Technical Report System</h4>
+                    <hr style="border-top: 2px solid #9b59b6;">
                 </div>
-                <hr>
-                <h6>Problem / Issue</h6>
-                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
-                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
-                ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
-                ${report.technician_notes ? `<h6>Technician's Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
+                
+                <div style="background: #f8f5fc; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; flex-wrap: wrap;">
+                    <div><strong>Report ID:</strong> #${report.utility_number || report.id}</div>
+                    <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
+                    <div><strong>Type:</strong> ${report.report_type.toUpperCase()} ${typeIcon}</div>
+                    <div><strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}</div>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Entity Type</th><td style="border: 1px solid #ddd; padding: 8px;">${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Entity Name</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    ${report.account_number ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Account Number</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.account_number)}</td></tr>` : ''}
+                    ${report.meter_number ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Meter Number</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.meter_number)}</td></tr>` : ''}
+                    ${report.phone_number ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Phone Number</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.phone_number)}</td></tr>` : ''}
+                    ${report.reference_number ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Reference</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Problem Type</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.problem_type || '-')}</td></tr>
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Priority</th><td style="border: 1px solid #ddd; padding: 8px;" class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Complaint Details</th><td style="border: 1px solid #ddd; padding: 8px; white-space: pre-wrap;">${complaintDetails}</td></tr>
+                    ${report.technician_notes ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Technician's Notes</th><td style="border: 1px solid #ddd; padding: 8px; white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td></tr>` : ''}
+                    ${report.action_taken ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Action Taken</th><td style="border: 1px solid #ddd; padding: 8px; white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Submitted By</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
+                    ${report.team_leader_acknowledged ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Acknowledged By</th><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
+                    ${report.team_leader_notes ? `<tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background: #f5f5f5;">Team Leader Notes</th><td style="border: 1px solid #ddd; padding: 8px; white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
+                </table>
                 ${imagesHtml}
                 ${commentsHtml}
                 ${acknowledgmentHtml}
+                
+                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                    <div style="text-align: center; width: 45%;">
+                        <div style="border-top: 1px solid #000; margin-top: 30px; padding-top: 5px;"></div>
+                        <div><strong>Technician's Signature</strong></div>
+                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
+                        <div>Date: ${formatDateOnly(new Date())}</div>
+                    </div>
+                    <div style="text-align: center; width: 45%;">
+                        <div style="border-top: 1px solid #000; margin-top: 30px; padding-top: 5px;"></div>
+                        <div><strong>Team Leader's Signature</strong></div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
+                        <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; font-size: 9pt; color: #999; border-top: 1px solid #eee; padding-top: 10px;">
+                    <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
+                    <p>Printed on: ${formatDate(new Date())}</p>
+                </div>
             </div>
         `;
         document.getElementById('modalBody').innerHTML = html;
@@ -499,248 +557,11 @@
         
         const report = currentReport;
         
+        // Track print
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
-        printWindow.document.write(generatePrintHTML(report));
-        printWindow.document.close();
-    }
-    
-    function generatePrintHTML(report) {
-        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        
-        return `<!DOCTYPE html>
-        <html>
-        <head>
-            <title>${reportTypeName} Technical Report #${report.id}</title>
-            <meta charset="UTF-8">
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                html, body {
-                    margin: 0;
-                    padding: 0;
-                    background: white;
-                }
-                body {
-                    font-family: 'Segoe UI', 'Arial', sans-serif;
-                    background: white;
-                    padding: 0;
-                    margin: 0;
-                    font-size: 12pt;
-                    line-height: 1.4;
-                    color: #000;
-                }
-                .print-container {
-                    max-width: 100%;
-                    margin: 0;
-                    padding: 15px;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 15px;
-                    padding-bottom: 5px;
-                }
-                .header h1 {
-                    color: #9b59b6;
-                    margin-bottom: 3px;
-                    font-size: 18pt;
-                }
-                .header h3 {
-                    color: #666;
-                    font-weight: normal;
-                    font-size: 12pt;
-                    margin-bottom: 5px;
-                }
-                .divider {
-                    border-top: 2px solid #9b59b6;
-                    margin: 8px 0;
-                }
-                .report-id {
-                    background: #f8f5fc;
-                    padding: 8px;
-                    border-radius: 6px;
-                    margin-bottom: 15px;
-                    display: flex;
-                    justify-content: space-between;
-                    flex-wrap: wrap;
-                    font-size: 10pt;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 10px;
-                }
-                th, td {
-                    padding: 8px;
-                    border: 1px solid #ddd;
-                    text-align: left;
-                    vertical-align: top;
-                }
-                th {
-                    background-color: #f5f5f5;
-                    width: 30%;
-                    font-weight: bold;
-                    font-size: 10pt;
-                }
-                td {
-                    font-size: 10pt;
-                    word-wrap: break-word;
-                    white-space: normal;
-                }
-                td[style*="white-space: pre-wrap"] {
-                    white-space: pre-wrap !important;
-                    word-wrap: break-word !important;
-                    word-break: break-word !important;
-                }
-                img {
-                    max-width: 140px;
-                    max-height: 90px;
-                    margin: 3px;
-                    border: 1px solid #ccc;
-                }
-                .badge {
-                    display: inline-block;
-                    padding: 2px 6px;
-                    border-radius: 10px;
-                    font-size: 8pt;
-                }
-                .bg-danger {
-                    background-color: #dc3545;
-                    color: white;
-                }
-                .priority-high {
-                    color: #dc3545;
-                    font-weight: bold;
-                }
-                .priority-medium {
-                    color: #856404;
-                    font-weight: bold;
-                }
-                .priority-low {
-                    color: #28a745;
-                    font-weight: bold;
-                }
-                .signatures {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 25px;
-                }
-                .signature-box {
-                    text-align: center;
-                    width: 45%;
-                }
-                .signature-line {
-                    border-top: 1px solid #000;
-                    margin-top: 30px;
-                    padding-top: 5px;
-                    width: 100%;
-                }
-                .footer {
-                    text-align: center;
-                    margin-top: 20px;
-                    font-size: 8pt;
-                    color: #999;
-                    border-top: 1px solid #eee;
-                    padding-top: 10px;
-                }
-                @page {
-                    size: A4;
-                    margin: 1cm;
-                }
-                @media print {
-                    html, body {
-                        margin: 0;
-                        padding: 0;
-                        height: auto;
-                    }
-                    .print-container {
-                        padding: 0;
-                        margin: 0;
-                    }
-                    table {
-                        page-break-inside: avoid;
-                    }
-                    .signatures {
-                        page-break-inside: avoid;
-                    }
-                    .priority-high, .priority-medium, .priority-low {
-                        print-color-adjust: exact;
-                        -webkit-print-color-adjust: exact;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="print-container">
-                <div class="header">
-                    <h1>Ministry of Education, Brunei Darussalam</h1>
-                    <h3>Technical Report System - ${reportTypeName}</h3>
-                    <div class="divider"></div>
-                </div>
-                
-                <div class="report-id">
-                    <div><strong>Report ID:</strong> #${report.id}</div>
-                    <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
-                    <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
-                    <div><strong>Status:</strong> ${report.team_leader_acknowledged ? '✓ Acknowledged' : '⏳ Pending Review'}</div>
-                </div>
-                
-                <table>
-                    <tr><th>Field</th><th>Details</th></tr>
-                    <tr><td><strong>Entity Type</strong>NonNullable<td>${report.entity_type === 'school' ? 'School' : 'Department'}NonNullable
-                    <tr><td><strong>Entity Name</strong>NonNullable<td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
-                    ${report.account_number ? `<tr><td><strong>Account Number</strong>NonNullable<td>${escapeHtml(report.account_number)}NonNullable` : ''}
-                    ${report.meter_number ? `<tr><td><strong>Meter Number</strong>NonNullable<td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `<tr><td><strong>Phone Number</strong>NonNullable<td>${escapeHtml(report.phone_number)}NonNullable` : ''}
-                    ${report.reference_number ? `<tr><td><strong>Reference</strong>NonNullable<td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
-                    <tr><td><strong>Problem Type</strong>NonNullable<td>${escapeHtml(report.problem_type || '-')}NonNullable
-                    <tr><td><strong>Priority</strong>NonNullable<td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.complaint_details || '-')}NonNullable
-                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.action_taken)}NonNullable` : ''}
-                    <tr><td><strong>Submitted By</strong>NonNullable<td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
-                    ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong>NonNullable<td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
-                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
-                </table>
-                
-                <div class="signatures">
-                    <div class="signature-box">
-                        <div class="signature-line"></div>
-                        <div><strong>Technician's Signature</strong></div>
-                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
-                        <div>Date: ${formatDateOnly(new Date())}</div>
-                    </div>
-                    <div class="signature-box">
-                        <div class="signature-line"></div>
-                        <div><strong>Team Leader's Signature</strong></div>
-                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
-                        <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
-                    </div>
-                </div>
-                
-                <div class="footer">
-                    <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
-                    <p>Printed on: ${currentDate}</p>
-                </div>
-            </div>
-            <script>
-                window.onload = function() { 
-                    window.print(); 
-                    setTimeout(function() { 
-                        window.close(); 
-                    }, 1000);
-                };
-            <\/script>
-        </body>
-        </html>`;
+        // Simply use browser's print - it will use the @media print CSS
+        window.print();
     }
     
     document.addEventListener('DOMContentLoaded', function() {
