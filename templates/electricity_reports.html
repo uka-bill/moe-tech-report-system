@@ -508,13 +508,38 @@
     function editReport() { window.location.href = `/new-report?id=${currentReportId}`; }
     
     function printReport() {
-        if (!currentReport) { window.showToast('No report to print', 'error'); return; }
+        if (!currentReport && currentReportId) {
+            window.showToast('No report to print', 'error');
+            return;
+        }
         
-        fetch(`/api/technical-reports/${currentReport.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        const report = currentReport;
         
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
-        printWindow.document.write(generatePrintHTML(currentReport));
-        printWindow.document.close();
+        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        
+        // Get the print HTML
+        const printHtml = generatePrintHTML(report);
+        
+        // Create an iframe for printing - this prevents PDF preview navigation bars
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+        
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(printHtml);
+        iframeDoc.close();
+        
+        // Print from iframe and then remove it
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        
+        setTimeout(function() {
+            document.body.removeChild(iframe);
+        }, 1000);
     }
     
     function generatePrintHTML(report) {
@@ -537,20 +562,21 @@
                     margin: 0;
                     padding: 0;
                     background: white;
+                    height: auto;
                 }
                 body {
                     font-family: 'Segoe UI', 'Arial', sans-serif;
                     background: white;
-                    padding: 0;
+                    padding: 20px;
                     margin: 0;
                     font-size: 12pt;
-                    line-height: 1.4;
+                    line-height: 1.3;
                     color: #000;
                 }
                 .print-container {
                     max-width: 100%;
-                    margin: 0;
-                    padding: 15px;
+                    margin: 0 auto;
+                    padding: 0;
                     background: white;
                 }
                 .header {
@@ -575,7 +601,7 @@
                 }
                 .report-id {
                     background: #fff3e0;
-                    padding: 8px;
+                    padding: 8px 10px;
                     border-radius: 6px;
                     margin-bottom: 15px;
                     display: flex;
@@ -589,7 +615,7 @@
                     margin-top: 10px;
                 }
                 th, td {
-                    padding: 8px;
+                    padding: 8px 10px;
                     border: 1px solid #ddd;
                     text-align: left;
                     vertical-align: top;
@@ -604,11 +630,6 @@
                     font-size: 10pt;
                     word-wrap: break-word;
                     white-space: normal;
-                }
-                td[style*="white-space: pre-wrap"] {
-                    white-space: pre-wrap !important;
-                    word-wrap: break-word !important;
-                    word-break: break-word !important;
                 }
                 img {
                     max-width: 140px;
@@ -641,7 +662,7 @@
                 .signatures {
                     display: flex;
                     justify-content: space-between;
-                    margin-top: 25px;
+                    margin-top: 30px;
                 }
                 .signature-box {
                     text-align: center;
@@ -670,6 +691,9 @@
                         margin: 0;
                         padding: 0;
                         height: auto;
+                    }
+                    body {
+                        padding: 0;
                     }
                     .print-container {
                         padding: 0;
@@ -700,7 +724,7 @@
                     <div><strong>Report ID:</strong> #${report.id}</div>
                     <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
                     <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
-                    <div><strong>Status:</strong> ${report.team_leader_acknowledged ? '✓ Acknowledged' : '⏳ Pending Review'}</div>
+                    <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
                 </div>
                 
                 <table>
@@ -709,13 +733,13 @@
                     <tr><td><strong>Entity Name</strong>NonNullable<td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
                     ${report.account_number ? `<tr><td><strong>Account Number</strong>NonNullable<td>${escapeHtml(report.account_number)}NonNullable` : ''}
                     ${report.meter_number ? `<tr><td><strong>Meter Number</strong>NonNullable<td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `</tr><td><strong>Phone Number</strong>NonNullable<td>${escapeHtml(report.phone_number)}NonNullable` : ''}
+                    ${report.phone_number ? `<tr><td><strong>Phone Number</strong>NonNullable<td>${escapeHtml(report.phone_number)}NonNullable` : ''}
                     ${report.reference_number ? `<tr><td><strong>Reference</strong>NonNullable<td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><td><strong>Problem Type</strong>NonNullable<td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><td><strong>Priority</strong>NonNullable<td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
                     <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.complaint_details || '-')}NonNullable
                     ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `</td><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.action_taken)}NonNullable` : ''}
+                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.action_taken)}NonNullable` : ''}
                     <tr><td><strong>Submitted By</strong>NonNullable<td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
                     ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong>NonNullable<td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
                     ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
@@ -743,11 +767,9 @@
                 </div>
             </div>
             <script>
+                // Auto-trigger print when loaded
                 window.onload = function() { 
                     window.print(); 
-                    setTimeout(function() { 
-                        window.close(); 
-                    }, 1000);
                 };
             <\/script>
         </body>
