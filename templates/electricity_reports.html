@@ -136,6 +136,31 @@
         color: #ccc;
         margin-bottom: 20px;
     }
+    
+    /* Print CSS - Hide all UI elements when printing */
+    @media print {
+        .no-print, .navbar, footer, .filter-card, .stats-badge, 
+        .btn, .btn-primary, .btn-warning, .btn-danger, .btn-secondary,
+        .btn-delete, .btn-edit, .btn-acknowledge, .btn-add-comment,
+        .modal-footer button, .modal-header .btn-close {
+            display: none !important;
+        }
+        body {
+            background: white;
+            padding: 0;
+            margin: 0;
+        }
+        .card, .report-card, .modal-content {
+            box-shadow: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+        .main-content {
+            padding: 0;
+            margin: 0;
+        }
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -242,7 +267,6 @@
     function checkUserRole() {
         const user = window.getCurrentUser();
         isTeamLeader = user && user.isAuthorized === true;
-        console.log('Electricity Reports - Is Team Leader:', isTeamLeader);
     }
     
     function getImageUrl(imgPath) {
@@ -295,7 +319,6 @@
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-warning"></div><p>Loading electricity reports...</p></div>';
         
         try {
-            console.log('Fetching electricity reports...');
             const response = await fetch('/api/technical-reports?type=electricity');
             
             if (!response.ok) {
@@ -304,8 +327,6 @@
             
             let reports = await response.json();
             if (!reports) reports = [];
-            
-            console.log('Reports received:', reports.length);
             
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
@@ -505,27 +526,182 @@
         return `<!DOCTYPE html>
         <html>
         <head>
-            <title>Electricity Technical Report #${report.id} - Discussion Copy</title>
+            <title>Electricity Technical Report #${report.id}</title>
+            <meta charset="UTF-8">
             <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: white; }
-                .print-container { max-width: 1000px; margin: 0 auto; background: white; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .header h1 { color: #f57c00; margin-bottom: 5px; font-size: 24px; }
-                .header h3 { color: #666; font-weight: normal; font-size: 16px; }
-                .discussion-badge { background-color: #ffc107; color: #333; padding: 5px 15px; border-radius: 20px; display: inline-block; margin-top: 10px; font-size: 12px; }
-                .divider { border-top: 2px solid #f57c00; margin: 10px 0; }
-                .report-id { background: #fff3e0; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
-                th { background-color: #f5f5f5; width: 30%; font-weight: bold; }
-                .footer { text-align: center; margin-top: 40px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-                .priority-high { color: #dc3545; font-weight: bold; }
-                .priority-medium { color: #856404; font-weight: bold; }
-                .priority-low { color: #28a745; font-weight: bold; }
-                .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; }
-                .bg-danger { background-color: #dc3545; color: white; }
-                @media print { body { padding: 0; margin: 0; } .print-container { margin: 0; padding: 20px; } }
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Segoe UI', 'Arial', sans-serif;
+                    background: white;
+                    padding: 20px;
+                    margin: 0;
+                    font-size: 12pt;
+                    line-height: 1.4;
+                    color: #000;
+                }
+                .print-container {
+                    max-width: 1000px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .header h1 {
+                    color: #f57c00;
+                    margin-bottom: 5px;
+                    font-size: 20pt;
+                }
+                .header h3 {
+                    color: #666;
+                    font-weight: normal;
+                    font-size: 14pt;
+                    margin-bottom: 10px;
+                }
+                .divider {
+                    border-top: 2px solid #f57c00;
+                    margin: 10px 0;
+                }
+                .report-id {
+                    background: #fff3e0;
+                    padding: 10px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    font-size: 11pt;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 15px;
+                    page-break-inside: avoid;
+                }
+                th, td {
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                th {
+                    background-color: #f5f5f5;
+                    width: 30%;
+                    font-weight: bold;
+                    font-size: 11pt;
+                }
+                td {
+                    font-size: 11pt;
+                    word-wrap: break-word;
+                    white-space: normal;
+                }
+                td[style*="white-space: pre-wrap"] {
+                    white-space: pre-wrap !important;
+                    word-wrap: break-word !important;
+                    word-break: break-word !important;
+                }
+                img {
+                    max-width: 150px;
+                    max-height: 100px;
+                    margin: 5px;
+                    border: 1px solid #ccc;
+                }
+                .badge {
+                    display: inline-block;
+                    padding: 3px 8px;
+                    border-radius: 12px;
+                    font-size: 9pt;
+                }
+                .bg-danger {
+                    background-color: #dc3545;
+                    color: white;
+                }
+                .priority-high {
+                    color: #dc3545;
+                    font-weight: bold;
+                }
+                .priority-medium {
+                    color: #856404;
+                    font-weight: bold;
+                }
+                .priority-low {
+                    color: #28a745;
+                    font-weight: bold;
+                }
+                .signatures {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-top: 40px;
+                    page-break-inside: avoid;
+                }
+                .signature-box {
+                    text-align: center;
+                    width: 45%;
+                }
+                .signature-line {
+                    border-top: 1px solid #000;
+                    margin-top: 40px;
+                    padding-top: 8px;
+                    width: 100%;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    font-size: 9pt;
+                    color: #999;
+                    border-top: 1px solid #eee;
+                    padding-top: 15px;
+                }
+                @page {
+                    size: A4;
+                    margin: 1.5cm;
+                }
+                @media print {
+                    body {
+                        padding: 0;
+                        margin: 0;
+                        background: white;
+                    }
+                    .print-container {
+                        margin: 0;
+                        padding: 0;
+                        max-width: 100%;
+                    }
+                    table {
+                        page-break-inside: avoid;
+                    }
+                    tr {
+                        page-break-inside: avoid;
+                        page-break-after: avoid;
+                    }
+                    img {
+                        page-break-inside: avoid;
+                    }
+                    .priority-high, .priority-medium, .priority-low {
+                        print-color-adjust: exact;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .signatures {
+                        page-break-inside: avoid;
+                    }
+                }
+                @media screen and (max-width: 768px) {
+                    body {
+                        padding: 10px;
+                    }
+                    .print-container {
+                        padding: 10px;
+                    }
+                    th, td {
+                        padding: 6px;
+                    }
+                }
             </style>
         </head>
         <body>
@@ -533,7 +709,6 @@
                 <div class="header">
                     <h1>Ministry of Education, Brunei Darussalam</h1>
                     <h3>Technical Report System - Electricity</h3>
-                    <div class="discussion-badge">📄 DISCUSSION COPY - FOR REVIEW ONLY</div>
                     <div class="divider"></div>
                 </div>
                 
@@ -554,36 +729,53 @@
                     ${report.reference_number ? `<tr><td><strong>Reference</strong>NonNullable<td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><td><strong>Problem Type</strong>NonNullable<td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><td><strong>Priority</strong>NonNullable<td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="badge bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.complaint_details || '-')}NonNullable
-                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `<tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.action_taken)}NonNullable` : ''}
+                    <tr><td><strong>Complaint Details</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.complaint_details || '-')}NonNullable
+                    ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
+                    ${report.action_taken ? `</tr><td><strong>Action Taken</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.action_taken)}NonNullable` : ''}
                     <tr><td><strong>Submitted By</strong>NonNullable<td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
                     ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong>NonNullable<td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
-                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 100px; margin: 5px;" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
+                    ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong>NonNullable<td style="white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
+                    ${report.images && report.images.length > 0 ? `<tr><td><strong>Attached Images</strong>NonNullable<td>${report.images.map(img => `<img src="${img}" onerror="this.style.display='none'">`).join('')}NonNullable` : ''}
                 </table>
                 
+                <div class="signatures">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Technician's Signature</strong></div>
+                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
+                        <div>Date: ${formatDateOnly(new Date())}</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Team Leader's Signature</strong></div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
+                        <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
+                    </div>
+                </div>
+                
                 <div class="footer">
-                    <p><strong>IMPORTANT:</strong> This is a discussion copy only. This report has ${report.team_leader_acknowledged ? 'been acknowledged' : 'not been acknowledged yet'}.</p>
-                    <p>Printed on: ${currentDate}</p>
                     <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
+                    <p>Printed on: ${currentDate}</p>
                 </div>
             </div>
             <script>
-                window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1000); };
+                window.onload = function() { 
+                    window.print(); 
+                    setTimeout(function() { 
+                        window.close(); 
+                    }, 1000);
+                };
             <\/script>
         </body>
         </html>`;
     }
     
-    // FIX: Use DOMContentLoaded to ensure page is fully loaded before initializing
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Electricity Reports page loaded, initializing...');
         checkUserRole();
         loadTechniciansForFilter().then(() => {
             loadReports();
         });
-        setInterval(loadReports, 30000);
+        // No auto-refresh - user must click Refresh button manually
     });
 </script>
 {% endblock %}
