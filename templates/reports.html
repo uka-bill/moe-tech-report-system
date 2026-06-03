@@ -118,7 +118,6 @@
         gap: 10px;
     }
     
-    /* Loading overlay for PDF generation */
     .pdf-loading {
         position: fixed;
         top: 0;
@@ -136,10 +135,6 @@
         padding: 20px 40px;
         border-radius: 10px;
         text-align: center;
-    }
-    .pdf-loading .spinner .spinner-border {
-        width: 40px;
-        height: 40px;
     }
 </style>
 
@@ -203,7 +198,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <div class="btn-group-print">
-                    <button type="button" class="btn btn-primary" onclick="printReportAsPDF()">
+                    <button type="button" class="btn btn-primary" onclick="printReport()">
                         <i class="bi bi-printer"></i> Print
                     </button>
                     <button type="button" class="btn btn-success" onclick="saveAsPDF()">
@@ -262,7 +257,7 @@
         return div.innerHTML;
     }
     
-    function showLoadingOverlay() {
+    function showLoading() {
         let overlay = document.getElementById('pdfLoadingOverlay');
         if (!overlay) {
             overlay = document.createElement('div');
@@ -271,7 +266,7 @@
             overlay.innerHTML = `
                 <div class="spinner">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 mb-0">Generating PDF...</p>
+                    <p class="mt-2 mb-0">Generating document...</p>
                 </div>
             `;
             document.body.appendChild(overlay);
@@ -279,7 +274,7 @@
         overlay.style.display = 'flex';
     }
     
-    function hideLoadingOverlay() {
+    function hideLoading() {
         const overlay = document.getElementById('pdfLoadingOverlay');
         if (overlay) {
             overlay.style.display = 'none';
@@ -526,7 +521,7 @@
         }
     }
     
-    function getReportHTML(report) {
+    function getPrintWindowHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -552,204 +547,199 @@
             commentsHtml += '</div></div>';
         }
         
-        return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>${reportTypeName} Technical Report #${report.id}</title>
-                <style>
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
+        return `<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>${reportTypeName} Technical Report #${report.id}</title>
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: 'Times New Roman', 'Arial', serif;
+                    background: white;
+                    padding: 40px;
+                    font-size: 12pt;
+                    line-height: 1.5;
+                    color: #000;
+                }
+                .report-container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                    background: white;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    padding-bottom: 15px;
+                }
+                .header h2 {
+                    font-size: 13pt;
+                    font-weight: normal;
+                    margin: 0;
+                    line-height: 1.4;
+                }
+                .header h1 {
+                    font-size: 16pt;
+                    font-weight: bold;
+                    margin: 5px 0;
+                    text-transform: uppercase;
+                }
+                .header .divider {
+                    border-top: 2px solid #000;
+                    margin: 15px 0 5px 0;
+                }
+                .header .sub-divider {
+                    border-top: 1px solid #000;
+                    margin: 5px 0;
+                }
+                .report-id {
+                    background: #f5f5f5;
+                    padding: 10px 15px;
+                    margin-bottom: 25px;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    border: 1px solid #ddd;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 15px 0;
+                }
+                th, td {
+                    padding: 10px 12px;
+                    border: 1px solid #aaa;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                th {
+                    background-color: #f0f0f0;
+                    width: 30%;
+                    font-weight: bold;
+                }
+                .priority-high {
+                    color: #dc3545;
+                    font-weight: bold;
+                }
+                .priority-medium {
+                    color: #d4a000;
+                    font-weight: bold;
+                }
+                .priority-low {
+                    color: #28a745;
+                    font-weight: bold;
+                }
+                .bg-danger {
+                    background-color: #dc3545;
+                    color: white;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    display: inline-block;
+                }
+                .signatures {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-top: 50px;
+                    margin-bottom: 30px;
+                }
+                .signature-box {
+                    text-align: center;
+                    width: 45%;
+                }
+                .signature-line {
+                    border-top: 1px solid #000;
+                    margin-top: 50px;
+                    padding-top: 8px;
+                    width: 100%;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 40px;
+                    font-size: 9pt;
+                    color: #666;
+                    border-top: 1px solid #ddd;
+                    padding-top: 15px;
+                }
+                @media print {
                     body {
-                        font-family: 'Times New Roman', 'Arial', serif;
-                        background: white;
-                        padding: 40px;
-                        font-size: 12pt;
-                        line-height: 1.5;
-                        color: #000;
-                    }
-                    .report-container {
-                        max-width: 100%;
-                        margin: 0 auto;
-                        background: white;
-                    }
-                    .header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        padding-bottom: 15px;
-                    }
-                    .header h2 {
-                        font-size: 13pt;
-                        font-weight: normal;
+                        padding: 0;
                         margin: 0;
-                        line-height: 1.4;
                     }
-                    .header h1 {
-                        font-size: 16pt;
-                        font-weight: bold;
-                        margin: 5px 0;
-                        text-transform: uppercase;
-                    }
-                    .header .divider {
-                        border-top: 2px solid #000;
-                        margin: 15px 0 5px 0;
-                    }
-                    .header .sub-divider {
-                        border-top: 1px solid #000;
-                        margin: 5px 0;
-                    }
-                    .report-id {
-                        background: #f5f5f5;
-                        padding: 10px 15px;
-                        margin-bottom: 25px;
-                        display: flex;
-                        justify-content: space-between;
-                        flex-wrap: wrap;
-                        border: 1px solid #ddd;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 15px 0;
-                    }
-                    th, td {
-                        padding: 10px 12px;
-                        border: 1px solid #aaa;
-                        text-align: left;
-                        vertical-align: top;
-                    }
-                    th {
-                        background-color: #f0f0f0;
-                        width: 30%;
-                        font-weight: bold;
-                    }
-                    .priority-high {
-                        color: #dc3545;
-                        font-weight: bold;
-                    }
-                    .priority-medium {
-                        color: #d4a000;
-                        font-weight: bold;
-                    }
-                    .priority-low {
-                        color: #28a745;
-                        font-weight: bold;
-                    }
-                    .badge {
-                        display: inline-block;
-                        padding: 2px 8px;
-                        border-radius: 12px;
-                        font-size: 10pt;
-                    }
-                    .bg-danger {
-                        background-color: #dc3545;
-                        color: white;
-                        padding: 2px 8px;
-                        border-radius: 4px;
-                    }
-                    .signatures {
-                        display: flex;
-                        justify-content: space-between;
-                        margin-top: 50px;
-                        margin-bottom: 30px;
-                    }
-                    .signature-box {
-                        text-align: center;
-                        width: 45%;
-                    }
-                    .signature-line {
-                        border-top: 1px solid #000;
-                        margin-top: 50px;
-                        padding-top: 8px;
-                        width: 100%;
-                    }
-                    .footer {
-                        text-align: center;
-                        margin-top: 40px;
-                        font-size: 9pt;
-                        color: #666;
-                        border-top: 1px solid #ddd;
-                        padding-top: 15px;
-                    }
-                    @media print {
-                        body {
-                            padding: 0;
-                            margin: 0;
-                        }
-                        .report-container {
-                            padding: 20px;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="report-container">
-                    <div class="header">
-                        <h2>Unit Kemudahan Asas</h2>
-                        <h2>Department of Administration and Services</h2>
-                        <h1>Ministry of Education</h1>
-                        <div class="divider"></div>
-                        <div class="sub-divider"></div>
-                        <h3 style="margin-top: 10px;">Technical Report System - ${reportTypeName}</h3>
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-container">
+                <div class="header">
+                    <h2>Unit Kemudahan Asas</h2>
+                    <h2>Department of Administration and Services</h2>
+                    <h1>Ministry of Education</h1>
+                    <div class="divider"></div>
+                    <div class="sub-divider"></div>
+                    <h3 style="margin-top: 10px;">Technical Report System - ${reportTypeName}</h3>
+                </div>
+                
+                <div class="report-id">
+                    <div><strong>Report ID:</strong> #${report.id}</div>
+                    <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
+                    <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
+                    <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
+                </div>
+                
+                <table>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
+                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
+                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td><tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
+                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td>` : ''}
+                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td>` : ''}
+                </table>
+                
+                ${imagesHtml}
+                ${commentsHtml}
+                
+                <div class="signatures">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Technician's Signature</strong></div>
+                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
+                        <div>Date: ${formatDateOnly(new Date())}</div>
                     </div>
-                    
-                    <div class="report-id">
-                        <div><strong>Report ID:</strong> #${report.id}</div>
-                        <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
-                        <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
-                        <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
-                    </div>
-                    
-                    <table>
-                        <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                        <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                        ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
-                        ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
-                        ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                        ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                        <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}</td></tr>
-                        <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
-                        <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
-                        ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</td></tr>` : ''}
-                        ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
-                        <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
-                        ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                        ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
-                    </table>
-                    
-                    ${imagesHtml}
-                    ${commentsHtml}
-                    
-                    <div class="signatures">
-                        <div class="signature-box">
-                            <div class="signature-line"></div>
-                            <div><strong>Technician's Signature</strong></div>
-                            <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
-                            <div>Date: ${formatDateOnly(new Date())}</div>
-                        </div>
-                        <div class="signature-box">
-                            <div class="signature-line"></div>
-                            <div><strong>Team Leader's Signature</strong></div>
-                            <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
-                            <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
-                        <p>Printed on: ${currentDate}</p>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Team Leader's Signature</strong></div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
+                        <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
                     </div>
                 </div>
-            </body>
-            </html>
-        `;
+                
+                <div class="footer">
+                    <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
+                    <p>Printed on: ${currentDate}</p>
+                </div>
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                };
+            <\/script>
+        </body>
+        </html>`;
     }
     
-    async function printReportAsPDF() {
+    function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
             return;
@@ -757,42 +747,15 @@
         
         const report = currentReport;
         
-        // Track print
-        await fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        showLoadingOverlay();
-        
-        try {
-            const reportHTML = getReportHTML(report);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = reportHTML;
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '0';
-            tempDiv.style.width = '210mm';
-            tempDiv.style.background = 'white';
-            document.body.appendChild(tempDiv);
-            
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `Technical_Report_${report.id}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true, useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-            
-            await html2pdf().set(opt).from(tempDiv).save();
-            document.body.removeChild(tempDiv);
-            hideLoadingOverlay();
-            window.showToast('Report ready for printing. PDF opened in new tab.');
-        } catch (error) {
-            hideLoadingOverlay();
-            console.error('PDF Error:', error);
-            window.showToast('Error generating PDF', 'error');
-        }
+        const printHtml = getPrintWindowHTML(report);
+        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
     }
     
-    async function saveAsPDF() {
+    function saveAsPDF() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to save', 'error');
             return;
@@ -800,39 +763,17 @@
         
         const report = currentReport;
         
-        // Track print
-        await fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        showLoadingOverlay();
+        const printHtml = getPrintWindowHTML(report);
+        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
         
-        try {
-            const reportHTML = getReportHTML(report);
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = reportHTML;
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '0';
-            tempDiv.style.width = '210mm';
-            tempDiv.style.background = 'white';
-            document.body.appendChild(tempDiv);
-            
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, letterRendering: true, useCORS: true },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
-            
-            await html2pdf().set(opt).from(tempDiv).save();
-            document.body.removeChild(tempDiv);
-            hideLoadingOverlay();
-            window.showToast('PDF saved successfully');
-        } catch (error) {
-            hideLoadingOverlay();
-            console.error('PDF Error:', error);
-            window.showToast('Error saving PDF', 'error');
-        }
+        // Show instruction
+        setTimeout(() => {
+            window.showToast('In the new window, press Ctrl+P (or Cmd+P) and select "Save as PDF"', 'info');
+        }, 500);
     }
     
     document.addEventListener('DOMContentLoaded', function() {
