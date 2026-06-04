@@ -112,31 +112,6 @@
         color: #999;
         margin-left: 10px;
     }
-    
-    .btn-group-print {
-        display: flex;
-        gap: 10px;
-    }
-    
-    /* Loading overlay */
-    .pdf-loading {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 99999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    .pdf-loading .spinner {
-        background: white;
-        padding: 20px 40px;
-        border-radius: 10px;
-        text-align: center;
-    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -187,14 +162,6 @@
     </div>
 </div>
 
-<!-- Loading Overlay -->
-<div id="pdfLoadingOverlay" class="pdf-loading">
-    <div class="spinner">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 mb-0">Generating document...</p>
-    </div>
-</div>
-
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -206,14 +173,9 @@
             <div class="modal-body" id="modalBody">Loading...</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <div class="btn-group-print">
-                    <button type="button" class="btn btn-primary" onclick="printReport()">
-                        <i class="bi bi-printer"></i> Print
-                    </button>
-                    <button type="button" class="btn btn-success" onclick="saveAsWord()">
-                        <i class="bi bi-file-word"></i> Save as Word
-                    </button>
-                </div>
+                <button type="button" class="btn btn-primary" onclick="printReport()">
+                    <i class="bi bi-printer"></i> Print / Save as PDF
+                </button>
                 <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
             </div>
         </div>
@@ -264,20 +226,6 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-    
-    function showLoading() {
-        const overlay = document.getElementById('pdfLoadingOverlay');
-        if (overlay) {
-            overlay.style.display = 'flex';
-        }
-    }
-    
-    function hideLoading() {
-        const overlay = document.getElementById('pdfLoadingOverlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-        }
     }
     
     function checkUserRole() {
@@ -526,11 +474,9 @@
         cleaned = cleaned.replace(/NonNullable/gi, '');
         cleaned = cleaned.replace(/Non-Nullable/gi, '');
         cleaned = cleaned.replace(/null/gi, '');
-        cleaned = cleaned.replace(/NULL/gi, '');
         return cleaned.trim();
     }
     
-    // ============ PRINT FUNCTION ============
     function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
@@ -541,25 +487,10 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        document.body.appendChild(iframe);
-        
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
         const printHtml = getPrintHTML(report);
-        const iframeDoc = iframe.contentWindow.document;
-        iframeDoc.open();
-        iframeDoc.write(printHtml);
-        iframeDoc.close();
-        
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        
-        setTimeout(function() {
-            document.body.removeChild(iframe);
-        }, 1000);
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
     }
     
     function getPrintHTML(report) {
@@ -650,21 +581,21 @@
                     <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
                     <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
                 </div>
-                <table>
+                </table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
-                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}NonNullable
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}NonNullable` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}NonNullable` : ''}
+                    ${phoneNumber ? `</tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}NonNullable` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}NonNullable
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}NonNullable
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}NonNullable` : ''}
+                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}NonNullable` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}NonNullable
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
+                    ${teamLeaderNotes ? `</table><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}NonNullable` : ''}
                 </table>
                 ${imagesHtml}
                 ${commentsHtml}
@@ -676,311 +607,6 @@
             </div>
         </body>
         </html>`;
-    }
-    
-    // ============ WORD DOCUMENT FUNCTION - PROPERLY FORMATTED ============
-    function getWordHTML(report) {
-        const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-        const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
-        const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        
-        let complaintDetails = cleanText(report.complaint_details || '-');
-        let actionTaken = cleanText(report.action_taken || '-');
-        let technicianNotes = cleanText(report.technician_notes || '');
-        let teamLeaderNotes = cleanText(report.team_leader_notes || '');
-        let accountNumber = cleanText(report.account_number || '');
-        let meterNumber = cleanText(report.meter_number || '');
-        let phoneNumber = cleanText(report.phone_number || '');
-        let referenceNumber = cleanText(report.reference_number || '');
-        let referenceType = cleanText(report.reference_type || '');
-        let problemType = cleanText(report.problem_type || '-');
-        let entityName = cleanText(report.entity_name || report.entity_type || '');
-        let technicianName = cleanText(report.technician_name || 'Unknown');
-        let teamLeaderName = cleanText(report.team_leader_name || '_________________');
-        
-        if (complaintDetails.includes('\n')) {
-            complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
-        }
-        if (actionTaken.includes('\n')) {
-            actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
-        }
-        
-        let imagesHtml = '';
-        if (report.images && report.images.length > 0) {
-            imagesHtml = '<div style="margin-top:20px;"><strong>Attached Images:</strong><div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:10px;">';
-            report.images.forEach(img => {
-                imagesHtml += `<img src="${img}" style="max-width:180px; max-height:120px; border:1px solid #ccc; border-radius:4px;">`;
-            });
-            imagesHtml += '</div></div>';
-        }
-        
-        let commentsHtml = '';
-        if (report.comments && report.comments.length > 0) {
-            commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
-            report.comments.forEach(c => {
-                let commentText = cleanText(c.text);
-                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
-            });
-            commentsHtml += '</div></div>';
-        }
-        
-        return `<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>${reportTypeName} Technical Report #${report.id}</title>
-            <style>
-                /* Professional Word Document Styles */
-                body {
-                    font-family: 'Times New Roman', 'Arial', serif;
-                    margin: 2.54cm 3.17cm;
-                    padding: 0;
-                    font-size: 12pt;
-                    line-height: 1.5;
-                    color: #000000;
-                    background: white;
-                }
-                
-                /* Header Section - Properly spaced */
-                .header {
-                    text-align: center;
-                    margin-bottom: 40px;
-                }
-                .header h2 {
-                    font-size: 12pt;
-                    font-weight: normal;
-                    margin: 0;
-                    padding: 0;
-                }
-                .header h1 {
-                    font-size: 18pt;
-                    font-weight: bold;
-                    margin: 15px 0 10px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                .divider {
-                    border-top: 2px solid #000000;
-                    margin: 20px 0 5px 0;
-                }
-                .sub-divider {
-                    border-top: 1px solid #000000;
-                    margin: 5px 0;
-                }
-                
-                /* Report ID Box */
-                .report-id {
-                    background: #f5f5f5;
-                    padding: 12px 15px;
-                    margin-bottom: 30px;
-                    border: 1px solid #cccccc;
-                }
-                .report-id p {
-                    margin: 5px 0;
-                }
-                
-                /* Table Styles - Properly formatted with borders */
-                .report-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 20px 0;
-                }
-                .report-table th {
-                    border: 1px solid #000000;
-                    padding: 10px 12px;
-                    text-align: left;
-                    vertical-align: top;
-                    background-color: #f0f0f0;
-                    width: 30%;
-                    font-weight: bold;
-                }
-                .report-table td {
-                    border: 1px solid #000000;
-                    padding: 10px 12px;
-                    text-align: left;
-                    vertical-align: top;
-                }
-                
-                /* Priority Colors */
-                .priority-high {
-                    color: #dc3545;
-                    font-weight: bold;
-                }
-                .priority-medium {
-                    color: #d4a000;
-                    font-weight: bold;
-                }
-                .priority-low {
-                    color: #28a745;
-                    font-weight: bold;
-                }
-                .tender-badge {
-                    background-color: #dc3545;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    display: inline-block;
-                    margin-left: 8px;
-                }
-                
-                /* Signatures Section */
-                .signatures {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 60px;
-                    margin-bottom: 40px;
-                }
-                .signature-box {
-                    text-align: center;
-                    width: 45%;
-                }
-                .signature-line {
-                    border-top: 1px solid #000000;
-                    margin-top: 50px;
-                    padding-top: 8px;
-                    width: 100%;
-                }
-                .signature-box p {
-                    margin: 8px 0;
-                }
-                
-                /* Footer */
-                .footer {
-                    text-align: center;
-                    margin-top: 50px;
-                    font-size: 9pt;
-                    color: #666666;
-                    border-top: 1px solid #dddddd;
-                    padding-top: 15px;
-                }
-                
-                /* Images */
-                .image-section {
-                    margin-top: 20px;
-                }
-                .image-gallery {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 15px;
-                    margin-top: 10px;
-                }
-                .report-image {
-                    max-width: 180px;
-                    max-height: 120px;
-                    border: 1px solid #cccccc;
-                    border-radius: 4px;
-                }
-                
-                /* Comments */
-                .comments-section {
-                    margin-top: 20px;
-                }
-                .comment-item {
-                    border: 1px solid #e0e0e0;
-                    padding: 12px;
-                    margin-bottom: 10px;
-                    border-radius: 6px;
-                    background: #fafafa;
-                }
-                
-                /* Page Setup - Standard margins */
-                @page {
-                    size: A4;
-                    margin: 2.54cm 3.17cm;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h2>Unit Kemudahan Asas</h2>
-                <h2>Department of Administration and Services</h2>
-                <h1>MINISTRY OF EDUCATION</h1>
-                <div class="divider"></div>
-                <div class="sub-divider"></div>
-                <h3 style="margin-top: 15px; font-size: 13pt;">Technical Report System - ${reportTypeName}</h3>
-            </div>
-            
-            <div class="report-id">
-                <p><strong>Report ID:</strong> #${report.id}</p>
-                <p><strong>Date:</strong> ${formatDate(report.created_at)}</p>
-                <p><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</p>
-                <p><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</p>
-            </div>
-            
-            <table class="report-table">
-                <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</tr>
-                ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</tr>` : ''}
-                ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</tr>` : ''}
-                ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</tr>` : ''}
-                ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</tr>` : ''}
-                <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</tr>
-                <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="tender-badge">TENDER</span>' : ''}</td></tr>
-                <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
-                ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
-                ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
-                <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</tr>
-                ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</tr>` : ''}
-                ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
-            </table>
-            
-            ${imagesHtml}
-            ${commentsHtml}
-            
-            <div class="signatures">
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <p><strong>Technician's Signature</strong></p>
-                    <p>Name: ${escapeHtml(technicianName)}</p>
-                    <p>Date: ${formatDateOnly(new Date())}</p>
-                </div>
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <p><strong>Team Leader's Signature</strong></p>
-                    <p>Name: ${report.team_leader_acknowledged ? escapeHtml(teamLeaderName) : '_________________'}</p>
-                    <p>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</p>
-                </div>
-            </div>
-            
-            <div class="footer">
-                <p>This is an official technical report from the Ministry of Education, Brunei Darussalam.</p>
-                <p>Printed on: ${currentDate}</p>
-            </div>
-        </body>
-        </html>`;
-    }
-    
-    function saveAsWord() {
-        if (!currentReport && currentReportId) {
-            window.showToast('No report to save', 'error');
-            return;
-        }
-        
-        const report = currentReport;
-        
-        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
-        
-        showLoading();
-        
-        try {
-            const wordHtml = getWordHTML(report);
-            const blob = new Blob([wordHtml], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Technical_Report_${report.id}_${formatDateOnly(new Date())}.doc`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            hideLoading();
-            window.showToast('Word document saved successfully');
-        } catch (error) {
-            hideLoading();
-            console.error('Error:', error);
-            window.showToast('Error generating document', 'error');
-        }
     }
     
     document.addEventListener('DOMContentLoaded', function() {
