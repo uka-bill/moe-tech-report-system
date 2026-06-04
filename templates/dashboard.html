@@ -157,7 +157,7 @@
 <!-- Weekly Report Chart -->
 <div class="chart-container">
     <div class="chart-title">
-        <i class="bi bi-graph-up"></i> Weekly Report Activity
+        <i class="bi bi-graph-up"></i> Weekly Report Activity (Last 7 Days)
     </div>
     <div class="weekly-stats" id="weeklyStats">
         <div class="day-stat">
@@ -269,32 +269,28 @@
             const response = await fetch('/api/technical-reports');
             const reports = await response.json();
             
-            // Get last 7 days
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const today = new Date();
-            const weeklyCount = {};
+            const weeklyCount = {
+                'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0
+            };
             
-            // Initialize counts
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() - i);
-                const dayName = days[date.getDay()];
-                weeklyCount[dayName] = 0;
-            }
+            // Get last 7 days
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
             
-            // Count reports per day
             reports.forEach(report => {
                 const reportDate = new Date(report.created_at);
-                const dayName = days[reportDate.getDay()];
-                if (weeklyCount[dayName] !== undefined) {
-                    weeklyCount[dayName]++;
+                if (reportDate >= sevenDaysAgo) {
+                    const dayName = days[reportDate.getDay()];
+                    if (weeklyCount[dayName] !== undefined) {
+                        weeklyCount[dayName]++;
+                    }
                 }
             });
             
-            // Find max count for bar scaling
             const maxCount = Math.max(...Object.values(weeklyCount), 1);
             
-            // Update display
             const dayIds = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             
