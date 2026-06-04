@@ -523,13 +523,17 @@
     function cleanText(text) {
         if (!text) return '';
         let cleaned = String(text);
+        // Remove all variations of NonNullable
         cleaned = cleaned.replace(/NonNullable/gi, '');
         cleaned = cleaned.replace(/Non-Nullable/gi, '');
         cleaned = cleaned.replace(/null/gi, '');
-        return cleaned.trim();
+        cleaned = cleaned.replace(/NULL/gi, '');
+        // Trim extra spaces
+        cleaned = cleaned.trim();
+        return cleaned;
     }
     
-    // ============ PRINT FUNCTION - Direct print dialog, no new tab ============
+    // ============ PRINT FUNCTION ============
     function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
@@ -540,7 +544,7 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        // Create hidden iframe for printing (no new tab)
+        // Create hidden iframe for printing
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
         iframe.style.width = '0';
@@ -554,11 +558,9 @@
         iframeDoc.write(printHtml);
         iframeDoc.close();
         
-        // Print from iframe
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
         
-        // Remove iframe after printing
         setTimeout(function() {
             document.body.removeChild(iframe);
         }, 1000);
@@ -569,8 +571,28 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        let complaintDetails = escapeHtml(report.complaint_details || '-');
-        let actionTaken = escapeHtml(report.action_taken || '-');
+        // CLEAN ALL TEXT FIELDS FOR PRINT
+        let complaintDetails = cleanText(report.complaint_details || '-');
+        let actionTaken = cleanText(report.action_taken || '-');
+        let technicianNotes = cleanText(report.technician_notes || '');
+        let teamLeaderNotes = cleanText(report.team_leader_notes || '');
+        let accountNumber = cleanText(report.account_number || '');
+        let meterNumber = cleanText(report.meter_number || '');
+        let phoneNumber = cleanText(report.phone_number || '');
+        let referenceNumber = cleanText(report.reference_number || '');
+        let referenceType = cleanText(report.reference_type || '');
+        let problemType = cleanText(report.problem_type || '-');
+        let entityName = cleanText(report.entity_name || report.entity_type || '');
+        let technicianName = cleanText(report.technician_name || 'Unknown');
+        let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        
+        // Format with line breaks
+        if (complaintDetails.includes('\n')) {
+            complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
+        }
+        if (actionTaken.includes('\n')) {
+            actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
+        }
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
@@ -585,7 +607,8 @@
         if (report.comments && report.comments.length > 0) {
             commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
-                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(c.text)}</p></div>`;
+                let commentText = cleanText(c.text);
+                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
         }
@@ -596,140 +619,28 @@
             <meta charset="UTF-8">
             <title>${reportTypeName} Technical Report #${report.id}</title>
             <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                body {
-                    font-family: 'Times New Roman', 'Arial', serif;
-                    background: white;
-                    padding: 0;
-                    margin: 0;
-                    font-size: 11pt;
-                    line-height: 1.5;
-                    color: #000;
-                }
-                @page {
-                    size: A4;
-                    margin: 2.2cm 2.2cm;
-                }
-                .report-container {
-                    max-width: 100%;
-                    margin: 0 auto;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 25px;
-                    margin-top: 0;
-                }
-                .header h2 {
-                    font-size: 12pt;
-                    font-weight: normal;
-                    margin: 0;
-                    line-height: 1.3;
-                }
-                .header h1 {
-                    font-size: 16pt;
-                    font-weight: bold;
-                    margin: 8px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                .header .divider {
-                    border-top: 2px solid #000;
-                    margin: 15px 0 5px 0;
-                }
-                .header .sub-divider {
-                    border-top: 1px solid #000;
-                    margin: 5px 0;
-                }
-                .report-id {
-                    background: #f5f5f5;
-                    padding: 10px 15px;
-                    margin-bottom: 25px;
-                    display: flex;
-                    justify-content: space-between;
-                    flex-wrap: wrap;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                }
-                .report-id div {
-                    margin: 3px 0;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 15px 0;
-                }
-                th, td {
-                    padding: 10px 12px;
-                    border: 1px solid #aaa;
-                    text-align: left;
-                    vertical-align: top;
-                }
-                th {
-                    background-color: #f0f0f0;
-                    width: 30%;
-                    font-weight: bold;
-                }
-                .priority-high {
-                    color: #dc3545;
-                    font-weight: bold;
-                }
-                .priority-medium {
-                    color: #d4a000;
-                    font-weight: bold;
-                }
-                .priority-low {
-                    color: #28a745;
-                    font-weight: bold;
-                }
-                .bg-danger {
-                    background-color: #dc3545;
-                    color: white;
-                    padding: 2px 8px;
-                    border-radius: 4px;
-                    display: inline-block;
-                }
-                .signatures {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 50px;
-                    margin-bottom: 30px;
-                }
-                .signature-box {
-                    text-align: center;
-                    width: 45%;
-                }
-                .signature-line {
-                    border-top: 1px solid #000;
-                    margin-top: 40px;
-                    padding-top: 8px;
-                    width: 100%;
-                }
-                .footer {
-                    text-align: center;
-                    margin-top: 40px;
-                    font-size: 9pt;
-                    color: #666;
-                    border-top: 1px solid #ddd;
-                    padding-top: 12px;
-                }
-                @media print {
-                    body {
-                        padding: 0;
-                        margin: 0;
-                    }
-                    .report-container {
-                        padding: 0;
-                        margin: 0;
-                    }
-                    table {
-                        page-break-inside: avoid;
-                    }
-                }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Times New Roman', 'Arial', serif; background: white; padding: 0; margin: 0; font-size: 11pt; line-height: 1.5; color: #000; }
+                @page { size: A4; margin: 2.2cm 2.2cm; }
+                .report-container { max-width: 100%; margin: 0 auto; background: white; }
+                .header { text-align: center; margin-bottom: 25px; }
+                .header h2 { font-size: 12pt; font-weight: normal; margin: 0; }
+                .header h1 { font-size: 16pt; font-weight: bold; margin: 8px 0; text-transform: uppercase; }
+                .divider { border-top: 2px solid #000; margin: 15px 0 5px 0; }
+                .sub-divider { border-top: 1px solid #000; margin: 5px 0; }
+                .report-id { background: #f5f5f5; padding: 10px 15px; margin-bottom: 25px; display: flex; justify-content: space-between; flex-wrap: wrap; border: 1px solid #ddd; border-radius: 5px; }
+                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                th, td { padding: 10px 12px; border: 1px solid #aaa; text-align: left; vertical-align: top; }
+                th { background-color: #f0f0f0; width: 30%; font-weight: bold; }
+                .priority-high { color: #dc3545; font-weight: bold; }
+                .priority-medium { color: #d4a000; font-weight: bold; }
+                .priority-low { color: #28a745; font-weight: bold; }
+                .bg-danger { background-color: #dc3545; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+                .signatures { display: flex; justify-content: space-between; margin-top: 50px; margin-bottom: 30px; }
+                .signature-box { text-align: center; width: 45%; }
+                .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 8px; width: 100%; }
+                .footer { text-align: center; margin-top: 40px; font-size: 9pt; color: #666; border-top: 1px solid #ddd; padding-top: 12px; }
+                @media print { body { padding: 0; margin: 0; } table { page-break-inside: avoid; } }
             </style>
         </head>
         <body>
@@ -752,19 +663,19 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
-                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
-                    ${report.meter_number ? `</tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap; line-height: 1.5;">${complaintDetails}NonNullable
-                    ${report.technician_notes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}NonNullable` : ''}
-                    ${report.action_taken ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap; line-height: 1.5;">${actionTaken}NonNullable` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${report.team_leader_notes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(report.team_leader_notes)}NonNullable` : ''}
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}NonNullable
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}NonNullable` : ''}
+                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}NonNullable` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}NonNullable
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}NonNullable` : ''}
                 </table>
                 
                 ${imagesHtml}
@@ -774,13 +685,13 @@
                     <div class="signature-box">
                         <div class="signature-line"></div>
                         <div><strong>Technician's Signature</strong></div>
-                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
+                        <div>Name: ${escapeHtml(technicianName)}</div>
                         <div>Date: ${formatDateOnly(new Date())}</div>
                     </div>
                     <div class="signature-box">
                         <div class="signature-line"></div>
                         <div><strong>Team Leader's Signature</strong></div>
-                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(teamLeaderName) : '_________________'}</div>
                         <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
                     </div>
                 </div>
@@ -790,22 +701,17 @@
                     <p>Printed on: ${currentDate}</p>
                 </div>
             </div>
-            <script>
-                window.onload = function() {
-                    window.print();
-                };
-            <\/script>
         </body>
         </html>`;
     }
     
-    // ============ WORD DOCUMENT FUNCTION - Proper formatted Word document ============
+    // ============ WORD DOCUMENT FUNCTION ============
     function getWordHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // Clean all text fields
+        // CLEAN ALL TEXT FIELDS FOR WORD
         let complaintDetails = cleanText(report.complaint_details || '-');
         let actionTaken = cleanText(report.action_taken || '-');
         let technicianNotes = cleanText(report.technician_notes || '');
@@ -820,35 +726,31 @@
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || '_________________');
         
-        // Format bullet points for complaint details
+        // Format bullet points
         if (complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
-        
-        // Format bullet points for action taken
         if (actionTaken.includes('\n')) {
             actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
         
-        // Images HTML
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = '<div style="margin-top:20px;"><strong>Attached Images:</strong><div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:10px;">';
+            imagesHtml = '<div class="image-section"><strong>Attached Images:</strong><div class="image-gallery">';
             report.images.forEach(img => {
-                imagesHtml += `<img src="${img}" style="max-width:180px; max-height:120px; border:1px solid #cccccc; border-radius:4px;">`;
+                imagesHtml += `<img src="${img}" class="report-image">`;
             });
             imagesHtml += '</div></div>';
         }
         
-        // Comments HTML
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
+            commentsHtml = '<div class="comments-section"><strong>Comments History:</strong>';
             report.comments.forEach(c => {
                 let commentText = cleanText(c.text);
-                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
+                commentsHtml += `<div class="comment-item"><strong>${escapeHtml(c.author)}</strong> <small>${formatDate(c.created_at)}</small><p>${escapeHtml(commentText)}</p></div>`;
             });
-            commentsHtml += '</div></div>';
+            commentsHtml += '</div>';
         }
         
         return `<!DOCTYPE html>
@@ -906,7 +808,7 @@
                     margin: 5px 0;
                 }
                 
-                /* Table Styles */
+                /* Table Styles - Properly formatted */
                 .report-table {
                     width: 100%;
                     border-collapse: collapse;
@@ -982,17 +884,23 @@
                 }
                 
                 /* Images */
-                .image-container {
+                .image-section {
                     margin-top: 20px;
                 }
-                .image-container img {
+                .image-gallery {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                    margin-top: 10px;
+                }
+                .report-image {
                     max-width: 180px;
                     max-height: 120px;
                     border: 1px solid #cccccc;
-                    margin: 5px;
+                    border-radius: 4px;
                 }
                 
-                /* Comments Section */
+                /* Comments */
                 .comments-section {
                     margin-top: 20px;
                 }
@@ -1031,22 +939,21 @@
             <table class="report-table">
                 <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                 <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
-                ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
-                ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
-                ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
+                ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
+                ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
+                ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
                 <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
                 <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="tender-badge">TENDER</span>' : ''}</td></tr>
                 <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
-                ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
-                ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td>` : ''}
+                ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
+                ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
                 <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
-                ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
+                ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
             </table>
             
             ${imagesHtml}
-            
             ${commentsHtml}
             
             <div class="signatures">
@@ -1086,8 +993,6 @@
         
         try {
             const wordHtml = getWordHTML(report);
-            
-            // Create blob and download as .doc (Word document)
             const blob = new Blob([wordHtml], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
