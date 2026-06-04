@@ -105,6 +105,21 @@ def test_supabase_connection():
         app.logger.error(f"❌ Supabase connection test failed: {e}")
         return False
 
+def init_supabase_storage():
+    """Initialize Supabase storage bucket for images"""
+    if not supabase:
+        return False
+    
+    try:
+        # Try to create bucket if it doesn't exist
+        supabase.storage.create_bucket('mapping-images', {'public': True})
+        app.logger.info("✅ Created storage bucket: mapping-images")
+    except Exception as e:
+        # Bucket might already exist
+        app.logger.info(f"Storage bucket ready (or already exists): {e}")
+    
+    return True
+
 # ============ ROUTES ============
 
 @app.route('/')
@@ -1029,7 +1044,7 @@ def create_mapping_image():
             "image_url": data.get('image_url'),
             "description": data.get('description', ''),
             "notes": data.get('notes', ''),
-            # New account fields
+            # Account fields
             "water_account_number": data.get('water_account_number', ''),
             "water_meter_number": data.get('water_meter_number', ''),
             "electricity_account_number": data.get('electricity_account_number', ''),
@@ -1096,18 +1111,28 @@ def delete_mapping_image(image_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
-        # Get the image record first to get the file path
+        # Get the image record first
         image_response = supabase.table("mapping_images").select("image_url").eq("id", image_id).execute()
         
         if image_response.data and image_response.data[0].get('image_url'):
-            # Extract filename from URL and delete the physical file
             image_url = image_response.data[0]['image_url']
-            # Remove /api/images/ prefix to get filename
-            filename = image_url.replace('/api/images/', '')
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
-                app.logger.info(f"Deleted image file: {filepath}")
+            
+            # Try to delete from Supabase Storage if the URL is from there
+            if supabase and 'supabase.co' in image_url:
+                try:
+                    # Extract filename from URL
+                    filename = image_url.split('/')[-1].split('?')[0]
+                    supabase.storage.from_('mapping-images').remove([filename])
+                    app.logger.info(f"Deleted image from Supabase Storage: {filename}")
+                except Exception as e:
+                    app.logger.warning(f"Could not delete from Supabase Storage: {e}")
+            else:
+                # Fallback to local file deletion
+                filename = image_url.replace('/api/images/', '')
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                    app.logger.info(f"Deleted local image file: {filepath}")
         
         # Delete the database record
         response = supabase.table("mapping_images").delete().eq("id", image_id).execute()
@@ -1158,25 +1183,7 @@ def debug_mapping_tables():
         app.logger.error(f"Debug endpoint error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/debug/mapping-images', methods=['GET'])
-def debug_mapping_images():
-    """Debug endpoint to check all mapping images in database"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Supabase not connected'}), 500
-        
-        # Get all mapping images
-        response = supabase.table("mapping_images").select("*").execute()
-        
-        return jsonify({
-            'count': len(response.data) if response.data else 0,
-            'images': response.data if response.data else []
-        })
-    except Exception as e:
-        app.logger.error(f"Debug endpoint error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-# ============ IMAGE UPLOAD ============
+# ============ IMAGE UPLOAD (with Supabase Storage) ============
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
@@ -1191,34 +1198,47 @@ def upload_image():
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
         
+        # Generate unique filename
         ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = secure_filename(f"{uuid.uuid4().hex}_{get_brunei_time().strftime('%Y%m%d_%H%M%S')}.{ext}")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        filename = f"{uuid.uuid4().hex}_{get_brunei_time().strftime('%Y%m%d_%H%M%S')}.{ext}"
         
-        file.save(filepath)
-        app.logger.info(f"Image saved: {filepath}")
+        # Read file content
+        file_content = file.read()
         
-        with open(filepath, 'rb') as img_file:
-            img_data = base64.b64encode(img_file.read()).decode('utf-8')
+        image_url = None
         
-        image_record = {
-            "filename": filename,
-            "original_name": file.filename,
-            "filepath": filepath,
-            "file_size": os.path.getsize(filepath),
-            "image_data_base64": img_data,
-            "uploaded_at": get_brunei_time_iso()
-        }
-        
+        # Try to upload to Supabase Storage first
         if supabase:
             try:
-                response = supabase.table("report_images").insert(image_record).execute()
-                if response.data:
-                    app.logger.info(f"Image record saved to Supabase: ID {response.data[0]['id']}")
+                # Ensure bucket exists (create if not)
+                init_supabase_storage()
+                
+                # Upload to Supabase Storage
+                supabase.storage.from_('mapping-images').upload(
+                    filename, 
+                    file_content,
+                    file_options={"content-type": f"image/{ext}"}
+                )
+                
+                # Get public URL
+                image_url = supabase.storage.from_('mapping-images').get_public_url(filename)
+                app.logger.info(f"✅ Image uploaded to Supabase Storage: {image_url}")
+                
             except Exception as e:
-                app.logger.warning(f"Could not save image to Supabase: {e}")
-        
-        image_url = f"/api/images/{filename}"
+                app.logger.error(f"❌ Failed to upload to Supabase Storage: {e}")
+                # Fallback to local storage
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                with open(filepath, 'wb') as f:
+                    f.write(file_content)
+                image_url = f"/api/images/{filename}"
+                app.logger.info(f"📁 Image saved locally: {filepath}")
+        else:
+            # Fallback to local storage
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            with open(filepath, 'wb') as f:
+                f.write(file_content)
+            image_url = f"/api/images/{filename}"
+            app.logger.info(f"📁 Image saved locally (Supabase not available): {filepath}")
         
         return jsonify({'success': True, 'image_url': image_url, 'filename': filename, 'message': 'Image uploaded successfully'})
         
@@ -1228,6 +1248,7 @@ def upload_image():
 
 @app.route('/api/images/<filename>')
 def get_image(filename):
+    """Serve local images (fallback)"""
     try:
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -1374,6 +1395,7 @@ def internal_error(error):
 
 def init_app():
     create_directories()
+    init_supabase_storage()
     app.logger.info("=" * 60)
     app.logger.info("🏫 MOE Technical Report System Starting")
     app.logger.info("Ministry of Education - Brunei Darussalam")
