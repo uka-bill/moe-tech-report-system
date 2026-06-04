@@ -17,7 +17,6 @@
     }
     .stat-icon {
         font-size: 36px;
-        color: var(--primary-color);
         margin-bottom: 10px;
     }
     .stat-number {
@@ -29,6 +28,21 @@
         color: #666;
         font-size: 14px;
     }
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+    }
+    .chart-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: var(--primary-dark);
+        border-left: 3px solid var(--primary-color);
+        padding-left: 10px;
+    }
     .recent-report-item {
         padding: 12px;
         border-bottom: 1px solid #eee;
@@ -37,6 +51,42 @@
     }
     .recent-report-item:hover {
         background-color: var(--secondary-color);
+    }
+    .weekly-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+        gap: 10px;
+    }
+    .day-stat {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        background: #f8f5fc;
+        border-radius: 8px;
+    }
+    .day-name {
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    .day-count {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    .day-bar {
+        height: 4px;
+        background: var(--primary-light);
+        border-radius: 2px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+    .day-bar-fill {
+        height: 100%;
+        background: var(--primary-color);
+        border-radius: 2px;
+        width: 0%;
     }
 </style>
 
@@ -47,61 +97,108 @@
     </div>
 </div>
 
+<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-file-text"></i></div>
+            <div class="stat-icon"><i class="bi bi-file-text" style="color: #9b59b6;"></i></div>
             <div class="stat-number" id="totalReports">0</div>
             <div class="stat-label">Total Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-droplet text-info"></i></div>
+            <div class="stat-icon"><i class="bi bi-droplet" style="color: #17a2b8;"></i></div>
             <div class="stat-number" id="waterReports">0</div>
             <div class="stat-label">Water Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-lightning-charge text-warning"></i></div>
+            <div class="stat-icon"><i class="bi bi-lightning-charge" style="color: #f57c00;"></i></div>
             <div class="stat-number" id="electricityReports">0</div>
             <div class="stat-label">Electricity Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-telephone text-success"></i></div>
+            <div class="stat-icon"><i class="bi bi-telephone" style="color: #28a745;"></i></div>
             <div class="stat-number" id="telephoneReports">0</div>
             <div class="stat-label">Telephone Reports</div>
         </div>
     </div>
 </div>
 
+<!-- Status Cards -->
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-clock-history text-warning"></i></div>
+            <div class="stat-icon"><i class="bi bi-clock-history" style="color: #ffc107;"></i></div>
             <div class="stat-number" id="pendingReports">0</div>
             <div class="stat-label">Pending Review</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-check2-circle text-success"></i></div>
+            <div class="stat-icon"><i class="bi bi-check2-circle" style="color: #28a745;"></i></div>
             <div class="stat-number" id="acknowledgedReports">0</div>
             <div class="stat-label">Acknowledged</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-people text-primary"></i></div>
+            <div class="stat-icon"><i class="bi bi-people" style="color: #9b59b6;"></i></div>
             <div class="stat-number" id="teamLeaderCount">0</div>
             <div class="stat-label">Team Leaders</div>
         </div>
     </div>
 </div>
 
+<!-- Weekly Report Chart -->
+<div class="chart-container">
+    <div class="chart-title">
+        <i class="bi bi-graph-up"></i> Weekly Report Activity
+    </div>
+    <div class="weekly-stats" id="weeklyStats">
+        <div class="day-stat">
+            <div class="day-name">Mon</div>
+            <div class="day-count" id="monCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="monBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Tue</div>
+            <div class="day-count" id="tueCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="tueBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Wed</div>
+            <div class="day-count" id="wedCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="wedBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Thu</div>
+            <div class="day-count" id="thuCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="thuBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Fri</div>
+            <div class="day-count" id="friCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="friBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Sat</div>
+            <div class="day-count" id="satCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="satBar"></div></div>
+        </div>
+        <div class="day-stat">
+            <div class="day-name">Sun</div>
+            <div class="day-count" id="sunCount">0</div>
+            <div class="day-bar"><div class="day-bar-fill" id="sunBar"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Reports -->
 <div class="card mb-4">
     <div class="card-header">
         <i class="bi bi-clock-history"></i> Recent Reports
@@ -142,6 +239,7 @@
             }
             
             await loadTeamLeaderCount();
+            await loadWeeklyStats();
             
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
@@ -163,6 +261,53 @@
         } catch (error) {
             console.error('Error loading team leaders:', error);
             document.getElementById('teamLeaderCount').textContent = '0';
+        }
+    }
+    
+    async function loadWeeklyStats() {
+        try {
+            const response = await fetch('/api/technical-reports');
+            const reports = await response.json();
+            
+            // Get last 7 days
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = new Date();
+            const weeklyCount = {};
+            
+            // Initialize counts
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dayName = days[date.getDay()];
+                weeklyCount[dayName] = 0;
+            }
+            
+            // Count reports per day
+            reports.forEach(report => {
+                const reportDate = new Date(report.created_at);
+                const dayName = days[reportDate.getDay()];
+                if (weeklyCount[dayName] !== undefined) {
+                    weeklyCount[dayName]++;
+                }
+            });
+            
+            // Find max count for bar scaling
+            const maxCount = Math.max(...Object.values(weeklyCount), 1);
+            
+            // Update display
+            const dayIds = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            
+            dayNames.forEach((day, index) => {
+                const count = weeklyCount[day] || 0;
+                const elementId = dayIds[index];
+                document.getElementById(`${elementId}Count`).textContent = count;
+                const percentage = (count / maxCount) * 100;
+                document.getElementById(`${elementId}Bar`).style.width = `${percentage}%`;
+            });
+            
+        } catch (error) {
+            console.error('Error loading weekly stats:', error);
         }
     }
     
