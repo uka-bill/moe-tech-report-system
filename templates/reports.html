@@ -137,6 +137,15 @@
         border-radius: 10px;
         text-align: center;
     }
+    
+    /* Hidden iframe for printing */
+    .print-iframe {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border: 0;
+        visibility: hidden;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -520,14 +529,13 @@
         }
     }
     
-    function getPrintWindowHTML(report) {
+    function getReportHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // Clean complaint details - remove any "Non-Nullable" text that might appear
+        // Clean complaint details - remove any "Non-Nullable" text
         let complaintDetails = (report.complaint_details || '-');
-        // Replace any accidental "Non-Nullable" text that might have been added
         complaintDetails = complaintDetails.replace(/Non-Nullable/gi, '');
         complaintDetails = escapeHtml(complaintDetails);
         
@@ -590,7 +598,7 @@
                 }
                 @page {
                     size: A4;
-                    margin: 2.5cm 2.5cm;
+                    margin: 2.2cm 2.2cm;
                 }
                 .report-container {
                     max-width: 100%;
@@ -730,12 +738,12 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
-                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
-                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}</tr></td>` : ''}
-                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}</td></tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
+                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
+                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
+                    ${report.phone_number ? `</td><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
                     <tr><th>Complaint Details</th><td style="white-space: pre-wrap; line-height: 1.5;">${complaintDetails}NonNullable
                     ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${technicianNotes}NonNullable` : ''}
@@ -768,11 +776,6 @@
                     <p>Printed on: ${currentDate}</p>
                 </div>
             </div>
-            <script>
-                window.onload = function() {
-                    window.print();
-                };
-            <\/script>
         </body>
         </html>`;
     }
@@ -787,10 +790,28 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const printHtml = getPrintWindowHTML(report);
-        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
+        // Create hidden iframe for printing
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+        
+        const reportHtml = getReportHTML(report);
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(reportHtml);
+        iframeDoc.close();
+        
+        // Print from iframe
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        
+        // Remove iframe after printing
+        setTimeout(function() {
+            document.body.removeChild(iframe);
+        }, 1000);
     }
     
     function saveAsPDF() {
@@ -806,18 +827,44 @@
         showLoading();
         
         try {
-            const printHtml = getPrintWindowHTML(report);
-            const blob = new Blob([printHtml], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Technical_Report_${report.id}_${formatDateOnly(new Date())}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            hideLoading();
-            window.showToast('PDF downloaded successfully');
+            const reportHtml = getReportHTML(report);
+            
+            // Create hidden iframe with the report
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+            
+            const iframeDoc = iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(reportHtml);
+            iframeDoc.close();
+            
+            // Wait for content to load, then print to PDF
+            iframe.onload = function() {
+                setTimeout(function() {
+                    // Focus and print - user can select "Save as PDF"
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                    
+                    // Remove iframe after print dialog closes
+                    setTimeout(function() {
+                        document.body.removeChild(iframe);
+                        hideLoading();
+                    }, 1000);
+                }, 500);
+            };
+            
+            // If onload doesn't fire, still remove after timeout
+            setTimeout(function() {
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                    hideLoading();
+                }
+            }, 5000);
+            
         } catch (error) {
             hideLoading();
             console.error('PDF Error:', error);
