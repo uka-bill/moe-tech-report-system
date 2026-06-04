@@ -6,838 +6,426 @@
         background: white;
         border-radius: 12px;
         padding: 20px;
-        margin-bottom: 20px;
+        text-align: center;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border-left: 4px solid var(--primary-color);
         transition: transform 0.2s;
+        height: 100%;
     }
-    
     .stat-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    
-    .stat-number {
-        font-size: 2rem;
-        font-weight: bold;
+    .stat-icon {
+        font-size: 36px;
         color: var(--primary-color);
-        margin: 10px 0;
+        margin-bottom: 10px;
     }
-    
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
     .stat-label {
         color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 5px;
+        font-size: 14px;
     }
-    
-    .summary-section {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    
-    .summary-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: var(--primary-dark);
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid var(--primary-light);
-    }
-    
-    .quick-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    
-    .report-list-item {
+    .recent-report-item {
         padding: 12px;
         border-bottom: 1px solid #eee;
-        transition: background 0.2s;
         cursor: pointer;
+        transition: background 0.2s;
     }
-    
-    .report-list-item:hover {
+    .recent-report-item:hover {
         background-color: var(--secondary-color);
     }
-    
-    .report-title {
-        font-weight: 500;
-        margin-bottom: 5px;
-    }
-    
-    .report-meta {
-        font-size: 0.8rem;
-        color: #666;
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-    
-    .tender-card {
-        background: linear-gradient(135deg, #fff8e7 0%, #fff3cd 100%);
-        border-left: 4px solid #ffc107;
-    }
-    
-    .tender-header {
-        background-color: #ffc107;
-        color: #856404;
-        padding: 10px 15px;
-        border-radius: 10px 10px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .tender-badge {
-        background-color: #dc3545;
+    .backup-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.7; transform: scale(1.05); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    
-    .tender-item {
-        background-color: #fff;
-        border-left: 3px solid #ffc107;
-        margin-bottom: 10px;
-        padding: 12px;
-        border-radius: 8px;
-        transition: all 0.2s;
-    }
-    
-    .tender-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .chart-container {
-        background: white;
         border-radius: 12px;
         padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-top: 30px;
     }
-    
-    .chart-wrapper {
-        position: relative;
-        height: 280px;
-        width: 100%;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-    
-    .chart-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--primary-dark);
-        margin-bottom: 15px;
-        text-align: center;
-    }
-    
-    .chart-stats {
-        text-align: center;
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px solid #eee;
-        font-size: 0.85rem;
-    }
-    
-    .acknowledgment-progress {
-        background: #f0f0f0;
-        border-radius: 10px;
-        height: 8px;
-        overflow: hidden;
-    }
-    
-    .acknowledgment-bar {
-        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
-        height: 100%;
-        transition: width 0.3s;
-    }
-    
-    .empty-tender {
-        text-align: center;
-        padding: 30px;
-        color: #856404;
-    }
-    
-    .welcome-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    .backup-section h5 {
         color: white;
-        padding: 15px 20px;
-        border-radius: 12px;
-        margin-bottom: 25px;
+        margin-bottom: 15px;
     }
-    
-    .datetime-badge {
-        background-color: rgba(255,255,255,0.2);
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        text-align: right;
-        display: inline-block;
-        min-width: 200px;
+    .btn-backup {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
     }
-    
-    .datetime-badge .date {
-        font-weight: bold;
-        font-size: 1rem;
+    .btn-backup:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
     }
-    
-    .datetime-badge .time {
-        font-family: monospace;
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-top: 3px;
+    .btn-restore {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #333;
     }
-    
-    .no-reports-message {
-        text-align: center;
-        padding: 50px;
-        background: white;
-        border-radius: 12px;
-        margin-bottom: 20px;
+    .btn-restore:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+    .backup-info {
+        background: rgba(255,255,255,0.2);
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+    }
+    .restore-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        font-size: 12px;
     }
 </style>
 
-<div class="container-fluid">
-    <!-- Welcome Header with Date and Time -->
-    <div class="welcome-header">
-        <div class="row align-items-center">
-            <div class="col-md-7">
-                <h4 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h4>
-                <p class="mb-0 mt-1 opacity-75">Welcome back, <strong id="welcomeName"></strong>!</p>
-            </div>
-            <div class="col-md-5 text-end">
-                <div class="datetime-badge">
-                    <div class="date">
-                        <i class="bi bi-calendar3"></i> <span id="currentDate">Loading...</span>
-                    </div>
-                    <div class="time">
-                        <i class="bi bi-clock"></i> <span id="currentTime">--:--:--</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+        <p class="text-muted">Welcome to the MOE Technical Report System</p>
     </div>
+</div>
 
-    <!-- Quick Stats Cards -->
-    <div class="quick-stats-grid">
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-label">Total Reports</div>
+            <div class="stat-icon"><i class="bi bi-file-text"></i></div>
             <div class="stat-number" id="totalReports">0</div>
-            <small class="text-muted">All time reports</small>
+            <div class="stat-label">Total Reports</div>
         </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-label">Today's Reports</div>
-            <div class="stat-number" id="todayReports">0</div>
-            <small class="text-muted"><span id="todayPending"></span> pending</small>
+            <div class="stat-icon"><i class="bi bi-droplet text-info"></i></div>
+            <div class="stat-number" id="waterReports">0</div>
+            <div class="stat-label">Water Reports</div>
         </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-label">Pending Acknowledgment</div>
-            <div class="stat-number text-warning" id="pendingAckCount">0</div>
-            <small class="text-muted">Awaiting team leader review</small>
+            <div class="stat-icon"><i class="bi bi-lightning-charge text-warning"></i></div>
+            <div class="stat-number" id="electricityReports">0</div>
+            <div class="stat-label">Electricity Reports</div>
         </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-label">Acknowledged Reports</div>
-            <div class="stat-number text-success" id="acknowledgedCount">0</div>
-            <small class="text-muted">Reviewed by team leader</small>
+            <div class="stat-icon"><i class="bi bi-telephone text-success"></i></div>
+            <div class="stat-number" id="telephoneReports">0</div>
+            <div class="stat-label">Telephone Reports</div>
         </div>
     </div>
+</div>
 
-    <!-- Priority with Tender Section -->
-    <div class="card tender-card mb-4">
-        <div class="tender-header">
-            <div>
-                <i class="bi bi-star-fill"></i> <strong>PRIORITY WITH TENDER</strong> - Urgent Reports Requiring Immediate Action
-            </div>
-            <div class="tender-badge">
-                <i class="bi bi-exclamation-triangle"></i> EMERGENCY
-            </div>
-        </div>
-        <div class="card-body">
-            <div id="tenderReportsList">
-                <div class="text-center py-3">No urgent reports at this time.</div>
-            </div>
-            <div class="text-center mt-3">
-                <a href="{{ url_for('reports_page') }}" class="btn btn-warning btn-sm">
-                    <i class="bi bi-eye"></i> View All Reports
-                </a>
-            </div>
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-clock-history text-warning"></i></div>
+            <div class="stat-number" id="pendingReports">0</div>
+            <div class="stat-label">Pending Review</div>
         </div>
     </div>
-
-    <!-- Reports by Category Summary -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="summary-section">
-                <div class="summary-title">
-                    <i class="bi bi-droplet"></i> Water Reports
-                </div>
-                <div class="text-center">
-                    <div class="stat-number" id="waterTotal">0</div>
-                    <div class="d-flex justify-content-between mt-3">
-                        <div><small>Pending:</small><br><strong id="waterPending">0</strong></div>
-                        <div><small>Acknowledged:</small><br><strong id="waterAck">0</strong></div>
-                        <div><small>Resolved:</small><br><strong id="waterResolved">0</strong></div>
-                    </div>
-                    <div class="mt-2">
-                        <div class="acknowledgment-progress">
-                            <div class="acknowledgment-bar" id="waterProgress" style="width: 0%"></div>
-                        </div>
-                        <small class="text-muted">Acknowledgment rate</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="summary-section">
-                <div class="summary-title">
-                    <i class="bi bi-lightning-charge"></i> Electricity Reports
-                </div>
-                <div class="text-center">
-                    <div class="stat-number" id="electricityTotal">0</div>
-                    <div class="d-flex justify-content-between mt-3">
-                        <div><small>Pending:</small><br><strong id="electricityPending">0</strong></div>
-                        <div><small>Acknowledged:</small><br><strong id="electricityAck">0</strong></div>
-                        <div><small>Resolved:</small><br><strong id="electricityResolved">0</strong></div>
-                    </div>
-                    <div class="mt-2">
-                        <div class="acknowledgment-progress">
-                            <div class="acknowledgment-bar" id="electricityProgress" style="width: 0%"></div>
-                        </div>
-                        <small class="text-muted">Acknowledgment rate</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="summary-section">
-                <div class="summary-title">
-                    <i class="bi bi-telephone"></i> Telephone Reports
-                </div>
-                <div class="text-center">
-                    <div class="stat-number" id="telephoneTotal">0</div>
-                    <div class="d-flex justify-content-between mt-3">
-                        <div><small>Pending:</small><br><strong id="telephonePending">0</strong></div>
-                        <div><small>Acknowledged:</small><br><strong id="telephoneAck">0</strong></div>
-                        <div><small>Resolved:</small><br><strong id="telephoneResolved">0</strong></div>
-                    </div>
-                    <div class="mt-2">
-                        <div class="acknowledgment-progress">
-                            <div class="acknowledgment-bar" id="telephoneProgress" style="width: 0%"></div>
-                        </div>
-                        <small class="text-muted">Acknowledgment rate</small>
-                    </div>
-                </div>
-            </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-check2-circle text-success"></i></div>
+            <div class="stat-number" id="acknowledgedReports">0</div>
+            <div class="stat-label">Acknowledged</div>
         </div>
     </div>
-
-    <!-- Latest Reports Section -->
-    <div class="row mb-4">
-        <div class="col-md-7">
-            <div class="summary-section">
-                <div class="summary-title">
-                    <i class="bi bi-clock-history"></i> Latest Reports
-                    <span class="float-end">
-                        <select id="filterLatestType" class="form-select form-select-sm" style="width: auto; display: inline-block;" onchange="loadDashboardData()">
-                            <option value="all">All Types</option>
-                            <option value="water">Water</option>
-                            <option value="electricity">Electricity</option>
-                            <option value="telephone">Telephone</option>
-                        </select>
-                    </span>
-                </div>
-                <div id="latestReportsList">
-                    <div class="text-center py-3 text-muted">No reports yet. Click "New Report" to create your first report.</div>
-                </div>
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('new_report') }}" class="btn btn-sm btn-primary">Create New Report →</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Pending Acknowledgment Quick View -->
-        <div class="col-md-5">
-            <div class="summary-section">
-                <div class="summary-title">
-                    <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgment
-                </div>
-                <div id="pendingAckList">
-                    <div class="text-center py-3 text-success">All reports acknowledged!</div>
-                </div>
-                {% if is_team_leader %}
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('team_leader') }}" class="btn btn-sm btn-primary">Go to Team Leader Dashboard →</a>
-                </div>
-                {% endif %}
-            </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="bi bi-trophy text-primary"></i></div>
+            <div class="stat-number" id="teamLeaderCount">0</div>
+            <div class="stat-label">Team Leaders</div>
         </div>
     </div>
+</div>
 
-    <!-- Charts Section -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="chart-container">
-                <div class="chart-title">
-                    <i class="bi bi-bar-chart"></i> Reports by Utility Type
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="utilityChart" height="250"></canvas>
-                </div>
-                <div class="chart-stats" id="utilityStats">No data available</div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="chart-container">
-                <div class="chart-title">
-                    <i class="bi bi-pie-chart"></i> Report Status Breakdown
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="statusChart" height="250"></canvas>
-                </div>
-                <div class="chart-stats" id="statusStats">No data available</div>
-            </div>
-        </div>
+<!-- Recent Reports -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-clock-history"></i> Recent Reports
     </div>
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="chart-container">
-                <div class="chart-title">
-                    <i class="bi bi-check2-square"></i> Acknowledgment Status
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="acknowledgmentChart" height="250"></canvas>
-                </div>
-                <div class="chart-stats" id="acknowledgmentStats">No data available</div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="chart-container">
-                <div class="chart-title">
-                    <i class="bi bi-graph-up"></i> Weekly Report Trend (Last 7 Days)
-                </div>
-                <div class="chart-wrapper">
-                    <canvas id="trendChart" height="250"></canvas>
-                </div>
-                <div class="chart-stats" id="trendStats">No data available</div>
+    <div class="card-body p-0">
+        <div id="recentReportsList">
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Loading recent reports...</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Backup and Restore Section (Only visible to authorized users) -->
+<div id="backupSection" class="backup-section" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h5><i class="bi bi-archive"></i> Data Backup & Restore</h5>
+            <p class="mb-0 small">Export all data to a backup file or restore from a previous backup.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-backup" onclick="backupData()">
+                <i class="bi bi-download"></i> Backup Data
+            </button>
+            <button class="btn btn-restore" onclick="restoreData()">
+                <i class="bi bi-upload"></i> Restore Data
+            </button>
+        </div>
+    </div>
+    <div id="backupInfo" class="backup-info mt-2" style="display: none;">
+        <i class="bi bi-info-circle"></i> Last backup: <span id="lastBackupTime">Never</span>
+    </div>
+    <div id="restoreWarning" class="restore-warning mt-2" style="display: none;">
+        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Restoring will replace ALL current data with the backup data. This action cannot be undone. Please ensure you have a current backup first.
+    </div>
+</div>
+
 <script>
-    // Function to update date and time - runs independently
-    function updateDateTime() {
+    let isAuthorized = false;
+    
+    async function loadDashboardStats() {
         try {
-            const now = new Date();
+            const response = await fetch('/api/dashboard-stats');
+            const stats = await response.json();
             
-            // Format date: 26 May 2026
-            const dateOptions = { day: '2-digit', month: 'long', year: 'numeric' };
-            const dateElement = document.getElementById('currentDate');
-            if (dateElement) {
-                dateElement.textContent = now.toLocaleDateString('en-GB', dateOptions);
+            document.getElementById('totalReports').textContent = stats.total_reports || 0;
+            document.getElementById('waterReports').textContent = stats.by_type?.water || 0;
+            document.getElementById('electricityReports').textContent = stats.by_type?.electricity || 0;
+            document.getElementById('telephoneReports').textContent = stats.by_type?.telephone || 0;
+            document.getElementById('pendingReports').textContent = stats.by_status?.pending || 0;
+            document.getElementById('acknowledgedReports').textContent = stats.acknowledged_count || 0;
+            
+            // Load recent reports
+            if (stats.recent_reports && stats.recent_reports.length > 0) {
+                displayRecentReports(stats.recent_reports);
+            } else {
+                document.getElementById('recentReportsList').innerHTML = `
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox" style="font-size: 36px;"></i>
+                        <p class="mt-2">No reports found</p>
+                        <a href="/new-report" class="btn btn-sm btn-primary">Create First Report</a>
+                    </div>
+                `;
             }
             
-            // Format time: 14:30:45
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) {
-                timeElement.textContent = now.toLocaleTimeString('en-GB', timeOptions);
-            }
-        } catch (error) {
-            console.error('Error updating date/time:', error);
-            const dateElement = document.getElementById('currentDate');
-            if (dateElement) dateElement.textContent = 'Date unavailable';
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) timeElement.textContent = '--:--:--';
-        }
-    }
-    
-    // Set welcome name
-    try {
-        const user = getCurrentUser();
-        const welcomeElement = document.getElementById('welcomeName');
-        if (welcomeElement) {
-            welcomeElement.textContent = user.name || 'Technician';
-        }
-    } catch (error) {
-        console.error('Error getting user:', error);
-        document.getElementById('welcomeName').textContent = 'User';
-    }
-    
-    // Initialize date/time immediately
-    updateDateTime();
-    
-    // Update time every second
-    setInterval(updateDateTime, 1000);
-    
-    let utilityChart, statusChart, acknowledgmentChart, trendChart;
-    
-    function formatDateOnly(dateString) {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            date.setHours(date.getHours() + 8);
-            return date.toLocaleDateString('en-GB');
-        } catch (e) {
-            return dateString;
-        }
-    }
-    
-    function getUtilityIcon(type) {
-        switch(type) {
-            case 'water': return '💧';
-            case 'electricity': return '⚡';
-            case 'telephone': return '📞';
-            default: return '📄';
-        }
-    }
-    
-    async function loadDashboardData() {
-        try {
-            const response = await fetch('/api/technical-reports');
-            const reports = await response.json();
-            
-            if (!reports || reports.length === 0) {
-                displayEmptyState();
-                return;
-            }
-            
-            const stats = calculateStats(reports);
-            updateStatsCards(stats);
-            updateCategoryStats(reports, stats);
-            updateLatestReports(reports);
-            updatePendingAckList(reports);
-            updateTenderReports(reports);
-            updateCharts(reports, stats);
+            // Load team leader count
+            await loadTeamLeaderCount();
             
         } catch (error) {
-            console.error('Error loading dashboard:', error);
-        }
-    }
-    
-    function updateTenderReports(reports) {
-        const tenderReports = reports.filter(r => r.priority_with_tender === true);
-        const container = document.getElementById('tenderReportsList');
-        
-        if (!container) return;
-        
-        if (tenderReports.length === 0) {
-            container.innerHTML = `
-                <div class="empty-tender">
-                    <i class="bi bi-check-circle" style="font-size: 48px; color: #28a745;"></i>
-                    <p class="mt-2 mb-0">No priority with tender reports at this time.</p>
-                    <small class="text-muted">All urgent issues have been addressed.</small>
+            console.error('Error loading dashboard stats:', error);
+            document.getElementById('recentReportsList').innerHTML = `
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 36px;"></i>
+                    <p class="mt-2">Error loading dashboard data</p>
                 </div>
             `;
-            return;
         }
-        
-        container.innerHTML = tenderReports.map(report => `
-            <div class="tender-item" onclick="viewReport(${report.id})" style="cursor: pointer;">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <div class="report-title">
-                            <span class="tender-priority-icon">🔴</span>
-                            <strong>[${getUtilityIcon(report.report_type)}] #${report.utility_number || report.id}</strong>
-                            <span class="badge bg-danger ms-2">TENDER REQUIRED</span>
-                            <span class="badge bg-warning ms-1">${report.priority.toUpperCase()}</span>
+    }
+    
+    async function loadTeamLeaderCount() {
+        try {
+            const response = await fetch('/api/technicians');
+            const techs = await response.json();
+            const teamLeaders = techs.filter(t => t.is_authorized === true);
+            document.getElementById('teamLeaderCount').textContent = teamLeaders.length;
+        } catch (error) {
+            console.error('Error loading team leaders:', error);
+            document.getElementById('teamLeaderCount').textContent = '0';
+        }
+    }
+    
+    function displayRecentReports(reports) {
+        const container = document.getElementById('recentReportsList');
+        container.innerHTML = reports.map(report => {
+            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+            const typeColor = report.report_type === 'water' ? 'info' : report.report_type === 'electricity' ? 'warning' : 'success';
+            const statusBadge = report.team_leader_acknowledged ? 
+                '<span class="badge bg-success">Acknowledged</span>' : 
+                '<span class="badge bg-warning text-dark">Pending</span>';
+            
+            return `
+                <div class="recent-report-item" onclick="viewReport(${report.id})">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-${typeColor} me-2">${typeIcon} ${report.report_type}</span>
+                            <strong>${escapeHtml(report.entity_name || report.entity_type)}</strong>
+                            <div class="small text-muted mt-1">${escapeHtml(report.problem_type || 'No problem type')}</div>
                         </div>
-                        <div class="report-meta mt-2">
-                            <span><i class="bi bi-building"></i> ${report.entity_name || report.entity_type}</span>
-                            <span><i class="bi bi-tag"></i> ${report.problem_type || 'No problem specified'}</span>
-                            <span><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</span>
-                            <span><i class="bi bi-clock"></i> ${formatDateOnly(report.created_at)}</span>
-                        </div>
-                        <div class="mt-2">
-                            <small class="text-muted">${report.complaint_details ? report.complaint_details.substring(0, 100) + (report.complaint_details.length > 100 ? '...' : '') : 'No details provided'}</small>
+                        <div class="text-end">
+                            ${statusBadge}
+                            <div class="small text-muted mt-1">${formatDateOnly(report.created_at)}</div>
                         </div>
                     </div>
-                    <div class="ms-3">
-                        <span class="status-badge status-${report.status}" style="font-size: 0.7rem;">
-                            ${report.status.replace('_', ' ')}
-                        </span>
-                        ${!report.team_leader_acknowledged ? '<span class="badge bg-secondary mt-1 d-block">Pending Ack</span>' : '<span class="badge bg-success mt-1 d-block">Acknowledged</span>'}
-                    </div>
                 </div>
-            </div>
-        `).join('');
-    }
-    
-    function calculateStats(reports) {
-        const today = new Date().toDateString();
-        const todayReports = reports.filter(r => new Date(r.created_at).toDateString() === today);
-        const pendingAck = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved');
-        const acknowledged = reports.filter(r => r.team_leader_acknowledged);
-        
-        const water = reports.filter(r => r.report_type === 'water');
-        const electricity = reports.filter(r => r.report_type === 'electricity');
-        const telephone = reports.filter(r => r.report_type === 'telephone');
-        
-        return {
-            total: reports.length,
-            today: todayReports.length,
-            todayPending: todayReports.filter(r => r.status === 'pending').length,
-            pendingAck: pendingAck.length,
-            acknowledged: acknowledged.length,
-            water: { total: water.length, pending: water.filter(r => r.status === 'pending').length, acknowledged: water.filter(r => r.team_leader_acknowledged).length, resolved: water.filter(r => r.status === 'resolved').length },
-            electricity: { total: electricity.length, pending: electricity.filter(r => r.status === 'pending').length, acknowledged: electricity.filter(r => r.team_leader_acknowledged).length, resolved: electricity.filter(r => r.status === 'resolved').length },
-            telephone: { total: telephone.length, pending: telephone.filter(r => r.status === 'pending').length, acknowledged: telephone.filter(r => r.team_leader_acknowledged).length, resolved: telephone.filter(r => r.status === 'resolved').length }
-        };
-    }
-    
-    function updateStatsCards(stats) {
-        const elements = ['totalReports', 'todayReports', 'todayPending', 'pendingAckCount', 'acknowledgedCount'];
-        elements.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = stats[id === 'todayPending' ? 'todayPending' : id === 'pendingAckCount' ? 'pendingAck' : id === 'acknowledgedCount' ? 'acknowledged' : id] || 0;
-        });
-        if (document.getElementById('totalReports')) document.getElementById('totalReports').textContent = stats.total;
-        if (document.getElementById('todayReports')) document.getElementById('todayReports').textContent = stats.today;
-        if (document.getElementById('todayPending')) document.getElementById('todayPending').textContent = stats.todayPending;
-        if (document.getElementById('pendingAckCount')) document.getElementById('pendingAckCount').textContent = stats.pendingAck;
-        if (document.getElementById('acknowledgedCount')) document.getElementById('acknowledgedCount').textContent = stats.acknowledged;
-    }
-    
-    function updateCategoryStats(reports, stats) {
-        const waterProgress = stats.water.total > 0 ? (stats.water.acknowledged / stats.water.total) * 100 : 0;
-        const waterProgressEl = document.getElementById('waterProgress');
-        if (waterProgressEl) waterProgressEl.style.width = waterProgress + '%';
-        
-        const elecProgress = stats.electricity.total > 0 ? (stats.electricity.acknowledged / stats.electricity.total) * 100 : 0;
-        const elecProgressEl = document.getElementById('electricityProgress');
-        if (elecProgressEl) elecProgressEl.style.width = elecProgress + '%';
-        
-        const telProgress = stats.telephone.total > 0 ? (stats.telephone.acknowledged / stats.telephone.total) * 100 : 0;
-        const telProgressEl = document.getElementById('telephoneProgress');
-        if (telProgressEl) telProgressEl.style.width = telProgress + '%';
-        
-        const waterTotalEl = document.getElementById('waterTotal');
-        if (waterTotalEl) waterTotalEl.textContent = stats.water.total;
-        const waterPendingEl = document.getElementById('waterPending');
-        if (waterPendingEl) waterPendingEl.textContent = stats.water.pending;
-        const waterAckEl = document.getElementById('waterAck');
-        if (waterAckEl) waterAckEl.textContent = stats.water.acknowledged;
-        const waterResolvedEl = document.getElementById('waterResolved');
-        if (waterResolvedEl) waterResolvedEl.textContent = stats.water.resolved;
-        
-        const elecTotalEl = document.getElementById('electricityTotal');
-        if (elecTotalEl) elecTotalEl.textContent = stats.electricity.total;
-        const elecPendingEl = document.getElementById('electricityPending');
-        if (elecPendingEl) elecPendingEl.textContent = stats.electricity.pending;
-        const elecAckEl = document.getElementById('electricityAck');
-        if (elecAckEl) elecAckEl.textContent = stats.electricity.acknowledged;
-        const elecResolvedEl = document.getElementById('electricityResolved');
-        if (elecResolvedEl) elecResolvedEl.textContent = stats.electricity.resolved;
-        
-        const telTotalEl = document.getElementById('telephoneTotal');
-        if (telTotalEl) telTotalEl.textContent = stats.telephone.total;
-        const telPendingEl = document.getElementById('telephonePending');
-        if (telPendingEl) telPendingEl.textContent = stats.telephone.pending;
-        const telAckEl = document.getElementById('telephoneAck');
-        if (telAckEl) telAckEl.textContent = stats.telephone.acknowledged;
-        const telResolvedEl = document.getElementById('telephoneResolved');
-        if (telResolvedEl) telResolvedEl.textContent = stats.telephone.resolved;
-    }
-    
-    function updateLatestReports(reports) {
-        const filterType = document.getElementById('filterLatestType')?.value || 'all';
-        let filtered = reports;
-        if (filterType !== 'all') {
-            filtered = reports.filter(r => r.report_type === filterType);
-        }
-        
-        const latest = filtered.slice(0, 10);
-        const container = document.getElementById('latestReportsList');
-        
-        if (!container) return;
-        
-        if (latest.length === 0) {
-            container.innerHTML = '<div class="text-center py-3 text-muted">No reports found</div>';
-            return;
-        }
-        
-        container.innerHTML = latest.map(report => `
-            <div class="report-list-item" onclick="viewReport(${report.id})" style="cursor: pointer;">
-                <div class="report-title">
-                    <span class="category-badge category-${report.report_type}" style="font-size: 0.7rem; padding: 2px 8px;">
-                        <i class="bi bi-${report.report_type === 'water' ? 'droplet' : report.report_type === 'electricity' ? 'lightning-charge' : 'telephone'}"></i>
-                        ${report.report_type.charAt(0).toUpperCase() + report.report_type.slice(1)}
-                        ${report.priority_with_tender ? '<span class="badge bg-danger ms-1">TENDER</span>' : ''}
-                    </span>
-                    <strong> ${report.entity_name || report.entity_type}</strong> - ${report.problem_type || 'No problem specified'}
-                </div>
-                <div class="report-meta">
-                    <span>
-                        Status: ${report.status.replace('_', ' ')}
-                    </span>
-                    <span>
-                        ${report.team_leader_acknowledged ? '<span class="text-success">Acknowledged</span>' : '<span class="text-warning">Pending Ack</span>'}
-                    </span>
-                    <span><i class="bi bi-person"></i> ${report.technician_name || 'Unassigned'}</span>
-                    <span><i class="bi bi-clock"></i> ${formatDateOnly(report.created_at)}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function updatePendingAckList(reports) {
-        const pending = reports.filter(r => !r.team_leader_acknowledged && r.status !== 'resolved').slice(0, 5);
-        const container = document.getElementById('pendingAckList');
-        
-        if (!container) return;
-        
-        if (pending.length === 0) {
-            container.innerHTML = '<div class="text-center py-3 text-success"><i class="bi bi-check-circle"></i> All reports acknowledged!</div>';
-            return;
-        }
-        
-        container.innerHTML = pending.map(report => `
-            <div class="report-list-item">
-                <div class="report-title">
-                    <strong>#${report.id}</strong> - ${report.entity_name || report.entity_type}
-                    <span class="priority-${report.priority}" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">${report.priority}</span>
-                    ${report.priority_with_tender ? '<span class="badge bg-danger ms-1">TENDER</span>' : ''}
-                </div>
-                <div class="report-meta">
-                    <span>${report.report_type} issue</span>
-                    <span>${report.problem_type || '-'}</span>
-                    <span><i class="bi bi-person"></i> ${report.technician_name || '-'}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    function updateCharts(reports, stats) {
-        // Simple chart data - show message if no data
-        const totalReports = reports.length;
-        
-        if (totalReports === 0) {
-            return;
-        }
-        
-        const pendingCount = reports.filter(r => r.status === 'pending').length;
-        const inProgressCount = reports.filter(r => r.status === 'in_progress').length;
-        const resolvedCount = reports.filter(r => r.status === 'resolved').length;
-        
-        const utilityCtx = document.getElementById('utilityChart')?.getContext('2d');
-        if (utilityCtx && utilityChart) utilityChart.destroy();
-        if (utilityCtx) {
-            utilityChart = new Chart(utilityCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Water', 'Electricity', 'Telephone'],
-                    datasets: [{
-                        label: 'Number of Reports',
-                        data: [stats.water.total, stats.electricity.total, stats.telephone.total],
-                        backgroundColor: ['#1976d2', '#f57c00', '#388e3c']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-            const utilityStats = document.getElementById('utilityStats');
-            if (utilityStats) utilityStats.innerHTML = `<span>💧 Water: ${stats.water.total}</span> | <span>⚡ Electricity: ${stats.electricity.total}</span> | <span>📞 Telephone: ${stats.telephone.total}</span>`;
-        }
-        
-        const statusCtx = document.getElementById('statusChart')?.getContext('2d');
-        if (statusCtx && statusChart) statusChart.destroy();
-        if (statusCtx) {
-            statusChart = new Chart(statusCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Pending', 'In Progress', 'Resolved'],
-                    datasets: [{ data: [pendingCount, inProgressCount, resolvedCount], backgroundColor: ['#ffc107', '#17a2b8', '#28a745'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-            const statusStats = document.getElementById('statusStats');
-            if (statusStats) statusStats.innerHTML = `<span>🟡 Pending: ${pendingCount} (${((pendingCount/totalReports)*100).toFixed(1)}%)</span> | <span>🔵 In Progress: ${inProgressCount} (${((inProgressCount/totalReports)*100).toFixed(1)}%)</span> | <span>🟢 Resolved: ${resolvedCount} (${((resolvedCount/totalReports)*100).toFixed(1)}%)</span>`;
-        }
-        
-        const ackCtx = document.getElementById('acknowledgmentChart')?.getContext('2d');
-        if (ackCtx && acknowledgmentChart) acknowledgmentChart.destroy();
-        if (ackCtx) {
-            acknowledgmentChart = new Chart(ackCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Acknowledged', 'Pending'],
-                    datasets: [{ data: [stats.acknowledged, stats.pendingAck], backgroundColor: ['#28a745', '#dc3545'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-            const ackStats = document.getElementById('acknowledgmentStats');
-            if (ackStats) ackStats.innerHTML = `<span>✅ Acknowledged: ${stats.acknowledged} (${((stats.acknowledged/totalReports)*100).toFixed(1)}%)</span> | <span>⏳ Pending: ${stats.pendingAck} (${((stats.pendingAck/totalReports)*100).toFixed(1)}%)</span>`;
-        }
-        
-        const last7Days = getLast7Days();
-        const weeklyData = last7Days.map(day => {
-            return reports.filter(r => {
-                const reportDate = new Date(r.created_at);
-                reportDate.setHours(reportDate.getHours() + 8);
-                return reportDate.toISOString().split('T')[0] === day;
-            }).length;
-        });
-        
-        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
-        if (trendCtx && trendChart) trendChart.destroy();
-        if (trendCtx) {
-            trendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: last7Days.map(d => d.substring(5, 10)),
-                    datasets: [{ label: 'Reports', data: weeklyData, borderColor: '#9b59b6', tension: 0.4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-            const totalWeekly = weeklyData.reduce((a, b) => a + b, 0);
-            const trendStats = document.getElementById('trendStats');
-            if (trendStats) trendStats.innerHTML = `<span>📊 Total this week: ${totalWeekly} reports</span> | <span>📈 Daily average: ${(totalWeekly/7).toFixed(1)}</span>`;
-        }
-    }
-    
-    function getLast7Days() {
-        const dates = [];
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            dates.push(date.toISOString().split('T')[0]);
-        }
-        return dates;
+            `;
+        }).join('');
     }
     
     function viewReport(id) {
         window.location.href = `/reports?id=${id}`;
     }
     
-    function displayEmptyState() {
-        const latestContainer = document.getElementById('latestReportsList');
-        if (latestContainer) {
-            latestContainer.innerHTML = '<div class="text-center py-5"><i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i><p class="mt-2 text-muted">No reports yet. Create your first report!</p><a href="/new-report" class="btn btn-primary">Create Report</a></div>';
-        }
-        const tenderContainer = document.getElementById('tenderReportsList');
-        if (tenderContainer) {
-            tenderContainer.innerHTML = '<div class="text-center py-3">No urgent reports yet</div>';
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    async function checkAuthorization() {
+        const user = window.getCurrentUser();
+        if (user && user.canEditTechnicians === true) {
+            isAuthorized = true;
+            document.getElementById('backupSection').style.display = 'block';
+            document.getElementById('restoreWarning').style.display = 'block';
+            loadLastBackupInfo();
         }
     }
     
-    // Load dashboard data
-    loadDashboardData();
-    setInterval(loadDashboardData, 30000);
+    async function loadLastBackupInfo() {
+        try {
+            const response = await fetch('/api/backup/last');
+            const data = await response.json();
+            if (data.success && data.last_backup) {
+                document.getElementById('lastBackupTime').textContent = formatDate(data.last_backup.created_at);
+                document.getElementById('backupInfo').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error loading backup info:', error);
+        }
+    }
+    
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleString('en-GB');
+    }
+    
+    async function backupData() {
+        const user = window.getCurrentUser();
+        if (!user || user.canEditTechnicians !== true) {
+            window.showToast('You are not authorized to perform backup', 'error');
+            return;
+        }
+        
+        window.showToast('Creating backup...', 'info');
+        
+        try {
+            const response = await fetch(`/api/backup?user_id=${user.id}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // Create download link for backup file
+                const backupData = result.data;
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const filename = `moe_backup_${timestamp}.json`;
+                
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                const counts = backupData._backup_info.record_counts;
+                window.showToast(`Backup created! Exported ${counts.technical_reports} reports, ${counts.schools} schools, ${counts.departments} departments`, 'success');
+                
+                document.getElementById('lastBackupTime').textContent = formatDate(backupData._backup_info.created_at);
+                document.getElementById('backupInfo').style.display = 'block';
+            } else {
+                window.showToast(result.error || 'Backup failed', 'error');
+            }
+        } catch (error) {
+            console.error('Backup error:', error);
+            window.showToast('Error creating backup', 'error');
+        }
+    }
+    
+    async function restoreData() {
+        const user = window.getCurrentUser();
+        if (!user || user.canEditTechnicians !== true) {
+            window.showToast('You are not authorized to perform restore', 'error');
+            return;
+        }
+        
+        // Confirm with user
+        const confirmed = confirm(
+            '⚠️ WARNING: Restoring will REPLACE all current data with the backup data.\n\n' +
+            'This action cannot be undone. Please ensure you have a current backup first.\n\n' +
+            'Are you sure you want to continue?'
+        );
+        
+        if (!confirmed) return;
+        
+        // Create file input
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const backupData = JSON.parse(event.target.result);
+                    
+                    if (!backupData._backup_info) {
+                        window.showToast('Invalid backup file format', 'error');
+                        return;
+                    }
+                    
+                    window.showToast('Restoring data... This may take a moment', 'info');
+                    
+                    const response = await fetch('/api/restore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ backup_data: backupData, user_id: user.id })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        window.showToast(`Restore successful! Restored ${result.restored_counts.technical_reports || 0} reports`, 'success');
+                        // Reload dashboard stats
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        window.showToast(result.error || 'Restore failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Restore error:', error);
+                    window.showToast('Error parsing backup file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        fileInput.click();
+    }
+    
+    // Auto-refresh dashboard every 30 seconds
+    loadDashboardStats();
+    checkAuthorization();
+    setInterval(loadDashboardStats, 30000);
 </script>
 {% endblock %}
