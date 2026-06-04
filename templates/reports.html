@@ -529,8 +529,42 @@
         return cleaned.trim();
     }
     
-    // ============ PREVIOUS WORKING PRINT FUNCTION (unchanged) ============
-    function getPrintWindowHTML(report) {
+    // ============ PRINT FUNCTION - Direct print dialog, no new tab ============
+    function printReport() {
+        if (!currentReport && currentReportId) {
+            window.showToast('No report to print', 'error');
+            return;
+        }
+        
+        const report = currentReport;
+        
+        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
+        
+        // Create hidden iframe for printing (no new tab)
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+        
+        const printHtml = getPrintHTML(report);
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(printHtml);
+        iframeDoc.close();
+        
+        // Print from iframe
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        
+        // Remove iframe after printing
+        setTimeout(function() {
+            document.body.removeChild(iframe);
+        }, 1000);
+    }
+    
+    function getPrintHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -720,8 +754,8 @@
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
                     ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
-                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `</td><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
+                    ${report.meter_number ? `</tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
+                    ${report.phone_number ? `<tr><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
                     ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
@@ -765,23 +799,7 @@
         </html>`;
     }
     
-    function printReport() {
-        if (!currentReport && currentReportId) {
-            window.showToast('No report to print', 'error');
-            return;
-        }
-        
-        const report = currentReport;
-        
-        fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
-        
-        const printHtml = getPrintWindowHTML(report);
-        const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
-    }
-    
-    // ============ WORD DOCUMENT FUNCTION (UPDATED WITH PROPER FORMATTING) ============
+    // ============ WORD DOCUMENT FUNCTION - Proper formatted Word document ============
     function getWordHTML(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
@@ -804,12 +822,12 @@
         
         // Format bullet points for complaint details
         if (complaintDetails.includes('\n')) {
-            complaintDetails = complaintDetails.split('\n').map(line => `• ${line}`).join('<br>');
+            complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
         
         // Format bullet points for action taken
         if (actionTaken.includes('\n')) {
-            actionTaken = actionTaken.split('\n').map(line => `• ${line}`).join('<br>');
+            actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
         
         // Images HTML
@@ -817,7 +835,7 @@
         if (report.images && report.images.length > 0) {
             imagesHtml = '<div style="margin-top:20px;"><strong>Attached Images:</strong><div style="display:flex; flex-wrap:wrap; gap:15px; margin-top:10px;">';
             report.images.forEach(img => {
-                imagesHtml += `<img src="${img}" style="max-width:180px; max-height:120px; border:1px solid #ccc; border-radius:4px;">`;
+                imagesHtml += `<img src="${img}" style="max-width:180px; max-height:120px; border:1px solid #cccccc; border-radius:4px;">`;
             });
             imagesHtml += '</div></div>';
         }
@@ -828,7 +846,7 @@
             commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
                 let commentText = cleanText(c.text);
-                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
+                commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
         }
@@ -839,16 +857,21 @@
             <meta charset="UTF-8">
             <title>${reportTypeName} Technical Report #${report.id}</title>
             <style>
+                /* Professional Word Document Styles */
                 body {
                     font-family: 'Times New Roman', 'Arial', serif;
                     margin: 2.54cm 3.17cm;
+                    padding: 0;
                     font-size: 12pt;
                     line-height: 1.5;
                     color: #000000;
+                    background: white;
                 }
+                
+                /* Header Section */
                 .header {
                     text-align: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 40px;
                 }
                 .header h2 {
                     font-size: 12pt;
@@ -859,42 +882,53 @@
                 .header h1 {
                     font-size: 16pt;
                     font-weight: bold;
-                    margin: 10px 0;
+                    margin: 15px 0 10px 0;
                     text-transform: uppercase;
+                    letter-spacing: 1px;
                 }
                 .divider {
                     border-top: 2px solid #000000;
-                    margin: 15px 0 5px 0;
+                    margin: 20px 0 5px 0;
                 }
                 .sub-divider {
                     border-top: 1px solid #000000;
                     margin: 5px 0;
                 }
+                
+                /* Report ID Box */
                 .report-id {
                     background: #f5f5f5;
-                    padding: 10px;
-                    margin-bottom: 20px;
+                    padding: 12px 15px;
+                    margin-bottom: 30px;
                     border: 1px solid #cccccc;
                 }
                 .report-id p {
                     margin: 5px 0;
                 }
-                table {
+                
+                /* Table Styles */
+                .report-table {
                     width: 100%;
                     border-collapse: collapse;
                     margin: 20px 0;
                 }
-                th, td {
+                .report-table th {
                     border: 1px solid #aaaaaa;
-                    padding: 10px;
+                    padding: 10px 12px;
                     text-align: left;
                     vertical-align: top;
-                }
-                th {
                     background-color: #f0f0f0;
                     width: 30%;
                     font-weight: bold;
                 }
+                .report-table td {
+                    border: 1px solid #aaaaaa;
+                    padding: 10px 12px;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                
+                /* Priority Colors */
                 .priority-high {
                     color: #dc3545;
                     font-weight: bold;
@@ -913,12 +947,15 @@
                     padding: 2px 8px;
                     border-radius: 4px;
                     display: inline-block;
+                    margin-left: 8px;
                 }
+                
+                /* Signatures Section */
                 .signatures {
                     display: flex;
                     justify-content: space-between;
-                    margin-top: 50px;
-                    margin-bottom: 30px;
+                    margin-top: 60px;
+                    margin-bottom: 40px;
                 }
                 .signature-box {
                     text-align: center;
@@ -926,24 +963,48 @@
                 }
                 .signature-line {
                     border-top: 1px solid #000000;
-                    margin-top: 40px;
+                    margin-top: 50px;
                     padding-top: 8px;
                     width: 100%;
                 }
+                .signature-box p {
+                    margin: 8px 0;
+                }
+                
+                /* Footer */
                 .footer {
                     text-align: center;
-                    margin-top: 40px;
+                    margin-top: 50px;
                     font-size: 9pt;
                     color: #666666;
                     border-top: 1px solid #dddddd;
                     padding-top: 15px;
                 }
-                img {
+                
+                /* Images */
+                .image-container {
+                    margin-top: 20px;
+                }
+                .image-container img {
                     max-width: 180px;
                     max-height: 120px;
                     border: 1px solid #cccccc;
                     margin: 5px;
                 }
+                
+                /* Comments Section */
+                .comments-section {
+                    margin-top: 20px;
+                }
+                .comment-item {
+                    border: 1px solid #e0e0e0;
+                    padding: 12px;
+                    margin-bottom: 10px;
+                    border-radius: 6px;
+                    background: #fafafa;
+                }
+                
+                /* Page Setup */
                 @page {
                     size: A4;
                     margin: 2.54cm 3.17cm;
@@ -957,7 +1018,7 @@
                 <h1>Ministry of Education</h1>
                 <div class="divider"></div>
                 <div class="sub-divider"></div>
-                <h3 style="margin-top: 10px;">Technical Report System - ${reportTypeName}</h3>
+                <h3 style="margin-top: 15px; font-size: 13pt;">Technical Report System - ${reportTypeName}</h3>
             </div>
             
             <div class="report-id">
@@ -967,24 +1028,25 @@
                 <p><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</p>
             </div>
             
-            </table>
+            <table class="report-table">
                 <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                 <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
-                ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
-                ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
-                ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
-                ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                 <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
                 <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="tender-badge">TENDER</span>' : ''}</td></tr>
                 <tr><th>Complaint Details</th><td style="white-space: pre-wrap;">${complaintDetails}</td></tr>
-                ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
-                ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td></tr>` : ''}
+                ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap;">${actionTaken}</td>` : ''}
                 <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
-                ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
+                ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
             </table>
             
             ${imagesHtml}
+            
             ${commentsHtml}
             
             <div class="signatures">
