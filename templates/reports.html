@@ -118,7 +118,7 @@
         gap: 10px;
     }
     
-    /* Loading overlay for PDF generation */
+    /* Loading overlay */
     .pdf-loading {
         position: fixed;
         top: 0;
@@ -136,15 +136,6 @@
         padding: 20px 40px;
         border-radius: 10px;
         text-align: center;
-    }
-    
-    /* Hidden iframe for printing */
-    .print-iframe {
-        position: absolute;
-        width: 0;
-        height: 0;
-        border: 0;
-        visibility: hidden;
     }
 </style>
 
@@ -200,7 +191,7 @@
 <div id="pdfLoadingOverlay" class="pdf-loading">
     <div class="spinner">
         <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2 mb-0">Generating PDF...</p>
+        <p class="mt-2 mb-0">Generating document...</p>
     </div>
 </div>
 
@@ -219,8 +210,8 @@
                     <button type="button" class="btn btn-primary" onclick="printReport()">
                         <i class="bi bi-printer"></i> Print
                     </button>
-                    <button type="button" class="btn btn-success" onclick="saveAsPDF()">
-                        <i class="bi bi-file-pdf"></i> Save as PDF
+                    <button type="button" class="btn btn-success" onclick="saveAsWord()">
+                        <i class="bi bi-file-word"></i> Save as Word
                     </button>
                 </div>
                 <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
@@ -534,25 +525,58 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // Clean complaint details - remove any "Non-Nullable" text
+        // Clean all text fields - remove any "Non-Nullable" text
         let complaintDetails = (report.complaint_details || '-');
+        complaintDetails = complaintDetails.replace(/NonNullable/gi, '');
         complaintDetails = complaintDetails.replace(/Non-Nullable/gi, '');
         complaintDetails = escapeHtml(complaintDetails);
         
-        // Clean action taken
         let actionTaken = (report.action_taken || '-');
+        actionTaken = actionTaken.replace(/NonNullable/gi, '');
         actionTaken = actionTaken.replace(/Non-Nullable/gi, '');
         actionTaken = escapeHtml(actionTaken);
         
-        // Clean technician notes
         let technicianNotes = (report.technician_notes || '');
+        technicianNotes = technicianNotes.replace(/NonNullable/gi, '');
         technicianNotes = technicianNotes.replace(/Non-Nullable/gi, '');
         technicianNotes = escapeHtml(technicianNotes);
         
-        // Clean team leader notes
         let teamLeaderNotes = (report.team_leader_notes || '');
+        teamLeaderNotes = teamLeaderNotes.replace(/NonNullable/gi, '');
         teamLeaderNotes = teamLeaderNotes.replace(/Non-Nullable/gi, '');
         teamLeaderNotes = escapeHtml(teamLeaderNotes);
+        
+        let accountNumber = (report.account_number || '');
+        accountNumber = accountNumber.replace(/NonNullable/gi, '');
+        accountNumber = accountNumber.replace(/Non-Nullable/gi, '');
+        
+        let meterNumber = (report.meter_number || '');
+        meterNumber = meterNumber.replace(/NonNullable/gi, '');
+        meterNumber = meterNumber.replace(/Non-Nullable/gi, '');
+        
+        let phoneNumber = (report.phone_number || '');
+        phoneNumber = phoneNumber.replace(/NonNullable/gi, '');
+        phoneNumber = phoneNumber.replace(/Non-Nullable/gi, '');
+        
+        let referenceNumber = (report.reference_number || '');
+        referenceNumber = referenceNumber.replace(/NonNullable/gi, '');
+        referenceNumber = referenceNumber.replace(/Non-Nullable/gi, '');
+        
+        let problemType = (report.problem_type || '-');
+        problemType = problemType.replace(/NonNullable/gi, '');
+        problemType = problemType.replace(/Non-Nullable/gi, '');
+        
+        let entityName = (report.entity_name || report.entity_type || '');
+        entityName = entityName.replace(/NonNullable/gi, '');
+        entityName = entityName.replace(/Non-Nullable/gi, '');
+        
+        let technicianName = (report.technician_name || 'Unknown');
+        technicianName = technicianName.replace(/NonNullable/gi, '');
+        technicianName = technicianName.replace(/Non-Nullable/gi, '');
+        
+        let teamLeaderName = (report.team_leader_name || 'Team Leader');
+        teamLeaderName = teamLeaderName.replace(/NonNullable/gi, '');
+        teamLeaderName = teamLeaderName.replace(/Non-Nullable/gi, '');
         
         // Images HTML
         let imagesHtml = '';
@@ -570,6 +594,7 @@
             commentsHtml = '<div style="margin-top:25px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
                 let commentText = (c.text || '');
+                commentText = commentText.replace(/NonNullable/gi, '');
                 commentText = commentText.replace(/Non-Nullable/gi, '');
                 commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
@@ -598,7 +623,7 @@
                 }
                 @page {
                     size: A4;
-                    margin: 2.2cm 2.2cm;
+                    margin: 2.5cm 2.5cm;
                 }
                 .report-container {
                     max-width: 100%;
@@ -738,19 +763,19 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(report.entity_name || report.entity_type)}NonNullable
-                    ${report.account_number ? `<tr><th>Account Number</th><td>${escapeHtml(report.account_number)}NonNullable` : ''}
-                    ${report.meter_number ? `<tr><th>Meter Number</th><td>${escapeHtml(report.meter_number)}NonNullable` : ''}
-                    ${report.phone_number ? `</td><th>Phone Number</th><td>${escapeHtml(report.phone_number)}NonNullable` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(report.problem_type || '-')}NonNullable
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap; line-height: 1.5;">${complaintDetails}NonNullable
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${technicianNotes}NonNullable` : ''}
-                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap; line-height: 1.5;">${actionTaken}NonNullable` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(report.technician_name || 'Unknown')}NonNullable
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(report.team_leader_name)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${teamLeaderNotes}NonNullable` : ''}
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                    ${report.reference_number ? `<tr><th>Reference</th><td>${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space: pre-wrap; line-height: 1.5;">${complaintDetails}</td></tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space: pre-wrap;">${technicianNotes}</td>` : ''}
+                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space: pre-wrap; line-height: 1.5;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space: pre-wrap;">${teamLeaderNotes}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
@@ -760,13 +785,13 @@
                     <div class="signature-box">
                         <div class="signature-line"></div>
                         <div><strong>Technician's Signature</strong></div>
-                        <div>Name: ${escapeHtml(report.technician_name || '_________________')}</div>
+                        <div>Name: ${escapeHtml(technicianName)}</div>
                         <div>Date: ${formatDateOnly(new Date())}</div>
                     </div>
                     <div class="signature-box">
                         <div class="signature-line"></div>
                         <div><strong>Team Leader's Signature</strong></div>
-                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(report.team_leader_name) : '_________________'}</div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(teamLeaderName) : '_________________'}</div>
                         <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
                     </div>
                 </div>
@@ -814,7 +839,7 @@
         }, 1000);
     }
     
-    function saveAsPDF() {
+    function saveAsWord() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to save', 'error');
             return;
@@ -829,46 +854,57 @@
         try {
             const reportHtml = getReportHTML(report);
             
-            // Create hidden iframe with the report
-            const iframe = document.createElement('iframe');
-            iframe.style.position = 'absolute';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
+            // Create a complete HTML document for Word
+            const fullHtml = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Technical_Report_${report.id}</title>
+                <style>
+                    body {
+                        font-family: 'Times New Roman', 'Arial', serif;
+                        margin: 2.5cm;
+                        font-size: 11pt;
+                        line-height: 1.5;
+                    }
+                    .header { text-align: center; margin-bottom: 25px; }
+                    .header h2 { font-size: 12pt; font-weight: normal; margin: 0; }
+                    .header h1 { font-size: 16pt; font-weight: bold; margin: 8px 0; text-transform: uppercase; }
+                    .divider { border-top: 2px solid #000; margin: 15px 0 5px 0; }
+                    .sub-divider { border-top: 1px solid #000; margin: 5px 0; }
+                    .report-id { background: #f5f5f5; padding: 10px 15px; margin-bottom: 25px; display: flex; justify-content: space-between; flex-wrap: wrap; border: 1px solid #ddd; }
+                    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                    th, td { border: 1px solid #aaa; padding: 10px; text-align: left; vertical-align: top; }
+                    th { background: #f0f0f0; width: 30%; }
+                    .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
+                    .signature-box { text-align: center; width: 45%; }
+                    .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 8px; }
+                    .footer { text-align: center; margin-top: 40px; font-size: 9pt; color: #666; border-top: 1px solid #ddd; padding-top: 12px; }
+                    img { max-width: 180px; max-height: 120px; border: 1px solid #ccc; margin: 5px; }
+                </style>
+            </head>
+            <body>
+                ${reportHtml.split('<body>')[1].split('</body>')[0]}
+            </body>
+            </html>`;
             
-            const iframeDoc = iframe.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(reportHtml);
-            iframeDoc.close();
+            // Create blob and download as .doc (Word document)
+            const blob = new Blob([fullHtml], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Technical_Report_${report.id}_${formatDateOnly(new Date())}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
             
-            // Wait for content to load, then print to PDF
-            iframe.onload = function() {
-                setTimeout(function() {
-                    // Focus and print - user can select "Save as PDF"
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-                    
-                    // Remove iframe after print dialog closes
-                    setTimeout(function() {
-                        document.body.removeChild(iframe);
-                        hideLoading();
-                    }, 1000);
-                }, 500);
-            };
-            
-            // If onload doesn't fire, still remove after timeout
-            setTimeout(function() {
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                    hideLoading();
-                }
-            }, 5000);
-            
+            hideLoading();
+            window.showToast('Word document saved successfully');
         } catch (error) {
             hideLoading();
-            console.error('PDF Error:', error);
-            window.showToast('Error generating PDF. Please use Print button instead.', 'error');
+            console.error('Error:', error);
+            window.showToast('Error generating document', 'error');
         }
     }
     
