@@ -562,7 +562,7 @@ def create_department():
         app.logger.error(f"Error creating department: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/departments/<int:dept_id>', methods(['PUT'])
+@app.route('/api/departments/<int:dept_id>', methods=['PUT'])
 def update_department(dept_id):
     try:
         if not supabase:
