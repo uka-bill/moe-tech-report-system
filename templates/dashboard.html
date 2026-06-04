@@ -202,7 +202,6 @@
             document.getElementById('pendingReports').textContent = stats.by_status?.pending || 0;
             document.getElementById('acknowledgedReports').textContent = stats.acknowledged_count || 0;
             
-            // Load recent reports
             if (stats.recent_reports && stats.recent_reports.length > 0) {
                 displayRecentReports(stats.recent_reports);
             } else {
@@ -215,7 +214,6 @@
                 `;
             }
             
-            // Load team leader count
             await loadTeamLeaderCount();
             
         } catch (error) {
@@ -330,7 +328,6 @@
             const result = await response.json();
             
             if (result.success) {
-                // Create download link for backup file
                 const backupData = result.data;
                 const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
                 const filename = `moe_backup_${timestamp}.json`;
@@ -366,7 +363,6 @@
             return;
         }
         
-        // Confirm with user
         const confirmed = confirm(
             '⚠️ WARNING: Restoring will REPLACE all current data with the backup data.\n\n' +
             'This action cannot be undone. Please ensure you have a current backup first.\n\n' +
@@ -375,7 +371,6 @@
         
         if (!confirmed) return;
         
-        // Create file input
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.json';
@@ -405,7 +400,6 @@
                     
                     if (result.success) {
                         window.showToast(`Restore successful! Restored ${result.restored_counts.technical_reports || 0} reports`, 'success');
-                        // Reload dashboard stats
                         setTimeout(() => {
                             location.reload();
                         }, 1500);
@@ -423,7 +417,6 @@
         fileInput.click();
     }
     
-    // Auto-refresh dashboard every 30 seconds
     loadDashboardStats();
     checkAuthorization();
     setInterval(loadDashboardStats, 30000);
