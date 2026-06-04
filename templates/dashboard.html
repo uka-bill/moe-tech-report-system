@@ -17,7 +17,6 @@
     }
     .stat-icon {
         font-size: 36px;
-        color: var(--primary-color);
         margin-bottom: 10px;
     }
     .stat-number {
@@ -48,6 +47,9 @@
     .backup-section h5 {
         color: white;
         margin-bottom: 15px;
+    }
+    .backup-section p {
+        color: rgba(255,255,255,0.9);
     }
     .btn-backup {
         background-color: #28a745;
@@ -95,28 +97,28 @@
 <div class="row mb-4">
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-file-text"></i></div>
+            <div class="stat-icon"><i class="bi bi-file-text" style="color: #9b59b6;"></i></div>
             <div class="stat-number" id="totalReports">0</div>
             <div class="stat-label">Total Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-droplet text-info"></i></div>
+            <div class="stat-icon"><i class="bi bi-droplet" style="color: #17a2b8;"></i></div>
             <div class="stat-number" id="waterReports">0</div>
             <div class="stat-label">Water Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-lightning-charge text-warning"></i></div>
+            <div class="stat-icon"><i class="bi bi-lightning-charge" style="color: #f57c00;"></i></div>
             <div class="stat-number" id="electricityReports">0</div>
             <div class="stat-label">Electricity Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-telephone text-success"></i></div>
+            <div class="stat-icon"><i class="bi bi-telephone" style="color: #28a745;"></i></div>
             <div class="stat-number" id="telephoneReports">0</div>
             <div class="stat-label">Telephone Reports</div>
         </div>
@@ -127,21 +129,21 @@
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-clock-history text-warning"></i></div>
+            <div class="stat-icon"><i class="bi bi-clock-history" style="color: #ffc107;"></i></div>
             <div class="stat-number" id="pendingReports">0</div>
             <div class="stat-label">Pending Review</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-check2-circle text-success"></i></div>
+            <div class="stat-icon"><i class="bi bi-check2-circle" style="color: #28a745;"></i></div>
             <div class="stat-number" id="acknowledgedReports">0</div>
             <div class="stat-label">Acknowledged</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-trophy text-primary"></i></div>
+            <div class="stat-icon"><i class="bi bi-people" style="color: #9b59b6;"></i></div>
             <div class="stat-number" id="teamLeaderCount">0</div>
             <div class="stat-label">Team Leaders</div>
         </div>
@@ -163,7 +165,7 @@
     </div>
 </div>
 
-<!-- Backup and Restore Section (Only visible to authorized users) -->
+<!-- Backup and Restore Section -->
 <div id="backupSection" class="backup-section" style="display: none;">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
@@ -188,8 +190,7 @@
 </div>
 
 <script>
-    let isAuthorized = false;
-    
+    // Load dashboard statistics
     async function loadDashboardStats() {
         try {
             const response = await fetch('/api/dashboard-stats');
@@ -202,6 +203,7 @@
             document.getElementById('pendingReports').textContent = stats.by_status?.pending || 0;
             document.getElementById('acknowledgedReports').textContent = stats.acknowledged_count || 0;
             
+            // Display recent reports
             if (stats.recent_reports && stats.recent_reports.length > 0) {
                 displayRecentReports(stats.recent_reports);
             } else {
@@ -214,6 +216,7 @@
                 `;
             }
             
+            // Load team leader count
             await loadTeamLeaderCount();
             
         } catch (error) {
@@ -284,36 +287,16 @@
         return div.innerHTML;
     }
     
-    async function checkAuthorization() {
+    // Check if user is authorized for backup/restore
+    function checkAuthorization() {
         const user = window.getCurrentUser();
         if (user && user.canEditTechnicians === true) {
-            isAuthorized = true;
             document.getElementById('backupSection').style.display = 'block';
             document.getElementById('restoreWarning').style.display = 'block';
-            loadLastBackupInfo();
         }
     }
     
-    async function loadLastBackupInfo() {
-        try {
-            const response = await fetch('/api/backup/last');
-            const data = await response.json();
-            if (data.success && data.last_backup) {
-                document.getElementById('lastBackupTime').textContent = formatDate(data.last_backup.created_at);
-                document.getElementById('backupInfo').style.display = 'block';
-            }
-        } catch (error) {
-            console.error('Error loading backup info:', error);
-        }
-    }
-    
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        date.setHours(date.getHours() + 8);
-        return date.toLocaleString('en-GB');
-    }
-    
+    // Backup function
     async function backupData() {
         const user = window.getCurrentUser();
         if (!user || user.canEditTechnicians !== true) {
@@ -343,10 +326,7 @@
                 URL.revokeObjectURL(url);
                 
                 const counts = backupData._backup_info.record_counts;
-                window.showToast(`Backup created! Exported ${counts.technical_reports} reports, ${counts.schools} schools, ${counts.departments} departments`, 'success');
-                
-                document.getElementById('lastBackupTime').textContent = formatDate(backupData._backup_info.created_at);
-                document.getElementById('backupInfo').style.display = 'block';
+                window.showToast(`Backup created! Exported ${counts.technical_reports} reports`, 'success');
             } else {
                 window.showToast(result.error || 'Backup failed', 'error');
             }
@@ -356,6 +336,7 @@
         }
     }
     
+    // Restore function
     async function restoreData() {
         const user = window.getCurrentUser();
         if (!user || user.canEditTechnicians !== true) {
@@ -399,7 +380,7 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        window.showToast(`Restore successful! Restored ${result.restored_counts.technical_reports || 0} reports`, 'success');
+                        window.showToast('Restore successful!', 'success');
                         setTimeout(() => {
                             location.reload();
                         }, 1500);
@@ -417,6 +398,7 @@
         fileInput.click();
     }
     
+    // Initialize dashboard
     loadDashboardStats();
     checkAuthorization();
     setInterval(loadDashboardStats, 30000);
