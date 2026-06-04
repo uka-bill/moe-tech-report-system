@@ -162,6 +162,9 @@
     </div>
 </div>
 
+<!-- Hidden iframe for printing (no preview window) -->
+<iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
+
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -487,10 +490,19 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        // Get the print HTML
         const printHtml = getPrintHTML(report);
-        printWindow.document.write(printHtml);
-        printWindow.document.close();
+        
+        // Use hidden iframe to print directly (no preview window)
+        const iframe = document.getElementById('printIframe');
+        const iframeDoc = iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(printHtml);
+        iframeDoc.close();
+        
+        // Print from iframe - this opens the print dialog directly
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
     }
     
     function getPrintHTML(report) {
@@ -581,21 +593,21 @@
                     <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
                     <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
                 </div>
-                </table>
+                <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}NonNullable
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}NonNullable` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}NonNullable` : ''}
-                    ${phoneNumber ? `</tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}NonNullable` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}NonNullable` : ''}
                     ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}NonNullable
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}NonNullable
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}NonNullable` : ''}
+                    ${technicianNotes ? `</tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}NonNullable` : ''}
                     ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}NonNullable` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}NonNullable
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${teamLeaderNotes ? `</table><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}NonNullable` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}NonNullable` : ''}
                 </table>
                 ${imagesHtml}
                 ${commentsHtml}
