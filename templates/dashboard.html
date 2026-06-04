@@ -17,6 +17,7 @@
     }
     .stat-icon {
         font-size: 36px;
+        color: var(--primary-color);
         margin-bottom: 10px;
     }
     .stat-number {
@@ -37,53 +38,6 @@
     .recent-report-item:hover {
         background-color: var(--secondary-color);
     }
-    .backup-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 30px;
-    }
-    .backup-section h5 {
-        color: white;
-        margin-bottom: 15px;
-    }
-    .backup-section p {
-        color: rgba(255,255,255,0.9);
-    }
-    .btn-backup {
-        background-color: #28a745;
-        border-color: #28a745;
-        color: white;
-    }
-    .btn-backup:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
-    .btn-restore {
-        background-color: #ffc107;
-        border-color: #ffc107;
-        color: #333;
-    }
-    .btn-restore:hover {
-        background-color: #e0a800;
-        border-color: #d39e00;
-    }
-    .backup-info {
-        background: rgba(255,255,255,0.2);
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 10px;
-        font-size: 12px;
-    }
-    .restore-warning {
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 10px;
-        border-radius: 8px;
-        margin-top: 10px;
-        font-size: 12px;
-    }
 </style>
 
 <div class="row mb-4">
@@ -97,28 +51,28 @@
 <div class="row mb-4">
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-file-text" style="color: #9b59b6;"></i></div>
+            <div class="stat-icon"><i class="bi bi-file-text"></i></div>
             <div class="stat-number" id="totalReports">0</div>
             <div class="stat-label">Total Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-droplet" style="color: #17a2b8;"></i></div>
+            <div class="stat-icon"><i class="bi bi-droplet text-info"></i></div>
             <div class="stat-number" id="waterReports">0</div>
             <div class="stat-label">Water Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-lightning-charge" style="color: #f57c00;"></i></div>
+            <div class="stat-icon"><i class="bi bi-lightning-charge text-warning"></i></div>
             <div class="stat-number" id="electricityReports">0</div>
             <div class="stat-label">Electricity Reports</div>
         </div>
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-telephone" style="color: #28a745;"></i></div>
+            <div class="stat-icon"><i class="bi bi-telephone text-success"></i></div>
             <div class="stat-number" id="telephoneReports">0</div>
             <div class="stat-label">Telephone Reports</div>
         </div>
@@ -129,21 +83,21 @@
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-clock-history" style="color: #ffc107;"></i></div>
+            <div class="stat-icon"><i class="bi bi-clock-history text-warning"></i></div>
             <div class="stat-number" id="pendingReports">0</div>
             <div class="stat-label">Pending Review</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-check2-circle" style="color: #28a745;"></i></div>
+            <div class="stat-icon"><i class="bi bi-check2-circle text-success"></i></div>
             <div class="stat-number" id="acknowledgedReports">0</div>
             <div class="stat-label">Acknowledged</div>
         </div>
     </div>
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="stat-icon"><i class="bi bi-people" style="color: #9b59b6;"></i></div>
+            <div class="stat-icon"><i class="bi bi-people text-primary"></i></div>
             <div class="stat-number" id="teamLeaderCount">0</div>
             <div class="stat-label">Team Leaders</div>
         </div>
@@ -165,32 +119,7 @@
     </div>
 </div>
 
-<!-- Backup and Restore Section -->
-<div id="backupSection" class="backup-section" style="display: none;">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div>
-            <h5><i class="bi bi-archive"></i> Data Backup & Restore</h5>
-            <p class="mb-0 small">Export all data to a backup file or restore from a previous backup.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-backup" onclick="backupData()">
-                <i class="bi bi-download"></i> Backup Data
-            </button>
-            <button class="btn btn-restore" onclick="restoreData()">
-                <i class="bi bi-upload"></i> Restore Data
-            </button>
-        </div>
-    </div>
-    <div id="backupInfo" class="backup-info mt-2" style="display: none;">
-        <i class="bi bi-info-circle"></i> Last backup: <span id="lastBackupTime">Never</span>
-    </div>
-    <div id="restoreWarning" class="restore-warning mt-2" style="display: none;">
-        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Restoring will replace ALL current data with the backup data. This action cannot be undone. Please ensure you have a current backup first.
-    </div>
-</div>
-
 <script>
-    // Load dashboard statistics
     async function loadDashboardStats() {
         try {
             const response = await fetch('/api/dashboard-stats');
@@ -203,7 +132,6 @@
             document.getElementById('pendingReports').textContent = stats.by_status?.pending || 0;
             document.getElementById('acknowledgedReports').textContent = stats.acknowledged_count || 0;
             
-            // Display recent reports
             if (stats.recent_reports && stats.recent_reports.length > 0) {
                 displayRecentReports(stats.recent_reports);
             } else {
@@ -216,7 +144,6 @@
                 `;
             }
             
-            // Load team leader count
             await loadTeamLeaderCount();
             
         } catch (error) {
@@ -287,120 +214,7 @@
         return div.innerHTML;
     }
     
-    // Check if user is authorized for backup/restore
-    function checkAuthorization() {
-        const user = window.getCurrentUser();
-        if (user && user.canEditTechnicians === true) {
-            document.getElementById('backupSection').style.display = 'block';
-            document.getElementById('restoreWarning').style.display = 'block';
-        }
-    }
-    
-    // Backup function
-    async function backupData() {
-        const user = window.getCurrentUser();
-        if (!user || user.canEditTechnicians !== true) {
-            window.showToast('You are not authorized to perform backup', 'error');
-            return;
-        }
-        
-        window.showToast('Creating backup...', 'info');
-        
-        try {
-            const response = await fetch(`/api/backup?user_id=${user.id}`);
-            const result = await response.json();
-            
-            if (result.success) {
-                const backupData = result.data;
-                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-                const filename = `moe_backup_${timestamp}.json`;
-                
-                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                const counts = backupData._backup_info.record_counts;
-                window.showToast(`Backup created! Exported ${counts.technical_reports} reports`, 'success');
-            } else {
-                window.showToast(result.error || 'Backup failed', 'error');
-            }
-        } catch (error) {
-            console.error('Backup error:', error);
-            window.showToast('Error creating backup', 'error');
-        }
-    }
-    
-    // Restore function
-    async function restoreData() {
-        const user = window.getCurrentUser();
-        if (!user || user.canEditTechnicians !== true) {
-            window.showToast('You are not authorized to perform restore', 'error');
-            return;
-        }
-        
-        const confirmed = confirm(
-            '⚠️ WARNING: Restoring will REPLACE all current data with the backup data.\n\n' +
-            'This action cannot be undone. Please ensure you have a current backup first.\n\n' +
-            'Are you sure you want to continue?'
-        );
-        
-        if (!confirmed) return;
-        
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = '.json';
-        fileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const backupData = JSON.parse(event.target.result);
-                    
-                    if (!backupData._backup_info) {
-                        window.showToast('Invalid backup file format', 'error');
-                        return;
-                    }
-                    
-                    window.showToast('Restoring data... This may take a moment', 'info');
-                    
-                    const response = await fetch('/api/restore', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ backup_data: backupData, user_id: user.id })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        window.showToast('Restore successful!', 'success');
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1500);
-                    } else {
-                        window.showToast(result.error || 'Restore failed', 'error');
-                    }
-                } catch (error) {
-                    console.error('Restore error:', error);
-                    window.showToast('Error parsing backup file', 'error');
-                }
-            };
-            reader.readAsText(file);
-        };
-        
-        fileInput.click();
-    }
-    
-    // Initialize dashboard
     loadDashboardStats();
-    checkAuthorization();
     setInterval(loadDashboardStats, 30000);
 </script>
 {% endblock %}
