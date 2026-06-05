@@ -11,7 +11,6 @@ import json
 import sys
 import zipfile
 import base64
-from urllib.parse import urlparse
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -24,9 +23,6 @@ BACKUP_FOLDER = 'backups'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['BACKUP_FOLDER'] = BACKUP_FOLDER
-
-# Supabase Storage bucket name
-SUPABASE_BUCKET = 'moe-images'  # You need to create this bucket in Supabase Storage
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -74,366 +70,10 @@ try:
     
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     print("✅ Supabase connected successfully!")
-    
-    # Test storage connection
-    try:
-        buckets = supabase.storage.list_buckets()
-        print(f"✅ Supabase Storage connected! Found {len(buckets)} buckets")
-        
-        bucket_exists = False
-        for bucket in buckets:
-            if bucket.name == SUPABASE_BUCKET:
-                bucket_exists = True
-                print(f"✅ Bucket '{SUPABASE_BUCKET}' exists")
-                break
-        
-        if not bucket_exists:
-            try:
-                supabase.storage.create_bucket(SUPABASE_BUCKET, {'public': True})
-                print(f"✅ Created bucket '{SUPABASE_BUCKET}'")
-            except Exception as e:
-                print(f"⚠️ Could not create bucket: {e}")
-                print(f"ℹ️ Please create bucket '{SUPABASE_BUCKET}' manually in Supabase Storage")
-    except Exception as e:
-        print(f"⚠️ Supabase Storage connection warning: {e}")
-        print(f"ℹ️ Please ensure storage is enabled in Supabase")
         
 except Exception as e:
     print(f"❌ Supabase connection error: {e}")
     supabase = None
-
-# ============ SUPABASE STORAGE FUNCTIONS (ADDED) ============
-
-def upload_file_to_supabase(file_data, filename, folder='reports'):
-    """Upload a file to Supabase Storage and return the public URL"""
-    if not supabase:
-        return None
-    
-    try:
-        # Generate a unique filename to avoid collisions
-        unique_id = str(uuid.uuid4())[:8]
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        safe_filename = f"{folder}/{timestamp}_{unique_id}_{filename}"
-        
-        # Upload to Supabase Storage
-        result = supabase.storage.from_(SUPABASE_BUCKET).upload(
-            safe_filename,
-            file_data,
-            {'content-type': 'image/png'}
-        )
-        
-        # Get public URL
-        public_url = supabase.storage.from_(SUPABASE_BUCKET).get_public_url(safe_filename)
-        
-        print(f"✅ File uploaded to Supabase: {public_url}")
-        return public_url
-        
-    except Exception as e:
-        print(f"❌ Supabase upload error: {e}")
-        return None
-
-def delete_file_from_supabase(file_url):
-    """Delete a file from Supabase Storage"""
-    if not supabase or not file_url:
-        return False
-    
-    try:
-        # Extract file path from URL
-        parsed = urlparse(file_url)
-        path_parts = parsed.path.split('/')
-        
-        # Find the bucket name and file path
-        bucket_index = -1
-        for i, part in enumerate(path_parts):
-            if part == 'public' and i + 1 < len(path_parts):
-                bucket_index = i + 1
-                break
-        
-        if bucket_index > 0 and bucket_index < len(path_parts):
-            bucket = path_parts[bucket_index]
-            file_path = '/'.join(path_parts[bucket_index + 1:])
-            
-            if bucket == SUPABASE_BUCKET:
-                supabase.storage.from_(SUPABASE_BUCKET).remove([file_path])
-                print(f"✅ Deleted file from Supabase: {file_path}")
-                return True
-        
-        return False
-        
-    except Exception as e:
-        print(f"❌ Supabase delete error: {e}")
-        return False
-
-# ============ UPDATED UPLOAD IMAGE API (MODIFIED) ============
-
-@app.route('/api/upload-image', methods=['POST'])
-def upload_image():
-    """Upload an image to Supabase Storage"""
-    try:
-        print("📸 POST /api/upload-image called")
-        
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image file provided'}), 400
-        
-        file = request.files['image']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Get folder from request (reports or mapping)
-        folder = request.form.get('folder', 'reports')
-        
-        # Read file data
-        file_data = file.read()
-        
-        # Get original filename
-        original_filename = secure_filename(file.filename)
-        
-        # Upload to Supabase
-        image_url = upload_file_to_supabase(file_data, original_filename, folder)
-        
-        if image_url:
-            return jsonify({
-                'success': True,
-                'image_url': image_url,
-                'message': 'Image uploaded successfully'
-            })
-        else:
-            # Fallback to local storage if Supabase fails
-            try:
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                unique_id = str(uuid.uuid4())[:8]
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f"{timestamp}_{unique_id}_{original_filename}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                local_url = f"/api/images/{filename}"
-                print(f"⚠️ Using local storage fallback: {local_url}")
-                return jsonify({
-                    'success': True,
-                    'image_url': local_url,
-                    'message': 'Image uploaded to local storage (Supabase unavailable)'
-                })
-            except Exception as local_error:
-                print(f"❌ Local storage fallback also failed: {local_error}")
-                return jsonify({'error': 'Failed to upload image to both Supabase and local storage'}), 500
-            
-    except Exception as e:
-        print(f"❌ Upload image error: {e}")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
-
-# ============ ADDED MAPPING IMAGE UPLOAD ROUTE ============
-
-@app.route('/api/upload-mapping-image', methods=['POST'])
-def upload_mapping_image():
-    """Upload a mapping image to Supabase Storage and save metadata"""
-    try:
-        print("📸 POST /api/upload-mapping-image called")
-        
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image file provided'}), 400
-        
-        file = request.files['image']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Get form data
-        entity_type = request.form.get('entity_type')
-        entity_id = request.form.get('entity_id')
-        description = request.form.get('description', '')
-        notes = request.form.get('notes', '')
-        water_account_number = request.form.get('water_account_number', '')
-        water_meter_number = request.form.get('water_meter_number', '')
-        electricity_account_number = request.form.get('electricity_account_number', '')
-        electricity_meter_number = request.form.get('electricity_meter_number', '')
-        telephone_account_number = request.form.get('telephone_account_number', '')
-        telephone_number = request.form.get('telephone_number', '')
-        canteen_account_number = request.form.get('canteen_account_number', '')
-        canteen_meter_number = request.form.get('canteen_meter_number', '')
-        
-        if not entity_type or not entity_id:
-            return jsonify({'error': 'Entity type and ID are required'}), 400
-        
-        # Read file data
-        file_data = file.read()
-        original_filename = secure_filename(file.filename)
-        
-        # Upload to Supabase in mapping folder
-        image_url = upload_file_to_supabase(file_data, original_filename, 'mapping')
-        
-        if not image_url:
-            # Fallback to local storage
-            try:
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                unique_id = str(uuid.uuid4())[:8]
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f"mapping_{timestamp}_{unique_id}_{original_filename}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                image_url = f"/api/images/{filename}"
-                print(f"⚠️ Using local storage fallback for mapping image: {image_url}")
-            except Exception as local_error:
-                print(f"❌ Local storage fallback failed: {local_error}")
-                return jsonify({'error': 'Failed to upload image'}), 500
-        
-        # Save metadata to database
-        image_data = {
-            'entity_type': entity_type,
-            'entity_id': int(entity_id),
-            'image_url': image_url,
-            'description': description,
-            'notes': notes,
-            'water_account_number': water_account_number,
-            'water_meter_number': water_meter_number,
-            'electricity_account_number': electricity_account_number,
-            'electricity_meter_number': electricity_meter_number,
-            'telephone_account_number': telephone_account_number,
-            'telephone_number': telephone_number,
-            'canteen_account_number': canteen_account_number,
-            'canteen_meter_number': canteen_meter_number,
-            'uploaded_at': datetime.now().isoformat()
-        }
-        
-        result = supabase.table("mapping_images").insert(image_data).execute()
-        
-        if result.data:
-            return jsonify({
-                'success': True,
-                'image': result.data[0],
-                'image_url': image_url,
-                'message': 'Image uploaded successfully'
-            })
-        else:
-            # If database insert fails, delete the uploaded file
-            delete_file_from_supabase(image_url)
-            return jsonify({'error': 'Failed to save image metadata'}), 500
-            
-    except Exception as e:
-        print(f"❌ Upload mapping image error: {e}")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
-
-# ============ ADDED MAPPING IMAGES CRUD ROUTES ============
-
-@app.route('/api/mapping/images', methods=['GET'])
-def get_mapping_images():
-    """Get mapping images for an entity"""
-    try:
-        print("📍 GET /api/mapping/images called")
-        
-        if not supabase:
-            return jsonify([]), 500
-        
-        entity_type = request.args.get('entity_type')
-        entity_id = request.args.get('entity_id')
-        
-        query = supabase.table("mapping_images").select("*")
-        
-        if entity_type:
-            query = query.eq("entity_type", entity_type)
-        if entity_id:
-            query = query.eq("entity_id", int(entity_id))
-        
-        query = query.order("uploaded_at", desc=True)
-        result = query.execute()
-        
-        images = result.data if result.data else []
-        return jsonify(images)
-        
-    except Exception as e:
-        print(f"❌ Get mapping images error: {e}")
-        return jsonify([]), 500
-
-@app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
-def update_mapping_image(image_id):
-    """Update a mapping image record"""
-    try:
-        print(f"📍 PUT /api/mapping/images/{image_id} called")
-        
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        
-        update_data = {
-            'description': data.get('description', ''),
-            'notes': data.get('notes', ''),
-            'water_account_number': data.get('water_account_number', ''),
-            'water_meter_number': data.get('water_meter_number', ''),
-            'electricity_account_number': data.get('electricity_account_number', ''),
-            'electricity_meter_number': data.get('electricity_meter_number', ''),
-            'telephone_account_number': data.get('telephone_account_number', ''),
-            'telephone_number': data.get('telephone_number', ''),
-            'canteen_account_number': data.get('canteen_account_number', ''),
-            'canteen_meter_number': data.get('canteen_meter_number', ''),
-            'updated_at': datetime.now().isoformat()
-        }
-        
-        result = supabase.table("mapping_images").update(update_data).eq("id", image_id).execute()
-        
-        if result.data:
-            return jsonify({
-                'success': True,
-                'image': result.data[0],
-                'message': 'Image updated successfully'
-            })
-        else:
-            return jsonify({'error': 'Failed to update image'}), 500
-            
-    except Exception as e:
-        print(f"❌ Update mapping image error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/mapping/images/<int:image_id>', methods=['DELETE'])
-def delete_mapping_image(image_id):
-    """Delete a mapping image record and the actual file"""
-    try:
-        print(f"📍 DELETE /api/mapping/images/{image_id} called")
-        
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        # Get the image record first to get the URL
-        get_result = supabase.table("mapping_images").select("image_url").eq("id", image_id).execute()
-        
-        if get_result.data:
-            image_url = get_result.data[0].get('image_url')
-            # Delete from Supabase Storage
-            if image_url:
-                delete_file_from_supabase(image_url)
-        
-        # Delete from database
-        result = supabase.table("mapping_images").delete().eq("id", image_id).execute()
-        
-        if result.data:
-            return jsonify({
-                'success': True,
-                'message': 'Image deleted successfully'
-            })
-        else:
-            return jsonify({'error': 'Failed to delete image'}), 500
-            
-    except Exception as e:
-        print(f"❌ Delete mapping image error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-# ============ SERVE LOCAL IMAGES (FALLBACK) ============
-
-@app.route('/api/images/<path:filename>')
-def serve_image(filename):
-    """Serve locally stored images (fallback when Supabase is unavailable)"""
-    try:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if os.path.exists(filepath):
-            return send_file(filepath, mimetype='image/png')
-        else:
-            return jsonify({'error': 'Image not found'}), 404
-    except Exception as e:
-        print(f"❌ Serve image error: {e}")
-        return jsonify({'error': str(e)}), 404
 
 def create_directories():
     """Create required directories if they don't exist"""
@@ -474,7 +114,7 @@ def initialize_database_tables():
         
         print("🗄️ Checking required database tables...")
         
-        tables = ['financial_years', 'schools', 'departments', 'utility_bills', 'utility_accounts', 'backup_metadata', 'sut_office_expenses', 'mapping_images']
+        tables = ['financial_years', 'schools', 'departments', 'utility_bills', 'utility_accounts', 'backup_metadata', 'sut_office_expenses']
         
         for table in tables:
             try:
@@ -1708,7 +1348,7 @@ def departments():
     return render_template('departments.html')
 
 @app.route('/reports')
-def reports_page():
+def reports():
     return render_template('reports.html')
 
 @app.route('/export')
@@ -1722,18 +1362,6 @@ def backup_page():
 @app.route('/sut-office')
 def sut_office():
     return render_template('sut_office.html')
-
-@app.route('/new-report')
-def new_report():
-    return render_template('new_reports.html')
-
-@app.route('/mapping')
-def mapping():
-    return render_template('mapping.html')
-
-@app.route('/my-reports')
-def my_reports():
-    return render_template('my_reports.html')
 
 # ============ ENTITIES API FOR REPORTS ============
 
@@ -3008,55 +2636,6 @@ def health_check():
 @app.route('/api/test')
 def api_test():
     return jsonify({'message': 'API is working'})
-
-# ============ TECHNICIAN API ROUTES ============
-
-@app.route('/api/technicians', methods=['GET'])
-def get_technicians():
-    """Get all technicians"""
-    try:
-        print("👤 GET /api/technicians called")
-        
-        if not supabase:
-            # Return default technicians if Supabase is not connected
-            return jsonify([
-                {'id': 1, 'name': 'Admin User', 'role': 'admin', 'isAuthorized': True},
-                {'id': 2, 'name': 'Technician User', 'role': 'technician', 'isAuthorized': False}
-            ]), 200
-        
-        response = supabase.table("technicians").select("*").execute()
-        technicians = response.data if response.data else []
-        
-        # If no technicians in database, return default
-        if not technicians:
-            return jsonify([
-                {'id': 1, 'name': 'Admin User', 'role': 'admin', 'isAuthorized': True},
-                {'id': 2, 'name': 'Technician User', 'role': 'technician', 'isAuthorized': False}
-            ]), 200
-        
-        return jsonify(technicians)
-        
-    except Exception as e:
-        print(f"❌ Get technicians error: {e}")
-        # Return default technicians on error
-        return jsonify([
-            {'id': 1, 'name': 'Admin User', 'role': 'admin', 'isAuthorized': True},
-            {'id': 2, 'name': 'Technician User', 'role': 'technician', 'isAuthorized': False}
-        ]), 200
-
-# ============ TECHNICAL REPORTS API (ADDITIONAL) ============
-
-@app.route('/api/technical-reports/<int:report_id>/track-print', methods=['POST'])
-def track_report_print(report_id):
-    """Track when a report is printed"""
-    try:
-        print(f"📄 POST /api/technical-reports/{report_id}/track-print called")
-        # Just log the print action - no database tracking needed
-        print(f"Report {report_id} was printed/viewed")
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"❌ Track print error: {e}")
-        return jsonify({'success': False}), 500
 
 # ============ APPLICATION STARTUP ============
 
