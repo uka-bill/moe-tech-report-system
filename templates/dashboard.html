@@ -12,7 +12,7 @@
         color: #2c3e50;
     }
     .dashboard-header p {
-        color: #7f8c8d;
+        color: #7f8d8d;
         margin-bottom: 0;
         font-size: 14px;
     }
@@ -532,9 +532,9 @@
                 </tr>
             </thead>
             <tbody id="pendingTableBody">
-                <tr><td colspan="8" class="text-center py-4">Loading pending reports...</td></tr>
+                <tr><td colspan="8" class="text-center py-4">Loading pending reports...<\/td><\/tr>
             </tbody>
-        </table>
+        <\/table>
     </div>
 </div>
 
@@ -557,9 +557,9 @@
                 </tr>
             </thead>
             <tbody id="acknowledgedTableBody">
-                <tr><td colspan="7" class="text-center py-4">Loading acknowledged reports...</td></tr>
+                <tr><td colspan="7" class="text-center py-4">Loading acknowledged reports...<\/td><\/tr>
             </tbody>
-        </table>
+        <\/table>
     </div>
 </div>
 
@@ -586,8 +586,8 @@
     </div>
 </div>
 
-<!-- Backup and Restore Section (Only visible to authorized users) -->
-<div id="backupSection" class="backup-section" style="display: none;">
+<!-- Backup and Restore Section (Visible to Team Leaders) -->
+<div id="backupSection" class="backup-section">
     <div class="backup-info">
         <i class="bi bi-shield-lock" style="font-size: 18px;"></i>
         <span class="backup-info-text">Data Backup & Restore</span>
@@ -598,7 +598,7 @@
         <button class="btn-restore" onclick="restoreData()"><i class="bi bi-upload"></i> Restore</button>
     </div>
 </div>
-<div id="restoreWarning" class="restore-warning" style="display: none;">
+<div id="restoreWarning" class="restore-warning">
     <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Restoring will replace ALL current data with the backup data. This action cannot be undone.
 </div>
 
@@ -854,18 +854,10 @@
         }
     }
     
-    function checkAuthorization() {
-        const user = window.getCurrentUser();
-        if (user && user.canEditTechnicians === true) {
-            document.getElementById('backupSection').style.display = 'flex';
-            document.getElementById('restoreWarning').style.display = 'block';
-        }
-    }
-    
     async function backupData() {
         const user = window.getCurrentUser();
-        if (!user || user.canEditTechnicians !== true) {
-            window.showToast('You are not authorized to perform backup', 'error');
+        if (!user || !user.isAuthorized) {
+            window.showToast('Only Team Leaders can perform backup', 'error');
             return;
         }
         
@@ -890,9 +882,8 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                const counts = backupData._backup_info.record_counts;
                 document.getElementById('lastBackupInfo').innerHTML = `Last backup: ${new Date().toLocaleString()}`;
-                window.showToast(`Backup created! Exported ${counts.technical_reports} reports`, 'success');
+                window.showToast('Backup created successfully!', 'success');
             } else {
                 window.showToast(result.error || 'Backup failed', 'error');
             }
@@ -904,8 +895,8 @@
     
     async function restoreData() {
         const user = window.getCurrentUser();
-        if (!user || user.canEditTechnicians !== true) {
-            window.showToast('You are not authorized to perform restore', 'error');
+        if (!user || !user.isAuthorized) {
+            window.showToast('Only Team Leaders can perform restore', 'error');
             return;
         }
         
@@ -963,7 +954,6 @@
         fileInput.click();
     }
     
-    checkAuthorization();
     loadDashboardData();
     setInterval(loadDashboardData, 30000);
 </script>
