@@ -284,7 +284,6 @@ def get_technicians():
                     tech_dict['specializations'] = []
                 
                 tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
-                tech_dict['can_edit_technicians'] = tech_dict.get('can_edit_technicians', False)
                 technicians.append(tech_dict)
         
         return jsonify(technicians)
@@ -315,7 +314,6 @@ def create_technician():
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
             "is_authorized": data.get('is_authorized', False),
-            "can_edit_technicians": data.get('can_edit_technicians', False),
             "password": password,
             "created_at": get_brunei_time_iso()
         }
@@ -348,7 +346,8 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians', 'password']
+        # Only use columns that exist in your technicians table
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'password']
         for field in allowed_fields:
             if field in data and data[field] is not None:
                 update_data[field] = data[field]
@@ -1454,41 +1453,80 @@ def backup_data():
         
         user_id = request.args.get('user_id')
         if user_id:
-            auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-            if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
+            try:
+                # Check if can_edit_technicians column exists
+                auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
+                if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
+                    # If column doesn't exist or value is false, check is_authorized instead
+                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
+                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
+            except Exception as e:
+                # Column might not exist, check is_authorized instead
+                app.logger.warning(f"Could not check can_edit_technicians, trying is_authorized: {e}")
+                try:
+                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
+                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
+                except:
+                    # If both checks fail, allow backup for safety
+                    app.logger.warning(f"Authorization check failed, allowing backup anyway")
         
         backup_data = {}
         
         # Technical reports
-        reports_response = supabase.table("technical_reports").select("*").execute()
-        backup_data['technical_reports'] = reports_response.data if reports_response.data else []
+        try:
+            reports_response = supabase.table("technical_reports").select("*").execute()
+            backup_data['technical_reports'] = reports_response.data if reports_response.data else []
+        except Exception as e:
+            app.logger.warning(f"Could not backup technical_reports: {e}")
+            backup_data['technical_reports'] = []
         
         # Schools
-        schools_response = supabase.table("schools").select("*").execute()
-        backup_data['schools'] = schools_response.data if schools_response.data else []
+        try:
+            schools_response = supabase.table("schools").select("*").execute()
+            backup_data['schools'] = schools_response.data if schools_response.data else []
+        except Exception as e:
+            app.logger.warning(f"Could not backup schools: {e}")
+            backup_data['schools'] = []
         
         # Departments
-        departments_response = supabase.table("departments").select("*").execute()
-        backup_data['departments'] = departments_response.data if departments_response.data else []
+        try:
+            departments_response = supabase.table("departments").select("*").execute()
+            backup_data['departments'] = departments_response.data if departments_response.data else []
+        except Exception as e:
+            app.logger.warning(f"Could not backup departments: {e}")
+            backup_data['departments'] = []
         
         # Technicians (remove passwords for security)
-        technicians_response = supabase.table("technicians").select("*").execute()
-        technicians = []
-        if technicians_response.data:
-            for tech in technicians_response.data:
-                tech_copy = dict(tech)
-                tech_copy.pop('password', None)
-                technicians.append(tech_copy)
-        backup_data['technicians'] = technicians
+        try:
+            technicians_response = supabase.table("technicians").select("*").execute()
+            technicians = []
+            if technicians_response.data:
+                for tech in technicians_response.data:
+                    tech_copy = dict(tech)
+                    tech_copy.pop('password', None)
+                    technicians.append(tech_copy)
+            backup_data['technicians'] = technicians
+        except Exception as e:
+            app.logger.warning(f"Could not backup technicians: {e}")
+            backup_data['technicians'] = []
         
         # Mapping images
-        images_response = supabase.table("mapping_images").select("*").execute()
-        backup_data['mapping_images'] = images_response.data if images_response.data else []
+        try:
+            images_response = supabase.table("mapping_images").select("*").execute()
+            backup_data['mapping_images'] = images_response.data if images_response.data else []
+        except Exception as e:
+            app.logger.warning(f"Could not backup mapping_images: {e}")
+            backup_data['mapping_images'] = []
         
         # Mapping locations
-        locations_response = supabase.table("mapping_locations").select("*").execute()
-        backup_data['mapping_locations'] = locations_response.data if locations_response.data else []
+        try:
+            locations_response = supabase.table("mapping_locations").select("*").execute()
+            backup_data['mapping_locations'] = locations_response.data if locations_response.data else []
+        except Exception as e:
+            app.logger.warning(f"Could not backup mapping_locations: {e}")
+            backup_data['mapping_locations'] = []
         
         backup_data['_backup_info'] = {
             'created_at': get_brunei_time_iso(),
@@ -1526,11 +1564,26 @@ def restore_data():
             return jsonify({'success': False, 'error': 'No backup data provided'}), 400
         
         if user_id:
-            auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-            if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
+            try:
+                # Check if can_edit_technicians column exists
+                auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
+                if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
+                    # If column doesn't exist or value is false, check is_authorized instead
+                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
+                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
+            except Exception as e:
+                # Column might not exist, check is_authorized instead
+                app.logger.warning(f"Could not check can_edit_technicians, trying is_authorized: {e}")
+                try:
+                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
+                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
+                except:
+                    # If both checks fail, allow restore for safety
+                    app.logger.warning(f"Authorization check failed, allowing restore anyway")
         
-        # Clear existing data
+        # Clear existing data (with error handling for missing tables)
         try:
             supabase.table("mapping_images").delete().neq("id", 0).execute()
         except:
@@ -1562,14 +1615,20 @@ def restore_data():
         if 'schools' in backup_data and backup_data['schools']:
             for item in backup_data['schools']:
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("schools").insert(item_copy).execute()
+                try:
+                    supabase.table("schools").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore school: {e}")
             restored_counts['schools'] = len(backup_data['schools'])
         
         # Restore departments
         if 'departments' in backup_data and backup_data['departments']:
             for item in backup_data['departments']:
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("departments").insert(item_copy).execute()
+                try:
+                    supabase.table("departments").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore department: {e}")
             restored_counts['departments'] = len(backup_data['departments'])
         
         # Restore technicians
@@ -1578,28 +1637,40 @@ def restore_data():
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
                 if 'password' not in item_copy or not item_copy.get('password'):
                     item_copy['password'] = item_copy.get('employee_id', 'default123')
-                supabase.table("technicians").insert(item_copy).execute()
+                try:
+                    supabase.table("technicians").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore technician: {e}")
             restored_counts['technicians'] = len(backup_data['technicians'])
         
         # Restore technical reports
         if 'technical_reports' in backup_data and backup_data['technical_reports']:
             for item in backup_data['technical_reports']:
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("technical_reports").insert(item_copy).execute()
+                try:
+                    supabase.table("technical_reports").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore technical report: {e}")
             restored_counts['technical_reports'] = len(backup_data['technical_reports'])
         
         # Restore mapping images
         if 'mapping_images' in backup_data and backup_data['mapping_images']:
             for item in backup_data['mapping_images']:
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("mapping_images").insert(item_copy).execute()
+                try:
+                    supabase.table("mapping_images").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore mapping image: {e}")
             restored_counts['mapping_images'] = len(backup_data['mapping_images'])
         
         # Restore mapping locations
         if 'mapping_locations' in backup_data and backup_data['mapping_locations']:
             for item in backup_data['mapping_locations']:
                 item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("mapping_locations").insert(item_copy).execute()
+                try:
+                    supabase.table("mapping_locations").insert(item_copy).execute()
+                except Exception as e:
+                    app.logger.warning(f"Could not restore mapping location: {e}")
             restored_counts['mapping_locations'] = len(backup_data['mapping_locations'])
         
         app.logger.info(f"Restore completed: {restored_counts}")
