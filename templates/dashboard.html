@@ -186,14 +186,22 @@
         background: #f8f5fc;
     }
     
-    /* Acknowledgement Table */
+    /* Acknowledgement Table - Enhanced with proper colors and borders */
+    .ack-table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+    }
     .ack-table {
         width: 100%;
         border-collapse: collapse;
+        margin: 0;
     }
     .ack-table th {
         text-align: left;
-        padding: 10px 12px;
+        padding: 12px 16px;
         background: #f8f9fa;
         font-size: 12px;
         font-weight: 600;
@@ -201,10 +209,14 @@
         border-bottom: 2px solid #e9ecef;
     }
     .ack-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #e9ecef;
-        font-size: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #eef2f7;
+        font-size: 13px;
         vertical-align: middle;
+        color: #2c3e50;
+    }
+    .ack-table tr:last-child td {
+        border-bottom: none;
     }
     .ack-table tr:hover {
         background: #f8f5fc;
@@ -212,10 +224,12 @@
     }
     .ack-status {
         display: inline-block;
-        padding: 3px 10px;
+        padding: 4px 12px;
         border-radius: 20px;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 600;
+        text-align: center;
+        min-width: 85px;
     }
     .ack-status.pending {
         background: #fff3cd;
@@ -228,61 +242,42 @@
     .priority-high {
         background: #f8d7da;
         color: #721c24;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-block;
     }
     .priority-medium {
         background: #fff3cd;
         color: #856404;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-block;
     }
     .priority-low {
         background: #d4edda;
         color: #155724;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-block;
     }
     .btn-ack {
         background: #28a745;
         color: white;
         border: none;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 10px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 500;
         cursor: pointer;
+        transition: all 0.2s;
     }
     .btn-ack:hover {
         background: #218838;
-    }
-    
-    /* Image Stats - Fixed styling */
-    .image-stats {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
-        padding: 18px;
-        color: white;
-        margin-top: 30px;
-    }
-    .image-stats h4 {
-        font-size: 14px;
-        margin-bottom: 15px;
-        color: white;
-        font-weight: 600;
-    }
-    .image-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 12px;
-    }
-    .image-stat-item {
-        background: rgba(255,255,255,0.15);
-        border-radius: 12px;
-        padding: 10px;
-        text-align: center;
-    }
-    .image-stat-number {
-        font-size: 20px;
-        font-weight: 700;
-    }
-    .image-stat-label {
-        font-size: 10px;
-        opacity: 0.9;
-        margin-top: 4px;
+        transform: translateY(-1px);
     }
     .entity-name-small {
         font-size: 11px;
@@ -318,6 +313,41 @@
         border-color: #9b59b6;
         color: #9b59b6;
         transform: translateY(-2px);
+    }
+    
+    /* Image Stats - Fixed styling */
+    .image-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 18px;
+        color: white;
+        margin-top: 30px;
+    }
+    .image-stats h4 {
+        font-size: 14px;
+        margin-bottom: 15px;
+        color: white;
+        font-weight: 600;
+    }
+    .image-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+    }
+    .image-stat-item {
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+    }
+    .image-stat-number {
+        font-size: 20px;
+        font-weight: 700;
+    }
+    .image-stat-label {
+        font-size: 10px;
+        opacity: 0.9;
+        margin-top: 4px;
     }
     
     /* Backup Section */
@@ -386,11 +416,21 @@
         display: block;
     }
     
+    /* Report type icons */
+    .type-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .type-icon.water { color: #17a2b8; }
+    .type-icon.electricity { color: #f57c00; }
+    .type-icon.telephone { color: #4caf50; }
+    
     /* Responsive */
     @media (max-width: 768px) {
         .ack-table th, .ack-table td {
-            padding: 6px 8px;
-            font-size: 10px;
+            padding: 8px 10px;
+            font-size: 11px;
         }
         .stat-number {
             font-size: 24px;
@@ -401,6 +441,15 @@
         .backup-section {
             flex-direction: column;
             text-align: center;
+        }
+        .ack-status {
+            min-width: 70px;
+            font-size: 10px;
+            padding: 3px 8px;
+        }
+        .btn-ack {
+            padding: 4px 10px;
+            font-size: 10px;
         }
     }
 </style>
@@ -519,59 +568,55 @@
     </div>
 </div>
 
-<!-- Pending Acknowledgment Table -->
+<!-- Pending Acknowledgment Table - Fixed with proper container -->
 <div class="section-header">
     <h4><i class="bi bi-envelope"></i> Pending Acknowledgment</h4>
     <a href="/team-leader">Team Leader Dashboard →</a>
 </div>
-<div class="card mb-4">
-    <div class="card-body p-0">
-        <table class="ack-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>Location</th>
-                    <th>Submitted By</th>
-                    <th>Date</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="pendingTableBody">
-                <tr><td colspan="8" class="text-center py-4">Loading pending reports...<\/td><\/tr>
-            </tbody>
-        <\/table>
-    </div>
+<div class="ack-table-container mb-4">
+    <table class="ack-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Submitted By</th>
+                <th>Date</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="pendingTableBody">
+            <tr><td colspan="8" class="text-center py-4">Loading pending reports...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <!-- Acknowledged Reports Table -->
 <div class="section-header">
     <h4><i class="bi bi-check2-all"></i> Recently Acknowledged</h4>
 </div>
-<div class="card mb-4">
-    <div class="card-body p-0">
-        <table class="ack-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>Location</th>
-                    <th>Submitted By</th>
-                    <th>Date</th>
-                    <th>Acknowledged By</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="acknowledgedTableBody">
-                <tr><td colspan="7" class="text-center py-4">Loading acknowledged reports...<\/td><\/tr>
-            </tbody>
-        <\/table>
-    </div>
+<div class="ack-table-container mb-4">
+    <table class="ack-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Submitted By</th>
+                <th>Date</th>
+                <th>Acknowledged By</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="acknowledgedTableBody">
+            <tr><td colspan="7" class="text-center py-4">Loading acknowledged reports...</td></tr>
+        </tbody>
+    </table>
 </div>
 
-<!-- Image Statistics - 2nd last position -->
+<!-- Image Statistics -->
 <div class="image-stats">
     <h4><i class="bi bi-images"></i> Mapping & Image Statistics</h4>
     <div class="image-stats-grid" id="imageStatsGrid">
@@ -594,7 +639,7 @@
     </div>
 </div>
 
-<!-- Backup and Restore Section - Last position -->
+<!-- Backup and Restore Section -->
 <div class="backup-section">
     <div class="backup-info">
         <i class="bi bi-shield-lock" style="font-size: 18px;"></i>
@@ -639,6 +684,13 @@
         if (!text) return '-';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
+    }
+    
+    function getTypeIcon(type) {
+        if (type === 'water') return '<i class="bi bi-droplet" style="color: #17a2b8;"></i>';
+        if (type === 'electricity') return '<i class="bi bi-lightning-charge" style="color: #f57c00;"></i>';
+        if (type === 'telephone') return '<i class="bi bi-telephone" style="color: #4caf50;"></i>';
+        return '<i class="bi bi-file-text"></i>';
     }
     
     async function loadDashboardData() {
@@ -726,7 +778,7 @@
     function displayPendingTable(reports, techMap) {
         const tbody = document.getElementById('pendingTableBody');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No pending reports</td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">✅ No pending reports</td></tr>';
             return;
         }
         
@@ -735,17 +787,28 @@
         const canAcknowledge = user && user.isAuthorized === true;
         
         tbody.innerHTML = reports.map(report => {
-            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-            const priorityClass = report.priority === 'high' ? 'priority-high' : report.priority === 'medium' ? 'priority-medium' : 'priority-low';
+            const typeIcon = getTypeIcon(report.report_type);
+            let priorityClass = '';
+            let priorityText = '';
+            if (report.priority === 'high') {
+                priorityClass = 'priority-high';
+                priorityText = 'HIGH';
+            } else if (report.priority === 'medium') {
+                priorityClass = 'priority-medium';
+                priorityText = 'MEDIUM';
+            } else {
+                priorityClass = 'priority-low';
+                priorityText = 'LOW';
+            }
             
             return `
                 <tr onclick="viewReport(${report.id})">
-                    <td>#${report.id}</td>
-                    <td>${typeIcon} ${report.report_type}</td>
-                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 30)}</td>
+                    <td style="font-weight: 600; color: #9b59b6;">#${report.id}</td>
+                    <td><span class="type-icon">${typeIcon} ${report.report_type}</span></td>
+                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 35)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
-                    <td><span class="report-status ${priorityClass}">${report.priority.toUpperCase()}</span></td>
+                    <td><span class="${priorityClass}">${priorityText}</span></td>
                     <td><span class="ack-status pending">Pending</span></td>
                     <td>
                         ${canAcknowledge ? `<button class="btn-ack" onclick="event.stopPropagation(); acknowledgeReport(${report.id})">Acknowledge</button>` : '—'}
@@ -758,18 +821,18 @@
     function displayAcknowledgedTable(reports, techMap) {
         const tbody = document.getElementById('acknowledgedTableBody');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No acknowledged reports</td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No acknowledged reports yet</td></tr>';
             return;
         }
         
         tbody.innerHTML = reports.map(report => {
-            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+            const typeIcon = getTypeIcon(report.report_type);
             
             return `
                 <tr onclick="viewReport(${report.id})">
-                    <td>#${report.id}</td>
-                    <td>${typeIcon} ${report.report_type}</td>
-                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 30)}</td>
+                    <td style="font-weight: 600; color: #9b59b6;">#${report.id}</td>
+                    <td><span class="type-icon">${typeIcon} ${report.report_type}</span></td>
+                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 35)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
                     <td>${escapeHtml(report.team_leader_name || 'Team Leader')}</td>
@@ -845,7 +908,11 @@
         // ONLY Team Leaders (isAuthorized === true) can acknowledge
         const user = window.getCurrentUser();
         if (!user || user.isAuthorized !== true) {
-            window.showToast('Only Team Leaders can acknowledge reports', 'error');
+            if (window.showToast) {
+                window.showToast('Only Team Leaders can acknowledge reports', 'error');
+            } else {
+                alert('Only Team Leaders can acknowledge reports');
+            }
             return;
         }
         
@@ -860,13 +927,15 @@
             });
             const data = await response.json();
             if (data.success) {
-                window.showToast('Report acknowledged successfully');
+                if (window.showToast) window.showToast('Report acknowledged successfully');
                 loadDashboardData();
             } else {
-                window.showToast(data.error || 'Failed to acknowledge', 'error');
+                if (window.showToast) window.showToast(data.error || 'Failed to acknowledge', 'error');
+                else alert(data.error || 'Failed to acknowledge');
             }
         } catch (error) {
-            window.showToast('Error acknowledging report', 'error');
+            if (window.showToast) window.showToast('Error acknowledging report', 'error');
+            else alert('Error acknowledging report');
         }
     }
     
@@ -876,11 +945,12 @@
         const canBackup = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
         
         if (!canBackup) {
-            window.showToast('Only Team Leaders and Senior Technicians can perform backup', 'error');
+            if (window.showToast) window.showToast('Only Team Leaders and Senior Technicians can perform backup', 'error');
+            else alert('Only Team Leaders and Senior Technicians can perform backup');
             return;
         }
         
-        window.showToast('Creating backup...', 'info');
+        if (window.showToast) window.showToast('Creating backup...', 'info');
         
         try {
             const response = await fetch(`/api/backup?user_id=${user.id}`);
@@ -902,13 +972,15 @@
                 URL.revokeObjectURL(url);
                 
                 document.getElementById('lastBackupInfo').innerHTML = `Last backup: ${new Date().toLocaleString()}`;
-                window.showToast('Backup created successfully!', 'success');
+                if (window.showToast) window.showToast('Backup created successfully!', 'success');
             } else {
-                window.showToast(result.error || 'Backup failed', 'error');
+                if (window.showToast) window.showToast(result.error || 'Backup failed', 'error');
+                else alert(result.error || 'Backup failed');
             }
         } catch (error) {
             console.error('Backup error:', error);
-            window.showToast('Error creating backup', 'error');
+            if (window.showToast) window.showToast('Error creating backup', 'error');
+            else alert('Error creating backup');
         }
     }
     
@@ -918,7 +990,8 @@
         const canRestore = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
         
         if (!canRestore) {
-            window.showToast('Only Team Leaders and Senior Technicians can perform restore', 'error');
+            if (window.showToast) window.showToast('Only Team Leaders and Senior Technicians can perform restore', 'error');
+            else alert('Only Team Leaders and Senior Technicians can perform restore');
             return;
         }
         
@@ -943,11 +1016,12 @@
                     const backupData = JSON.parse(event.target.result);
                     
                     if (!backupData._backup_info) {
-                        window.showToast('Invalid backup file format', 'error');
+                        if (window.showToast) window.showToast('Invalid backup file format', 'error');
+                        else alert('Invalid backup file format');
                         return;
                     }
                     
-                    window.showToast('Restoring data... This may take a moment', 'info');
+                    if (window.showToast) window.showToast('Restoring data... This may take a moment', 'info');
                     
                     const response = await fetch('/api/restore', {
                         method: 'POST',
@@ -958,16 +1032,18 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        window.showToast('Restore successful!', 'success');
+                        if (window.showToast) window.showToast('Restore successful!', 'success');
                         setTimeout(() => {
                             location.reload();
                         }, 1500);
                     } else {
-                        window.showToast(result.error || 'Restore failed', 'error');
+                        if (window.showToast) window.showToast(result.error || 'Restore failed', 'error');
+                        else alert(result.error || 'Restore failed');
                     }
                 } catch (error) {
                     console.error('Restore error:', error);
-                    window.showToast('Error parsing backup file', 'error');
+                    if (window.showToast) window.showToast('Error parsing backup file', 'error');
+                    else alert('Error parsing backup file');
                 }
             };
             reader.readAsText(file);
