@@ -250,7 +250,7 @@
         background: #218838;
     }
     
-    /* Image Stats */
+    /* Image Stats - Fixed styling */
     .image-stats {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 16px;
@@ -283,6 +283,14 @@
         font-size: 10px;
         opacity: 0.9;
         margin-top: 4px;
+    }
+    .entity-name-small {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 130px;
+        display: inline-block;
     }
     
     /* Quick Actions */
@@ -375,7 +383,7 @@
         border-radius: 8px;
         font-size: 11px;
         margin-top: 12px;
-        display: none;
+        display: block;
     }
     
     /* Responsive */
@@ -563,7 +571,7 @@
     </div>
 </div>
 
-<!-- Image Statistics -->
+<!-- Image Statistics - 2nd last position -->
 <div class="image-stats">
     <h4><i class="bi bi-images"></i> Mapping & Image Statistics</h4>
     <div class="image-stats-grid" id="imageStatsGrid">
@@ -586,8 +594,8 @@
     </div>
 </div>
 
-<!-- Backup and Restore Section (Visible to Team Leaders) -->
-<div id="backupSection" class="backup-section">
+<!-- Backup and Restore Section - Last position -->
+<div class="backup-section">
     <div class="backup-info">
         <i class="bi bi-shield-lock" style="font-size: 18px;"></i>
         <span class="backup-info-text">Data Backup & Restore</span>
@@ -598,7 +606,7 @@
         <button class="btn-restore" onclick="restoreData()"><i class="bi bi-upload"></i> Restore</button>
     </div>
 </div>
-<div id="restoreWarning" class="restore-warning">
+<div class="restore-warning">
     <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> Restoring will replace ALL current data with the backup data. This action cannot be undone.
 </div>
 
@@ -625,6 +633,12 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    function truncateText(text, maxLength) {
+        if (!text) return '-';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     }
     
     async function loadDashboardData() {
@@ -698,7 +712,7 @@
                 <div class="report-item" onclick="viewReport(${report.id})">
                     <div class="report-info">
                         <div class="report-id">#${report.id} ${icon}</div>
-                        <div class="report-location">${escapeHtml(report.entity_name || report.entity_type)}</div>
+                        <div class="report-location">${truncateText(escapeHtml(report.entity_name || report.entity_type), 40)}</div>
                         <div class="report-date">${formatDate(report.created_at)}</div>
                     </div>
                     <div class="text-end">
@@ -712,12 +726,13 @@
     function displayPendingTable(reports, techMap) {
         const tbody = document.getElementById('pendingTableBody');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No pending reports</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4">No pending reports</td><\/tr>';
             return;
         }
         
+        // Only Team Leaders can acknowledge (isAuthorized === true)
         const user = window.getCurrentUser();
-        const isTeamLeader = user && user.isAuthorized === true;
+        const canAcknowledge = user && user.isAuthorized === true;
         
         tbody.innerHTML = reports.map(report => {
             const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
@@ -727,13 +742,13 @@
                 <tr onclick="viewReport(${report.id})">
                     <td>#${report.id}</td>
                     <td>${typeIcon} ${report.report_type}</td>
-                    <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 30)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
                     <td><span class="report-status ${priorityClass}">${report.priority.toUpperCase()}</span></td>
                     <td><span class="ack-status pending">Pending</span></td>
                     <td>
-                        ${isTeamLeader ? `<button class="btn-ack" onclick="event.stopPropagation(); acknowledgeReport(${report.id})">Acknowledge</button>` : '—'}
+                        ${canAcknowledge ? `<button class="btn-ack" onclick="event.stopPropagation(); acknowledgeReport(${report.id})">Acknowledge</button>` : '—'}
                     </td>
                 </tr>
             `;
@@ -743,7 +758,7 @@
     function displayAcknowledgedTable(reports, techMap) {
         const tbody = document.getElementById('acknowledgedTableBody');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No acknowledged reports</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No acknowledged reports</td><\/tr>';
             return;
         }
         
@@ -754,7 +769,7 @@
                 <tr onclick="viewReport(${report.id})">
                     <td>#${report.id}</td>
                     <td>${typeIcon} ${report.report_type}</td>
-                    <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 30)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
                     <td>${escapeHtml(report.team_leader_name || 'Team Leader')}</td>
@@ -815,7 +830,7 @@
             document.getElementById('totalImages2').textContent = totalImages;
             document.getElementById('schoolsWithImages').textContent = schoolsWithImagesCount;
             document.getElementById('departmentsWithImages').textContent = departmentsWithImagesCount;
-            document.getElementById('topImageEntity').textContent = topEntity !== '-' ? `${topEntity.substring(0, 30)}${topEntity.length > 30 ? '...' : ''} (${maxCount} images)` : '-';
+            document.getElementById('topImageEntity').innerHTML = topEntity !== '-' ? `<span class="entity-name-small">${truncateText(escapeHtml(topEntity), 25)} (${maxCount})</span>` : '-';
             
         } catch (error) {
             console.error('Error loading image stats:', error);
@@ -827,9 +842,10 @@
     }
     
     async function acknowledgeReport(id) {
+        // ONLY Team Leaders (isAuthorized === true) can acknowledge
         const user = window.getCurrentUser();
-        if (!user || !user.isAuthorized) {
-            window.showToast('You are not authorized to acknowledge reports', 'error');
+        if (!user || user.isAuthorized !== true) {
+            window.showToast('Only Team Leaders can acknowledge reports', 'error');
             return;
         }
         
@@ -855,9 +871,12 @@
     }
     
     async function backupData() {
+        // Team Leaders AND Senior Technicians can backup
         const user = window.getCurrentUser();
-        if (!user || !user.isAuthorized) {
-            window.showToast('Only Team Leaders can perform backup', 'error');
+        const canBackup = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
+        
+        if (!canBackup) {
+            window.showToast('Only Team Leaders and Senior Technicians can perform backup', 'error');
             return;
         }
         
@@ -894,9 +913,12 @@
     }
     
     async function restoreData() {
+        // Team Leaders AND Senior Technicians can restore
         const user = window.getCurrentUser();
-        if (!user || !user.isAuthorized) {
-            window.showToast('Only Team Leaders can perform restore', 'error');
+        const canRestore = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
+        
+        if (!canRestore) {
+            window.showToast('Only Team Leaders and Senior Technicians can perform restore', 'error');
             return;
         }
         
