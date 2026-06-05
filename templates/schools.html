@@ -2,284 +2,236 @@
 
 {% block content %}
 <style>
-    .filter-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        overflow-x: auto;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .school-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .school-table th {
-        background: #f8f9fa;
-        padding: 12px;
-        text-align: left;
-        font-weight: 600;
-        border-bottom: 2px solid #e9ecef;
-        white-space: nowrap;
-    }
-    .school-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #eef2f7;
-        vertical-align: middle;
-    }
-    .school-table tr:hover {
-        background: #f8f5fc;
-    }
-    .btn-sm {
+    .school-code-badge {
+        font-family: monospace;
+        font-weight: bold;
+        background-color: #f0f0f0;
         padding: 4px 8px;
-        font-size: 11px;
-        margin: 2px;
+        border-radius: 6px;
+        font-size: 12px;
     }
-    .btn-edit {
-        background-color: #ffc107;
-        color: #333;
-        border: none;
+    .school-name {
+        font-weight: 600;
+        color: var(--primary-dark);
     }
-    .btn-edit:hover {
-        background-color: #e0a800;
-    }
-    .btn-delete {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-    }
-    .btn-delete:hover {
-        background-color: #c82333;
-    }
-    .status-badge {
-        padding: 3px 8px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    .status-active {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    .status-inactive {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-    .empty-row td {
-        text-align: center;
-        padding: 40px;
-        color: #999;
-    }
-    .search-box {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        width: 250px;
-    }
-    .modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    .modal-header .btn-close {
-        color: white;
-        filter: brightness(0) invert(1);
+    .cluster-name {
+        font-size: 0.9rem;
+        color: #666;
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2><i class="bi bi-building"></i> School Management</h2>
-    <div>
-        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search school name..." onkeyup="filterSchools()">
-        <button class="btn btn-primary" onclick="showAddModal()">
-            <i class="bi bi-plus-circle"></i> Add School
-        </button>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-building"></i> Schools Management</h2>
+    <button class="btn btn-primary" onclick="showAddSchoolModal()">
+        <i class="bi bi-plus-circle"></i> Add School
+    </button>
 </div>
 
-<div class="table-container">
-    <table class="school-table" id="schoolsTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>School Name</th>
-                <th>Cluster</th>
-                <th>School Number</th>
-                <th>Contact Person</th>
-                <th>Contact Phone</th>
-                <th>Address</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="schoolsTableBody">
-            <tr class="empty-row">
-                <td colspan="8" class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2">Loading schools...</p>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> School Directory
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>School Name</th>
+                        <th>Cluster</th>
+                        <th>School Number</th>
+                        <th>Contact Person</th>
+                        <th>Contact Number</th>
+                        <th>Address</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="schoolsTable">
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div> Loading schools...
+                        <\/td>
+                    <\/tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <!-- Add/Edit School Modal -->
 <div class="modal fade" id="schoolModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Add New School</h5>
+                <h5 class="modal-title" id="schoolModalTitle">
+                    <i class="bi bi-building"></i> Add School
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="schoolForm">
                     <input type="hidden" id="schoolId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">School Name *</label>
+                        <input type="text" class="form-control" id="schoolName" required placeholder="e.g., Sekolah Rendah Putera">
+                    </div>
+                    
                     <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">School Name *</label>
-                            <input type="text" class="form-control" id="schoolName" required>
+                        <div class="col-md-6">
+                            <label class="form-label">Cluster *</label>
+                            <input type="text" class="form-control" id="clusterNumber" required placeholder="e.g., CL001">
+                            <small class="text-muted">School cluster number</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">School Number *</label>
+                            <input type="text" class="form-control" id="schoolNumber" required placeholder="e.g., SCH001">
+                            <small class="text-muted">Official school number</small>
                         </div>
                     </div>
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">Cluster Number *</label>
-                            <input type="text" class="form-control" id="clusterNumber" placeholder="e.g., CL001" required>
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contactPerson" placeholder="e.g., Haji Ali bin Haji Omar">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">School Number *</label>
-                            <input type="text" class="form-control" id="schoolNumber" placeholder="e.g., SCH001" required>
+                            <label class="form-label">Contact Number</label>
+                            <input type="text" class="form-control" id="contactPhone" placeholder="e.g., 8881234">
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Contact Person</label>
-                            <input type="text" class="form-control" id="contactPerson" placeholder="Full name">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Contact Phone</label>
-                            <input type="text" class="form-control" id="contactPhone" placeholder="Phone number">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Address</label>
-                            <textarea class="form-control" id="address" rows="2" placeholder="School address"></textarea>
-                        </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" id="schoolAddress" rows="2" placeholder="School address"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveSchool()">Save School</button>
+                <button type="button" class="btn btn-primary" onclick="saveSchool()">
+                    <i class="bi bi-save"></i> Save School
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let schools = [];
-    
     async function loadSchools() {
         try {
             const response = await fetch('/api/schools');
-            schools = await response.json();
+            const schools = await response.json();
+            // Sort by ID to ensure correct order
+            schools.sort((a, b) => a.id - b.id);
             displaySchools(schools);
         } catch (error) {
             console.error('Error loading schools:', error);
-            document.getElementById('schoolsTableBody').innerHTML = '<tr class="empty-row"><td colspan="8" class="text-center py-4 text-danger">Error loading schools</td></tr>';
+            showToast('Error loading schools', 'error');
+            document.getElementById('schoolsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading schools. Please refresh.<\/td><\/tr>';
         }
     }
     
-    function displaySchools(schoolsList) {
-        const tbody = document.getElementById('schoolsTableBody');
-        
-        if (!schoolsList || schoolsList.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="8" class="text-center py-4">No schools found</td></tr>';
+    function displaySchools(schools) {
+        const tbody = document.getElementById('schoolsTable');
+        if (!schools || schools.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No schools found. Click "Add School" to create one.<\/td><\/tr>';
             return;
         }
         
-        tbody.innerHTML = schoolsList.map(school => `
+        tbody.innerHTML = schools.map(school => `
             <tr>
-                <td>${school.id}</td>
-                <td><strong>${escapeHtml(school.name)}</strong></td>
-                <td>${escapeHtml(school.cluster_number || '-')}</td>
-                <td>${escapeHtml(school.school_number || '-')}</td>
-                <td>${escapeHtml(school.contact_person || '-')}</td>
-                <td>${escapeHtml(school.contact_phone || '-')}</td>
-                <td>${escapeHtml((school.address || '').substring(0, 50))}${(school.address || '').length > 50 ? '...' : ''}</td>
+                <td><strong>${school.id}<\/strong><br><small class="text-muted">DB ID<\/small><\/td>
+                <td><span class="school-name">${escapeHtml(school.name)}<\/span><\/td>
+                <td>${escapeHtml(school.cluster_number || '-')}<\/td>
+                <td>${escapeHtml(school.school_number || '-')}<\/td>
+                <td>${escapeHtml(school.contact_person || '-')}<br><small class="text-muted">Contact<\/small><\/td>
+                <td>${escapeHtml(school.contact_phone || '-')}<br><small class="text-muted">Phone<\/small><\/td>
+                <td>${escapeHtml(school.address ? school.address.substring(0, 40) + (school.address.length > 40 ? '...' : '') : '-')}<br><small class="text-muted">Address<\/small><\/td>
                 <td>
-                    <button class="btn btn-sm btn-edit" onclick="editSchool(${school.id})" title="Edit">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editSchool(${school.id})" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-delete" onclick="deleteSchool(${school.id})" title="Delete">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSchool(${school.id})" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
-                </td>
-            </tr>
+                <\/td>
+            <\/tr>
         `).join('');
     }
     
-    function filterSchools() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = schools.filter(school => 
-            school.name.toLowerCase().includes(searchTerm) ||
-            (school.cluster_number && school.cluster_number.toLowerCase().includes(searchTerm)) ||
-            (school.school_number && school.school_number.toLowerCase().includes(searchTerm))
-        );
-        displaySchools(filtered);
+    function escapeHtml(text) {
+        if (!text) return '';
+        if (typeof text !== 'string') return text;
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
-    function showAddModal() {
-        document.getElementById('modalTitle').innerHTML = 'Add New School';
+    function showAddSchoolModal() {
+        document.getElementById('schoolModalTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Add School';
         document.getElementById('schoolForm').reset();
         document.getElementById('schoolId').value = '';
-        new bootstrap.Modal(document.getElementById('schoolModal')).show();
+        const modal = new bootstrap.Modal(document.getElementById('schoolModal'));
+        modal.show();
     }
     
     async function editSchool(id) {
-        const school = schools.find(s => s.id === id);
-        if (school) {
-            document.getElementById('modalTitle').innerHTML = 'Edit School';
-            document.getElementById('schoolId').value = school.id;
-            document.getElementById('schoolName').value = school.name || '';
-            document.getElementById('clusterNumber').value = school.cluster_number || '';
-            document.getElementById('schoolNumber').value = school.school_number || '';
-            document.getElementById('contactPerson').value = school.contact_person || '';
-            document.getElementById('contactPhone').value = school.contact_phone || '';
-            document.getElementById('address').value = school.address || '';
-            new bootstrap.Modal(document.getElementById('schoolModal')).show();
+        try {
+            const response = await fetch('/api/schools');
+            const schools = await response.json();
+            const school = schools.find(s => s.id === id);
+            
+            if (school) {
+                document.getElementById('schoolModalTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit School';
+                document.getElementById('schoolId').value = school.id;
+                document.getElementById('schoolName').value = school.name || '';
+                document.getElementById('clusterNumber').value = school.cluster_number || '';
+                document.getElementById('schoolNumber').value = school.school_number || '';
+                document.getElementById('contactPerson').value = school.contact_person || '';
+                document.getElementById('contactPhone').value = school.contact_phone || '';
+                document.getElementById('schoolAddress').value = school.address || '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('schoolModal'));
+                modal.show();
+            }
+        } catch (error) {
+            console.error('Error loading school:', error);
+            showToast('Error loading school details', 'error');
         }
     }
     
     async function saveSchool() {
         const id = document.getElementById('schoolId').value;
-        const schoolData = {
-            name: document.getElementById('schoolName').value,
-            cluster_number: document.getElementById('clusterNumber').value,
-            school_number: document.getElementById('schoolNumber').value,
-            contact_person: document.getElementById('contactPerson').value,
-            contact_phone: document.getElementById('contactPhone').value,
-            address: document.getElementById('address').value
+        const schoolName = document.getElementById('schoolName').value.trim();
+        const clusterNumber = document.getElementById('clusterNumber').value.trim();
+        const schoolNumber = document.getElementById('schoolNumber').value.trim();
+        
+        if (!schoolName) {
+            showToast('School Name is required', 'error');
+            return;
+        }
+        
+        if (!clusterNumber) {
+            showToast('Cluster is required', 'error');
+            return;
+        }
+        
+        if (!schoolNumber) {
+            showToast('School Number is required', 'error');
+            return;
+        }
+        
+        const data = {
+            name: schoolName,
+            cluster_number: clusterNumber,
+            school_number: schoolNumber,
+            contact_person: document.getElementById('contactPerson').value.trim(),
+            contact_phone: document.getElementById('contactPhone').value.trim(),
+            address: document.getElementById('schoolAddress').value.trim()
         };
-        
-        if (!schoolData.name) {
-            window.showToast('School name is required', 'error');
-            return;
-        }
-        
-        if (!schoolData.cluster_number) {
-            window.showToast('Cluster number is required', 'error');
-            return;
-        }
-        
-        if (!schoolData.school_number) {
-            window.showToast('School number is required', 'error');
-            return;
-        }
         
         try {
             let response;
@@ -287,61 +239,51 @@
                 response = await fetch(`/api/schools/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(schoolData)
+                    body: JSON.stringify(data)
                 });
             } else {
                 response = await fetch('/api/schools', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(schoolData)
+                    body: JSON.stringify(data)
                 });
             }
             
             const result = await response.json();
             if (result.success) {
-                window.showToast(id ? 'School updated successfully' : 'School added successfully');
+                showToast(id ? 'School updated successfully' : 'School added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('schoolModal')).hide();
                 loadSchools();
             } else {
-                window.showToast(result.error || 'Failed to save school', 'error');
+                showToast(result.error || 'Failed to save school', 'error');
             }
         } catch (error) {
             console.error('Error saving school:', error);
-            window.showToast('Error saving school', 'error');
+            showToast('Error saving school', 'error');
         }
     }
     
     async function deleteSchool(id) {
-        const school = schools.find(s => s.id === id);
-        if (!confirm(`Are you sure you want to delete "${school?.name}"? This action cannot be undone.`)) {
-            return;
-        }
-        
-        try {
-            const response = await fetch(`/api/schools/${id}`, { method: 'DELETE' });
-            const result = await response.json();
-            if (result.success) {
-                window.showToast('School deleted successfully');
-                loadSchools();
-            } else {
-                window.showToast(result.error || 'Failed to delete school', 'error');
+        if (confirm('⚠️ Are you sure you want to delete this school?\n\nThis action cannot be undone.')) {
+            try {
+                const response = await fetch(`/api/schools/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('School deleted successfully');
+                    loadSchools();
+                } else {
+                    showToast(result.error || 'Cannot delete school with existing reports', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting school:', error);
+                showToast('Error deleting school', 'error');
             }
-        } catch (error) {
-            console.error('Error deleting school:', error);
-            window.showToast('Error deleting school', 'error');
         }
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
     
     // Load schools on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        loadSchools();
-    });
+    loadSchools();
 </script>
 {% endblock %}
