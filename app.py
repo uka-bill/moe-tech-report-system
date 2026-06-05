@@ -122,7 +122,7 @@ def init_supabase_storage():
     
     return True
 
-# ============ SUPABASE STORAGE FUNCTIONS (ADDED) ============
+# ============ SUPABASE STORAGE FUNCTIONS ============
 
 def upload_to_supabase_storage(file_data, filename, folder='reports'):
     """Upload file to Supabase Storage - returns public URL or None"""
@@ -201,6 +201,7 @@ def init_supabase_storage_bucket():
 
 @app.route('/')
 def index():
+    """Splash screen - no auto-redirect, user must click button"""
     return render_template('index.html')
 
 @app.route('/dashboard')
@@ -1218,7 +1219,7 @@ def delete_mapping_image(image_id):
         app.logger.error(f"Error deleting mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ UPDATED IMAGE UPLOAD WITH SUPABASE STORAGE ============
+# ============ IMAGE UPLOAD WITH SUPABASE STORAGE ============
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
@@ -1277,7 +1278,7 @@ def upload_image():
         app.logger.error(f"Error uploading image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ NEW: DIRECT MAPPING IMAGE UPLOAD WITH METADATA ============
+# ============ DIRECT MAPPING IMAGE UPLOAD WITH METADATA ============
 
 @app.route('/api/upload-mapping-image', methods=['POST'])
 def upload_mapping_image():
