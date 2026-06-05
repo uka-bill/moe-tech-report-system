@@ -1,70 +1,284 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ministry of Education - Technical Report System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block content %}
-<div class="container">
-    <div class="row min-vh-100 align-items-center">
-        <div class="col-md-8 mx-auto text-center">
-            <div class="card shadow-lg">
-                <div class="card-body p-5">
-                    <div class="mb-4">
-                        <i class="bi bi-clipboard-check" style="font-size: 80px; color: #006b3f;"></i>
-                    </div>
-                    <h1 class="display-4 mb-3">Ministry of Education</h1>
-                    <h2 class="h3 text-muted mb-4">Technical Report System</h2>
-                    <p class="lead mb-4">Water • Electricity • Telephone</p>
-                    <hr class="my-4">
-                    <p class="mb-4">Welcome to the centralised reporting system for technical issues across all schools and departments under MOE Brunei.</p>
-                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                            <i class="bi bi-speedometer2"></i> Go to Dashboard
-                        </a>
-                        <a href="{{ url_for('new_report') }}" class="btn btn-outline-success btn-lg px-4">
-                            <i class="bi bi-plus-circle"></i> Create New Report
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mt-5 g-4">
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-droplet" style="font-size: 40px; color: #17a2b8;"></i>
-                            <h5 class="card-title mt-3">Water Issues</h5>
-                            <p class="card-text small">Report water leaks, low pressure, tank issues, pipe bursts, and water quality problems.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-lightning-charge" style="font-size: 40px; color: #ffc107;"></i>
-                            <h5 class="card-title mt-3">Electricity Issues</h5>
-                            <p class="card-text small">Report power outages, faulty wiring, tripped breakers, generator problems, and electrical hazards.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-telephone" style="font-size: 40px; color: #28a745;"></i>
-                            <h5 class="card-title mt-3">Telephone Issues</h5>
-                            <p class="card-text small">Report dead lines, static noise, call drops, PBX issues, and internet connectivity problems.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background shapes */
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            left: -150px;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            bottom: -100px;
+            right: -100px;
+            animation-delay: 5s;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            top: 50%;
+            left: 10%;
+            animation-delay: 10s;
+        }
+
+        .shape-4 {
+            width: 250px;
+            height: 250px;
+            bottom: 20%;
+            right: 5%;
+            animation-delay: 15s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            33% {
+                transform: translateY(-30px) translateX(20px) rotate(120deg);
+            }
+            66% {
+                transform: translateY(30px) translateX(-20px) rotate(240deg);
+            }
+        }
+
+        /* Main splash card */
+        .splash-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            animation: fadeInUp 0.8s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-icon {
+            font-size: 64px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .ministry-title {
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #764ba2;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .system-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .system-subtitle {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .brunei-flag {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .flag-bar {
+            width: 40px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .flag-yellow { background-color: #FFD700; }
+        .flag-black { background-color: #000000; }
+        .flag-white { background-color: #FFFFFF; border: 1px solid #ddd; }
+        .flag-red { background-color: #DC143C; }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-report {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-report:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .version-info {
+            margin-top: 30px;
+            font-size: 11px;
+            color: #95a5a6;
+        }
+
+        @media (max-width: 576px) {
+            .splash-card {
+                padding: 30px 20px;
+            }
+            .system-title {
+                font-size: 22px;
+            }
+            .btn-dashboard, .btn-report {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background shapes -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+
+    <!-- Main splash card -->
+    <div class="splash-card">
+        <div class="logo-icon">
+            <i class="bi bi-building"></i>
+        </div>
+        
+        <div class="ministry-title">
+            KEMENTERIAN PENDIDIKAN
+        </div>
+        
+        <div class="system-title">
+            Technical Report System
+        </div>
+        
+        <div class="system-subtitle">
+            Unit Kemudahan Asas (UKA)<br>
+            Department of Administration and Services
+        </div>
+        
+        <!-- Brunei Flag Colors -->
+        <div class="brunei-flag">
+            <div class="flag-bar flag-yellow"></div>
+            <div class="flag-bar flag-black"></div>
+            <div class="flag-bar flag-white"></div>
+            <div class="flag-bar flag-red"></div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="btn-container">
+            <a href="/dashboard" class="btn-dashboard" id="dashboardBtn">
+                <i class="bi bi-speedometer2"></i> Go to Dashboard
+            </a>
+            <a href="/new-report" class="btn-report" id="reportBtn">
+                <i class="bi bi-plus-circle"></i> Create New Report
+            </a>
+        </div>
+        
+        <div class="version-info">
+            Version 1.0 | Ministry of Education, Brunei Darussalam
         </div>
     </div>
-</div>
 
-<script>
-    // Auto-redirect after 3 seconds if needed
-    setTimeout(function() {
-        const user = getCurrentUser();
-        if (user && user.id) {
-            window.location.href = "{{ url_for('dashboard') }}";
-        }
-    }, 3000);
-</script>
-{% endblock %}
+    <script>
+        // Optional: Add click tracking
+        document.getElementById('dashboardBtn').addEventListener('click', function(e) {
+            console.log('User clicked Go to Dashboard');
+        });
+        
+        document.getElementById('reportBtn').addEventListener('click', function(e) {
+            console.log('User clicked Create New Report');
+        });
+        
+        // No automatic redirect - page stays until user clicks
+    </script>
+</body>
+</html>
