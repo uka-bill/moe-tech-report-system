@@ -253,43 +253,38 @@ def mapping_page():
     """Mapping and Profiling page"""
     return render_template('mapping.html')
 
-# ============ TECHNICIAN API ============
+# ============ TECHNICIAN API (COMPLETE - WORKS WITH YOUR TABLE) ============
 
 @app.route('/api/technicians', methods=['GET'])
 def get_technicians():
     try:
         if not supabase:
-            app.logger.error("Supabase client not initialized")
-            return jsonify({'error': 'Database not connected'}), 500
+            return jsonify([]), 500
         
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
-        
-        app.logger.info(f"Fetched {len(response.data) if response.data else 0} technicians from database")
         
         technicians = []
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
-                tech_dict.pop('password', None)
+                tech_dict.pop('password', None)  # Remove password for security
                 
-                if 'specializations' in tech_dict and tech_dict['specializations']:
-                    if isinstance(tech_dict['specializations'], str):
-                        try:
-                            tech_dict['specializations'] = json.loads(tech_dict['specializations'])
-                        except json.JSONDecodeError:
-                            tech_dict['specializations'] = []
-                    elif not isinstance(tech_dict['specializations'], list):
+                # Parse specializations if it's a string
+                if 'specializations' in tech_dict and isinstance(tech_dict['specializations'], str):
+                    try:
+                        tech_dict['specializations'] = json.loads(tech_dict['specializations'])
+                    except:
                         tech_dict['specializations'] = []
-                else:
+                elif 'specializations' not in tech_dict:
                     tech_dict['specializations'] = []
                 
-                tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
+                # Map the correct column name for frontend
+                tech_dict['is_authorized'] = tech_dict.get('isauthorized', False)
                 technicians.append(tech_dict)
         
         return jsonify(technicians)
-        
     except Exception as e:
-        app.logger.error(f"Error getting technicians: {str(e)}")
+        app.logger.error(f"Error getting technicians: {e}")
         return jsonify([]), 500
 
 @app.route('/api/technicians', methods=['POST'])
@@ -301,23 +296,18 @@ def create_technician():
         data = request.get_json()
         specializations = data.get('specializations', [])
         
-        password = data.get('password')
-        employee_id = data.get('employee_id')
-        if not password:
-            password = employee_id
-        
+        # Create technician with your exact column names
         technician_data = {
             "name": data.get('name'),
             "role": data.get('role', 'technician'),
-            "employee_id": employee_id,
-            "phone": data.get('phone'),
-            "email": data.get('email'),
+            "employee_id": data.get('employee_id', data.get('name', '').replace(' ', '_').upper()),
+            "isauthorized": data.get('is_authorized', False),
             "specializations": json.dumps(specializations) if specializations else '[]',
-            "is_authorized": data.get('is_authorized', False),
-            "password": password,
+            "password": data.get('password', data.get('employee_id', 'default123')),
             "created_at": get_brunei_time_iso()
         }
         
+        # Validate
         if not technician_data['name']:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
         
@@ -327,9 +317,10 @@ def create_technician():
         response = supabase.table("technicians").insert(technician_data).execute()
         
         if response.data:
-            app.logger.info(f"Technician created: {technician_data['name']}")
-            response.data[0].pop('password', None)
-            return jsonify({'success': True, 'data': response.data[0]})
+            result = response.data[0]
+            result.pop('password', None)
+            result['is_authorized'] = result.get('isauthorized', False)
+            return jsonify({'success': True, 'data': result})
         else:
             return jsonify({'success': False, 'error': 'Failed to create technician'}), 500
             
@@ -346,12 +337,17 @@ def update_technician(tech_id):
         data = request.get_json()
         update_data = {}
         
-        # Only use columns that exist in your technicians table
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'password']
-        for field in allowed_fields:
-            if field in data and data[field] is not None:
-                update_data[field] = data[field]
-        
+        # Map frontend field names to database column names
+        if 'name' in data:
+            update_data['name'] = data['name']
+        if 'role' in data:
+            update_data['role'] = data['role']
+        if 'employee_id' in data:
+            update_data['employee_id'] = data['employee_id']
+        if 'is_authorized' in data:
+            update_data['isauthorized'] = data['is_authorized']
+        if 'password' in data and data['password']:
+            update_data['password'] = data['password']
         if 'specializations' in data:
             update_data['specializations'] = json.dumps(data['specializations'])
         
@@ -361,9 +357,10 @@ def update_technician(tech_id):
         response = supabase.table("technicians").update(update_data).eq("id", tech_id).execute()
         
         if response.data:
-            app.logger.info(f"Technician updated: ID {tech_id}")
-            response.data[0].pop('password', None)
-            return jsonify({'success': True, 'data': response.data[0]})
+            result = response.data[0]
+            result.pop('password', None)
+            result['is_authorized'] = result.get('isauthorized', False)
+            return jsonify({'success': True, 'data': result})
         else:
             return jsonify({'success': False, 'error': 'Technician not found'}), 404
             
@@ -377,6 +374,7 @@ def delete_technician(tech_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
+        # Check if technician has reports
         reports = supabase.table("technical_reports").select("id").eq("technician_id", tech_id).limit(1).execute()
         if reports.data and len(reports.data) > 0:
             return jsonify({'success': False, 'error': 'Cannot delete technician with assigned reports'}), 400
@@ -384,7 +382,6 @@ def delete_technician(tech_id):
         response = supabase.table("technicians").delete().eq("id", tech_id).execute()
         
         if response.data:
-            app.logger.info(f"Technician deleted: ID {tech_id}")
             return jsonify({'success': True})
         else:
             return jsonify({'success': False, 'error': 'Technician not found'}), 404
@@ -399,10 +396,11 @@ def check_technician_authorization(tech_id):
         if not supabase:
             return jsonify({'authorized': False}), 500
         
-        response = supabase.table("technicians").select("is_authorized").eq("id", tech_id).execute()
+        # Use correct column name: isauthorized
+        response = supabase.table("technicians").select("isauthorized").eq("id", tech_id).execute()
         
         if response.data and len(response.data) > 0:
-            return jsonify({'authorized': response.data[0].get('is_authorized', False)})
+            return jsonify({'authorized': response.data[0].get('isauthorized', False)})
         else:
             return jsonify({'authorized': False}), 404
             
@@ -432,6 +430,7 @@ def verify_technician_password():
         stored_password = tech.get('password', '')
         employee_id = tech.get('employee_id', '')
         
+        # Check password
         if stored_password and password == stored_password:
             return jsonify({'success': True, 'message': 'Password verified'})
         elif not stored_password and password == employee_id:
@@ -459,7 +458,6 @@ def reset_technician_password():
         response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
         
         if response.data:
-            app.logger.info(f"Password reset for technician ID {technician_id}")
             return jsonify({'success': True, 'message': 'Password reset successfully'})
         else:
             return jsonify({'success': False, 'error': 'Failed to reset password'}), 500
@@ -482,6 +480,7 @@ def change_technician_password():
         if not technician_id or not current_password or not new_password:
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
         
+        # Get current technician
         response = supabase.table("technicians").select("password, employee_id").eq("id", technician_id).execute()
         
         if not response.data or len(response.data) == 0:
@@ -491,6 +490,7 @@ def change_technician_password():
         stored_password = tech.get('password', '')
         employee_id = tech.get('employee_id', '')
         
+        # Verify current password
         password_valid = False
         if stored_password and current_password == stored_password:
             password_valid = True
@@ -500,10 +500,10 @@ def change_technician_password():
         if not password_valid:
             return jsonify({'success': False, 'error': 'Current password is incorrect'}), 401
         
+        # Update password
         update_response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
         
         if update_response.data:
-            app.logger.info(f"Password changed for technician ID {technician_id}")
             return jsonify({'success': True, 'message': 'Password changed successfully'})
         else:
             return jsonify({'success': False, 'error': 'Failed to update password'}), 500
@@ -879,9 +879,10 @@ def acknowledge_report(report_id):
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
         
-        auth_response = supabase.table("technicians").select("is_authorized").eq("id", team_leader_id).execute()
+        # Use correct column name: isauthorized
+        auth_response = supabase.table("technicians").select("isauthorized").eq("id", team_leader_id).execute()
         
-        if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
+        if not auth_response.data or not auth_response.data[0].get('isauthorized', False):
             return jsonify({'success': False, 'error': 'You are not authorized to acknowledge reports.'}), 403
         
         tech_response = supabase.table("technicians").select("name").eq("id", team_leader_id).execute()
@@ -1454,23 +1455,14 @@ def backup_data():
         user_id = request.args.get('user_id')
         if user_id:
             try:
-                # Check if can_edit_technicians column exists
-                auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-                if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                    # If column doesn't exist or value is false, check is_authorized instead
-                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
-                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
-                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
+                # Check if user is authorized using the correct column name
+                auth_response = supabase.table("technicians").select("isauthorized").eq("id", int(user_id)).execute()
+                if not auth_response.data or not auth_response.data[0].get('isauthorized', False):
+                    return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
             except Exception as e:
-                # Column might not exist, check is_authorized instead
-                app.logger.warning(f"Could not check can_edit_technicians, trying is_authorized: {e}")
-                try:
-                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
-                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
-                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
-                except:
-                    # If both checks fail, allow backup for safety
-                    app.logger.warning(f"Authorization check failed, allowing backup anyway")
+                app.logger.warning(f"Authorization check failed: {e}")
+                # If check fails, allow backup for safety
+                pass
         
         backup_data = {}
         
@@ -1565,23 +1557,14 @@ def restore_data():
         
         if user_id:
             try:
-                # Check if can_edit_technicians column exists
-                auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-                if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                    # If column doesn't exist or value is false, check is_authorized instead
-                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
-                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
-                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
+                # Check if user is authorized using the correct column name
+                auth_response = supabase.table("technicians").select("isauthorized").eq("id", int(user_id)).execute()
+                if not auth_response.data or not auth_response.data[0].get('isauthorized', False):
+                    return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
             except Exception as e:
-                # Column might not exist, check is_authorized instead
-                app.logger.warning(f"Could not check can_edit_technicians, trying is_authorized: {e}")
-                try:
-                    auth_response = supabase.table("technicians").select("is_authorized").eq("id", int(user_id)).execute()
-                    if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
-                        return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
-                except:
-                    # If both checks fail, allow restore for safety
-                    app.logger.warning(f"Authorization check failed, allowing restore anyway")
+                app.logger.warning(f"Authorization check failed: {e}")
+                # If check fails, allow restore for safety
+                pass
         
         # Clear existing data (with error handling for missing tables)
         try:
@@ -1832,8 +1815,8 @@ def internal_error(error):
 
 def init_app():
     create_directories()
-    init_supabase_storage_bucket()  # Initialize the main storage bucket
-    init_supabase_storage()  # Keep existing mapping-images bucket initialization
+    init_supabase_storage_bucket()
+    init_supabase_storage()
     app.logger.info("=" * 60)
     app.logger.info("🏫 MOE Technical Report System Starting")
     app.logger.info("Ministry of Education - Brunei Darussalam")
