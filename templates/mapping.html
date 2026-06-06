@@ -175,29 +175,10 @@
         border-color: var(--primary-color);
         outline: none;
     }
-    .upload-progress {
-        display: none;
-        margin-top: 10px;
-    }
-    .progress-bar-custom {
-        height: 20px;
-        background-color: #e9ecef;
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        width: 0%;
-        height: 100%;
-        background-color: #9b59b6;
-        transition: width 0.3s ease;
-    }
-    .image-placeholder {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 14px;
+    .compression-info {
+        font-size: 11px;
+        color: #28a745;
+        margin-top: 5px;
     }
 </style>
 
@@ -248,7 +229,7 @@
         </div>
     </div>
     <div class="text-center mt-2">
-        <small class="text-muted">Upload Google Maps screenshots showing the location of water meters, electricity meters, or telephone sets. Images are stored securely in Supabase.</small>
+        <small class="text-muted">Upload Google Maps screenshots showing the location of water meters, electricity meters, or telephone sets</small>
     </div>
 </div>
 
@@ -266,7 +247,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-image"></i> Upload Map Image (Supabase Storage)</h5>
+                <h5 class="modal-title"><i class="bi bi-image"></i> Upload Map Image</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -277,14 +258,9 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Upload Google Maps Screenshot</label>
-                        <input type="file" class="form-control" id="mapImageUpload" accept="image/*" required>
-                        <small class="text-muted">Upload a screenshot from Google Maps (JPG, PNG, GIF). Images are stored in Supabase.</small>
-                        <div class="upload-progress" id="uploadProgress">
-                            <div class="progress-bar-custom">
-                                <div class="progress-fill" id="progressFill"></div>
-                            </div>
-                            <p class="small text-muted mt-1" id="progressText"></p>
-                        </div>
+                        <input type="file" class="form-control" id="mapImageUpload" accept="image/*" multiple>
+                        <small class="text-muted">Upload a screenshot from Google Maps (will be compressed automatically)</small>
+                        <div id="compressionInfo" class="compression-info"></div>
                     </div>
                     <div id="imagePreview" class="text-center" style="display: none;">
                         <img id="uploadPreview" class="img-fluid rounded" style="max-height: 300px;">
@@ -412,7 +388,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
-                <img id="viewImageSrc" src="" class="img-fluid rounded" style="max-height: 70vh;" onerror="this.src='https://placehold.co/800x600?text=Image+Not+Found'">
+                <img id="viewImageSrc" src="" class="img-fluid rounded" style="max-height: 70vh;">
                 <div id="viewImageDetails" class="mt-3 text-start"></div>
             </div>
             <div class="modal-footer">
@@ -432,16 +408,56 @@
     let currentImageData = null;
     let allMapImages = [];
     let entitiesList = [];
-    let isUploading = false;
     
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
-        // If it's already a full URL (Supabase URL), return as is
         if (imagePath.startsWith('http')) return imagePath;
-        // For local development fallback
         if (imagePath.startsWith('/api/images/')) return window.location.origin + imagePath;
         if (imagePath.startsWith('api/images/')) return window.location.origin + '/' + imagePath;
-        return imagePath;
+        return window.location.origin + '/api/images/' + imagePath;
+    }
+    
+    // ============ CLIENT-SIDE IMAGE COMPRESSION ============
+    async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Calculate new dimensions while maintaining aspect ratio
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = Math.round(width * (maxHeight / height));
+                            height = maxHeight;
+                        }
+                    }
+                    
+                    // Create canvas and resize
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress and convert to blob
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/jpeg', quality);
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
     }
     
     async function loadEntityList() {
@@ -515,13 +531,15 @@
             }
             
             currentImages = await response.json();
-            console.log('Images loaded:', currentImages.length);
+            console.log('Images loaded from DB:', currentImages.length);
             
-            // Process image URLs
-            currentImages = currentImages.map(img => ({
-                ...img,
-                image_url: getFullImageUrl(img.image_url)
-            }));
+            currentImages = currentImages.map(img => {
+                const fullUrl = getFullImageUrl(img.image_url);
+                return {
+                    ...img,
+                    image_url: fullUrl
+                };
+            });
             
             displayImages();
             
@@ -579,7 +597,7 @@
             return `
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="image-card h-100">
-                        <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})" onerror="this.src='https://placehold.co/400x300?text=Image+Not+Found'">
+                        <img src="${img.image_url}" class="card-img-top" onclick="viewImage('${img.image_url}', ${img.id})" onerror="this.src='https://placehold.co/400x300?text=Image+Not+Found&font=arial'">
                         <div class="image-card-body">
                             <p class="mb-2"><strong>Description:</strong> ${escapeHtml(img.description || 'No description')}</p>
                             ${accountDetailsHtml}
@@ -634,7 +652,7 @@
         allMapImages.forEach((img, idx) => {
             carouselHtml += `
                 <div class="carousel-item ${idx === 0 ? 'active' : ''}">
-                    <img src="${img.image_url}" class="d-block w-100 map-image" style="height: 500px; object-fit: contain;" onclick="window.open('${img.image_url}')" onerror="this.src='https://placehold.co/800x500?text=Image+Not+Found'">
+                    <img src="${img.image_url}" class="d-block w-100 map-image" style="height: 500px; object-fit: contain;" onclick="window.open('${img.image_url}')" onerror="this.src='https://placehold.co/800x500?text=Image+Not+Found&font=arial'">
                     <div class="carousel-caption d-none d-md-block">
                         <h5>${escapeHtml(img.description || 'Map Image')}</h5>
                         ${img.notes ? `<p>${escapeHtml(img.notes)}</p>` : ''}
@@ -669,6 +687,7 @@
         }
         document.getElementById('imageForm').reset();
         document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('compressionInfo').innerHTML = '';
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
     }
     
@@ -728,100 +747,130 @@
         }
     }
     
-    document.getElementById('mapImageUpload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                document.getElementById('uploadPreview').src = event.target.result;
-                document.getElementById('imagePreview').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+    // ============ UPDATED: Image upload with client-side compression ============
+    document.getElementById('mapImageUpload').addEventListener('change', async function(e) {
+        const files = Array.from(e.target.files);
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const compressionInfo = document.getElementById('compressionInfo');
+        
+        for (const file of files) {
+            // Show compression progress
+            compressionInfo.innerHTML = '<i class="bi bi-arrow-repeat"></i> Compressing image...';
+            
+            // Compress image before upload (max 1024px, quality 0.7)
+            const compressedBlob = await compressImage(file, 1024, 1024, 0.7);
+            
+            // Calculate size reduction
+            const originalSizeKB = (file.size / 1024).toFixed(1);
+            const compressedSizeKB = (compressedBlob.size / 1024).toFixed(1);
+            const reduction = ((1 - compressedBlob.size / file.size) * 100).toFixed(0);
+            
+            compressionInfo.innerHTML = `<i class="bi bi-check-circle"></i> Compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${reduction}% saved)`;
+            
+            // Create FormData with compressed image
+            const formData = new FormData();
+            const newFileName = file.name.replace(/\.[^/.]+$/, '.jpg');
+            formData.append('image', compressedBlob, newFileName);
+            
+            try {
+                const response = await fetch('/api/upload-image', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    uploadedImages.push(data.image_url);
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview-container';
+                    previewDiv.setAttribute('data-image-url', data.image_url);
+                    
+                    // Show compressed image preview
+                    const previewUrl = URL.createObjectURL(compressedBlob);
+                    previewDiv.innerHTML = `<img src="${previewUrl}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
+                    previewContainer.appendChild(previewDiv);
+                    
+                    // Revoke URL to free memory
+                    URL.revokeObjectURL(previewUrl);
+                    
+                    window.showToast(`Image uploaded: ${data.compressed_size_kb}KB (saved ${Math.round((1 - data.compressed_size_kb / data.original_size_kb) * 100)}%)`, 'success');
+                } else {
+                    window.showToast(data.error || 'Failed to upload image', 'error');
+                }
+            } catch (error) { 
+                console.error('Upload error:', error);
+                window.showToast('Error uploading image', 'error'); 
+            }
+            
+            setTimeout(() => {
+                compressionInfo.innerHTML = '';
+            }, 3000);
         }
+        document.getElementById('imageUpload').value = '';
     });
     
-    async function uploadMapImage() {
-        if (isUploading) {
-            window.showToast('Upload in progress, please wait...', 'error');
-            return;
-        }
+    async function saveImageEdit() {
+        const imageId = document.getElementById('editImageId').value;
         
-        const fileInput = document.getElementById('mapImageUpload');
-        const description = document.getElementById('imageDescription').value;
-        const notes = document.getElementById('imageNotes').value;
-        
-        const waterAccountNumber = document.getElementById('waterAccountNumber').value;
-        const waterMeterNumber = document.getElementById('waterMeterNumber').value;
-        const electricityAccountNumber = document.getElementById('electricityAccountNumber').value;
-        const electricityMeterNumber = document.getElementById('electricityMeterNumber').value;
-        const telephoneAccountNumber = document.getElementById('telephoneAccountNumber').value;
-        const telephoneNumber = document.getElementById('telephoneNumber').value;
-        const canteenAccountNumber = document.getElementById('canteenAccountNumber').value;
-        const canteenMeterNumber = document.getElementById('canteenMeterNumber').value;
-        
-        if (!fileInput.files[0]) {
-            window.showToast('Please select an image', 'error');
-            return;
-        }
-        
-        if (!currentEntityType || !currentEntityId) {
-            window.showToast('Please select a school or department first', 'error');
-            return;
-        }
-        
-        isUploading = true;
-        const progressDiv = document.getElementById('uploadProgress');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        
-        progressDiv.style.display = 'block';
-        progressFill.style.width = '30%';
-        progressText.textContent = 'Uploading image to Supabase...';
-        
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        formData.append('entity_type', currentEntityType);
-        formData.append('entity_id', currentEntityId);
-        formData.append('description', description);
-        formData.append('notes', notes);
-        formData.append('water_account_number', waterAccountNumber);
-        formData.append('water_meter_number', waterMeterNumber);
-        formData.append('electricity_account_number', electricityAccountNumber);
-        formData.append('electricity_meter_number', electricityMeterNumber);
-        formData.append('telephone_account_number', telephoneAccountNumber);
-        formData.append('telephone_number', telephoneNumber);
-        formData.append('canteen_account_number', canteenAccountNumber);
-        formData.append('canteen_meter_number', canteenMeterNumber);
+        const updateData = {
+            description: document.getElementById('editImageDescription').value,
+            water_account_number: document.getElementById('editWaterAccountNumber').value,
+            water_meter_number: document.getElementById('editWaterMeterNumber').value,
+            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
+            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
+            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
+            telephone_number: document.getElementById('editTelephoneNumber').value,
+            canteen_account_number: document.getElementById('editCanteenAccountNumber').value,
+            canteen_meter_number: document.getElementById('editCanteenMeterNumber').value,
+            notes: document.getElementById('editImageNotes').value
+        };
         
         try {
-            progressFill.style.width = '60%';
-            progressText.textContent = 'Saving image record...';
-            
-            const response = await fetch('/api/upload-mapping-image', { 
-                method: 'POST', 
-                body: formData 
+            const response = await fetch(`/api/mapping/images/${imageId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData)
             });
             const result = await response.json();
-            
             if (result.success) {
-                progressFill.style.width = '100%';
-                progressText.textContent = 'Upload complete!';
-                window.showToast('Map image uploaded successfully to Supabase');
-                bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
+                window.showToast('Image details updated successfully');
+                bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
                 await loadImages();
             } else {
-                window.showToast(result.error || 'Failed to upload image', 'error');
+                window.showToast(result.error || 'Failed to update', 'error');
             }
         } catch (error) {
-            console.error('Error uploading image:', error);
-            window.showToast('Error uploading image: ' + error.message, 'error');
-        } finally {
-            setTimeout(() => {
-                progressDiv.style.display = 'none';
-                progressFill.style.width = '0%';
-            }, 2000);
-            isUploading = false;
+            console.error('Error updating image:', error);
+            window.showToast('Error updating image', 'error');
         }
+    }
+    
+    let uploadedImages = [];
+    
+    function removeImage(imageUrl) {
+        uploadedImages = uploadedImages.filter(img => img !== imageUrl);
+        const preview = document.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
+        if (preview) preview.remove();
+    }
+    
+    async function uploadMapImage() {
+        // This function is now handled by the change event above
+        // The button is kept for compatibility but the actual upload happens on file selection
+        if (uploadedImages.length === 0) {
+            window.showToast('Please select images first', 'error');
+            return;
+        }
+        
+        // Save all image URLs to the form
+        const imageUrlsInput = document.createElement('input');
+        imageUrlsInput.type = 'hidden';
+        imageUrlsInput.name = 'imageUrls';
+        imageUrlsInput.value = JSON.stringify(uploadedImages);
+        document.getElementById('imageForm').appendChild(imageUrlsInput);
+        
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
+        window.showToast(`${uploadedImages.length} image(s) ready to save with other details`, 'success');
     }
     
     function viewImage(url, id) {
@@ -873,12 +922,12 @@
     
     async function deleteCurrentImage() {
         if (!currentImageId) return;
-        if (confirm('Delete this map image? This cannot be undone.')) {
+        if (confirm('Delete this map image?')) {
             try {
                 const response = await fetch(`/api/mapping/images/${currentImageId}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    window.showToast('Image deleted from Supabase');
+                    window.showToast('Image deleted');
                     bootstrap.Modal.getInstance(document.getElementById('viewImageModal')).hide();
                     await loadImages();
                 } else {
@@ -892,12 +941,12 @@
     }
     
     async function deleteImage(id) {
-        if (confirm('Delete this map image? This cannot be undone.')) {
+        if (confirm('Delete this map image?')) {
             try {
                 const response = await fetch(`/api/mapping/images/${id}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    window.showToast('Image deleted from Supabase');
+                    window.showToast('Image deleted');
                     await loadImages();
                 } else {
                     window.showToast('Failed to delete', 'error');
@@ -938,7 +987,7 @@
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Mapping page loaded - using Supabase Storage');
+        console.log('Mapping page loaded');
     });
     
     window.showAddImageModal = showAddImageModal;
@@ -954,5 +1003,6 @@
     window.filterEntityList = filterEntityList;
     window.loadEntityList = loadEntityList;
     window.loadImages = loadImages;
+    window.compressImage = compressImage;
 </script>
 {% endblock %}
