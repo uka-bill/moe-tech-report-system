@@ -159,11 +159,15 @@
         color: var(--primary-dark);
         border-left: 3px solid var(--primary-color);
         padding-left: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .account-row {
         display: flex;
         gap: 10px;
         margin-bottom: 10px;
+        align-items: center;
     }
     .account-row input {
         flex: 1;
@@ -175,10 +179,75 @@
         border-color: var(--primary-color);
         outline: none;
     }
+    .btn-add-account {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-add-account:hover {
+        background-color: #218838;
+    }
+    .btn-remove-account {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .btn-remove-account:hover {
+        background-color: #c82333;
+    }
+    .account-entry {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .account-entry input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
     .compression-info {
         font-size: 11px;
         color: #28a745;
         margin-top: 5px;
+    }
+    .image-preview-container {
+        position: relative;
+        display: inline-block;
+        margin: 5px;
+    }
+    .image-preview {
+        width: 150px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--primary-light);
+    }
+    .remove-image-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
     }
 </style>
 
@@ -270,36 +339,67 @@
                         <textarea class="form-control" id="imageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
                     
-                    <!-- Account Details Section -->
+                    <!-- Water Account Details Section with Add Button -->
                     <div class="form-section">
-                        <div class="form-section-title">💧 Water Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="waterAccountNumber" placeholder="Water Account Number">
-                            <input type="text" class="form-control" id="waterMeterNumber" placeholder="Water Meter Number">
+                        <div class="form-section-title">
+                            <span>💧 Water Account Details</span>
+                            <button type="button" class="btn-add-account" onclick="addWaterAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
+                        </div>
+                        <div id="waterAccountsContainer">
+                            <div class="account-entry">
+                                <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+                                <input type="text" class="form-control" name="water_meter_number[]" placeholder="Water Meter Number">
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- Electricity Account Details Section with Add Button -->
                     <div class="form-section">
-                        <div class="form-section-title">⚡ Electricity Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="electricityAccountNumber" placeholder="Electricity Account Number">
-                            <input type="text" class="form-control" id="electricityMeterNumber" placeholder="Electricity Meter Number">
+                        <div class="form-section-title">
+                            <span>⚡ Electricity Account Details</span>
+                            <button type="button" class="btn-add-account" onclick="addElectricityAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
+                        </div>
+                        <div id="electricityAccountsContainer">
+                            <div class="account-entry">
+                                <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+                                <input type="text" class="form-control" name="electricity_meter_number[]" placeholder="Electricity Meter Number">
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- Telephone Account Details Section with Add Button -->
                     <div class="form-section">
-                        <div class="form-section-title">📞 Telephone Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="telephoneAccountNumber" placeholder="Telephone Account Number">
-                            <input type="text" class="form-control" id="telephoneNumber" placeholder="Telephone Number">
+                        <div class="form-section-title">
+                            <span>📞 Telephone Account Details</span>
+                            <button type="button" class="btn-add-account" onclick="addTelephoneAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
+                        </div>
+                        <div id="telephoneAccountsContainer">
+                            <div class="account-entry">
+                                <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+                                <input type="text" class="form-control" name="telephone_number[]" placeholder="Telephone Number">
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- Canteen Account Details Section with Add Button -->
                     <div class="form-section">
-                        <div class="form-section-title">🍽️ Canteen Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="canteenAccountNumber" placeholder="Canteen Account Number">
-                            <input type="text" class="form-control" id="canteenMeterNumber" placeholder="Canteen Meter Number">
+                        <div class="form-section-title">
+                            <span>🍽️ Canteen Account Details</span>
+                            <button type="button" class="btn-add-account" onclick="addCanteenAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
+                        </div>
+                        <div id="canteenAccountsContainer">
+                            <div class="account-entry">
+                                <input type="text" class="form-control" name="canteen_account_number[]" placeholder="Canteen Account Number">
+                                <input type="text" class="form-control" name="canteen_meter_number[]" placeholder="Canteen Meter Number">
+                            </div>
                         </div>
                     </div>
                     
@@ -332,39 +432,6 @@
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
-                    
-                    <div class="form-section">
-                        <div class="form-section-title">💧 Water Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="editWaterAccountNumber" placeholder="Water Account Number">
-                            <input type="text" class="form-control" id="editWaterMeterNumber" placeholder="Water Meter Number">
-                        </div>
-                    </div>
-                    
-                    <div class="form-section">
-                        <div class="form-section-title">⚡ Electricity Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="editElectricityAccountNumber" placeholder="Electricity Account Number">
-                            <input type="text" class="form-control" id="editElectricityMeterNumber" placeholder="Electricity Meter Number">
-                        </div>
-                    </div>
-                    
-                    <div class="form-section">
-                        <div class="form-section-title">📞 Telephone Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="editTelephoneAccountNumber" placeholder="Telephone Account Number">
-                            <input type="text" class="form-control" id="editTelephoneNumber" placeholder="Telephone Number">
-                        </div>
-                    </div>
-                    
-                    <div class="form-section">
-                        <div class="form-section-title">🍽️ Canteen Account Details</div>
-                        <div class="account-row">
-                            <input type="text" class="form-control" id="editCanteenAccountNumber" placeholder="Canteen Account Number">
-                            <input type="text" class="form-control" id="editCanteenMeterNumber" placeholder="Canteen Meter Number">
-                        </div>
-                    </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Notes / Remarks</label>
                         <textarea class="form-control" id="editImageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
@@ -408,6 +475,7 @@
     let currentImageData = null;
     let allMapImages = [];
     let entitiesList = [];
+    let uploadedImages = [];
     
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
@@ -429,7 +497,6 @@
                     let width = img.width;
                     let height = img.height;
                     
-                    // Calculate new dimensions while maintaining aspect ratio
                     if (width > height) {
                         if (width > maxWidth) {
                             height = Math.round(height * (maxWidth / width));
@@ -442,14 +509,12 @@
                         }
                     }
                     
-                    // Create canvas and resize
                     const canvas = document.createElement('canvas');
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // Compress and convert to blob
                     canvas.toBlob((blob) => {
                         resolve(blob);
                     }, 'image/jpeg', quality);
@@ -459,6 +524,120 @@
             reader.onerror = reject;
         });
     }
+    
+    // ============ DYNAMIC ACCOUNT FIELD FUNCTIONS ============
+    function addWaterAccountField() {
+        const container = document.getElementById('waterAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+            <input type="text" class="form-control" name="water_meter_number[]" placeholder="Water Meter Number">
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addElectricityAccountField() {
+        const container = document.getElementById('electricityAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+            <input type="text" class="form-control" name="electricity_meter_number[]" placeholder="Electricity Meter Number">
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addTelephoneAccountField() {
+        const container = document.getElementById('telephoneAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+            <input type="text" class="form-control" name="telephone_number[]" placeholder="Telephone Number">
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addCanteenAccountField() {
+        const container = document.getElementById('canteenAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="canteen_account_number[]" placeholder="Canteen Account Number">
+            <input type="text" class="form-control" name="canteen_meter_number[]" placeholder="Canteen Meter Number">
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function getAllAccountData() {
+        const accountData = {
+            water_accounts: [],
+            electricity_accounts: [],
+            telephone_accounts: [],
+            canteen_accounts: []
+        };
+        
+        // Water accounts
+        document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.water_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Electricity accounts
+        document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.electricity_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Telephone accounts
+        document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.telephone_accounts.push({
+                    account_number: inputs[0].value,
+                    phone_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Canteen accounts
+        document.querySelectorAll('#canteenAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.canteen_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        return accountData;
+    }
+    
+    // ============ EXISTING FUNCTIONS ============
     
     async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
@@ -685,9 +864,18 @@
             window.showToast('Please select a school or department first', 'error');
             return;
         }
+        // Reset form
         document.getElementById('imageForm').reset();
         document.getElementById('imagePreview').style.display = 'none';
         document.getElementById('compressionInfo').innerHTML = '';
+        uploadedImages = [];
+        
+        // Reset account containers to single entry
+        document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><input type="text" class="form-control" name="water_meter_number[]" placeholder="Water Meter Number"></div>';
+        document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><input type="text" class="form-control" name="electricity_meter_number[]" placeholder="Electricity Meter Number"></div>';
+        document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><input type="text" class="form-control" name="telephone_number[]" placeholder="Telephone Number"></div>';
+        document.getElementById('canteenAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="canteen_account_number[]" placeholder="Canteen Account Number"><input type="text" class="form-control" name="canteen_meter_number[]" placeholder="Canteen Meter Number"></div>';
+        
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
     }
     
@@ -698,14 +886,6 @@
         currentImageId = imageId;
         document.getElementById('editImageId').value = imageId;
         document.getElementById('editImageDescription').value = image.description || '';
-        document.getElementById('editWaterAccountNumber').value = image.water_account_number || '';
-        document.getElementById('editWaterMeterNumber').value = image.water_meter_number || '';
-        document.getElementById('editElectricityAccountNumber').value = image.electricity_account_number || '';
-        document.getElementById('editElectricityMeterNumber').value = image.electricity_meter_number || '';
-        document.getElementById('editTelephoneAccountNumber').value = image.telephone_account_number || '';
-        document.getElementById('editTelephoneNumber').value = image.telephone_number || '';
-        document.getElementById('editCanteenAccountNumber').value = image.canteen_account_number || '';
-        document.getElementById('editCanteenMeterNumber').value = image.canteen_meter_number || '';
         document.getElementById('editImageNotes').value = image.notes || '';
         
         new bootstrap.Modal(document.getElementById('editImageModal')).show();
@@ -716,14 +896,6 @@
         
         const updateData = {
             description: document.getElementById('editImageDescription').value,
-            water_account_number: document.getElementById('editWaterAccountNumber').value,
-            water_meter_number: document.getElementById('editWaterMeterNumber').value,
-            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
-            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
-            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
-            telephone_number: document.getElementById('editTelephoneNumber').value,
-            canteen_account_number: document.getElementById('editCanteenAccountNumber').value,
-            canteen_meter_number: document.getElementById('editCanteenMeterNumber').value,
             notes: document.getElementById('editImageNotes').value
         };
         
@@ -747,32 +919,33 @@
         }
     }
     
-    // ============ UPDATED: Image upload with client-side compression ============
+    // Image upload with compression
     document.getElementById('mapImageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
         const compressionInfo = document.getElementById('compressionInfo');
         
+        if (!previewContainer) {
+            console.error('Preview container not found');
+            return;
+        }
+        
         for (const file of files) {
-            // Show compression progress
             compressionInfo.innerHTML = '<i class="bi bi-arrow-repeat"></i> Compressing image...';
             
-            // Compress image before upload (max 1024px, quality 0.7)
-            const compressedBlob = await compressImage(file, 1024, 1024, 0.7);
-            
-            // Calculate size reduction
-            const originalSizeKB = (file.size / 1024).toFixed(1);
-            const compressedSizeKB = (compressedBlob.size / 1024).toFixed(1);
-            const reduction = ((1 - compressedBlob.size / file.size) * 100).toFixed(0);
-            
-            compressionInfo.innerHTML = `<i class="bi bi-check-circle"></i> Compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${reduction}% saved)`;
-            
-            // Create FormData with compressed image
-            const formData = new FormData();
-            const newFileName = file.name.replace(/\.[^/.]+$/, '.jpg');
-            formData.append('image', compressedBlob, newFileName);
-            
             try {
+                const compressedBlob = await compressImage(file, 1024, 1024, 0.7);
+                
+                const originalSizeKB = (file.size / 1024).toFixed(1);
+                const compressedSizeKB = (compressedBlob.size / 1024).toFixed(1);
+                const reduction = ((1 - compressedBlob.size / file.size) * 100).toFixed(0);
+                
+                compressionInfo.innerHTML = `<i class="bi bi-check-circle"></i> Compressed: ${originalSizeKB}KB → ${compressedSizeKB}KB (${reduction}% saved)`;
+                
+                const formData = new FormData();
+                const newFileName = file.name.replace(/\.[^/.]+$/, '.jpg');
+                formData.append('image', compressedBlob, newFileName);
+                
                 const response = await fetch('/api/upload-image', { 
                     method: 'POST', 
                     body: formData 
@@ -785,12 +958,10 @@
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
                     
-                    // Show compressed image preview
                     const previewUrl = URL.createObjectURL(compressedBlob);
                     previewDiv.innerHTML = `<img src="${previewUrl}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
                     
-                    // Revoke URL to free memory
                     URL.revokeObjectURL(previewUrl);
                     
                     window.showToast(`Image uploaded: ${data.compressed_size_kb}KB (saved ${Math.round((1 - data.compressed_size_kb / data.original_size_kb) * 100)}%)`, 'success');
@@ -799,53 +970,15 @@
                 }
             } catch (error) { 
                 console.error('Upload error:', error);
-                window.showToast('Error uploading image', 'error'); 
+                window.showToast('Error uploading image: ' + error.message, 'error'); 
             }
             
             setTimeout(() => {
                 compressionInfo.innerHTML = '';
             }, 3000);
         }
-        document.getElementById('imageUpload').value = '';
+        document.getElementById('mapImageUpload').value = '';
     });
-    
-    async function saveImageEdit() {
-        const imageId = document.getElementById('editImageId').value;
-        
-        const updateData = {
-            description: document.getElementById('editImageDescription').value,
-            water_account_number: document.getElementById('editWaterAccountNumber').value,
-            water_meter_number: document.getElementById('editWaterMeterNumber').value,
-            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
-            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
-            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
-            telephone_number: document.getElementById('editTelephoneNumber').value,
-            canteen_account_number: document.getElementById('editCanteenAccountNumber').value,
-            canteen_meter_number: document.getElementById('editCanteenMeterNumber').value,
-            notes: document.getElementById('editImageNotes').value
-        };
-        
-        try {
-            const response = await fetch(`/api/mapping/images/${imageId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updateData)
-            });
-            const result = await response.json();
-            if (result.success) {
-                window.showToast('Image details updated successfully');
-                bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
-                await loadImages();
-            } else {
-                window.showToast(result.error || 'Failed to update', 'error');
-            }
-        } catch (error) {
-            console.error('Error updating image:', error);
-            window.showToast('Error updating image', 'error');
-        }
-    }
-    
-    let uploadedImages = [];
     
     function removeImage(imageUrl) {
         uploadedImages = uploadedImages.filter(img => img !== imageUrl);
@@ -854,23 +987,50 @@
     }
     
     async function uploadMapImage() {
-        // This function is now handled by the change event above
-        // The button is kept for compatibility but the actual upload happens on file selection
+        const description = document.getElementById('imageDescription').value;
+        const notes = document.getElementById('imageNotes').value;
+        const accountData = getAllAccountData();
+        
+        // Process water accounts
+        for (let i = 0; i < accountData.water_accounts.length; i++) {
+            const acc = accountData.water_accounts[i];
+            if (i === 0 && uploadedImages.length > 0) {
+                // Associate first account with images
+                for (const imageUrl of uploadedImages) {
+                    const imageData = {
+                        entity_type: currentEntityType,
+                        entity_id: parseInt(currentEntityId),
+                        image_url: imageUrl,
+                        description: description,
+                        notes: notes,
+                        water_account_number: acc.account_number,
+                        water_meter_number: acc.meter_number,
+                        uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
+                    };
+                    
+                    const saveResponse = await fetch('/api/mapping/images', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(imageData)
+                    });
+                    const saveResult = await saveResponse.json();
+                    if (!saveResult.success) {
+                        window.showToast('Failed to save image record', 'error');
+                        return;
+                    }
+                }
+            }
+        }
+        
         if (uploadedImages.length === 0) {
             window.showToast('Please select images first', 'error');
             return;
         }
         
-        // Save all image URLs to the form
-        const imageUrlsInput = document.createElement('input');
-        imageUrlsInput.type = 'hidden';
-        imageUrlsInput.name = 'imageUrls';
-        imageUrlsInput.value = JSON.stringify(uploadedImages);
-        document.getElementById('imageForm').appendChild(imageUrlsInput);
-        
-        // Close modal
+        window.showToast(`${uploadedImages.length} image(s) uploaded successfully!`, 'success');
         bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
-        window.showToast(`${uploadedImages.length} image(s) ready to save with other details`, 'success');
+        await loadImages();
+        uploadedImages = [];
     }
     
     function viewImage(url, id) {
@@ -988,8 +1148,19 @@
     
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Mapping page loaded');
+        // Create image preview container if it doesn't exist
+        if (!document.getElementById('imagePreviewContainer')) {
+            const previewContainer = document.createElement('div');
+            previewContainer.id = 'imagePreviewContainer';
+            previewContainer.className = 'mt-2 d-flex flex-wrap gap-2';
+            const imageUpload = document.getElementById('mapImageUpload');
+            if (imageUpload && imageUpload.parentNode) {
+                imageUpload.parentNode.appendChild(previewContainer);
+            }
+        }
     });
     
+    // Make functions global
     window.showAddImageModal = showAddImageModal;
     window.uploadMapImage = uploadMapImage;
     window.viewImage = viewImage;
@@ -1003,6 +1174,10 @@
     window.filterEntityList = filterEntityList;
     window.loadEntityList = loadEntityList;
     window.loadImages = loadImages;
-    window.compressImage = compressImage;
+    window.addWaterAccountField = addWaterAccountField;
+    window.addElectricityAccountField = addElectricityAccountField;
+    window.addTelephoneAccountField = addTelephoneAccountField;
+    window.addCanteenAccountField = addCanteenAccountField;
+    window.removeImage = removeImage;
 </script>
 {% endblock %}
