@@ -94,27 +94,20 @@ def create_directories():
             app.logger.error(f"Failed to create directory {directory}: {e}")
 
 def init_supabase_storage():
-    """Initialize Supabase storage bucket - check if exists first"""
+    """Initialize Supabase storage bucket - simplified version"""
     if not supabase_storage:
         app.logger.error("Storage client not available")
         return False
     
     try:
-        # Try to get bucket info to check if it exists
-        buckets = supabase_storage.storage.list_buckets()
-        bucket_exists = any(bucket.get('name') == SUPABASE_STORAGE_BUCKET for bucket in buckets)
-        
-        if not bucket_exists:
-            # Create bucket if it doesn't exist
-            supabase_storage.storage.create_bucket(SUPABASE_STORAGE_BUCKET, {'public': True})
-            app.logger.info(f"Created storage bucket: {SUPABASE_STORAGE_BUCKET}")
-        else:
-            app.logger.info(f"Storage bucket already exists: {SUPABASE_STORAGE_BUCKET}")
-        
-        return True
+        # Try to create bucket (it will fail silently if already exists)
+        supabase_storage.storage.create_bucket(SUPABASE_STORAGE_BUCKET, {'public': True})
+        app.logger.info(f"Storage bucket ready: {SUPABASE_STORAGE_BUCKET}")
     except Exception as e:
-        app.logger.error(f"Error with storage bucket: {e}")
-        return True  # Assume it exists and continue
+        # Bucket likely already exists, this is fine
+        app.logger.info(f"Storage bucket already exists or error: {e}")
+    
+    return True
 
 def compress_image(file_content, filename):
     try:
@@ -701,7 +694,7 @@ def create_mapping_image():
         response = supabase_db.table("mapping_images").insert(image_data).execute()
         
         if response.data:
-            app.logger.info(f"Mapping image created successfully: ID {response.data[0]['id']}")
+            app.logger.info(f"Mapping image created successfully: ID {response.data[0]['id']}, URL: {response.data[0]['image_url'][:100]}...")
             return jsonify({'success': True, 'data': response.data[0]})
         else:
             app.logger.error(f"Insert returned no data - response: {response}")
