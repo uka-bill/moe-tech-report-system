@@ -50,7 +50,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
 # Image upload configuration - Reduced limits to save bandwidth
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB max (reduced from 16MB)
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
 
@@ -82,9 +82,9 @@ SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 
 try:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    app.logger.info("✅ Supabase client initialized successfully")
+    app.logger.info(" Supabase client initialized successfully")
 except Exception as e:
-    app.logger.error(f"❌ Failed to initialize Supabase client: {e}")
+    app.logger.error(f" Failed to initialize Supabase client: {e}")
     supabase = None
 
 # ============ HELPER FUNCTIONS ============
@@ -97,21 +97,21 @@ def create_directories():
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
-            app.logger.info(f"📁 Directory ready: {directory}")
+            app.logger.info(f" Directory ready: {directory}")
         except Exception as e:
-            app.logger.error(f"❌ Failed to create directory {directory}: {e}")
+            app.logger.error(f" Failed to create directory {directory}: {e}")
 
 def test_supabase_connection():
     if not supabase:
-        app.logger.warning("⚠️ Supabase client not initialized")
+        app.logger.warning(" Supabase client not initialized")
         return False
     
     try:
         response = supabase.table("technicians").select("id").limit(1).execute()
-        app.logger.info("✅ Supabase connection test successful")
+        app.logger.info(" Supabase connection test successful")
         return True
     except Exception as e:
-        app.logger.error(f"❌ Supabase connection test failed: {e}")
+        app.logger.error(f" Supabase connection test failed: {e}")
         return False
 
 def init_supabase_storage():
@@ -121,7 +121,7 @@ def init_supabase_storage():
     
     try:
         supabase.storage.create_bucket('mapping-images', {'public': True})
-        app.logger.info("✅ Created storage bucket: mapping-images")
+        app.logger.info(" Created storage bucket: mapping-images")
     except Exception as e:
         app.logger.info(f"Storage bucket ready (or already exists): {e}")
     
@@ -1063,8 +1063,6 @@ def get_mapping_images():
         if response.data:
             for img in response.data:
                 img_dict = dict(img)
-                if img_dict.get('image_data_base64'):
-                    img_dict['image_data_base64'] = None
                 images.append(img_dict)
         
         return jsonify(images)
@@ -1093,8 +1091,10 @@ def create_mapping_image():
             "electricity_meter_number": data.get('electricity_meter_number', ''),
             "telephone_account_number": data.get('telephone_account_number', ''),
             "telephone_number": data.get('telephone_number', ''),
-            "canteen_account_number": data.get('canteen_account_number', ''),
-            "canteen_meter_number": data.get('canteen_meter_number', ''),
+            "canteen_water_account_number": data.get('canteen_water_account_number', ''),
+            "canteen_water_meter_number": data.get('canteen_water_meter_number', ''),
+            "canteen_electricity_account_number": data.get('canteen_electricity_account_number', ''),
+            "canteen_electricity_meter_number": data.get('canteen_electricity_meter_number', ''),
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
@@ -1113,7 +1113,7 @@ def create_mapping_image():
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
 def update_mapping_image(image_id):
-    """Update a mapping image (description, notes, and account details)"""
+    """Update a mapping image"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -1125,7 +1125,8 @@ def update_mapping_image(image_id):
                           'water_account_number', 'water_meter_number',
                           'electricity_account_number', 'electricity_meter_number',
                           'telephone_account_number', 'telephone_number',
-                          'canteen_account_number', 'canteen_meter_number']
+                          'canteen_water_account_number', 'canteen_water_meter_number',
+                          'canteen_electricity_account_number', 'canteen_electricity_meter_number']
         
         for field in allowed_fields:
             if field in data:
@@ -1153,25 +1154,23 @@ def delete_mapping_image(image_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         
+        # First get the image URL to delete from storage
         image_response = supabase.table("mapping_images").select("image_url").eq("id", image_id).execute()
         
         if image_response.data and image_response.data[0].get('image_url'):
             image_url = image_response.data[0]['image_url']
             
+            # Extract filename from URL
             if supabase and 'supabase.co' in image_url:
                 try:
+                    # Extract filename from the full URL
                     filename = image_url.split('/')[-1].split('?')[0]
                     supabase.storage.from_('mapping-images').remove([filename])
                     app.logger.info(f"Deleted image from Supabase Storage: {filename}")
                 except Exception as e:
                     app.logger.warning(f"Could not delete from Supabase Storage: {e}")
-            else:
-                filename = image_url.replace('/api/images/', '')
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                    app.logger.info(f"Deleted local image file: {filepath}")
         
+        # Delete the database record
         response = supabase.table("mapping_images").delete().eq("id", image_id).execute()
         
         if response.data:
@@ -1182,225 +1181,6 @@ def delete_mapping_image(image_id):
     except Exception as e:
         app.logger.error(f"Error deleting mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============ DEBUG ENDPOINTS ============
-
-@app.route('/api/debug/mapping-tables', methods=['GET'])
-def debug_mapping_tables():
-    """Debug endpoint to check if mapping tables exist"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Supabase not connected'}), 500
-        
-        try:
-            locations_response = supabase.table("mapping_locations").select("id").limit(1).execute()
-            locations_exists = True
-            locations_error = None
-        except Exception as e:
-            locations_exists = False
-            locations_error = str(e)
-        
-        try:
-            images_response = supabase.table("mapping_images").select("id").limit(1).execute()
-            images_exists = True
-            images_error = None
-        except Exception as e:
-            images_exists = False
-            images_error = str(e)
-        
-        return jsonify({
-            'mapping_locations_exists': locations_exists,
-            'mapping_images_exists': images_exists,
-            'locations_error': locations_error,
-            'images_error': images_error
-        })
-    except Exception as e:
-        app.logger.error(f"Debug endpoint error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/debug/mapping-images', methods=['GET'])
-def debug_mapping_images():
-    """Debug endpoint to check all mapping images in database"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Supabase not connected'}), 500
-        
-        response = supabase.table("mapping_images").select("*").execute()
-        
-        return jsonify({
-            'count': len(response.data) if response.data else 0,
-            'images': response.data if response.data else []
-        })
-    except Exception as e:
-        app.logger.error(f"Debug endpoint error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-# ============ BACKUP AND RESTORE API ============
-
-@app.route('/api/backup', methods=['GET'])
-def backup_data():
-    """Export all data to JSON file"""
-    try:
-        if not supabase:
-            return jsonify({'success': False, 'error': 'Database not connected'}), 500
-        
-        user_id = request.args.get('user_id')
-        if user_id:
-            auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-            if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform backup'}), 403
-        
-        backup_data = {}
-        
-        reports_response = supabase.table("technical_reports").select("*").execute()
-        backup_data['technical_reports'] = reports_response.data if reports_response.data else []
-        
-        schools_response = supabase.table("schools").select("*").execute()
-        backup_data['schools'] = schools_response.data if schools_response.data else []
-        
-        departments_response = supabase.table("departments").select("*").execute()
-        backup_data['departments'] = departments_response.data if departments_response.data else []
-        
-        technicians_response = supabase.table("technicians").select("*").execute()
-        technicians = []
-        if technicians_response.data:
-            for tech in technicians_response.data:
-                tech_copy = dict(tech)
-                tech_copy.pop('password', None)
-                technicians.append(tech_copy)
-        backup_data['technicians'] = technicians
-        
-        images_response = supabase.table("mapping_images").select("*").execute()
-        backup_data['mapping_images'] = images_response.data if images_response.data else []
-        
-        locations_response = supabase.table("mapping_locations").select("*").execute()
-        backup_data['mapping_locations'] = locations_response.data if locations_response.data else []
-        
-        backup_data['_backup_info'] = {
-            'created_at': get_brunei_time_iso(),
-            'version': '1.0',
-            'record_counts': {
-                'technical_reports': len(backup_data['technical_reports']),
-                'schools': len(backup_data['schools']),
-                'departments': len(backup_data['departments']),
-                'technicians': len(backup_data['technicians']),
-                'mapping_images': len(backup_data['mapping_images']),
-                'mapping_locations': len(backup_data['mapping_locations'])
-            }
-        }
-        
-        app.logger.info(f"Backup created with {backup_data['_backup_info']['record_counts']}")
-        
-        return jsonify({'success': True, 'data': backup_data})
-        
-    except Exception as e:
-        app.logger.error(f"Error creating backup: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/restore', methods=['POST'])
-def restore_data():
-    """Restore data from backup JSON"""
-    try:
-        if not supabase:
-            return jsonify({'success': False, 'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        backup_data = data.get('backup_data')
-        user_id = data.get('user_id')
-        
-        if not backup_data:
-            return jsonify({'success': False, 'error': 'No backup data provided'}), 400
-        
-        if user_id:
-            auth_response = supabase.table("technicians").select("can_edit_technicians").eq("id", int(user_id)).execute()
-            if not auth_response.data or not auth_response.data[0].get('can_edit_technicians', False):
-                return jsonify({'success': False, 'error': 'Unauthorized: Only administrators can perform restore'}), 403
-        
-        # Clear existing data
-        try:
-            supabase.table("mapping_images").delete().neq("id", 0).execute()
-        except:
-            pass
-        try:
-            supabase.table("mapping_locations").delete().neq("id", 0).execute()
-        except:
-            pass
-        try:
-            supabase.table("technical_reports").delete().neq("id", 0).execute()
-        except:
-            pass
-        try:
-            supabase.table("departments").delete().neq("id", 0).execute()
-        except:
-            pass
-        try:
-            supabase.table("schools").delete().neq("id", 0).execute()
-        except:
-            pass
-        try:
-            supabase.table("technicians").delete().neq("id", 0).execute()
-        except:
-            pass
-        
-        restored_counts = {}
-        
-        if 'schools' in backup_data and backup_data['schools']:
-            for item in backup_data['schools']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("schools").insert(item_copy).execute()
-            restored_counts['schools'] = len(backup_data['schools'])
-        
-        if 'departments' in backup_data and backup_data['departments']:
-            for item in backup_data['departments']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("departments").insert(item_copy).execute()
-            restored_counts['departments'] = len(backup_data['departments'])
-        
-        if 'technicians' in backup_data and backup_data['technicians']:
-            for item in backup_data['technicians']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                if 'password' not in item_copy or not item_copy.get('password'):
-                    item_copy['password'] = item_copy.get('employee_id', 'default123')
-                supabase.table("technicians").insert(item_copy).execute()
-            restored_counts['technicians'] = len(backup_data['technicians'])
-        
-        if 'technical_reports' in backup_data and backup_data['technical_reports']:
-            for item in backup_data['technical_reports']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("technical_reports").insert(item_copy).execute()
-            restored_counts['technical_reports'] = len(backup_data['technical_reports'])
-        
-        if 'mapping_images' in backup_data and backup_data['mapping_images']:
-            for item in backup_data['mapping_images']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("mapping_images").insert(item_copy).execute()
-            restored_counts['mapping_images'] = len(backup_data['mapping_images'])
-        
-        if 'mapping_locations' in backup_data and backup_data['mapping_locations']:
-            for item in backup_data['mapping_locations']:
-                item_copy = {k: v for k, v in item.items() if k != 'id'}
-                supabase.table("mapping_locations").insert(item_copy).execute()
-            restored_counts['mapping_locations'] = len(backup_data['mapping_locations'])
-        
-        app.logger.info(f"Restore completed: {restored_counts}")
-        
-        return jsonify({
-            'success': True, 
-            'message': 'Data restored successfully',
-            'restored_counts': restored_counts
-        })
-        
-    except Exception as e:
-        app.logger.error(f"Error restoring data: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/backup/last', methods=['GET'])
-def get_last_backup_info():
-    """Get information about the last backup"""
-    try:
-        return jsonify({'success': True, 'last_backup': None})
-    except Exception as e:
-        return jsonify({'success': True, 'last_backup': None})
 
 # ============ IMAGE UPLOAD (with Compression) ============
 
@@ -1421,62 +1201,58 @@ def upload_image():
         original_content = file.read()
         original_size_kb = len(original_content) / 1024
         
-        # Check if file is too large (>1MB)
-        if len(original_content) > app.config['MAX_CONTENT_LENGTH']:
-            return jsonify({
-                'success': False, 
-                'error': f'Image too large ({original_size_kb:.1f}KB). Maximum allowed is 1MB.'
-            }), 400
-        
         # Compress the image
         compressed_content, ext = compress_image(original_content, file.filename)
         compressed_size_kb = len(compressed_content) / 1024
         
-        # Check if compressed image is still too large
-        max_size_bytes = app.config['MAX_IMAGE_SIZE_KB'] * 1024
-        if len(compressed_content) > max_size_bytes:
-            return jsonify({
-                'success': False,
-                'error': f'Image too large even after compression ({compressed_size_kb:.1f}KB). Please upload a smaller image.'
-            }), 400
-        
         # Generate unique filename
-        filename = f"{uuid.uuid4().hex}_{get_brunei_time().strftime('%Y%m%d_%H%M%S')}.{ext}"
+        timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
+        unique_id = uuid.uuid4().hex[:8]
+        filename = f"{timestamp}_{unique_id}.{ext}"
         
         image_url = None
         
         # Upload to Supabase Storage
         if supabase:
             try:
+                # Ensure bucket exists
                 init_supabase_storage()
+                
+                # Upload file to Supabase Storage
                 supabase.storage.from_('mapping-images').upload(
                     filename, 
                     compressed_content,
                     file_options={"content-type": "image/jpeg"}
                 )
+                
+                # Get the public URL - THIS IS THE KEY FIX
                 image_url = supabase.storage.from_('mapping-images').get_public_url(filename)
-                app.logger.info(f"✅ Image uploaded to Supabase Storage: {image_url} (Original: {original_size_kb:.1f}KB → Compressed: {compressed_size_kb:.1f}KB)")
+                app.logger.info(f" Image uploaded to Supabase Storage: {image_url}")
+                
             except Exception as e:
-                app.logger.error(f"❌ Failed to upload to Supabase Storage: {e}")
+                app.logger.error(f" Failed to upload to Supabase Storage: {e}")
+                # Fallback to local storage
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 with open(filepath, 'wb') as f:
                     f.write(compressed_content)
                 image_url = f"/api/images/{filename}"
-                app.logger.info(f"📁 Image saved locally: {filepath}")
+                app.logger.info(f" Image saved locally: {filepath}")
         else:
+            # No Supabase, use local storage
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             with open(filepath, 'wb') as f:
                 f.write(compressed_content)
             image_url = f"/api/images/{filename}"
-            app.logger.info(f"📁 Image saved locally: {filepath}")
+            app.logger.info(f" Image saved locally: {filepath}")
         
         return jsonify({
             'success': True, 
             'image_url': image_url, 
             'filename': filename, 
             'original_size_kb': round(original_size_kb, 1),
-            'compressed_size_kb': round(compressed_size_kb, 1),
-            'message': f'Image uploaded successfully (Compressed: {original_size_kb:.1f}KB → {compressed_size_kb:.1f}KB)'
+            'compressed_size_kb': round(compressed_size_kb, 1)
         })
         
     except Exception as e:
@@ -1634,18 +1410,18 @@ def init_app():
     create_directories()
     init_supabase_storage()
     app.logger.info("=" * 60)
-    app.logger.info("🏫 MOE Technical Report System Starting")
+    app.logger.info(" MOE Technical Report System Starting")
     app.logger.info("Ministry of Education - Brunei Darussalam")
-    app.logger.info(f"📸 Image settings: Max {app.config['MAX_IMAGE_DIMENSION']}px, Quality {app.config['IMAGE_QUALITY']}%, Max size {app.config['MAX_IMAGE_SIZE_KB']}KB")
+    app.logger.info(f" Image settings: Max {app.config['MAX_IMAGE_DIMENSION']}px, Quality {app.config['IMAGE_QUALITY']}%, Max size {app.config['MAX_IMAGE_SIZE_KB']}KB")
     app.logger.info("=" * 60)
     
     if test_supabase_connection():
-        app.logger.info("✅ Supabase connection established")
+        app.logger.info(" Supabase connection established")
     else:
-        app.logger.warning("⚠️ Supabase connection failed")
+        app.logger.warning(" Supabase connection failed")
     
     port = int(os.environ.get('PORT', 5000))
-    app.logger.info(f"🚀 Server will run on port: {port}")
+    app.logger.info(f" Server will run on port: {port}")
 
 init_app()
 
