@@ -6,28 +6,25 @@ from werkzeug.utils import secure_filename
 import csv
 import io
 from datetime import datetime, timezone, timedelta
-import traceback
 import json
-import base64
 import logging
 from logging.handlers import RotatingFileHandler
 from PIL import Image
 import io as io_lib
+import requests
+import base64
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
 
 def get_brunei_time():
-    """Get current time in Brunei (UTC+8)"""
     utc_now = datetime.now(timezone.utc)
     brunei_time = utc_now + timedelta(hours=8)
     return brunei_time
 
 def get_brunei_time_iso():
-    """Get current time in Brunei as ISO string"""
     return get_brunei_time().isoformat()
 
 def format_brunei_time(date_string):
-    """Format a date string to Brunei time display"""
     if not date_string:
         return '-'
     try:
@@ -35,10 +32,8 @@ def format_brunei_time(date_string):
             dt = datetime.fromisoformat(date_string.replace('Z', '+00:00'))
         else:
             dt = date_string
-        
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
-        
         brunei_dt = dt.astimezone(timezone(timedelta(hours=8)))
         return brunei_dt.strftime('%d/%m/%Y %H:%M:%S')
     except Exception as e:
@@ -49,15 +44,12 @@ def format_brunei_time(date_string):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
-# Image upload configuration - Reduced limits to save bandwidth
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-# Image compression settings
-app.config['MAX_IMAGE_DIMENSION'] = 1200  # Max width or height in pixels
-app.config['IMAGE_QUALITY'] = 75  # JPEG quality (1-100)
-app.config['MAX_IMAGE_SIZE_KB'] = 500  # Max file size after compression (500KB)
+app.config['MAX_IMAGE_DIMENSION'] = 1200
+app.config['IMAGE_QUALITY'] = 75
 
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
@@ -67,24 +59,22 @@ if not os.path.exists('logs'):
     os.makedirs('logs')
 
 file_handler = RotatingFileHandler('logs/app.log', maxBytes=10240, backupCount=10)
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-))
+file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO)
-app.logger.info('MOE Technical Report System startup')
 
 # ============ SUPABASE CONFIGURATION ============
 
-SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://megrxcfmcwrttiwujddh.supabase.co')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZ3J4Y2ZtY3dydHRpd3VqZGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDA4ODgsImV4cCI6MjA5NDYxNjg4OH0.fmwcV6fqqr-hO6hRPTzER6eODl6zffwud9heIchMNkw')
+SUPABASE_URL = 'https://megrxcfmcwrttiwujddh.supabase.co'
+SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZ3J4Y2ZtY3dydHRpd3VqZGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDA4ODgsImV4cCI6MjA5NDYxNjg4OH0.fmwcV6fqqr-hO6hRPTzER6eODl6zffwud9heIchMNkw'
+SUPABASE_STORAGE_BUCKET = 'mapping-images'
 
 try:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    app.logger.info(" Supabase client initialized successfully")
+    app.logger.info("Supabase client initialized successfully")
 except Exception as e:
-    app.logger.error(f" Failed to initialize Supabase client: {e}")
+    app.logger.error(f"Failed to initialize Supabase client: {e}")
     supabase = None
 
 # ============ HELPER FUNCTIONS ============
@@ -97,43 +87,42 @@ def create_directories():
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
-            app.logger.info(f" Directory ready: {directory}")
         except Exception as e:
-            app.logger.error(f" Failed to create directory {directory}: {e}")
+            app.logger.error(f"Failed to create directory {directory}: {e}")
 
-def test_supabase_connection():
-    if not supabase:
-        app.logger.warning(" Supabase client not initialized")
-        return False
-    
+def upload_to_supabase_storage(file_content, filename):
+    """Upload file directly to Supabase Storage using REST API"""
     try:
-        response = supabase.table("technicians").select("id").limit(1).execute()
-        app.logger.info(" Supabase connection test successful")
-        return True
+        # Prepare the file
+        files = {'file': (filename, file_content, 'image/jpeg')}
+        
+        # Supabase Storage API endpoint
+        url = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{filename}"
+        
+        # Headers with authorization
+        headers = {
+            'Authorization': f'Bearer {SUPABASE_KEY}',
+            'apikey': SUPABASE_KEY
+        }
+        
+        # Make the request
+        response = requests.post(url, headers=headers, files=files)
+        
+        if response.status_code in [200, 201]:
+            # Get the public URL
+            public_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_STORAGE_BUCKET}/{filename}"
+            app.logger.info(f"File uploaded to Supabase: {public_url}")
+            return public_url
+        else:
+            app.logger.error(f"Supabase upload failed: {response.status_code} - {response.text}")
+            return None
     except Exception as e:
-        app.logger.error(f" Supabase connection test failed: {e}")
-        return False
-
-def init_supabase_storage():
-    """Initialize Supabase storage bucket for images"""
-    if not supabase:
-        return False
-    
-    try:
-        supabase.storage.create_bucket('mapping-images', {'public': True})
-        app.logger.info(" Created storage bucket: mapping-images")
-    except Exception as e:
-        app.logger.info(f"Storage bucket ready (or already exists): {e}")
-    
-    return True
+        app.logger.error(f"Error uploading to Supabase: {e}")
+        return None
 
 def compress_image(file_content, filename):
-    """Compress image to save bandwidth and storage"""
     try:
-        # Open image from bytes
         img = Image.open(io_lib.BytesIO(file_content))
-        
-        # Convert RGBA to RGB (remove transparency)
         if img.mode in ('RGBA', 'LA', 'P'):
             rgb_img = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -144,23 +133,16 @@ def compress_image(file_content, filename):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Resize if too large (maintain aspect ratio)
         max_dimension = app.config['MAX_IMAGE_DIMENSION']
         if img.width > max_dimension or img.height > max_dimension:
             ratio = min(max_dimension / img.width, max_dimension / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
-            app.logger.info(f"Resized image from {img.width}x{img.height} to {new_size[0]}x{new_size[1]}")
         
-        # Save compressed image to bytes
         output = io_lib.BytesIO()
         img.save(output, format='JPEG', quality=app.config['IMAGE_QUALITY'], optimize=True)
         compressed_content = output.getvalue()
-        
-        app.logger.info(f"Image compressed: {len(file_content)/1024:.1f}KB → {len(compressed_content)/1024:.1f}KB")
-        
         return compressed_content, 'jpg'
-        
     except Exception as e:
         app.logger.error(f"Image compression error: {e}")
         return file_content, 'jpg'
@@ -217,7 +199,6 @@ def team_leader():
 
 @app.route('/mapping')
 def mapping_page():
-    """Mapping and Profiling page"""
     return render_template('mapping.html')
 
 # ============ TECHNICIAN API ============
@@ -226,38 +207,22 @@ def mapping_page():
 def get_technicians():
     try:
         if not supabase:
-            app.logger.error("Supabase client not initialized")
-            return jsonify({'error': 'Database not connected'}), 500
-        
+            return jsonify([]), 500
         response = supabase.table("technicians").select("*").order("id", desc=False).execute()
-        
-        app.logger.info(f"Fetched {len(response.data) if response.data else 0} technicians from database")
-        
         technicians = []
         if response.data:
             for tech in response.data:
                 tech_dict = dict(tech)
                 tech_dict.pop('password', None)
-                
-                if 'specializations' in tech_dict and tech_dict['specializations']:
-                    if isinstance(tech_dict['specializations'], str):
-                        try:
-                            tech_dict['specializations'] = json.loads(tech_dict['specializations'])
-                        except json.JSONDecodeError:
-                            tech_dict['specializations'] = []
-                    elif not isinstance(tech_dict['specializations'], list):
+                if 'specializations' in tech_dict and isinstance(tech_dict['specializations'], str):
+                    try:
+                        tech_dict['specializations'] = json.loads(tech_dict['specializations'])
+                    except:
                         tech_dict['specializations'] = []
-                else:
-                    tech_dict['specializations'] = []
-                
-                tech_dict['is_authorized'] = tech_dict.get('is_authorized', False)
-                tech_dict['can_edit_technicians'] = tech_dict.get('can_edit_technicians', False)
                 technicians.append(tech_dict)
-        
         return jsonify(technicians)
-        
     except Exception as e:
-        app.logger.error(f"Error getting technicians: {str(e)}")
+        app.logger.error(f"Error getting technicians: {e}")
         return jsonify([]), 500
 
 @app.route('/api/technicians', methods=['POST'])
@@ -265,19 +230,13 @@ def create_technician():
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         specializations = data.get('specializations', [])
-        
-        password = data.get('password')
-        employee_id = data.get('employee_id')
-        if not password:
-            password = employee_id
-        
+        password = data.get('password') or data.get('employee_id')
         technician_data = {
             "name": data.get('name'),
             "role": data.get('role', 'technician'),
-            "employee_id": employee_id,
+            "employee_id": data.get('employee_id'),
             "phone": data.get('phone'),
             "email": data.get('email'),
             "specializations": json.dumps(specializations) if specializations else '[]',
@@ -286,22 +245,15 @@ def create_technician():
             "password": password,
             "created_at": get_brunei_time_iso()
         }
-        
         if not technician_data['name']:
             return jsonify({'success': False, 'error': 'Name is required'}), 400
-        
         if not specializations or len(specializations) == 0:
             return jsonify({'success': False, 'error': 'At least one specialization is required'}), 400
-        
         response = supabase.table("technicians").insert(technician_data).execute()
-        
         if response.data:
-            app.logger.info(f"Technician created: {technician_data['name']}")
             response.data[0].pop('password', None)
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create technician'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to create technician'}), 500
     except Exception as e:
         app.logger.error(f"Error creating technician: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -311,30 +263,21 @@ def update_technician(tech_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         update_data = {}
-        
         allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians', 'password']
         for field in allowed_fields:
             if field in data and data[field] is not None:
                 update_data[field] = data[field]
-        
         if 'specializations' in data:
             update_data['specializations'] = json.dumps(data['specializations'])
-        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
         response = supabase.table("technicians").update(update_data).eq("id", tech_id).execute()
-        
         if response.data:
-            app.logger.info(f"Technician updated: ID {tech_id}")
             response.data[0].pop('password', None)
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Technician not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Technician not found'}), 404
     except Exception as e:
         app.logger.error(f"Error updating technician: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -344,96 +287,40 @@ def delete_technician(tech_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         reports = supabase.table("technical_reports").select("id").eq("technician_id", tech_id).limit(1).execute()
         if reports.data and len(reports.data) > 0:
             return jsonify({'success': False, 'error': 'Cannot delete technician with assigned reports'}), 400
-        
         response = supabase.table("technicians").delete().eq("id", tech_id).execute()
-        
         if response.data:
-            app.logger.info(f"Technician deleted: ID {tech_id}")
             return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Technician not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Technician not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting technician: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/technicians/<int:tech_id>/authorization', methods=['GET'])
-def check_technician_authorization(tech_id):
-    try:
-        if not supabase:
-            return jsonify({'authorized': False}), 500
-        
-        response = supabase.table("technicians").select("is_authorized").eq("id", tech_id).execute()
-        
-        if response.data and len(response.data) > 0:
-            return jsonify({'authorized': response.data[0].get('is_authorized', False)})
-        else:
-            return jsonify({'authorized': False}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error checking authorization: {e}")
-        return jsonify({'authorized': False}), 500
 
 @app.route('/api/technicians/verify-password', methods=['POST'])
 def verify_technician_password():
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         technician_id = data.get('technician_id')
         password = data.get('password')
-        
         if not technician_id or not password:
             return jsonify({'success': False, 'error': 'Technician ID and password required'}), 400
-        
         response = supabase.table("technicians").select("password, employee_id").eq("id", technician_id).execute()
-        
-        if not response.data or len(response.data) == 0:
+        if not response.data:
             return jsonify({'success': False, 'error': 'Technician not found'}), 404
-        
         tech = response.data[0]
         stored_password = tech.get('password', '')
         employee_id = tech.get('employee_id', '')
-        
         if stored_password and password == stored_password:
             return jsonify({'success': True, 'message': 'Password verified'})
-        elif not stored_password and password == employee_id:
+        if not stored_password and password == employee_id:
             return jsonify({'success': True, 'message': 'Password verified'})
-        else:
-            return jsonify({'success': False, 'error': 'Invalid password'}), 401
-            
+        return jsonify({'success': False, 'error': 'Invalid password'}), 401
     except Exception as e:
         app.logger.error(f"Error verifying password: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/technicians/reset-password', methods=['POST'])
-def reset_technician_password():
-    try:
-        if not supabase:
-            return jsonify({'success': False, 'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        technician_id = data.get('technician_id')
-        new_password = data.get('new_password')
-        
-        if not technician_id or not new_password:
-            return jsonify({'success': False, 'error': 'Technician ID and new password required'}), 400
-        
-        response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
-        
-        if response.data:
-            app.logger.info(f"Password reset for technician ID {technician_id}")
-            return jsonify({'success': True, 'message': 'Password reset successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to reset password'}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Error resetting password: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/technicians/change-password', methods=['POST'])
@@ -441,41 +328,25 @@ def change_technician_password():
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         technician_id = data.get('technician_id')
         current_password = data.get('current_password')
         new_password = data.get('new_password')
-        
         if not technician_id or not current_password or not new_password:
             return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-        
         response = supabase.table("technicians").select("password, employee_id").eq("id", technician_id).execute()
-        
-        if not response.data or len(response.data) == 0:
+        if not response.data:
             return jsonify({'success': False, 'error': 'Technician not found'}), 404
-        
         tech = response.data[0]
         stored_password = tech.get('password', '')
         employee_id = tech.get('employee_id', '')
-        
-        password_valid = False
-        if stored_password and current_password == stored_password:
-            password_valid = True
-        elif not stored_password and current_password == employee_id:
-            password_valid = True
-        
+        password_valid = (stored_password and current_password == stored_password) or (not stored_password and current_password == employee_id)
         if not password_valid:
             return jsonify({'success': False, 'error': 'Current password is incorrect'}), 401
-        
         update_response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
-        
         if update_response.data:
-            app.logger.info(f"Password changed for technician ID {technician_id}")
             return jsonify({'success': True, 'message': 'Password changed successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to update password'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to update password'}), 500
     except Exception as e:
         app.logger.error(f"Error changing password: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -498,7 +369,6 @@ def create_school():
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         school_data = {
             "name": data.get('name'),
@@ -509,17 +379,12 @@ def create_school():
             "contact_phone": data.get('contact_phone'),
             "created_at": get_brunei_time_iso()
         }
-        
         if not school_data['name']:
             return jsonify({'success': False, 'error': 'School name is required'}), 400
-        
         response = supabase.table("schools").insert(school_data).execute()
-        
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create school'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to create school'}), 500
     except Exception as e:
         app.logger.error(f"Error creating school: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -529,15 +394,11 @@ def update_school(school_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         response = supabase.table("schools").update(data).eq("id", school_id).execute()
-        
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'School not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'School not found'}), 404
     except Exception as e:
         app.logger.error(f"Error updating school: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -547,18 +408,13 @@ def delete_school(school_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         reports = supabase.table("technical_reports").select("id").eq("entity_id", school_id).eq("entity_type", "school").limit(1).execute()
-        if reports.data and len(reports.data) > 0:
+        if reports.data:
             return jsonify({'success': False, 'error': 'Cannot delete school with existing reports'}), 400
-        
         response = supabase.table("schools").delete().eq("id", school_id).execute()
-        
         if response.data:
             return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'School not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'School not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting school: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -581,30 +437,21 @@ def create_department():
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         dept_data = {
             "name": data.get('name'),
-            "unit_name": data.get('unit_name'),
+            "unit_name": data.get('unit_name') or data.get('name'),
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
             "contact_phone": data.get('contact_phone'),
             "created_at": get_brunei_time_iso()
         }
-        
-        if not dept_data['unit_name']:
-            dept_data['unit_name'] = dept_data['name']
-        
         if not dept_data['name']:
             return jsonify({'success': False, 'error': 'Department name is required'}), 400
-        
         response = supabase.table("departments").insert(dept_data).execute()
-        
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create department'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to create department'}), 500
     except Exception as e:
         app.logger.error(f"Error creating department: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -614,24 +461,18 @@ def update_department(dept_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         update_data = {}
         allowed_fields = ['name', 'unit_name', 'address', 'contact_person', 'contact_phone']
         for field in allowed_fields:
             if field in data and data[field] is not None:
                 update_data[field] = data[field]
-        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
         response = supabase.table("departments").update(update_data).eq("id", dept_id).execute()
-        
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Department not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Department not found'}), 404
     except Exception as e:
         app.logger.error(f"Error updating department: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -641,18 +482,13 @@ def delete_department(dept_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         reports = supabase.table("technical_reports").select("id").eq("entity_id", dept_id).eq("entity_type", "department").limit(1).execute()
-        if reports.data and len(reports.data) > 0:
+        if reports.data:
             return jsonify({'success': False, 'error': 'Cannot delete department with existing reports'}), 400
-        
         response = supabase.table("departments").delete().eq("id", dept_id).execute()
-        
         if response.data:
             return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Department not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Department not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting department: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -664,93 +500,50 @@ def get_technical_reports():
     try:
         if not supabase:
             return jsonify([]), 500
-        
-        report_type = request.args.get('type')
-        entity_type = request.args.get('entity_type')
-        entity_id = request.args.get('entity_id')
-        status = request.args.get('status')
-        priority = request.args.get('priority')
-        technician_id = request.args.get('technician_id')
-        team_leader_ack = request.args.get('team_leader_acknowledged')
-        priority_with_tender = request.args.get('priority_with_tender')
-        
         query = supabase.table("technical_reports").select("*")
-        
-        if report_type:
-            query = query.eq("report_type", report_type)
-        if entity_type:
-            query = query.eq("entity_type", entity_type)
-        if entity_id:
-            query = query.eq("entity_id", int(entity_id))
-        if status:
-            query = query.eq("status", status)
-        if priority:
-            query = query.eq("priority", priority)
-        if technician_id:
-            query = query.eq("technician_id", int(technician_id))
-        if team_leader_ack is not None:
-            query = query.eq("team_leader_acknowledged", team_leader_ack.lower() == 'true')
-        if priority_with_tender is not None:
-            query = query.eq("priority_with_tender", priority_with_tender.lower() == 'true')
-        
+        if request.args.get('type'):
+            query = query.eq("report_type", request.args.get('type'))
+        if request.args.get('entity_type'):
+            query = query.eq("entity_type", request.args.get('entity_type'))
+        if request.args.get('entity_id'):
+            query = query.eq("entity_id", int(request.args.get('entity_id')))
+        if request.args.get('status'):
+            query = query.eq("status", request.args.get('status'))
+        if request.args.get('technician_id'):
+            query = query.eq("technician_id", int(request.args.get('technician_id')))
         response = query.order("created_at", desc=True).execute()
-        
         reports = []
         if response.data:
             for report in response.data:
                 report_data = dict(report)
-                
                 if report_data['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
-                elif report_data['entity_type'] == 'department':
+                else:
                     entity = supabase.table("departments").select("name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
-                
                 if report_data.get('technician_id'):
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
                         report_data['technician_name'] = tech.data[0]['name']
-                        report_data['technician_role'] = tech.data[0]['role']
-                
-                if 'comments' not in report_data or report_data['comments'] is None:
-                    report_data['comments'] = []
-                elif isinstance(report_data['comments'], str):
-                    try:
-                        report_data['comments'] = json.loads(report_data['comments'])
-                    except:
-                        report_data['comments'] = []
-                
                 reports.append(report_data)
-        
         return jsonify(reports)
-        
     except Exception as e:
         app.logger.error(f"Error getting technical reports: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify([]), 500
 
 @app.route('/api/technical-reports', methods=['POST'])
 def create_technical_report():
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
-        
         required_fields = ['report_type', 'entity_type', 'entity_id', 'problem_type', 'complaint_details']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'{field} is required'}), 400
-        
-        reference_date = data.get('reference_date')
-        if reference_date:
-            try:
-                reference_date = datetime.strptime(reference_date, '%Y-%m-%d').date().isoformat()
-            except:
-                reference_date = None
-        
         report_data = {
             "report_type": data.get('report_type'),
             "entity_type": data.get('entity_type'),
@@ -767,30 +560,17 @@ def create_technical_report():
             "technician_id": data.get('technician_id'),
             "technician_notes": data.get('technician_notes', ''),
             "action_taken": data.get('action_taken', ''),
-            "resolution_details": data.get('resolution_details', ''),
-            "team_leader_notes": data.get('team_leader_notes', ''),
-            "team_leader_acknowledged": False,
-            "team_leader_acknowledged_at": None,
-            "team_leader_id": None,
             "images": data.get('images', []),
-            "comments": data.get('comments', []),
             "reference_type": data.get('reference_type', ''),
             "reference_number": data.get('reference_number', ''),
-            "reference_date": reference_date,
+            "reference_date": data.get('reference_date'),
             "created_at": get_brunei_time_iso(),
-            "updated_at": get_brunei_time_iso(),
-            "print_count": 0,
-            "last_printed_at": None
+            "updated_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("technical_reports").insert(report_data).execute()
-        
         if response.data:
-            app.logger.info(f"Technical report created: ID {response.data[0]['id']}")
             return jsonify({'success': True, 'message': 'Report created successfully', 'report': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create report'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to create report'}), 500
     except Exception as e:
         app.logger.error(f"Error creating technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -800,40 +580,21 @@ def update_technical_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
-        
-        allowed_fields = [
-            'problem_type', 'complaint_details', 'priority', 'priority_with_tender', 'status',
-            'technician_notes', 'action_taken', 'resolution_details',
-            'team_leader_notes', 'images', 'account_number', 'meter_number',
-            'phone_number', 'number_of_lines', 'comments',
-            'reference_type', 'reference_number', 'reference_date'
-        ]
-        
+        allowed_fields = ['problem_type', 'complaint_details', 'priority', 'priority_with_tender', 'status',
+                         'technician_notes', 'action_taken', 'images', 'account_number', 'meter_number',
+                         'phone_number', 'number_of_lines', 'reference_type', 'reference_number', 'reference_date']
         update_data = {}
         for field in allowed_fields:
             if field in data:
-                if field == 'reference_date' and data[field]:
-                    try:
-                        update_data[field] = datetime.strptime(data[field], '%Y-%m-%d').date().isoformat()
-                    except:
-                        update_data[field] = None
-                else:
-                    update_data[field] = data[field]
-        
+                update_data[field] = data[field]
         update_data['updated_at'] = get_brunei_time_iso()
-        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
-        
         if response.data:
             return jsonify({'success': True, 'message': 'Report updated successfully', 'report': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Report not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Report not found'}), 404
     except Exception as e:
         app.logger.error(f"Error updating technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -843,34 +604,22 @@ def acknowledge_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
-        
         auth_response = supabase.table("technicians").select("is_authorized").eq("id", team_leader_id).execute()
-        
         if not auth_response.data or not auth_response.data[0].get('is_authorized', False):
             return jsonify({'success': False, 'error': 'You are not authorized to acknowledge reports.'}), 403
-        
-        tech_response = supabase.table("technicians").select("name").eq("id", team_leader_id).execute()
-        team_leader_name = tech_response.data[0]['name'] if tech_response.data else 'Team Leader'
-        
         update_data = {
             "team_leader_acknowledged": True,
             "team_leader_acknowledged_at": get_brunei_time_iso(),
             "team_leader_id": team_leader_id,
-            "team_leader_name": team_leader_name,
             "team_leader_notes": data.get('team_leader_notes', ''),
             "updated_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
-        
         if response.data:
-            return jsonify({'success': True, 'message': 'Report acknowledged successfully', 'report': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Report not found'}), 404
-            
+            return jsonify({'success': True, 'message': 'Report acknowledged successfully'})
+        return jsonify({'success': False, 'error': 'Report not found'}), 404
     except Exception as e:
         app.logger.error(f"Error acknowledging report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -880,205 +629,41 @@ def delete_technical_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         response = supabase.table("technical_reports").delete().eq("id", report_id).execute()
-        
         if response.data:
             return jsonify({'success': True, 'message': 'Report deleted successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'Report not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Report not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/technical-reports/<int:report_id>/track-print', methods=['POST'])
-def track_print(report_id):
-    try:
-        if not supabase:
-            return jsonify({'success': False}), 500
-        
-        current = supabase.table("technical_reports").select("print_count").eq("id", report_id).execute()
-        current_count = current.data[0].get('print_count', 0) if current.data else 0
-        
-        response = supabase.table("technical_reports").update({
-            "print_count": current_count + 1,
-            "last_printed_at": get_brunei_time_iso()
-        }).eq("id", report_id).execute()
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        app.logger.error(f"Error tracking print: {e}")
-        return jsonify({'success': False}), 500
-
 # ============ MAPPING AND PROFILING API ============
-
-@app.route('/api/mapping/locations', methods=['GET'])
-def get_mapping_locations():
-    """Get all mapping locations for an entity"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        entity_type = request.args.get('entity_type')
-        entity_id = request.args.get('entity_id')
-        
-        query = supabase.table("mapping_locations").select("*")
-        
-        if entity_type:
-            query = query.eq("entity_type", entity_type)
-        if entity_id:
-            query = query.eq("entity_id", int(entity_id))
-        
-        response = query.order("location_type", desc=False).execute()
-        
-        locations = []
-        if response.data:
-            for loc in response.data:
-                loc_dict = dict(loc)
-                if loc_dict['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", loc_dict['entity_id']).execute()
-                    if entity.data:
-                        loc_dict['entity_name'] = entity.data[0]['name']
-                else:
-                    entity = supabase.table("departments").select("name").eq("id", loc_dict['entity_id']).execute()
-                    if entity.data:
-                        loc_dict['entity_name'] = entity.data[0]['name']
-                locations.append(loc_dict)
-        
-        return jsonify(locations)
-    except Exception as e:
-        app.logger.error(f"Error getting mapping locations: {e}")
-        return jsonify([]), 500
-
-@app.route('/api/mapping/locations', methods=['POST'])
-def create_mapping_location():
-    """Create a new mapping location"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        
-        location_data = {
-            "entity_type": data.get('entity_type'),
-            "entity_id": int(data.get('entity_id')),
-            "location_type": data.get('location_type'),
-            "account_number": data.get('account_number', ''),
-            "meter_number": data.get('meter_number', ''),
-            "phone_number": data.get('phone_number', ''),
-            "description": data.get('description', ''),
-            "latitude": data.get('latitude'),
-            "longitude": data.get('longitude'),
-            "address": data.get('address', ''),
-            "image_url": data.get('image_url', ''),
-            "created_by": data.get('created_by'),
-            "created_at": get_brunei_time_iso(),
-            "updated_at": get_brunei_time_iso()
-        }
-        
-        response = supabase.table("mapping_locations").insert(location_data).execute()
-        
-        if response.data:
-            app.logger.info(f"Mapping location created: {response.data[0]['id']}")
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create location'}), 500
-            
-    except Exception as e:
-        app.logger.error(f"Error creating mapping location: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/mapping/locations/<int:location_id>', methods=['PUT'])
-def update_mapping_location(location_id):
-    """Update a mapping location"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        data = request.get_json()
-        update_data = {}
-        
-        allowed_fields = ['account_number', 'meter_number', 'phone_number', 'description', 
-                         'latitude', 'longitude', 'address', 'image_url']
-        
-        for field in allowed_fields:
-            if field in data:
-                update_data[field] = data[field]
-        
-        update_data['updated_at'] = get_brunei_time_iso()
-        
-        if not update_data:
-            return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
-        response = supabase.table("mapping_locations").update(update_data).eq("id", location_id).execute()
-        
-        if response.data:
-            return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Location not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error updating mapping location: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/mapping/locations/<int:location_id>', methods=['DELETE'])
-def delete_mapping_location(location_id):
-    """Delete a mapping location"""
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        response = supabase.table("mapping_locations").delete().eq("id", location_id).execute()
-        
-        if response.data:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Location not found'}), 404
-            
-    except Exception as e:
-        app.logger.error(f"Error deleting mapping location: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images', methods=['GET'])
 def get_mapping_images():
-    """Get all mapping images for an entity"""
     try:
         if not supabase:
             return jsonify([]), 500
-        
         entity_type = request.args.get('entity_type')
         entity_id = request.args.get('entity_id')
-        
         query = supabase.table("mapping_images").select("*")
-        
         if entity_type:
             query = query.eq("entity_type", entity_type)
         if entity_id:
             query = query.eq("entity_id", int(entity_id))
-        
         response = query.order("uploaded_at", desc=True).execute()
-        
-        images = []
-        if response.data:
-            for img in response.data:
-                img_dict = dict(img)
-                images.append(img_dict)
-        
-        return jsonify(images)
+        return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting mapping images: {e}")
         return jsonify([]), 500
 
 @app.route('/api/mapping/images', methods=['POST'])
 def create_mapping_image():
-    """Create a new mapping image record"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
-        
+        app.logger.info(f"Received mapping image data: {data}")
         image_data = {
             "entity_type": data.get('entity_type'),
             "entity_id": int(data.get('entity_id')),
@@ -1098,91 +683,54 @@ def create_mapping_image():
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("mapping_images").insert(image_data).execute()
-        
         if response.data:
             app.logger.info(f"Mapping image created: {response.data[0]['id']}")
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to save image record'}), 500
-            
+        return jsonify({'success': False, 'error': 'Failed to save image record'}), 500
     except Exception as e:
         app.logger.error(f"Error creating mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
 def update_mapping_image(image_id):
-    """Update a mapping image"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
+        allowed_fields = ['description', 'notes', 'water_account_number', 'water_meter_number',
+                         'electricity_account_number', 'electricity_meter_number',
+                         'telephone_account_number', 'telephone_number',
+                         'canteen_water_account_number', 'canteen_water_meter_number',
+                         'canteen_electricity_account_number', 'canteen_electricity_meter_number']
         update_data = {}
-        
-        allowed_fields = ['description', 'notes', 
-                          'water_account_number', 'water_meter_number',
-                          'electricity_account_number', 'electricity_meter_number',
-                          'telephone_account_number', 'telephone_number',
-                          'canteen_water_account_number', 'canteen_water_meter_number',
-                          'canteen_electricity_account_number', 'canteen_electricity_meter_number']
-        
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
-        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
         response = supabase.table("mapping_images").update(update_data).eq("id", image_id).execute()
-        
         if response.data:
-            app.logger.info(f"Mapping image updated: ID {image_id}")
             return jsonify({'success': True, 'data': response.data[0]})
-        else:
-            return jsonify({'success': False, 'error': 'Image not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Image not found'}), 404
     except Exception as e:
         app.logger.error(f"Error updating mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['DELETE'])
 def delete_mapping_image(image_id):
-    """Delete a mapping image"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
-        # First get the image URL to delete from storage
-        image_response = supabase.table("mapping_images").select("image_url").eq("id", image_id).execute()
-        
-        if image_response.data and image_response.data[0].get('image_url'):
-            image_url = image_response.data[0]['image_url']
-            
-            # Extract filename from URL
-            if supabase and 'supabase.co' in image_url:
-                try:
-                    # Extract filename from the full URL
-                    filename = image_url.split('/')[-1].split('?')[0]
-                    supabase.storage.from_('mapping-images').remove([filename])
-                    app.logger.info(f"Deleted image from Supabase Storage: {filename}")
-                except Exception as e:
-                    app.logger.warning(f"Could not delete from Supabase Storage: {e}")
-        
-        # Delete the database record
         response = supabase.table("mapping_images").delete().eq("id", image_id).execute()
-        
         if response.data:
             return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Image not found'}), 404
-            
+        return jsonify({'success': False, 'error': 'Image not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ IMAGE UPLOAD (with Compression) ============
+# ============ IMAGE UPLOAD ============
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
@@ -1197,62 +745,29 @@ def upload_image():
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
         
-        # Read file content
         original_content = file.read()
-        original_size_kb = len(original_content) / 1024
-        
-        # Compress the image
         compressed_content, ext = compress_image(original_content, file.filename)
-        compressed_size_kb = len(compressed_content) / 1024
         
-        # Generate unique filename
         timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
         unique_id = uuid.uuid4().hex[:8]
         filename = f"{timestamp}_{unique_id}.{ext}"
         
-        image_url = None
+        # Try to upload to Supabase Storage
+        image_url = upload_to_supabase_storage(compressed_content, filename)
         
-        # Upload to Supabase Storage
-        if supabase:
-            try:
-                # Ensure bucket exists
-                init_supabase_storage()
-                
-                # Upload file to Supabase Storage
-                supabase.storage.from_('mapping-images').upload(
-                    filename, 
-                    compressed_content,
-                    file_options={"content-type": "image/jpeg"}
-                )
-                
-                # Get the public URL - THIS IS THE KEY FIX
-                image_url = supabase.storage.from_('mapping-images').get_public_url(filename)
-                app.logger.info(f" Image uploaded to Supabase Storage: {image_url}")
-                
-            except Exception as e:
-                app.logger.error(f" Failed to upload to Supabase Storage: {e}")
-                # Fallback to local storage
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                with open(filepath, 'wb') as f:
-                    f.write(compressed_content)
-                image_url = f"/api/images/{filename}"
-                app.logger.info(f" Image saved locally: {filepath}")
-        else:
-            # No Supabase, use local storage
+        if not image_url:
+            # Fallback to local storage
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             with open(filepath, 'wb') as f:
                 f.write(compressed_content)
-            image_url = f"/api/images/{filename}"
-            app.logger.info(f" Image saved locally: {filepath}")
+            image_url = request.host_url.rstrip('/') + f'/api/images/{filename}'
+            app.logger.info(f"Image saved locally: {filepath}")
         
         return jsonify({
             'success': True, 
             'image_url': image_url, 
-            'filename': filename, 
-            'original_size_kb': round(original_size_kb, 1),
-            'compressed_size_kb': round(compressed_size_kb, 1)
+            'filename': filename
         })
         
     except Exception as e:
@@ -1261,12 +776,10 @@ def upload_image():
 
 @app.route('/api/images/<filename>')
 def get_image(filename):
-    """Serve local images (fallback)"""
     try:
         from flask import send_from_directory
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except Exception as e:
-        app.logger.error(f"Error serving image {filename}: {e}")
         return jsonify({'error': 'Image not found'}), 404
 
 # ============ DASHBOARD STATISTICS ============
@@ -1276,152 +789,32 @@ def get_dashboard_stats():
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
-        water_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "water").execute()
-        electricity_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "electricity").execute()
-        telephone_reports = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "telephone").execute()
-        
-        pending_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "pending").execute()
-        in_progress_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "in_progress").execute()
-        resolved_reports = supabase.table("technical_reports").select("*", count="exact").eq("status", "resolved").execute()
-        
-        acknowledged_reports = supabase.table("technical_reports").select("*", count="exact").eq("team_leader_acknowledged", True).execute()
-        
-        recent_reports = supabase.table("technical_reports").select("*").order("created_at", desc=True).limit(10).execute()
-        
-        recent_list = []
-        if recent_reports.data:
-            for report in recent_reports.data:
-                report_dict = dict(report)
-                if report_dict['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", report_dict['entity_id']).execute()
-                    if entity.data:
-                        report_dict['entity_name'] = entity.data[0]['name']
-                else:
-                    entity = supabase.table("departments").select("name").eq("id", report_dict['entity_id']).execute()
-                    if entity.data:
-                        report_dict['entity_name'] = entity.data[0]['name']
-                if report_dict.get('technician_id'):
-                    tech = supabase.table("technicians").select("name").eq("id", report_dict['technician_id']).execute()
-                    if tech.data:
-                        report_dict['technician_name'] = tech.data[0]['name']
-                recent_list.append(report_dict)
-        
+        water = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "water").execute()
+        electricity = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "electricity").execute()
+        telephone = supabase.table("technical_reports").select("*", count="exact").eq("report_type", "telephone").execute()
+        pending = supabase.table("technical_reports").select("*", count="exact").eq("status", "pending").execute()
+        in_progress = supabase.table("technical_reports").select("*", count="exact").eq("status", "in_progress").execute()
+        resolved = supabase.table("technical_reports").select("*", count="exact").eq("status", "resolved").execute()
         return jsonify({
-            'total_reports': (water_reports.count or 0) + (electricity_reports.count or 0) + (telephone_reports.count or 0),
-            'by_type': {'water': water_reports.count or 0, 'electricity': electricity_reports.count or 0, 'telephone': telephone_reports.count or 0},
-            'by_status': {'pending': pending_reports.count or 0, 'in_progress': in_progress_reports.count or 0, 'resolved': resolved_reports.count or 0},
-            'acknowledged_count': acknowledged_reports.count or 0,
-            'recent_reports': recent_list
+            'total_reports': (water.count or 0) + (electricity.count or 0) + (telephone.count or 0),
+            'by_type': {'water': water.count or 0, 'electricity': electricity.count or 0, 'telephone': telephone.count or 0},
+            'by_status': {'pending': pending.count or 0, 'in_progress': in_progress.count or 0, 'resolved': resolved.count or 0}
         })
-        
     except Exception as e:
         app.logger.error(f"Error getting dashboard stats: {e}")
         return jsonify({'error': str(e)}), 500
-
-# ============ EXPORT REPORTS ============
-
-@app.route('/api/export-reports', methods=['GET'])
-def export_reports():
-    try:
-        if not supabase:
-            return jsonify({'error': 'Database not connected'}), 500
-        
-        report_type = request.args.get('type')
-        query = supabase.table("technical_reports").select("*")
-        if report_type:
-            query = query.eq("report_type", report_type)
-        
-        response = query.order("created_at", desc=True).execute()
-        
-        if not response.data:
-            return jsonify({'success': False, 'error': 'No data to export'}), 404
-        
-        output = io.StringIO()
-        writer = csv.writer(output)
-        
-        headers = ['Report ID', 'Type', 'Entity Type', 'Entity Name', 'Problem Type', 'Complaint Details', 'Priority', 'Status', 'Technician Name', 'Created At']
-        writer.writerow(headers)
-        
-        for report in response.data:
-            entity_name = ''
-            if report['entity_type'] == 'school':
-                entity = supabase.table("schools").select("name").eq("id", report['entity_id']).execute()
-                if entity.data:
-                    entity_name = entity.data[0]['name']
-            else:
-                entity = supabase.table("departments").select("name").eq("id", report['entity_id']).execute()
-                if entity.data:
-                    entity_name = entity.data[0]['name']
-            
-            tech_name = ''
-            if report.get('technician_id'):
-                tech = supabase.table("technicians").select("name").eq("id", report['technician_id']).execute()
-                if tech.data:
-                    tech_name = tech.data[0]['name']
-            
-            writer.writerow([
-                report.get('id', ''), report.get('report_type', ''), report.get('entity_type', ''),
-                entity_name, report.get('problem_type', ''), report.get('complaint_details', ''),
-                report.get('priority', ''), report.get('status', ''), tech_name, report.get('created_at', '')
-            ])
-        
-        output.seek(0)
-        timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
-        filename = f"technical_reports_{timestamp}.csv"
-        
-        return send_file(io.BytesIO(output.getvalue().encode('utf-8-sig')), mimetype='text/csv', as_attachment=True, download_name=filename)
-        
-    except Exception as e:
-        app.logger.error(f"Error exporting reports: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ HEALTH CHECK ============
 
 @app.route('/health')
 def health_check():
-    supabase_status = test_supabase_connection()
-    return jsonify({
-        'status': 'healthy' if supabase_status else 'degraded',
-        'timestamp': get_brunei_time_iso(),
-        'version': '1.0.0',
-        'supabase_connected': supabase_status,
-        'service': 'MOE Technical Report System'
-    })
-
-@app.route('/api/health')
-def api_health():
-    return jsonify({'status': 'ok', 'timestamp': get_brunei_time_iso()})
-
-# ============ ERROR HANDLERS ============
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return jsonify({'error': 'Resource not found'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    app.logger.error(f"500 error: {error}")
-    return jsonify({'error': 'Internal server error'}), 500
+    return jsonify({'status': 'healthy', 'timestamp': get_brunei_time_iso()})
 
 # ============ APPLICATION STARTUP ============
 
 def init_app():
     create_directories()
-    init_supabase_storage()
-    app.logger.info("=" * 60)
-    app.logger.info(" MOE Technical Report System Starting")
-    app.logger.info("Ministry of Education - Brunei Darussalam")
-    app.logger.info(f" Image settings: Max {app.config['MAX_IMAGE_DIMENSION']}px, Quality {app.config['IMAGE_QUALITY']}%, Max size {app.config['MAX_IMAGE_SIZE_KB']}KB")
-    app.logger.info("=" * 60)
-    
-    if test_supabase_connection():
-        app.logger.info(" Supabase connection established")
-    else:
-        app.logger.warning(" Supabase connection failed")
-    
-    port = int(os.environ.get('PORT', 5000))
-    app.logger.info(f" Server will run on port: {port}")
+    app.logger.info("MOE Technical Report System Starting")
 
 init_app()
 
