@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify, send_file
 import os
 from supabase import create_client
 import uuid
-from werkzeug.utils import secure_filename
 import csv
 import io
 from datetime import datetime, timezone, timedelta
@@ -11,6 +10,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from PIL import Image
 import io as io_lib
+import requests
 import base64
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
@@ -43,10 +43,12 @@ def format_brunei_time(date_string):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB for base64 images
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-app.config['MAX_IMAGE_DIMENSION'] = 800  # Smaller for base64
-app.config['IMAGE_QUALITY'] = 60  # Lower quality for base64
+
+app.config['MAX_IMAGE_DIMENSION'] = 1200
+app.config['IMAGE_QUALITY'] = 75
 
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
@@ -65,6 +67,7 @@ app.logger.setLevel(logging.INFO)
 
 SUPABASE_URL = 'https://megrxcfmcwrttiwujddh.supabase.co'
 SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lZ3J4Y2ZtY3dydHRpd3VqZGRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwNDA4ODgsImV4cCI6MjA5NDYxNjg4OH0.fmwcV6fqqr-hO6hRPTzER6eODl6zffwud9heIchMNkw'
+SUPABASE_STORAGE_BUCKET = 'mapping-images'
 
 try:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -86,12 +89,20 @@ def create_directories():
         except Exception as e:
             app.logger.error(f"Failed to create directory {directory}: {e}")
 
-def compress_and_convert_to_base64(file_content, filename):
-    """Compress image and convert to base64 string"""
+def init_supabase_storage():
+    """Initialize Supabase storage bucket"""
+    if not supabase:
+        return False
+    try:
+        supabase.storage.create_bucket(SUPABASE_STORAGE_BUCKET, {'public': True})
+        app.logger.info(f"Created storage bucket: {SUPABASE_STORAGE_BUCKET}")
+    except Exception as e:
+        app.logger.info(f"Storage bucket already exists: {e}")
+    return True
+
+def compress_image(file_content, filename):
     try:
         img = Image.open(io_lib.BytesIO(file_content))
-        
-        # Convert to RGB if needed
         if img.mode in ('RGBA', 'LA', 'P'):
             rgb_img = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -102,28 +113,20 @@ def compress_and_convert_to_base64(file_content, filename):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Resize if too large
         max_dimension = app.config['MAX_IMAGE_DIMENSION']
         if img.width > max_dimension or img.height > max_dimension:
             ratio = min(max_dimension / img.width, max_dimension / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
         
-        # Save to bytes with compression
         output = io_lib.BytesIO()
         img.save(output, format='JPEG', quality=app.config['IMAGE_QUALITY'], optimize=True)
         compressed_content = output.getvalue()
-        
-        # Convert to base64
-        base64_str = base64.b64encode(compressed_content).decode('utf-8')
-        
-        app.logger.info(f"Image converted to base64: {len(file_content)/1024:.1f}KB → {len(compressed_content)/1024:.1f}KB → base64 length {len(base64_str)}")
-        
-        return base64_str
+        app.logger.info(f"Image compressed: {len(file_content)/1024:.1f}KB -> {len(compressed_content)/1024:.1f}KB")
+        return compressed_content, 'jpg'
     except Exception as e:
         app.logger.error(f"Image compression error: {e}")
-        # Fallback: just convert original to base64
-        return base64.b64encode(file_content).decode('utf-8')
+        return file_content, 'jpg'
 
 # ============ ROUTES ============
 
@@ -641,12 +644,10 @@ def create_mapping_image():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        app.logger.info(f"Received mapping image data")
         image_data = {
             "entity_type": data.get('entity_type'),
             "entity_id": int(data.get('entity_id')),
             "image_url": data.get('image_url'),
-            "image_base64": data.get('image_base64', ''),  # Store base64 image
             "description": data.get('description', ''),
             "notes": data.get('notes', ''),
             "water_account_number": data.get('water_account_number', ''),
@@ -725,19 +726,33 @@ def upload_image():
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
         
         original_content = file.read()
+        compressed_content, ext = compress_image(original_content, file.filename)
         
-        # Convert to base64
-        base64_image = compress_and_convert_to_base64(original_content, file.filename)
+        timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
+        unique_id = uuid.uuid4().hex[:8]
+        filename = f"{timestamp}_{unique_id}.{ext}"
         
-        # Create a data URL for display
-        data_url = f"data:image/jpeg;base64,{base64_image}"
+        # Initialize storage and upload
+        init_supabase_storage()
         
-        return jsonify({
-            'success': True, 
-            'image_url': data_url,
-            'image_base64': base64_image,
-            'filename': file.filename
-        })
+        # Use supabase client to upload
+        try:
+            supabase.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
+                filename, 
+                compressed_content,
+                file_options={"content-type": "image/jpeg"}
+            )
+            image_url = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(filename)
+            app.logger.info(f"Image uploaded to Supabase: {image_url}")
+            
+            return jsonify({
+                'success': True, 
+                'image_url': image_url, 
+                'filename': filename
+            })
+        except Exception as e:
+            app.logger.error(f"Supabase upload error: {e}")
+            return jsonify({'success': False, 'error': f'Upload failed: {str(e)}'}), 500
         
     except Exception as e:
         app.logger.error(f"Error uploading image: {e}")
@@ -775,6 +790,7 @@ def health_check():
 
 def init_app():
     create_directories()
+    init_supabase_storage()
     app.logger.info("MOE Technical Report System Starting")
 
 init_app()
