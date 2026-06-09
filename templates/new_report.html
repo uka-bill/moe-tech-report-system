@@ -16,6 +16,9 @@
         margin-bottom: 20px;
         padding-bottom: 10px;
         border-bottom: 2px solid var(--primary-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .datetime-panel {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
@@ -122,6 +125,45 @@
         height: 100%;
         background-color: #9b59b6;
         transition: width 0.3s ease;
+    }
+    .account-entry {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .account-entry input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+    .btn-add-account {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-add-account:hover {
+        background-color: #218838;
+    }
+    .btn-remove-account {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .btn-remove-account:hover {
+        background-color: #c82333;
     }
 </style>
 
@@ -276,34 +318,52 @@
                 <div class="form-section-title">
                     <i class="bi bi-receipt"></i> Account Details
                 </div>
-                <div id="waterFields" class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Water Account Number</label>
-                        <input type="text" class="form-control" id="accountNumber" placeholder="e.g., W-12345">
+                
+                <!-- Water Account Fields with Add Button -->
+                <div id="waterFields" class="mb-3">
+                    <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
+                        <span>💧 Water Account Details</span>
+                        <button type="button" class="btn-add-account" onclick="addWaterAccountField()">
+                            <i class="bi bi-plus-circle"></i> Add Account
+                        </button>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Water Meter Number</label>
-                        <input type="text" class="form-control" id="meterNumber" placeholder="e.g., MTR-12345">
-                    </div>
-                </div>
-                <div id="electricityFields" class="row mb-3" style="display: none;">
-                    <div class="col-md-6">
-                        <label class="form-label">Electricity Account Number</label>
-                        <input type="text" class="form-control" id="electricityAccountNumber" placeholder="e.g., E-12345">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Electricity Meter Number</label>
-                        <input type="text" class="form-control" id="electricityMeterNumber" placeholder="e.g., MET-12345">
+                    <div id="waterAccountsContainer">
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+                            <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button>
+                        </div>
                     </div>
                 </div>
-                <div id="telephoneFields" class="row mb-3" style="display: none;">
-                    <div class="col-md-6">
-                        <label class="form-label">Phone Number</label>
-                        <input type="text" class="form-control" id="phoneNumber" placeholder="e.g., 2380000">
+                
+                <!-- Electricity Account Fields with Add Button -->
+                <div id="electricityFields" class="mb-3" style="display: none;">
+                    <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
+                        <span>⚡ Electricity Account Details</span>
+                        <button type="button" class="btn-add-account" onclick="addElectricityAccountField()">
+                            <i class="bi bi-plus-circle"></i> Add Account
+                        </button>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Number of Lines</label>
-                        <input type="number" class="form-control" id="numberOfLines" placeholder="e.g., 10">
+                    <div id="electricityAccountsContainer">
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+                            <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Telephone Account Fields with Add Button -->
+                <div id="telephoneFields" class="mb-3" style="display: none;">
+                    <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
+                        <span>📞 Telephone Account Details</span>
+                        <button type="button" class="btn-add-account" onclick="addTelephoneAccountField()">
+                            <i class="bi bi-plus-circle"></i> Add Account
+                        </button>
+                    </div>
+                    <div id="telephoneAccountsContainer">
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+                            <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -371,7 +431,7 @@
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <input type="file" class="form-control" id="imageUpload" accept="image/*" multiple>
-                        <small class="text-muted">Upload photos of the issue and the work done (JPG, PNG, GIF, up to 16MB each). Images are stored securely in Supabase.</small>
+                        <small class="text-muted">Upload photos of the issue and the work done (JPG, PNG, GIF, up to 1MB each). Images are stored securely in Supabase.</small>
                         <div class="upload-progress" id="uploadProgress">
                             <div class="progress-bar-custom">
                                 <div class="progress-fill" id="progressFill"></div>
@@ -419,6 +479,11 @@
     let editReportId = null;
     let isUploading = false;
     
+    // Water account data storage
+    let waterAccounts = [];
+    let electricityAccounts = [];
+    let telephoneAccounts = [];
+    
     // Check if we're in edit mode
     const urlParams = new URLSearchParams(window.location.search);
     editReportId = urlParams.get('id');
@@ -428,6 +493,136 @@
         document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
         document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. Your changes will be saved.';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
+    }
+    
+    // ============ ACCOUNT FIELD FUNCTIONS ============
+    
+    function addWaterAccountField() {
+        const container = document.getElementById('waterAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+            <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addWaterMeterField(button) {
+        const accountEntry = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Water Meter Number';
+        meterInput.name = 'water_meter_number[]';
+        
+        // Insert meter input before the buttons
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+    
+    function addElectricityAccountField() {
+        const container = document.getElementById('electricityAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+            <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addElectricityMeterField(button) {
+        const accountEntry = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Electricity Meter Number';
+        meterInput.name = 'electricity_meter_number[]';
+        
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+    
+    function addTelephoneAccountField() {
+        const container = document.getElementById('telephoneAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+            <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+    }
+    
+    function addTelephoneNumberField(button) {
+        const accountEntry = button.parentElement;
+        const phoneInput = document.createElement('input');
+        phoneInput.type = 'text';
+        phoneInput.className = 'form-control';
+        phoneInput.placeholder = 'Telephone Number';
+        phoneInput.name = 'telephone_number[]';
+        
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(phoneInput, buttons[0]);
+        button.textContent = '+ Number (Added)';
+        button.disabled = true;
+    }
+    
+    function getAllAccountData() {
+        const accountData = {
+            water_accounts: [],
+            electricity_accounts: [],
+            telephone_accounts: []
+        };
+        
+        // Water accounts
+        document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.water_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Electricity accounts
+        document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.electricity_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Telephone accounts
+        document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.telephone_accounts.push({
+                    account_number: inputs[0].value,
+                    phone_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        return accountData;
     }
     
     function selectPriority(priority) {
@@ -483,12 +678,9 @@
     });
     
     function updateAccountFields(reportType) {
-        document.getElementById('waterFields').style.display = 'none';
-        document.getElementById('electricityFields').style.display = 'none';
-        document.getElementById('telephoneFields').style.display = 'none';
-        if (reportType === 'water') document.getElementById('waterFields').style.display = 'flex';
-        else if (reportType === 'electricity') document.getElementById('electricityFields').style.display = 'flex';
-        else if (reportType === 'telephone') document.getElementById('telephoneFields').style.display = 'flex';
+        document.getElementById('waterFields').style.display = reportType === 'water' ? 'block' : 'none';
+        document.getElementById('electricityFields').style.display = reportType === 'electricity' ? 'block' : 'none';
+        document.getElementById('telephoneFields').style.display = reportType === 'telephone' ? 'block' : 'none';
     }
     
     async function loadSchools() {
@@ -546,7 +738,6 @@
             
             const formData = new FormData();
             formData.append('image', file);
-            formData.append('folder', 'reports');
             
             try {
                 const response = await fetch('/api/upload-image', { 
@@ -564,13 +755,15 @@
                     previewDiv.innerHTML = `<img src="${data.image_url}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Image+Load+Error'"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
                     
-                    window.showToast(`Uploaded: ${file.name}`, 'success');
+                    if (window.showToast) {
+                        window.showToast(`Uploaded: ${file.name} (${data.compressed_size_kb}KB)`, 'success');
+                    }
                 } else {
-                    window.showToast(`Failed to upload ${file.name}: ${data.error}`, 'error');
+                    if (window.showToast) window.showToast(`Failed to upload ${file.name}: ${data.error}`, 'error');
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                window.showToast(`Error uploading ${file.name}`, 'error');
+                if (window.showToast) window.showToast(`Error uploading ${file.name}`, 'error');
             }
         }
         
@@ -606,9 +799,15 @@
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
             document.getElementById('priority').disabled = false;
+            
+            // Reset account containers
+            document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button></div>';
+            document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button></div>';
+            document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button></div>';
+            
             updateAccountFields('water');
             setReportDateTime();
-            window.showToast('Form cleared');
+            if (window.showToast) window.showToast('Form cleared');
         }
     }
     
@@ -619,23 +818,20 @@
             const report = reports.find(r => r.id == id);
             
             if (!report) {
-                window.showToast('Report not found', 'error');
+                if (window.showToast) window.showToast('Report not found', 'error');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
                 return;
             }
             
-            // Check if report is acknowledged - prevent editing
             if (report.team_leader_acknowledged) {
-                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
+                if (window.showToast) window.showToast('This report has already been acknowledged and cannot be edited', 'error');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
                 return;
             }
             
-            // Populate form with report data
             document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
             updateAccountFields(report.report_type);
             
-            // Set entity type and load entities
             document.getElementById('entityType').value = report.entity_type;
             const changeEvent = new Event('change');
             document.getElementById('entityType').dispatchEvent(changeEvent);
@@ -652,7 +848,6 @@
             document.getElementById('referenceNumber').value = report.reference_number || '';
             document.getElementById('referenceDate').value = report.reference_date || '';
             
-            // Set priority
             if (report.priority === 'high') {
                 document.getElementById('priorityHigh').checked = true;
                 selectPriority('high');
@@ -669,19 +864,51 @@
                 document.getElementById('priorityInfo').style.display = 'block';
             }
             
-            // Set account details based on report type
-            if (report.report_type === 'water') {
-                document.getElementById('accountNumber').value = report.account_number || '';
-                document.getElementById('meterNumber').value = report.meter_number || '';
-            } else if (report.report_type === 'electricity') {
-                document.getElementById('electricityAccountNumber').value = report.account_number || '';
-                document.getElementById('electricityMeterNumber').value = report.meter_number || '';
-            } else if (report.report_type === 'telephone') {
-                document.getElementById('phoneNumber').value = report.phone_number || '';
-                document.getElementById('numberOfLines').value = report.number_of_lines || '';
+            // Parse and set account details from JSON if stored
+            if (report.account_details) {
+                try {
+                    const accountDetails = JSON.parse(report.account_details);
+                    // Handle parsing account details
+                } catch(e) {}
+            } else {
+                if (report.report_type === 'water' && report.account_number) {
+                    document.querySelector('#waterAccountsContainer input').value = report.account_number;
+                } else if (report.report_type === 'electricity' && report.account_number) {
+                    document.querySelector('#electricityAccountsContainer input').value = report.account_number;
+                } else if (report.report_type === 'telephone' && report.account_number) {
+                    document.querySelector('#telephoneAccountsContainer input').value = report.account_number;
+                }
+                if (report.meter_number) {
+                    const meterInput = document.createElement('input');
+                    meterInput.type = 'text';
+                    meterInput.className = 'form-control';
+                    meterInput.value = report.meter_number;
+                    meterInput.placeholder = 'Meter Number';
+                    const container = report.report_type === 'water' ? document.querySelector('#waterAccountsContainer .account-entry') : 
+                                      (report.report_type === 'electricity' ? document.querySelector('#electricityAccountsContainer .account-entry') : null);
+                    if (container) {
+                        const button = container.querySelector('button');
+                        container.insertBefore(meterInput, button);
+                        button.disabled = true;
+                        button.textContent = '+ Meter (Added)';
+                    }
+                }
+                if (report.phone_number && report.report_type === 'telephone') {
+                    const phoneInput = document.createElement('input');
+                    phoneInput.type = 'text';
+                    phoneInput.className = 'form-control';
+                    phoneInput.value = report.phone_number;
+                    phoneInput.placeholder = 'Phone Number';
+                    const container = document.querySelector('#telephoneAccountsContainer .account-entry');
+                    if (container) {
+                        const button = container.querySelector('button');
+                        container.insertBefore(phoneInput, button);
+                        button.disabled = true;
+                        button.textContent = '+ Number (Added)';
+                    }
+                }
             }
             
-            // Load existing images
             uploadedImages = report.images || [];
             const previewContainer = document.getElementById('imagePreviewContainer');
             previewContainer.innerHTML = '';
@@ -695,7 +922,7 @@
             
         } catch (error) {
             console.error('Error loading report for edit:', error);
-            window.showToast('Error loading report', 'error');
+            if (window.showToast) window.showToast('Error loading report', 'error');
         }
     }
     
@@ -703,7 +930,7 @@
         e.preventDefault();
         
         if (isUploading) {
-            window.showToast('Please wait for image uploads to complete', 'error');
+            if (window.showToast) window.showToast('Please wait for image uploads to complete', 'error');
             return;
         }
         
@@ -713,48 +940,55 @@
         const problemType = document.getElementById('problemType').value;
         const complaintDetails = document.getElementById('complaintDetails').value;
         
-        // Get entity name
-        let entityName = '';
-        if (entityType === 'school') {
-            const schools = await loadSchools();
-            const school = schools.find(s => s.id == parseInt(entityId));
-            entityName = school ? school.name : '';
-        } else if (entityType === 'department') {
-            const departments = await loadDepartments();
-            const dept = departments.find(d => d.id == parseInt(entityId));
-            entityName = dept ? dept.name : '';
-        }
+        if (!entityType || !entityId) { if (window.showToast) window.showToast('Please select entity type and name', 'error'); return; }
+        if (!problemType) { if (window.showToast) window.showToast('Please select a problem type', 'error'); return; }
+        if (!complaintDetails) { if (window.showToast) window.showToast('Please provide complaint details', 'error'); return; }
         
         let priority = 'medium';
         if (document.getElementById('priorityLow').checked) priority = 'low';
         if (document.getElementById('priorityMedium').checked) priority = 'medium';
         if (document.getElementById('priorityHigh').checked) priority = 'high';
         
-        if (!entityType || !entityId) { window.showToast('Please select entity type and name', 'error'); return; }
-        if (!problemType) { window.showToast('Please select a problem type', 'error'); return; }
-        if (!complaintDetails) { window.showToast('Please provide complaint details', 'error'); return; }
+        const accountData = getAllAccountData();
+        
+        // For backward compatibility, also set single account fields
+        let accountNumber = '';
+        let meterNumber = '';
+        let phoneNumber = '';
+        let numberOfLines = null;
+        
+        if (reportType === 'water' && accountData.water_accounts.length > 0) {
+            accountNumber = accountData.water_accounts[0].account_number;
+            meterNumber = accountData.water_accounts[0].meter_number;
+        } else if (reportType === 'electricity' && accountData.electricity_accounts.length > 0) {
+            accountNumber = accountData.electricity_accounts[0].account_number;
+            meterNumber = accountData.electricity_accounts[0].meter_number;
+        } else if (reportType === 'telephone' && accountData.telephone_accounts.length > 0) {
+            accountNumber = accountData.telephone_accounts[0].account_number;
+            phoneNumber = accountData.telephone_accounts[0].phone_number;
+            numberOfLines = accountData.telephone_accounts.length;
+        }
         
         const reportData = {
             report_type: reportType,
             entity_type: entityType,
             entity_id: parseInt(entityId),
-            entity_name: entityName,
-            account_number: reportType === 'water' ? document.getElementById('accountNumber').value : (reportType === 'electricity' ? document.getElementById('electricityAccountNumber').value : ''),
-            meter_number: reportType === 'water' ? document.getElementById('meterNumber').value : (reportType === 'electricity' ? document.getElementById('electricityMeterNumber').value : ''),
-            phone_number: reportType === 'telephone' ? document.getElementById('phoneNumber').value : '',
-            number_of_lines: reportType === 'telephone' ? parseInt(document.getElementById('numberOfLines').value) || null : null,
+            account_number: accountNumber,
+            meter_number: meterNumber,
+            phone_number: phoneNumber,
+            number_of_lines: numberOfLines,
             problem_type: problemType,
             complaint_details: complaintDetails,
             action_taken: document.getElementById('actionTaken').value,
             priority: priority,
             priority_with_tender: document.getElementById('priorityWithTender').checked,
             technician_id: currentTechnicianId,
-            technician_name: currentTechnicianName,
             technician_notes: document.getElementById('technicianNotes').value,
             images: uploadedImages,
             reference_type: document.getElementById('referenceType').value,
             reference_number: document.getElementById('referenceNumber').value,
-            reference_date: document.getElementById('referenceDate').value
+            reference_date: document.getElementById('referenceDate').value,
+            account_details: JSON.stringify(accountData)
         };
         
         try {
@@ -775,14 +1009,14 @@
             
             const data = await response.json();
             if (data.success) {
-                window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
+                if (window.showToast) window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
+                if (window.showToast) window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
             }
         } catch (error) {
             console.error('Submit error:', error);
-            window.showToast(isEditMode ? 'Error updating report' : 'Error submitting report', 'error');
+            if (window.showToast) window.showToast(isEditMode ? 'Error updating report' : 'Error submitting report', 'error');
         }
     });
     
@@ -806,5 +1040,16 @@
         }
     }
     init();
+    
+    // Make functions global
+    window.addWaterAccountField = addWaterAccountField;
+    window.addWaterMeterField = addWaterMeterField;
+    window.addElectricityAccountField = addElectricityAccountField;
+    window.addElectricityMeterField = addElectricityMeterField;
+    window.addTelephoneAccountField = addTelephoneAccountField;
+    window.addTelephoneNumberField = addTelephoneNumberField;
+    window.selectPriority = selectPriority;
+    window.removeImage = removeImage;
+    window.resetForm = resetForm;
 </script>
 {% endblock %}
