@@ -10,6 +10,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from PIL import Image
 import io as io_lib
+import traceback
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
 
@@ -113,7 +114,6 @@ def init_supabase_storage():
         return True
     except Exception as e:
         app.logger.error(f"Error with storage bucket: {e}")
-        # Bucket might already exist with different configuration
         return True  # Assume it exists and continue
 
 def compress_image(file_content, filename):
@@ -649,6 +649,7 @@ def get_mapping_images():
         if entity_id:
             query = query.eq("entity_id", int(entity_id))
         response = query.order("uploaded_at", desc=True).execute()
+        app.logger.info(f"Retrieved {len(response.data) if response.data else 0} images for {entity_type}/{entity_id}")
         return jsonify(response.data if response.data else [])
     except Exception as e:
         app.logger.error(f"Error getting mapping images: {e}")
@@ -658,8 +659,23 @@ def get_mapping_images():
 def create_mapping_image():
     try:
         if not supabase_db:
-            return jsonify({'error': 'Database not connected'}), 500
+            app.logger.error("Database client not available")
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        
         data = request.get_json()
+        app.logger.info(f"Received mapping image data - keys: {list(data.keys()) if data else 'None'}")
+        
+        # Validate required fields
+        if not data.get('entity_type'):
+            app.logger.error("Missing entity_type in request")
+            return jsonify({'success': False, 'error': 'entity_type is required'}), 400
+        if not data.get('entity_id'):
+            app.logger.error("Missing entity_id in request")
+            return jsonify({'success': False, 'error': 'entity_id is required'}), 400
+        if not data.get('image_url'):
+            app.logger.error("Missing image_url in request")
+            return jsonify({'success': False, 'error': 'image_url is required'}), 400
+        
         image_data = {
             "entity_type": data.get('entity_type'),
             "entity_id": int(data.get('entity_id')),
@@ -679,13 +695,21 @@ def create_mapping_image():
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
+        
+        app.logger.info(f"Attempting to insert into mapping_images: entity_type={image_data['entity_type']}, entity_id={image_data['entity_id']}")
+        
         response = supabase_db.table("mapping_images").insert(image_data).execute()
+        
         if response.data:
-            app.logger.info(f"Mapping image created: {response.data[0]['id']}")
+            app.logger.info(f"Mapping image created successfully: ID {response.data[0]['id']}")
             return jsonify({'success': True, 'data': response.data[0]})
-        return jsonify({'success': False, 'error': 'Failed to save image record'}), 500
+        else:
+            app.logger.error(f"Insert returned no data - response: {response}")
+            return jsonify({'success': False, 'error': 'Database insert returned no data'}), 500
+            
     except Exception as e:
-        app.logger.error(f"Error creating mapping image: {e}")
+        app.logger.error(f"Error creating mapping image: {str(e)}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
@@ -707,6 +731,7 @@ def update_mapping_image(image_id):
             return jsonify({'success': False, 'error': 'No data to update'}), 400
         response = supabase_db.table("mapping_images").update(update_data).eq("id", image_id).execute()
         if response.data:
+            app.logger.info(f"Mapping image updated: ID {image_id}")
             return jsonify({'success': True, 'data': response.data[0]})
         return jsonify({'success': False, 'error': 'Image not found'}), 404
     except Exception as e:
@@ -720,13 +745,14 @@ def delete_mapping_image(image_id):
             return jsonify({'error': 'Database not connected'}), 500
         response = supabase_db.table("mapping_images").delete().eq("id", image_id).execute()
         if response.data:
+            app.logger.info(f"Mapping image deleted: ID {image_id}")
             return jsonify({'success': True})
         return jsonify({'success': False, 'error': 'Image not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting mapping image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ IMAGE UPLOAD ============
+# ============ IMAGE UPLOAD (for both Mapping and Reports) ============
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
@@ -752,6 +778,7 @@ def upload_image():
         init_supabase_storage()
         
         if not supabase_storage:
+            app.logger.error("Storage client not initialized")
             return jsonify({'success': False, 'error': 'Storage client not initialized'}), 500
         
         # Upload using the service role client
@@ -764,7 +791,7 @@ def upload_image():
             
             # Get public URL
             image_url = supabase_storage.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(filename)
-            app.logger.info(f"Image uploaded successfully: {image_url}")
+            app.logger.info(f"Image uploaded successfully to Supabase Storage: {image_url}")
             
             return jsonify({
                 'success': True, 
@@ -772,11 +799,12 @@ def upload_image():
                 'filename': filename
             })
         except Exception as upload_error:
-            app.logger.error(f"Upload error: {upload_error}")
-            return jsonify({'success': False, 'error': f'Upload failed: {str(upload_error)}'}), 500
+            app.logger.error(f"Supabase upload error: {upload_error}")
+            return jsonify({'success': False, 'error': f'Upload to Supabase failed: {str(upload_error)}'}), 500
         
     except Exception as e:
         app.logger.error(f"Error uploading image: {e}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ DASHBOARD STATISTICS ============
@@ -807,23 +835,62 @@ def get_dashboard_stats():
 def health_check():
     return jsonify({'status': 'healthy', 'timestamp': get_brunei_time_iso()})
 
-# ============ DEBUG ENDPOINT ============
+# ============ DEBUG ENDPOINTS ============
 
 @app.route('/api/debug/supabase', methods=['GET'])
 def debug_supabase():
+    """Debug endpoint to check Supabase configuration"""
     return jsonify({
         'has_service_key': SUPABASE_SERVICE_KEY != SUPABASE_ANON_KEY,
         'service_key_length': len(SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else 0,
         'storage_client_exists': supabase_storage is not None,
-        'db_client_exists': supabase_db is not None
+        'db_client_exists': supabase_db is not None,
+        'storage_bucket': SUPABASE_STORAGE_BUCKET
     })
+
+@app.route('/api/debug/test-db', methods=['POST'])
+def debug_test_db():
+    """Debug endpoint to test database insert"""
+    try:
+        if not supabase_db:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        
+        test_data = {
+            "entity_type": "school",
+            "entity_id": 1,
+            "image_url": "https://test.com/test.jpg",
+            "description": "Debug test image",
+            "notes": "This is a test",
+            "uploaded_at": get_brunei_time_iso()
+        }
+        
+        app.logger.info(f"Test insert data: {test_data}")
+        response = supabase_db.table("mapping_images").insert(test_data).execute()
+        app.logger.info(f"Test insert response: {response.data}")
+        
+        # Clean up - delete the test record
+        if response.data and len(response.data) > 0:
+            test_id = response.data[0]['id']
+            supabase_db.table("mapping_images").delete().eq("id", test_id).execute()
+            app.logger.info(f"Test record {test_id} deleted")
+        
+        return jsonify({'success': True, 'message': 'Database insert test passed', 'data': response.data})
+    except Exception as e:
+        app.logger.error(f"Test DB insert failed: {e}")
+        app.logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ APPLICATION STARTUP ============
 
 def init_app():
     create_directories()
     init_supabase_storage()
+    app.logger.info("=" * 60)
     app.logger.info("MOE Technical Report System Starting")
+    app.logger.info(f"Supabase URL: {SUPABASE_URL}")
+    app.logger.info(f"Storage Bucket: {SUPABASE_STORAGE_BUCKET}")
+    app.logger.info(f"Service key configured: {SUPABASE_SERVICE_KEY != SUPABASE_ANON_KEY}")
+    app.logger.info("=" * 60)
 
 init_app()
 
