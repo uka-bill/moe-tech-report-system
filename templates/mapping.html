@@ -283,6 +283,31 @@
         background-color: #9b59b6;
         transition: width 0.3s ease;
     }
+    .edit-account-section {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+    }
+    .edit-account-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: var(--primary-dark);
+        font-size: 14px;
+    }
+    .edit-account-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .edit-account-row input {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 13px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -460,7 +485,7 @@
     </div>
 </div>
 
-<!-- Edit Image Modal -->
+<!-- Edit Image Modal - UPDATED with full account editing -->
 <div class="modal fade" id="editImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -471,10 +496,58 @@
             <div class="modal-body">
                 <form id="editImageForm">
                     <input type="hidden" id="editImageId">
+                    
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="editImageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
+                    
+                    <!-- Water Account Details Edit Section -->
+                    <div class="edit-account-section">
+                        <div class="edit-account-title">💧 Water Account Details</div>
+                        <div id="editWaterAccountsContainer">
+                            <div class="edit-account-row">
+                                <input type="text" id="editWaterAccountNumber" class="form-control" placeholder="Water Account Number">
+                                <input type="text" id="editWaterMeterNumber" class="form-control" placeholder="Water Meter Number">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Electricity Account Details Edit Section -->
+                    <div class="edit-account-section">
+                        <div class="edit-account-title">⚡ Electricity Account Details</div>
+                        <div id="editElectricityAccountsContainer">
+                            <div class="edit-account-row">
+                                <input type="text" id="editElectricityAccountNumber" class="form-control" placeholder="Electricity Account Number">
+                                <input type="text" id="editElectricityMeterNumber" class="form-control" placeholder="Electricity Meter Number">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Telephone Account Details Edit Section -->
+                    <div class="edit-account-section">
+                        <div class="edit-account-title">📞 Telephone Account Details</div>
+                        <div id="editTelephoneAccountsContainer">
+                            <div class="edit-account-row">
+                                <input type="text" id="editTelephoneAccountNumber" class="form-control" placeholder="Telephone Account Number">
+                                <input type="text" id="editTelephoneNumber" class="form-control" placeholder="Telephone Number">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Canteen Account Details Edit Section -->
+                    <div class="edit-account-section">
+                        <div class="edit-account-title">🍽️ Canteen Account Details</div>
+                        <div class="edit-account-row">
+                            <input type="text" id="editCanteenWaterAccountNumber" class="form-control" placeholder="Canteen Water Account Number">
+                            <input type="text" id="editCanteenWaterMeterNumber" class="form-control" placeholder="Canteen Water Meter Number">
+                        </div>
+                        <div class="edit-account-row mt-2">
+                            <input type="text" id="editCanteenElectricityAccountNumber" class="form-control" placeholder="Canteen Electricity Account Number">
+                            <input type="text" id="editCanteenElectricityMeterNumber" class="form-control" placeholder="Canteen Electricity Meter Number">
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Notes / Remarks</label>
                         <textarea class="form-control" id="editImageNotes" rows="3" placeholder="Add any notes or remarks about this map image..."></textarea>
@@ -1031,24 +1104,61 @@
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
     }
     
+    // UPDATED: Show Edit Image Modal with all account fields populated
     function showEditImageModal(imageId) {
         const image = currentImages.find(img => img.id === imageId);
         if (!image) return;
         
         currentImageId = imageId;
+        currentImageData = image;
+        
+        // Set basic fields
         document.getElementById('editImageId').value = imageId;
         document.getElementById('editImageDescription').value = image.description || '';
         document.getElementById('editImageNotes').value = image.notes || '';
         
+        // Set Water Account fields
+        document.getElementById('editWaterAccountNumber').value = image.water_account_number || '';
+        document.getElementById('editWaterMeterNumber').value = image.water_meter_number || '';
+        
+        // Set Electricity Account fields
+        document.getElementById('editElectricityAccountNumber').value = image.electricity_account_number || '';
+        document.getElementById('editElectricityMeterNumber').value = image.electricity_meter_number || '';
+        
+        // Set Telephone Account fields
+        document.getElementById('editTelephoneAccountNumber').value = image.telephone_account_number || '';
+        document.getElementById('editTelephoneNumber').value = image.telephone_number || '';
+        
+        // Set Canteen Account fields
+        document.getElementById('editCanteenWaterAccountNumber').value = image.canteen_water_account_number || '';
+        document.getElementById('editCanteenWaterMeterNumber').value = image.canteen_water_meter_number || '';
+        document.getElementById('editCanteenElectricityAccountNumber').value = image.canteen_electricity_account_number || '';
+        document.getElementById('editCanteenElectricityMeterNumber').value = image.canteen_electricity_meter_number || '';
+        
         new bootstrap.Modal(document.getElementById('editImageModal')).show();
     }
     
+    // UPDATED: Save Image Edit with all account fields
     async function saveImageEdit() {
         const imageId = document.getElementById('editImageId').value;
         
         const updateData = {
             description: document.getElementById('editImageDescription').value,
-            notes: document.getElementById('editImageNotes').value
+            notes: document.getElementById('editImageNotes').value,
+            // Water Account
+            water_account_number: document.getElementById('editWaterAccountNumber').value,
+            water_meter_number: document.getElementById('editWaterMeterNumber').value,
+            // Electricity Account
+            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
+            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
+            // Telephone Account
+            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
+            telephone_number: document.getElementById('editTelephoneNumber').value,
+            // Canteen Account
+            canteen_water_account_number: document.getElementById('editCanteenWaterAccountNumber').value,
+            canteen_water_meter_number: document.getElementById('editCanteenWaterMeterNumber').value,
+            canteen_electricity_account_number: document.getElementById('editCanteenElectricityAccountNumber').value,
+            canteen_electricity_meter_number: document.getElementById('editCanteenElectricityMeterNumber').value
         };
         
         try {
