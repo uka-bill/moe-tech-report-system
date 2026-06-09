@@ -106,10 +106,6 @@
     .priority-option.selected {
         box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
     }
-    .readonly-field {
-        background-color: #e9ecef;
-        opacity: 0.8;
-    }
     .upload-progress {
         display: none;
         margin-top: 10px;
@@ -161,9 +157,6 @@
         padding: 4px 8px;
         font-size: 10px;
         cursor: pointer;
-    }
-    .btn-remove-account:hover {
-        background-color: #c82333;
     }
 </style>
 
@@ -319,7 +312,6 @@
                     <i class="bi bi-receipt"></i> Account Details
                 </div>
                 
-                <!-- Water Account Fields with Add Button -->
                 <div id="waterFields" class="mb-3">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>💧 Water Account Details</span>
@@ -335,7 +327,6 @@
                     </div>
                 </div>
                 
-                <!-- Electricity Account Fields with Add Button -->
                 <div id="electricityFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>⚡ Electricity Account Details</span>
@@ -351,7 +342,6 @@
                     </div>
                 </div>
                 
-                <!-- Telephone Account Fields with Add Button -->
                 <div id="telephoneFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>📞 Telephone Account Details</span>
@@ -431,7 +421,7 @@
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <input type="file" class="form-control" id="imageUpload" accept="image/*" multiple>
-                        <small class="text-muted">Upload photos of the issue and the work done (JPG, PNG, GIF, up to 1MB each). Images are stored securely in Supabase.</small>
+                        <small class="text-muted">Upload photos of the issue and the work done (JPG, PNG, up to 2MB each). Images are stored securely in Supabase.</small>
                         <div class="upload-progress" id="uploadProgress">
                             <div class="progress-bar-custom">
                                 <div class="progress-fill" id="progressFill"></div>
@@ -478,13 +468,7 @@
     let isEditMode = false;
     let editReportId = null;
     let isUploading = false;
-    
-    // Water account data storage
-    let waterAccounts = [];
-    let electricityAccounts = [];
-    let telephoneAccounts = [];
-    
-    // Check if we're in edit mode
+
     const urlParams = new URLSearchParams(window.location.search);
     editReportId = urlParams.get('id');
     isEditMode = editReportId !== null;
@@ -494,9 +478,14 @@
         document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. Your changes will be saved.';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
     }
-    
-    // ============ ACCOUNT FIELD FUNCTIONS ============
-    
+
+    function getFullImageUrl(imagePath) {
+        if (!imagePath) return '';
+        if (imagePath.startsWith('http')) return imagePath;
+        if (imagePath.startsWith('/api/images/')) return window.location.origin + imagePath;
+        return window.location.origin + '/api/images/' + imagePath;
+    }
+
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
         const newEntry = document.createElement('div');
@@ -504,13 +493,11 @@
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
             <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button>
-            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
-                <i class="bi bi-trash"></i>
-            </button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
         `;
         container.appendChild(newEntry);
     }
-    
+
     function addWaterMeterField(button) {
         const accountEntry = button.parentElement;
         const meterInput = document.createElement('input');
@@ -518,14 +505,12 @@
         meterInput.className = 'form-control';
         meterInput.placeholder = 'Water Meter Number';
         meterInput.name = 'water_meter_number[]';
-        
-        // Insert meter input before the buttons
         const buttons = accountEntry.querySelectorAll('button');
         accountEntry.insertBefore(meterInput, buttons[0]);
         button.textContent = '+ Meter (Added)';
         button.disabled = true;
     }
-    
+
     function addElectricityAccountField() {
         const container = document.getElementById('electricityAccountsContainer');
         const newEntry = document.createElement('div');
@@ -533,13 +518,11 @@
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
             <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button>
-            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
-                <i class="bi bi-trash"></i>
-            </button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
         `;
         container.appendChild(newEntry);
     }
-    
+
     function addElectricityMeterField(button) {
         const accountEntry = button.parentElement;
         const meterInput = document.createElement('input');
@@ -547,13 +530,12 @@
         meterInput.className = 'form-control';
         meterInput.placeholder = 'Electricity Meter Number';
         meterInput.name = 'electricity_meter_number[]';
-        
         const buttons = accountEntry.querySelectorAll('button');
         accountEntry.insertBefore(meterInput, buttons[0]);
         button.textContent = '+ Meter (Added)';
         button.disabled = true;
     }
-    
+
     function addTelephoneAccountField() {
         const container = document.getElementById('telephoneAccountsContainer');
         const newEntry = document.createElement('div');
@@ -561,13 +543,11 @@
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
             <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button>
-            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()">
-                <i class="bi bi-trash"></i>
-            </button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
         `;
         container.appendChild(newEntry);
     }
-    
+
     function addTelephoneNumberField(button) {
         const accountEntry = button.parentElement;
         const phoneInput = document.createElement('input');
@@ -575,21 +555,17 @@
         phoneInput.className = 'form-control';
         phoneInput.placeholder = 'Telephone Number';
         phoneInput.name = 'telephone_number[]';
-        
         const buttons = accountEntry.querySelectorAll('button');
         accountEntry.insertBefore(phoneInput, buttons[0]);
         button.textContent = '+ Number (Added)';
         button.disabled = true;
     }
-    
+
     function getAllAccountData() {
         const accountData = {
-            water_accounts: [],
-            electricity_accounts: [],
-            telephone_accounts: []
+            water_accounts: [], electricity_accounts: [], telephone_accounts: []
         };
         
-        // Water accounts
         document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -600,7 +576,6 @@
             }
         });
         
-        // Electricity accounts
         document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -611,7 +586,6 @@
             }
         });
         
-        // Telephone accounts
         document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -624,19 +598,17 @@
         
         return accountData;
     }
-    
+
     function selectPriority(priority) {
         document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
         document.getElementById('priority').value = priority;
         document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
         document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
     }
-    document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
-    
+
     async function getCurrentTechnician() {
         try {
             const userId = localStorage.getItem('userId');
-            const userName = localStorage.getItem('userName');
             if (userId && userId !== 'null') {
                 const response = await fetch('/api/technicians');
                 const technicians = await response.json();
@@ -648,20 +620,18 @@
                     return;
                 }
             }
-            currentTechnicianName = userName || 'Technician';
+            currentTechnicianName = localStorage.getItem('userName') || 'Technician';
             document.getElementById('technicianName').textContent = currentTechnicianName;
         } catch (error) {
             document.getElementById('technicianName').textContent = 'Unknown Technician';
         }
     }
-    
+
     function setReportDateTime() {
         const now = new Date();
-        document.getElementById('reportDateTime').textContent = now.toLocaleString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
+        document.getElementById('reportDateTime').textContent = now.toLocaleString('en-GB');
     }
-    
+
     document.getElementById('priorityWithTender').addEventListener('change', function() {
         const infoDiv = document.getElementById('priorityInfo');
         const prioritySelect = document.getElementById('priority');
@@ -676,27 +646,27 @@
             prioritySelect.disabled = false;
         }
     });
-    
+
     function updateAccountFields(reportType) {
         document.getElementById('waterFields').style.display = reportType === 'water' ? 'block' : 'none';
         document.getElementById('electricityFields').style.display = reportType === 'electricity' ? 'block' : 'none';
         document.getElementById('telephoneFields').style.display = reportType === 'telephone' ? 'block' : 'none';
     }
-    
+
     async function loadSchools() {
         try {
             const response = await fetch('/api/schools');
             return await response.json();
         } catch { return []; }
     }
-    
+
     async function loadDepartments() {
         try {
             const response = await fetch('/api/departments');
             return await response.json();
         } catch { return []; }
     }
-    
+
     document.getElementById('entityType').addEventListener('change', async function() {
         const entitySelect = document.getElementById('entityId');
         if (this.value === 'school') {
@@ -712,12 +682,44 @@
             entitySelect.disabled = true;
         }
     });
-    
+
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
         radio.addEventListener('change', function() { updateAccountFields(this.value); });
     });
-    
-    // Upload images to Supabase
+
+    async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let width = img.width, height = img.height;
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width = Math.round(width * (maxHeight / height));
+                            height = maxHeight;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    }
+
     document.getElementById('imageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -725,212 +727,73 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         
-        if (files.length === 0) return;
-        
+        if (!files.length) return;
         progressDiv.style.display = 'block';
         isUploading = true;
         
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const percent = ((i + 1) / files.length) * 100;
-            progressFill.style.width = `${percent}%`;
+            progressFill.style.width = `${((i + 1) / files.length) * 100}%`;
             progressText.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
             
-            const formData = new FormData();
-            formData.append('image', file);
-            
             try {
-                const response = await fetch('/api/upload-image', { 
-                    method: 'POST', 
-                    body: formData 
-                });
+                const compressedBlob = await compressImage(file);
+                const formData = new FormData();
+                formData.append('image', compressedBlob, file.name.replace(/\.[^/.]+$/, '.jpg'));
+                const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
                 const data = await response.json();
-                
                 if (data.success) {
                     uploadedImages.push(data.image_url);
-                    
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
-                    previewDiv.innerHTML = `<img src="${data.image_url}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Image+Load+Error'"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
+                    const fullUrl = getFullImageUrl(data.image_url);
+                    previewDiv.innerHTML = `<img src="${fullUrl}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Error'"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
-                    
-                    if (window.showToast) {
-                        window.showToast(`Uploaded: ${file.name} (${data.compressed_size_kb}KB)`, 'success');
-                    }
-                } else {
-                    if (window.showToast) window.showToast(`Failed to upload ${file.name}: ${data.error}`, 'error');
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                if (window.showToast) window.showToast(`Error uploading ${file.name}`, 'error');
             }
         }
-        
-        progressFill.style.width = '100%';
-        progressText.textContent = 'Upload complete!';
-        setTimeout(() => {
-            progressDiv.style.display = 'none';
-            progressFill.style.width = '0%';
-        }, 2000);
-        
+        progressDiv.style.display = 'none';
         isUploading = false;
         document.getElementById('imageUpload').value = '';
     });
-    
+
     function removeImage(imageUrl) {
         uploadedImages = uploadedImages.filter(img => img !== imageUrl);
         const preview = document.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
         if (preview) preview.remove();
     }
-    
+
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
-    
+
     async function resetForm() {
-        if (confirm('Clear all form data? Images will need to be re-uploaded.')) {
+        if (confirm('Clear all form data?')) {
             document.getElementById('reportForm').reset();
             uploadedImages = [];
             document.getElementById('imagePreviewContainer').innerHTML = '';
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
             document.getElementById('priority').disabled = false;
-            
-            // Reset account containers
             document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button></div>';
             document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button></div>';
             document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button></div>';
-            
             updateAccountFields('water');
             setReportDateTime();
-            if (window.showToast) window.showToast('Form cleared');
+            alert('Form cleared');
         }
     }
-    
-    async function loadReportForEdit(id) {
-        try {
-            const response = await fetch('/api/technical-reports');
-            const reports = await response.json();
-            const report = reports.find(r => r.id == id);
-            
-            if (!report) {
-                if (window.showToast) window.showToast('Report not found', 'error');
-                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
-                return;
-            }
-            
-            if (report.team_leader_acknowledged) {
-                if (window.showToast) window.showToast('This report has already been acknowledged and cannot be edited', 'error');
-                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
-                return;
-            }
-            
-            document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
-            updateAccountFields(report.report_type);
-            
-            document.getElementById('entityType').value = report.entity_type;
-            const changeEvent = new Event('change');
-            document.getElementById('entityType').dispatchEvent(changeEvent);
-            
-            setTimeout(() => {
-                document.getElementById('entityId').value = report.entity_id;
-            }, 500);
-            
-            document.getElementById('problemType').value = report.problem_type;
-            document.getElementById('complaintDetails').value = report.complaint_details || '';
-            document.getElementById('actionTaken').value = report.action_taken || '';
-            document.getElementById('technicianNotes').value = report.technician_notes || '';
-            document.getElementById('referenceType').value = report.reference_type || '';
-            document.getElementById('referenceNumber').value = report.reference_number || '';
-            document.getElementById('referenceDate').value = report.reference_date || '';
-            
-            if (report.priority === 'high') {
-                document.getElementById('priorityHigh').checked = true;
-                selectPriority('high');
-            } else if (report.priority === 'medium') {
-                document.getElementById('priorityMedium').checked = true;
-                selectPriority('medium');
-            } else {
-                document.getElementById('priorityLow').checked = true;
-                selectPriority('low');
-            }
-            
-            document.getElementById('priorityWithTender').checked = report.priority_with_tender || false;
-            if (report.priority_with_tender) {
-                document.getElementById('priorityInfo').style.display = 'block';
-            }
-            
-            // Parse and set account details from JSON if stored
-            if (report.account_details) {
-                try {
-                    const accountDetails = JSON.parse(report.account_details);
-                    // Handle parsing account details
-                } catch(e) {}
-            } else {
-                if (report.report_type === 'water' && report.account_number) {
-                    document.querySelector('#waterAccountsContainer input').value = report.account_number;
-                } else if (report.report_type === 'electricity' && report.account_number) {
-                    document.querySelector('#electricityAccountsContainer input').value = report.account_number;
-                } else if (report.report_type === 'telephone' && report.account_number) {
-                    document.querySelector('#telephoneAccountsContainer input').value = report.account_number;
-                }
-                if (report.meter_number) {
-                    const meterInput = document.createElement('input');
-                    meterInput.type = 'text';
-                    meterInput.className = 'form-control';
-                    meterInput.value = report.meter_number;
-                    meterInput.placeholder = 'Meter Number';
-                    const container = report.report_type === 'water' ? document.querySelector('#waterAccountsContainer .account-entry') : 
-                                      (report.report_type === 'electricity' ? document.querySelector('#electricityAccountsContainer .account-entry') : null);
-                    if (container) {
-                        const button = container.querySelector('button');
-                        container.insertBefore(meterInput, button);
-                        button.disabled = true;
-                        button.textContent = '+ Meter (Added)';
-                    }
-                }
-                if (report.phone_number && report.report_type === 'telephone') {
-                    const phoneInput = document.createElement('input');
-                    phoneInput.type = 'text';
-                    phoneInput.className = 'form-control';
-                    phoneInput.value = report.phone_number;
-                    phoneInput.placeholder = 'Phone Number';
-                    const container = document.querySelector('#telephoneAccountsContainer .account-entry');
-                    if (container) {
-                        const button = container.querySelector('button');
-                        container.insertBefore(phoneInput, button);
-                        button.disabled = true;
-                        button.textContent = '+ Number (Added)';
-                    }
-                }
-            }
-            
-            uploadedImages = report.images || [];
-            const previewContainer = document.getElementById('imagePreviewContainer');
-            previewContainer.innerHTML = '';
-            uploadedImages.forEach(imgUrl => {
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'image-preview-container';
-                previewDiv.setAttribute('data-image-url', imgUrl);
-                previewDiv.innerHTML = `<img src="${imgUrl}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Image+Not+Found'"><button type="button" class="remove-image-btn" onclick="removeImage('${imgUrl}')">×</button>`;
-                previewContainer.appendChild(previewDiv);
-            });
-            
-        } catch (error) {
-            console.error('Error loading report for edit:', error);
-            if (window.showToast) window.showToast('Error loading report', 'error');
-        }
-    }
-    
+
     document.getElementById('reportForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         if (isUploading) {
-            if (window.showToast) window.showToast('Please wait for image uploads to complete', 'error');
+            alert('Please wait for image uploads to complete');
             return;
         }
         
@@ -940,22 +803,16 @@
         const problemType = document.getElementById('problemType').value;
         const complaintDetails = document.getElementById('complaintDetails').value;
         
-        if (!entityType || !entityId) { if (window.showToast) window.showToast('Please select entity type and name', 'error'); return; }
-        if (!problemType) { if (window.showToast) window.showToast('Please select a problem type', 'error'); return; }
-        if (!complaintDetails) { if (window.showToast) window.showToast('Please provide complaint details', 'error'); return; }
+        if (!entityType || !entityId) { alert('Please select entity type and name'); return; }
+        if (!problemType) { alert('Please select a problem type'); return; }
+        if (!complaintDetails) { alert('Please provide complaint details'); return; }
         
         let priority = 'medium';
         if (document.getElementById('priorityLow').checked) priority = 'low';
-        if (document.getElementById('priorityMedium').checked) priority = 'medium';
         if (document.getElementById('priorityHigh').checked) priority = 'high';
         
         const accountData = getAllAccountData();
-        
-        // For backward compatibility, also set single account fields
-        let accountNumber = '';
-        let meterNumber = '';
-        let phoneNumber = '';
-        let numberOfLines = null;
+        let accountNumber = '', meterNumber = '', phoneNumber = '', numberOfLines = null;
         
         if (reportType === 'water' && accountData.water_accounts.length > 0) {
             accountNumber = accountData.water_accounts[0].account_number;
@@ -1006,20 +863,19 @@
                     body: JSON.stringify(reportData)
                 });
             }
-            
             const data = await response.json();
             if (data.success) {
-                if (window.showToast) window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
+                alert(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                if (window.showToast) window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
+                alert(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'));
             }
         } catch (error) {
             console.error('Submit error:', error);
-            if (window.showToast) window.showToast(isEditMode ? 'Error updating report' : 'Error submitting report', 'error');
+            alert('Error submitting report');
         }
     });
-    
+
     document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
     const priorityHidden = document.createElement('input');
     priorityHidden.type = 'hidden';
@@ -1029,19 +885,15 @@
     document.querySelectorAll('input[name="priorityRadio"]').forEach(radio => {
         radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
     });
-    
+
     async function init() {
         setReportDateTime();
         await getCurrentTechnician();
         updateAccountFields('water');
-        
-        if (isEditMode) {
-            await loadReportForEdit(editReportId);
-        }
+        document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
     }
     init();
-    
-    // Make functions global
+
     window.addWaterAccountField = addWaterAccountField;
     window.addWaterMeterField = addWaterMeterField;
     window.addElectricityAccountField = addElectricityAccountField;
