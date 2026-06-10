@@ -57,6 +57,14 @@
     }
     .status-pending { background-color: #fff3cd; color: #856404; }
     .status-acknowledged { background-color: #d4edda; color: #155724; }
+    .checked-badge {
+        background-color: #17a2b8;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        display: inline-block;
+    }
     .filter-select {
         width: 100%;
         padding: 8px;
@@ -112,12 +120,46 @@
         color: #999;
         margin-left: 10px;
     }
+    .btn-add-comment {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 5px;
+        font-size: 12px;
+    }
+    .btn-acknowledge {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 5px;
+    }
+    
+    @media print {
+        .no-print, .navbar, footer, .filter-card, .stats-badge, 
+        .btn, .btn-primary, .btn-warning, .btn-danger, .btn-secondary,
+        .modal-footer button, .modal-header .btn-close {
+            display: none !important;
+        }
+        body {
+            background: white;
+            padding: 0;
+            margin: 0;
+        }
+        .card, .report-card, .modal-content {
+            box-shadow: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-archive"></i> All Reports</h2>
+    <h2><i class="bi bi-archive"></i> All Technical Reports</h2>
     <div class="stats-badge">
-        <i class="bi bi-envelope"></i> Pending Review: <span id="pendingCount">0</span>
+        <i class="bi bi-file-text"></i> Total: <span id="totalCount">0</span>
     </div>
 </div>
 
@@ -136,7 +178,7 @@
             <label class="form-label fw-bold">Status</label>
             <select class="filter-select" id="filterStatus" onchange="loadReports()">
                 <option value="all">All Status</option>
-                <option value="pending">⏳ Pending Review</option>
+                <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
@@ -162,7 +204,7 @@
     </div>
 </div>
 
-<!-- Hidden iframe for printing (no preview window) -->
+<!-- Hidden iframe for printing -->
 <iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
 <!-- Report Detail Modal -->
@@ -177,9 +219,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="printReport()">
-                    <i class="bi bi-printer"></i> Print / Save as PDF
+                    <i class="bi bi-printer"></i> Print
                 </button>
                 <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
+                <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
+                <button type="button" class="btn btn-success" id="acknowledgeBtn" onclick="showAcknowledgeModal()" style="display: none;">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -204,11 +248,31 @@
     </div>
 </div>
 
+<!-- Add Comment Modal -->
+<div class="modal fade" id="commentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitComment()">Add Comment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentReport = null;
     let currentReportId = null;
     let isTeamLeader = false;
     let currentUser = null;
+    let currentTechnicianId = null;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -231,9 +295,27 @@
         return div.innerHTML;
     }
     
+    // ============ CLEAN TEXT FUNCTION - REMOVES NONNULLABLE ============
+    function cleanText(text) {
+        if (!text) return '';
+        let cleaned = String(text);
+        cleaned = cleaned.replace(/NonNullable/gi, '');
+        cleaned = cleaned.replace(/Non-Nullable/gi, '');
+        cleaned = cleaned.replace(/null/gi, '');
+        cleaned = cleaned.replace(/undefined/gi, '');
+        return cleaned.trim();
+    }
+    
     function checkUserRole() {
         currentUser = window.getCurrentUser();
         isTeamLeader = currentUser && currentUser.isAuthorized === true;
+        currentTechnicianId = currentUser ? currentUser.id : null;
+    }
+    
+    function getImageUrl(imgPath) {
+        if (!imgPath) return '';
+        if (imgPath.startsWith('http')) return imgPath;
+        return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
     }
     
     async function loadTechniciansForFilter() {
@@ -260,7 +342,10 @@
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading reports...</p></div>';
         
         try {
-            const response = await fetch('/api/technical-reports');
+            let url = '/api/technical-reports';
+            if (type !== 'all') url += `?type=${type}`;
+            
+            const response = await fetch(url);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -269,23 +354,15 @@
             let reports = await response.json();
             if (!reports) reports = [];
             
-            if (type !== 'all') {
-                reports = reports.filter(r => r.report_type === type);
-            }
             if (technicianId !== 'all') {
                 reports = reports.filter(r => r.technician_id == technicianId);
             }
             if (status !== 'all') {
-                if (status === 'pending') {
-                    reports = reports.filter(r => !r.team_leader_acknowledged);
-                }
-                if (status === 'acknowledged') {
-                    reports = reports.filter(r => r.team_leader_acknowledged);
-                }
+                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
+                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
             }
             
-            const pendingCount = reports.filter(r => !r.team_leader_acknowledged).length;
-            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('totalCount').textContent = reports.length;
             
             if (reports.length === 0) {
                 container.innerHTML = `
@@ -320,8 +397,9 @@
             const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const priorityClass = `priority-${report.priority}`;
             const isAcknowledged = report.team_leader_acknowledged;
-            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
+            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
+            const isChecked = report.checked_by_assistant === true;
             
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
@@ -330,6 +408,7 @@
                             <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span>
                             <span class="priority-badge ${priorityClass} ms-2">${report.priority.toUpperCase()}</span>
                             ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">🔴 TENDER</span>' : ''}
+                            ${isChecked ? `<span class="checked-badge ms-2"><i class="bi bi-eye"></i> Checked</span>` : ''}
                         </div>
                         <div>
                             <span class="status-badge ${statusClass}">${statusText}</span>
@@ -343,7 +422,7 @@
                             <div class="text-muted small mt-1">${escapeHtml((report.complaint_details || '').substring(0, 100))}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
                         </div>
                         <div class="col-md-4 text-end">
-                            <div><i class="bi bi-person"></i> Submitted by: <strong>${escapeHtml(report.technician_name || 'Unknown')}</strong></div>
+                            <div><i class="bi bi-person"></i> ${escapeHtml(report.technician_name || 'Unknown')}</div>
                             <div class="small text-muted"><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
                             ${report.action_taken ? `<div class="small text-success"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
                         </div>
@@ -361,10 +440,21 @@
             currentReport = reports.find(r => r.id === id);
             if (currentReport) {
                 displayReportModal();
+                
                 const editBtn = document.getElementById('editBtn');
-                if (editBtn) {
-                    editBtn.style.display = currentReport.team_leader_acknowledged ? 'none' : 'inline-block';
+                const deleteBtn = document.getElementById('deleteBtn');
+                const acknowledgeBtn = document.getElementById('acknowledgeBtn');
+                
+                const isCreator = currentReport.technician_id == currentTechnicianId;
+                const canEditDelete = isCreator && !currentReport.team_leader_acknowledged;
+                
+                if (editBtn) editBtn.style.display = canEditDelete ? 'inline-block' : 'none';
+                if (deleteBtn) deleteBtn.style.display = canEditDelete ? 'inline-block' : 'none';
+                
+                if (acknowledgeBtn) {
+                    acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
+                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -374,14 +464,15 @@
     
     function displayReportModal() {
         const report = currentReport;
-        const priorityClass = `priority-${report.priority}`;
-        const typeClass = `type-${report.report_type}`;
         const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+        const typeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
+        const priorityClass = `priority-${report.priority}`;
         const isAcknowledged = report.team_leader_acknowledged;
+        const isChecked = report.checked_by_assistant === true;
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${img}" class="image-preview" onclick="window.open('${img}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
@@ -396,36 +487,71 @@
             acknowledgmentHtml = `<div class="alert alert-warning mt-3"><button class="btn btn-success w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
         }
         
+        let assistantCheckHtml = '';
+        if (isChecked) {
+            assistantCheckHtml = `<div class="alert alert-info mt-2"><i class="bi bi-eye"></i> <strong>Checked by Assistant Team Leader</strong><br>By: ${escapeHtml(report.checked_by_assistant_name)}<br>Date: ${formatDate(report.checked_by_assistant_at)}</div>`;
+        }
+        
         const html = `
             <div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Report #:</strong> ${report.utility_number || report.id}<br>
-                        <strong>Type:</strong> <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span><br>
-                        <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
-                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
-                        <strong>Technician:</strong> ${escapeHtml(report.technician_name || 'Unknown')}<br>
-                        <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
-                    </div>
+                <div class="alert alert-info">
+                    <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
+                    Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
-                <hr>
-                <h6>Problem / Issue</h6>
-                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
-                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
-                ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
-                ${report.technician_notes ? `<h6>Technician's Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
+                <div class="row mb-2"><div class="col-4 fw-bold">Entity:</div><div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div></div>
+                ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
+                ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
+                ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
+                <div class="row mb-2"><div class="col-4 fw-bold">Problem Type:</div><div class="col-8">${escapeHtml(report.problem_type)}</div></div>
+                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div></div>
+                <div class="row mb-2"><div class="col-4 fw-bold">Complaint Details:</div><div class="col-8">${escapeHtml(report.complaint_details)}</div></div>
+                ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
+                ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
+                <div class="row mb-2"><div class="col-4 fw-bold">Submitted By:</div><div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div></div>
+                ${assistantCheckHtml}
+                ${acknowledgmentHtml}
                 ${imagesHtml}
                 ${commentsHtml}
-                ${acknowledgmentHtml}
+                <div class="mt-3"><button class="btn btn-sm btn-secondary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
         document.getElementById('modalBody').innerHTML = html;
     }
     
+    function showAddCommentModal() { 
+        document.getElementById('newComment').value = ''; 
+        new bootstrap.Modal(document.getElementById('commentModal')).show(); 
+    }
+    
+    async function submitComment() {
+        const comment = document.getElementById('newComment').value;
+        const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
+        if (!comment.trim()) return window.showToast('Enter a comment', 'error');
+        try {
+            let comments = currentReport.comments || [];
+            comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ comments: comments }) 
+            });
+            const data = await response.json();
+            if (data.success) { 
+                window.showToast('Comment added'); 
+                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); 
+                openReportDetail(currentReportId); 
+            }
+        } catch (error) { 
+            window.showToast('Error', 'error'); 
+        }
+    }
+    
     function showAcknowledgeModal() { 
+        if (!isTeamLeader) {
+            window.showToast('Only Team Leaders can acknowledge reports', 'error');
+            return;
+        }
         document.getElementById('acknowledgeComment').value = ''; 
         new bootstrap.Modal(document.getElementById('acknowledgeModal')).show(); 
     }
@@ -455,31 +581,45 @@
     
     function editReport() { 
         if (currentReportId) {
+            if (currentReport && currentReport.technician_id != currentTechnicianId) {
+                window.showToast('You can only edit your own reports', 'error');
+                return;
+            }
             if (currentReport && currentReport.team_leader_acknowledged) {
                 window.showToast('This report has already been acknowledged and cannot be edited', 'error');
                 return;
             }
             window.location.href = `/new-report?id=${currentReportId}`;
-        } else if (currentReport && currentReport.id) {
-            if (currentReport.team_leader_acknowledged) {
-                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
-                return;
-            }
-            window.location.href = `/new-report?id=${currentReport.id}`;
         } else {
             window.showToast('No report selected', 'error');
         }
     }
     
-    function cleanText(text) {
-        if (!text) return '';
-        let cleaned = String(text);
-        cleaned = cleaned.replace(/NonNullable/gi, '');
-        cleaned = cleaned.replace(/Non-Nullable/gi, '');
-        cleaned = cleaned.replace(/null/gi, '');
-        return cleaned.trim();
+    async function deleteReport() {
+        if (!currentReportId) return;
+        
+        if (currentReport && currentReport.technician_id != currentTechnicianId) {
+            window.showToast('You can only delete your own reports', 'error');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
+        try {
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) { 
+                window.showToast('Report deleted'); 
+                bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); 
+                loadReports(); 
+            } else { 
+                window.showToast(data.error || 'Cannot delete', 'error'); 
+            }
+        } catch (error) { 
+            window.showToast('Error deleting', 'error'); 
+        }
     }
     
+    // ============ FIXED PRINT FUNCTION WITH cleanText ============
     function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
@@ -490,17 +630,14 @@
         
         fetch(`/api/technical-reports/${report.id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
         
-        // Get the print HTML
         const printHtml = getPrintHTML(report);
         
-        // Use hidden iframe to print directly (no preview window)
         const iframe = document.getElementById('printIframe');
         const iframeDoc = iframe.contentWindow.document;
         iframeDoc.open();
         iframeDoc.write(printHtml);
         iframeDoc.close();
         
-        // Print from iframe - this opens the print dialog directly
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
     }
@@ -510,8 +647,9 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
+        // CLEAN ALL TEXT FIELDS - REMOVES NonNullable
         let complaintDetails = cleanText(report.complaint_details || '-');
-        let actionTaken = cleanText(report.action_taken || '-');
+        let actionTaken = cleanText(report.action_taken || '');
         let technicianNotes = cleanText(report.technician_notes || '');
         let teamLeaderNotes = cleanText(report.team_leader_notes || '');
         let accountNumber = cleanText(report.account_number || '');
@@ -523,11 +661,13 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
-        if (complaintDetails.includes('\n')) {
+        // Format multiline text
+        if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
-        if (actionTaken.includes('\n')) {
+        if (actionTaken && actionTaken.includes('\n')) {
             actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
         
@@ -548,6 +688,11 @@
                 commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
+        }
+        
+        let assistantCheckHtml = '';
+        if (report.checked_by_assistant) {
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -587,36 +732,64 @@
                     <div class="divider"></div><div class="sub-divider"></div>
                     <h3 style="margin-top:12px;font-size:13pt;">Technical Report System - ${reportTypeName}</h3>
                 </div>
+                
                 <div class="report-id">
                     <div><strong>Report ID:</strong> #${report.id}</div>
                     <div><strong>Date:</strong> ${formatDate(report.created_at)}</div>
                     <div><strong>Type:</strong> ${reportTypeName} ${reportTypeIcon}</div>
                     <div><strong>Status:</strong> ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}</div>
                 </div>
+                
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}NonNullable
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}NonNullable` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}NonNullable` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}NonNullable` : ''}
-                    ${report.reference_number ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}NonNullable` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}NonNullable
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}NonNullable
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}NonNullable
-                    ${technicianNotes ? `</tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}NonNullable` : ''}
-                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}NonNullable` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}NonNullable
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}NonNullable` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}NonNullable` : ''}
-                </table>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
+                    </tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
+                    </tr>
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
+                    </tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
+                    </tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
+                    </tr>
+                    ${technicianNotes ? `<td><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
+                    </tr>
+                    ${assistantCheckHtml}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                }</table>
+                
                 ${imagesHtml}
                 ${commentsHtml}
+                
                 <div class="signatures">
-                    <div class="signature-box"><div class="signature-line"></div><div><strong>Technician's Signature</strong></div><div>Name: ${escapeHtml(technicianName)}</div><div>Date: ${formatDateOnly(new Date())}</div></div>
-                    <div class="signature-box"><div class="signature-line"></div><div><strong>Team Leader's Signature</strong></div><div>Name: ${report.team_leader_acknowledged ? escapeHtml(teamLeaderName) : '_________________'}</div><div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div></div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Technician's Signature</strong></div>
+                        <div>Name: ${escapeHtml(technicianName)}</div>
+                        <div>Date: ${formatDateOnly(new Date())}</div>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <div><strong>Team Leader's Signature</strong></div>
+                        <div>Name: ${report.team_leader_acknowledged ? escapeHtml(teamLeaderName) : '_________________'}</div>
+                        <div>Date: ${report.team_leader_acknowledged ? formatDateOnly(report.team_leader_acknowledged_at) : '_________________'}</div>
+                    </div>
                 </div>
-                <div class="footer"><p>This is an official technical report from Unit Kemudahan Asas, Ministry of Education,Brunei Darussalam.</p><p>Printed on: ${currentDate}</p></div>
+                
+                <div class="footer">
+                    <p>This is an official technical report from Unit Kemudahan Asas, Ministry of Education, Brunei Darussalam.</p>
+                    <p>Printed on: ${currentDate}</p>
+                </div>
             </div>
+            <script>
+                window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 1000); };
+            <\/script>
         </body>
         </html>`;
     }
