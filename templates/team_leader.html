@@ -83,9 +83,9 @@
                     </tr>
                 </thead>
                 <tbody id="pendingAckTable">
-                    <tr><td colspan="8" class="text-center">Loading reports...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading reports...</td>
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -112,9 +112,9 @@
                     </tr>
                 </thead>
                 <tbody id="unacknowledgedTable">
-                    <tr><td colspan="8" class="text-center">Loading reports...</td></tr>
+                    <tr><td colspan="8" class="text-center">Loading reports...</td>
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -225,31 +225,42 @@
         return div.innerHTML;
     }
     
-    async function checkAuthorization() {
+    // ============ FIXED: Check authorization directly from localStorage ============
+    function checkAuthorization() {
+        // Get user from localStorage (set during login)
         const user = window.getCurrentUser();
-        console.log('Team Leader - Current User:', user);
+        console.log('Team Leader - Current User from localStorage:', user);
         
+        // Check if user is authorized (Team Leader)
         if (user && user.id) {
-            try {
-                const response = await fetch(`/api/technicians/${user.id}/authorization`);
-                const data = await response.json();
-                isAuthorizedUser = data.authorized;
-                const authStatus = document.getElementById('authStatus');
-                if (isAuthorizedUser) {
-                    authStatus.innerHTML = '✓ Authorized Team Leader';
-                    authStatus.classList.add('bg-success');
-                    authStatus.classList.remove('bg-primary');
-                } else {
-                    authStatus.innerHTML = '👁️ View Only Mode';
-                    authStatus.classList.add('bg-secondary');
-                    authStatus.classList.remove('bg-primary');
-                }
-            } catch (error) {
-                console.error('Error checking authorization:', error);
-                isAuthorizedUser = false;
+            // Use the isAuthorized flag from localStorage (set during login)
+            // This matches the "Authorized Team Leader" checkbox in technicians management
+            isAuthorizedUser = user.isAuthorized === true;
+            
+            const authStatus = document.getElementById('authStatus');
+            if (isAuthorizedUser) {
+                authStatus.innerHTML = '✓ Authorized Team Leader';
+                authStatus.classList.add('bg-success');
+                authStatus.classList.remove('bg-primary');
+                console.log('User IS authorized as Team Leader - Acknowledge buttons will appear');
+            } else {
+                authStatus.innerHTML = '👁️ View Only Mode';
+                authStatus.classList.add('bg-secondary');
+                authStatus.classList.remove('bg-primary');
+                console.log('User is NOT authorized - Acknowledge buttons hidden');
             }
+        } else {
+            console.log('No user logged in');
+            isAuthorizedUser = false;
+            const authStatus = document.getElementById('authStatus');
+            authStatus.innerHTML = '⚠️ No User Selected';
+            authStatus.classList.add('bg-secondary');
+            authStatus.classList.remove('bg-primary');
         }
+        
+        // Load data after setting authorization
         loadTeamLeaderData();
+        // Auto-refresh every 15 seconds
         setInterval(loadTeamLeaderData, 15000);
     }
     
@@ -272,6 +283,7 @@
             
             console.log('Unacknowledged reports:', unacknowledgedReports.length);
             console.log('High priority unack:', highPriorityUnack.length);
+            console.log('isAuthorizedUser:', isAuthorizedUser);
             
             // Update statistics
             document.getElementById('statTotal').textContent = allReports.length;
@@ -290,21 +302,21 @@
                 notificationBadge.style.display = 'none';
             }
             
-            // Display tables
+            // Display tables (pass isAuthorizedUser to display functions)
             displayPendingAck(highPriorityUnack);
             displayUnacknowledged(unacknowledgedReports);
             
         } catch (error) {
             console.error('Error loading reports:', error);
-            document.getElementById('pendingAckTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td></tr>';
-            document.getElementById('unacknowledgedTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td></tr>';
+            document.getElementById('pendingAckTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td>';
+            document.getElementById('unacknowledgedTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading reports: ' + error.message + '</td>';
         }
     }
     
     function displayPendingAck(reports) {
         const tbody = document.getElementById('pendingAckTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No high priority reports pending</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No high priority reports pending</td>';
             return;
         }
         
@@ -321,15 +333,15 @@
                     ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
                     <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
                     <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
-                </td>
-            </tr>
+                 </td>
+             </tr>
         `).join('');
     }
     
     function displayUnacknowledged(reports) {
         const tbody = document.getElementById('unacknowledgedTable');
         if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No reports pending acknowledgment</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No reports pending acknowledgment</td>';
             return;
         }
         
@@ -346,8 +358,8 @@
                     ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
                     <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
                     <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
-                </td>
-            </tr>
+                 </td>
+             </tr>
         `).join('');
     }
     
@@ -535,21 +547,28 @@
                 
                 <table>
                     <tr><th>Field</th><th>Details</th></tr>
-                    <tr><td><strong>Entity Type</strong></td><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><td><strong>Entity Name</strong></td><td>${escapeHtml(report.entity_name || report.entity_type)}</td></tr>
+                    <tr><td><strong>Entity Type</strong></td><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
+                    </tr>
+                    <tr><td><strong>Entity Name</strong></td><td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                    </tr>
                     ${report.account_number ? `<tr><td><strong>Account Number</strong></td><td>${escapeHtml(report.account_number)}</td></tr>` : ''}
                     ${report.meter_number ? `<tr><td><strong>Meter Number</strong></td><td>${escapeHtml(report.meter_number)}</td></tr>` : ''}
                     ${report.phone_number ? `<tr><td><strong>Phone Number</strong></td><td>${escapeHtml(report.phone_number)}</td></tr>` : ''}
-                    <tr><td><strong>Problem Type</strong></td><td>${escapeHtml(report.problem_type || '-')}</td></tr>
-                    <tr><td><strong>Priority</strong></td><td class="priority-${report.priority}">${report.priority.toUpperCase()}</td></tr>
-                    <tr><td><strong>Status</strong></td><td>${report.team_leader_acknowledged ? '<span class="badge bg-success">Acknowledged</span>' : '<span class="badge bg-warning">Pending Review</span>'}</td></tr>
-                    <tr><td><strong>Complaint Details</strong></td><td>${escapeHtml(report.complaint_details || '-')}</td></tr>
+                    <tr><td><strong>Problem Type</strong></td><td>${escapeHtml(report.problem_type || '-')}</td>
+                    </tr>
+                    <tr><td><strong>Priority</strong></td><td class="priority-${report.priority}">${report.priority.toUpperCase()}</td>
+                    </tr>
+                    <tr><td><strong>Status</strong></td><td>${report.team_leader_acknowledged ? '<span class="badge bg-success">Acknowledged</span>' : '<span class="badge bg-warning">Pending Review</span>'}</td>
+                    </tr>
+                    <tr><td><strong>Complaint Details</strong></td><td>${escapeHtml(report.complaint_details || '-')}</td>
+                    </tr>
                     ${report.technician_notes ? `<tr><td><strong>Technician's Notes</strong></td><td>${escapeHtml(report.technician_notes)}</td></tr>` : ''}
                     ${report.action_taken ? `<tr><td><strong>Action Taken</strong></td><td>${escapeHtml(report.action_taken)}</td></tr>` : ''}
-                    <tr><td><strong>Submitted By</strong></td><td>${escapeHtml(report.technician_name || 'Unknown')}</td></tr>
+                    <tr><td><strong>Submitted By</strong></td><td>${escapeHtml(report.technician_name || 'Unknown')}</td>
+                    </tr>
                     ${report.team_leader_acknowledged ? `<tr><td><strong>Acknowledged By</strong></td><td>${escapeHtml(report.team_leader_name || 'Team Leader')} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
                     ${report.team_leader_notes ? `<tr><td><strong>Team Leader Notes</strong></td><td>${escapeHtml(report.team_leader_notes)}</td></tr>` : ''}
-                </table>
+                量
                 
                 <div class="signatures">
                     <div class="signature-box">
