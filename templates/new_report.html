@@ -471,7 +471,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     editReportId = urlParams.get('id');
-    isEditMode = editReportId !== null;
+    isEditMode = editReportId !== null && editReportId !== 'null' && editReportId !== '';
     
     if (isEditMode) {
         document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
@@ -675,7 +675,10 @@
             entitySelect.disabled = false;
         } else if (this.value === 'department') {
             const departments = await loadDepartments();
-            entitySelect.innerHTML = '<option value="">Select Department</option>' + departments.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+            entitySelect.innerHTML = '<option value="">Select Department</option>' + departments.map(d => {
+                const displayName = d.unit_name || d.name;
+                return `<option value="${d.id}">${escapeHtml(displayName)}</option>`;
+            }).join('');
             entitySelect.disabled = false;
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
@@ -774,7 +777,7 @@
     }
 
     async function resetForm() {
-        if (confirm('Clear all form data?')) {
+        if (confirm('Clear all form data? Images will need to be re-uploaded.')) {
             document.getElementById('reportForm').reset();
             uploadedImages = [];
             document.getElementById('imagePreviewContainer').innerHTML = '';
@@ -787,6 +790,137 @@
             updateAccountFields('water');
             setReportDateTime();
             alert('Form cleared');
+        }
+    }
+
+    // ============ LOAD EXISTING REPORT FOR EDIT ============
+    async function loadReportForEdit(id) {
+        try {
+            console.log('Loading report for edit:', id);
+            const response = await fetch(`/api/technical-reports`);
+            const reports = await response.json();
+            const report = reports.find(r => r.id == id);
+            
+            if (!report) {
+                window.showToast('Report not found', 'error');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
+                return;
+            }
+            
+            // Check if report is acknowledged - prevent editing
+            if (report.team_leader_acknowledged) {
+                window.showToast('This report has already been acknowledged and cannot be edited', 'error');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
+                return;
+            }
+            
+            // Check if current user is the creator
+            const currentUser = window.getCurrentUser();
+            if (currentUser && currentUser.id && report.technician_id != currentUser.id) {
+                window.showToast('You can only edit your own reports', 'error');
+                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
+                return;
+            }
+            
+            console.log('Report loaded:', report);
+            
+            // Set report type
+            document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
+            updateAccountFields(report.report_type);
+            
+            // Set entity type and load entities
+            document.getElementById('entityType').value = report.entity_type;
+            const changeEvent = new Event('change');
+            document.getElementById('entityType').dispatchEvent(changeEvent);
+            
+            // Wait for entity list to load, then set value
+            setTimeout(() => {
+                if (report.entity_id) {
+                    document.getElementById('entityId').value = report.entity_id;
+                }
+            }, 500);
+            
+            // Set form fields
+            document.getElementById('problemType').value = report.problem_type || '';
+            document.getElementById('complaintDetails').value = report.complaint_details || '';
+            document.getElementById('actionTaken').value = report.action_taken || '';
+            document.getElementById('technicianNotes').value = report.technician_notes || '';
+            document.getElementById('referenceType').value = report.reference_type || '';
+            document.getElementById('referenceNumber').value = report.reference_number || '';
+            document.getElementById('referenceDate').value = report.reference_date || '';
+            
+            // Set priority
+            if (report.priority === 'high') {
+                document.getElementById('priorityHigh').checked = true;
+                selectPriority('high');
+            } else if (report.priority === 'medium') {
+                document.getElementById('priorityMedium').checked = true;
+                selectPriority('medium');
+            } else {
+                document.getElementById('priorityLow').checked = true;
+                selectPriority('low');
+            }
+            
+            document.getElementById('priorityWithTender').checked = report.priority_with_tender || false;
+            if (report.priority_with_tender) {
+                document.getElementById('priorityInfo').style.display = 'block';
+                document.getElementById('priority').disabled = true;
+            }
+            
+            // Set account details based on report type
+            if (report.report_type === 'water') {
+                if (report.account_number) {
+                    const waterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_account_number[]"]');
+                    if (waterInput) waterInput.value = report.account_number;
+                }
+                if (report.meter_number) {
+                    const meterBtn = document.querySelector('#waterAccountsContainer .account-entry .btn-add-account');
+                    if (meterBtn) addWaterMeterField(meterBtn);
+                    const meterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_meter_number[]"]');
+                    if (meterInput) meterInput.value = report.meter_number;
+                }
+            } else if (report.report_type === 'electricity') {
+                if (report.account_number) {
+                    const elecInput = document.querySelector('#electricityAccountsContainer .account-entry input[name="electricity_account_number[]"]');
+                    if (elecInput) elecInput.value = report.account_number;
+                }
+                if (report.meter_number) {
+                    const meterBtn = document.querySelector('#electricityAccountsContainer .account-entry .btn-add-account');
+                    if (meterBtn) addElectricityMeterField(meterBtn);
+                    const meterInput = document.querySelector('#electricityAccountsContainer .account-entry input[name="electricity_meter_number[]"]');
+                    if (meterInput) meterInput.value = report.meter_number;
+                }
+            } else if (report.report_type === 'telephone') {
+                if (report.account_number) {
+                    const telInput = document.querySelector('#telephoneAccountsContainer .account-entry input[name="telephone_account_number[]"]');
+                    if (telInput) telInput.value = report.account_number;
+                }
+                if (report.phone_number) {
+                    const phoneBtn = document.querySelector('#telephoneAccountsContainer .account-entry .btn-add-account');
+                    if (phoneBtn) addTelephoneNumberField(phoneBtn);
+                    const phoneInput = document.querySelector('#telephoneAccountsContainer .account-entry input[name="telephone_number[]"]');
+                    if (phoneInput) phoneInput.value = report.phone_number;
+                }
+            }
+            
+            // Load existing images
+            uploadedImages = report.images || [];
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            previewContainer.innerHTML = '';
+            uploadedImages.forEach(imgUrl => {
+                const fullImgUrl = getFullImageUrl(imgUrl);
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview-container';
+                previewDiv.setAttribute('data-image-url', imgUrl);
+                previewDiv.innerHTML = `<img src="${fullImgUrl}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Image+Not+Found'"><button type="button" class="remove-image-btn" onclick="removeImage('${imgUrl}')">×</button>`;
+                previewContainer.appendChild(previewDiv);
+            });
+            
+            window.showToast('Report loaded for editing', 'success');
+            
+        } catch (error) {
+            console.error('Error loading report for edit:', error);
+            window.showToast('Error loading report: ' + error.message, 'error');
         }
     }
 
@@ -865,14 +999,14 @@
             }
             const data = await response.json();
             if (data.success) {
-                alert(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
+                window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                alert(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'));
+                window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
             }
         } catch (error) {
             console.error('Submit error:', error);
-            alert('Error submitting report');
+            window.showToast('Error submitting report', 'error');
         }
     });
 
@@ -891,6 +1025,10 @@
         await getCurrentTechnician();
         updateAccountFields('water');
         document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+        
+        if (isEditMode && editReportId) {
+            await loadReportForEdit(editReportId);
+        }
     }
     init();
 
