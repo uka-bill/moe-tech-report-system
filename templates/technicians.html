@@ -124,6 +124,14 @@
         font-size: 11px;
         font-weight: 500;
     }
+    .assistant-badge {
+        background-color: #6c757d;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
     .permission-note {
         background-color: #fff3cd;
         border-left: 4px solid #ffc107;
@@ -206,18 +214,19 @@
                         <th>Role</th>
                         <th>Specializations</th>
                         <th>Authorized</th>
-                        <th>Can Edit Techs</th>
+                        <th>Can Edit</th>
+                        <th>Assistant</th>
                         <th>Phone</th>
                         <th>Email</th>
                         <th style="width: 140px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="techniciansTable">
-                    <tr><td colspan="10" class="text-center">
+                    <tr><td colspan="11" class="text-center">
                         <div class="spinner-border text-primary" role="status"></div> Loading technicians...
-                    </td>
+                    </td
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -270,6 +279,13 @@
                             <label class="form-check-label fw-bold">Can Edit Technicians</label>
                         </div>
                         <small class="text-muted">Can add/edit/delete technicians</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isAssistantLeader">
+                            <label class="form-check-label fw-bold">👥 Assistant Team Leader</label>
+                        </div>
+                        <small class="text-muted">Can mark reports as "Checked" (read/view verification) but cannot acknowledge</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
@@ -368,7 +384,7 @@
             applyFilter();
         } catch (error) {
             console.error('Error loading technicians:', error);
-            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error loading technicians. Please refresh.</td</tr>';
+            document.getElementById('techniciansTable').innerHTML = '<tr><td colspan="11" class="text-center text-danger">Error loading technicians. Please refresh.</td>';
         }
     }
     
@@ -409,7 +425,7 @@
     function displayTechnicians(technicians) {
         const tbody = document.getElementById('techniciansTable');
         if (!technicians || technicians.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center">No technicians found. Click "Add Technician" to create one.</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center">No technicians found. Click "Add Technician" to create one.</td>';
             return;
         }
         
@@ -424,7 +440,8 @@
             
             const roleBadge = tech.role === 'senior_technician' ? '<span class="role-badge-senior">⭐ Senior Technician</span>' : '<span class="role-badge-tech">👤 Technician</span>';
             const authBadge = tech.is_authorized ? '<span class="authorized-badge">✓ Authorized</span>' : '<span class="unauthorized-badge">✗ Not Authorized</span>';
-            const canEditBadge = tech.can_edit_technicians ? '<span class="can-edit-badge">✓ Can Edit Techs</span>' : '<span class="unauthorized-badge">✗ View Only</span>';
+            const canEditBadge = tech.can_edit_technicians ? '<span class="can-edit-badge">✓ Can Edit</span>' : '<span class="unauthorized-badge">✗ View Only</span>';
+            const assistantBadge = tech.is_assistant_leader ? '<span class="assistant-badge">👥 Assistant Leader</span>' : '<span class="text-muted">-</span>';
             
             // Action buttons - ONLY show if current user is Team Leader
             let actions = '';
@@ -454,7 +471,8 @@
                     <td>${roleBadge}<br><small>${tech.role === 'senior_technician' ? 'Senior' : 'Regular'}</small></td>
                     <td>${specBadges || '<span class="text-muted">-</span>'}<br><small>Qualified Areas</small></td>
                     <td>${authBadge}<br><small>Can Acknowledge</small></td>
-                    <td>${canEditBadge}<br><small>Can Manage Techs</small></td>
+                    <td>${canEditBadge}<br><small>Manage Techs</small></td>
+                    <td>${assistantBadge}<br><small>Can Check Reports</small></td>
                     <td>${escapeHtml(tech.phone || '-')}<br><small>Contact</small></td>
                     <td>${escapeHtml(tech.email || '-')}<br><small>Email</small></td>
                     <td class="text-nowrap">${actions}<br><small>${isTeamLeader ? 'Team Leader Actions' : 'View Only'}</small></td>
@@ -504,7 +522,7 @@
         }
     }
     
-    // ============ EXISTING FUNCTIONS (unchanged) ============
+    // ============ EXISTING FUNCTIONS ============
     
     function showAddTechModal() {
         if (!isTeamLeader) { 
@@ -516,6 +534,7 @@
         document.getElementById('techId').value = '';
         document.getElementById('isAuthorized').checked = false;
         document.getElementById('canEditTechnicians').checked = false;
+        document.getElementById('isAssistantLeader').checked = false;
         document.querySelectorAll('.spec-checkbox').forEach(cb => cb.checked = false);
         const nextNum = String(allTechnicians.length + 1).padStart(3, '0');
         document.getElementById('employeeId').value = `TECH${nextNum}`;
@@ -538,6 +557,7 @@
             document.getElementById('techEmail').value = tech.email || '';
             document.getElementById('isAuthorized').checked = tech.is_authorized || false;
             document.getElementById('canEditTechnicians').checked = tech.can_edit_technicians || false;
+            document.getElementById('isAssistantLeader').checked = tech.is_assistant_leader || false;
             document.getElementById('techPassword').value = '';
             
             let specs = tech.specializations;
@@ -574,6 +594,7 @@
             specializations: specializations,
             is_authorized: document.getElementById('isAuthorized').checked,
             can_edit_technicians: document.getElementById('canEditTechnicians').checked,
+            is_assistant_leader: document.getElementById('isAssistantLeader').checked,
             phone: document.getElementById('techPhone').value.trim(),
             email: document.getElementById('techEmail').value.trim(),
             password: password || null
@@ -599,6 +620,17 @@
                 if (window.showToast) window.showToast(id ? 'Technician updated successfully' : 'Technician added successfully');
                 bootstrap.Modal.getInstance(document.getElementById('techModal')).hide();
                 loadTechnicians();
+                
+                // If editing own account, update localStorage
+                const currentUserId = localStorage.getItem('userId');
+                if (id && parseInt(id) === parseInt(currentUserId)) {
+                    localStorage.setItem('isAuthorized', data.is_authorized);
+                    localStorage.setItem('canEditTechnicians', data.can_edit_technicians);
+                    localStorage.setItem('isAssistantLeader', data.is_assistant_leader);
+                    localStorage.setItem('userRole', data.role);
+                    localStorage.setItem('userName', data.name);
+                    document.getElementById('currentUserName').textContent = data.name;
+                }
             } else {
                 if (window.showToast) window.showToast(result.error || 'Failed to save', 'error');
             }
