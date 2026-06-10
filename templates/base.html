@@ -312,6 +312,21 @@
             display: flex;
             gap: 8px;
         }
+        
+        /* Change Password Modal specific styles */
+        .password-strength {
+            height: 4px;
+            margin-top: 5px;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .strength-weak { background-color: #dc3545; width: 25%; }
+        .strength-medium { background-color: #ffc107; width: 50%; }
+        .strength-strong { background-color: #28a745; width: 75%; }
+        .strength-very-strong { background-color: #17a2b8; width: 100%; }
+        .password-match { font-size: 12px; margin-top: 5px; }
+        .match-success { color: #28a745; }
+        .match-error { color: #dc3545; }
     </style>
 </head>
 <body>
@@ -381,6 +396,7 @@
                                 </div>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="showChangePasswordModal()"><i class="bi bi-key"></i> Change Password</a></li>
                             <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
                         </ul>
                     </li>
@@ -403,6 +419,7 @@
         </small>
     </footer>
     
+    <!-- Password Modal for Login -->
     <div class="modal fade" id="passwordModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -421,6 +438,46 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="verifyPassword()">Unlock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key"></i> Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 36px; color: var(--primary-color);"></i>
+                        <h6 id="changePwdUserName" class="mt-2">Loading...</h6>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" placeholder="Enter current password">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="Enter new password" onkeyup="checkPasswordStrength()">
+                        <div id="passwordStrength" class="password-strength"></div>
+                        <small class="text-muted">Minimum 6 characters</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm new password" onkeyup="checkPasswordMatch()">
+                        <div id="passwordMatchMsg" class="password-match"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="submitChangePassword()">Change Password</button>
                 </div>
             </div>
         </div>
@@ -529,6 +586,130 @@
             const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
             bsToast.show();
             toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+        
+        // ============ CHANGE PASSWORD FUNCTIONS ============
+        
+        function showChangePasswordModal() {
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            
+            if (!userId || !userName) {
+                showToast('Please login first', 'error');
+                return;
+            }
+            
+            document.getElementById('changePwdUserName').textContent = userName;
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordStrength').className = 'password-strength';
+            document.getElementById('passwordMatchMsg').innerHTML = '';
+            
+            new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+        }
+        
+        function checkPasswordStrength() {
+            const password = document.getElementById('newPassword').value;
+            const strengthDiv = document.getElementById('passwordStrength');
+            
+            if (!password) {
+                strengthDiv.className = 'password-strength';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            strengthDiv.className = 'password-strength';
+            if (strength <= 1) {
+                strengthDiv.classList.add('strength-weak');
+            } else if (strength <= 3) {
+                strengthDiv.classList.add('strength-medium');
+            } else if (strength <= 4) {
+                strengthDiv.classList.add('strength-strong');
+            } else {
+                strengthDiv.classList.add('strength-very-strong');
+            }
+            
+            checkPasswordMatch();
+        }
+        
+        function checkPasswordMatch() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const matchMsg = document.getElementById('passwordMatchMsg');
+            
+            if (!confirmPassword) {
+                matchMsg.innerHTML = '';
+                return;
+            }
+            
+            if (newPassword === confirmPassword) {
+                matchMsg.innerHTML = '<i class="bi bi-check-circle"></i> Passwords match';
+                matchMsg.className = 'password-match match-success';
+            } else {
+                matchMsg.innerHTML = '<i class="bi bi-exclamation-circle"></i> Passwords do not match';
+                matchMsg.className = 'password-match match-error';
+            }
+        }
+        
+        async function submitChangePassword() {
+            const userId = localStorage.getItem('userId');
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!currentPassword) {
+                showToast('Please enter current password', 'error');
+                return;
+            }
+            
+            if (!newPassword) {
+                showToast('Please enter new password', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showToast('New password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('New passwords do not match', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/technicians/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        technician_id: parseInt(userId),
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Password changed successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    showToast(result.error || 'Failed to change password', 'error');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showToast('Error changing password', 'error');
+            }
         }
         
         window.getCurrentUser = () => ({
