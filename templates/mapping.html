@@ -575,8 +575,7 @@
                 const img = new Image();
                 img.src = event.target.result;
                 img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
+                    let width = img.width, height = img.height;
                     if (width > height) {
                         if (width > maxWidth) {
                             height = Math.round(height * (maxWidth / width));
@@ -782,15 +781,19 @@
         return accountData;
     }
 
+    // ============ UPDATED: Show unit_name for departments instead of name ============
     async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
         if (!currentEntityType) {
             document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-muted">Select entity type first</div>';
             return;
         }
+        
         try {
             const response = await fetch(`/api/${currentEntityType}s`);
-            entitiesList = await response.json();
+            const data = await response.json();
+            entitiesList = data;
+            console.log('Loaded entities:', entitiesList);
             displayEntityList(entitiesList);
         } catch (error) {
             console.error('Error loading entities:', error);
@@ -798,35 +801,56 @@
         }
     }
 
+    // ============ UPDATED: For departments, show unit_name instead of name ============
     function displayEntityList(entities) {
         const container = document.getElementById('entityList');
         if (!entities || entities.length === 0) {
             container.innerHTML = '<div class="text-center py-3 text-muted">No entities found</div>';
             return;
         }
-        container.innerHTML = entities.map(entity => `
-            <div class="entity-item" data-id="${entity.id}" data-name="${escapeHtml(entity.name)}" onclick="selectEntity(${entity.id}, '${escapeHtml(entity.name)}')">
-                <strong>${escapeHtml(entity.name)}</strong>
-                ${entity.address ? `<br><small class="text-muted">${escapeHtml(entity.address)}</small>` : ''}
-            </div>
-        `).join('');
+        
+        container.innerHTML = entities.map(entity => {
+            // For departments, use unit_name as the display name
+            let displayName = entity.name;
+            if (currentEntityType === 'department' && entity.unit_name) {
+                displayName = entity.unit_name;
+            }
+            
+            return `
+                <div class="entity-item" data-id="${entity.id}" data-name="${escapeHtml(displayName)}" onclick="selectEntity(${entity.id}, '${escapeHtml(displayName)}')">
+                    <strong>${escapeHtml(displayName)}</strong>
+                    ${entity.address ? `<br><small class="text-muted">${escapeHtml(entity.address)}</small>` : ''}
+                </div>
+            `;
+        }).join('');
     }
 
     function filterEntityList() {
         const searchTerm = document.getElementById('entitySearch').value.toLowerCase();
         if (!entitiesList) return;
-        const filtered = entitiesList.filter(entity => 
-            entity.name.toLowerCase().includes(searchTerm) ||
-            (entity.address && entity.address.toLowerCase().includes(searchTerm))
-        );
+        
+        const filtered = entitiesList.filter(entity => {
+            let displayName = entity.name;
+            if (currentEntityType === 'department' && entity.unit_name) {
+                displayName = entity.unit_name;
+            }
+            return displayName.toLowerCase().includes(searchTerm) ||
+                (entity.address && entity.address.toLowerCase().includes(searchTerm));
+        });
         displayEntityList(filtered);
     }
 
     async function selectEntity(id, name) {
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
-        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-        document.querySelector(`.entity-item[data-id="${id}"]`).classList.add('selected');
+        
+        document.querySelectorAll('.entity-item').forEach(item => {
+            item.classList.remove('selected');
+            if (item.dataset.id == id) {
+                item.classList.add('selected');
+            }
+        });
+        
         await loadImages();
     }
 
@@ -991,14 +1015,14 @@
             progressFill.style.width = `${((i + 1) / files.length) * 100}%`;
             progressText.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
             
+            const formData = new FormData();
+            formData.append('image', file);
+            
             try {
-                const compressedBlob = await compressImage(file);
-                const formData = new FormData();
-                formData.append('image', compressedBlob, file.name.replace(/\.[^/.]+$/, '.jpg'));
                 const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
                 const data = await response.json();
                 if (data.success) {
-                    uploadedImages.push(data.image_url);
+                    uploadedImages.push(data);
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
@@ -1018,7 +1042,7 @@
     });
 
     function removeImage(imageUrl) {
-        uploadedImages = uploadedImages.filter(img => img !== imageUrl);
+        uploadedImages = uploadedImages.filter(img => img.image_url !== imageUrl);
         const preview = document.querySelector(`.image-preview-container[data-image-url="${imageUrl}"]`);
         if (preview) preview.remove();
     }
@@ -1036,7 +1060,7 @@
         const accountData = getAllAccountData();
         let successCount = 0;
         
-        for (const imageUrl of uploadedImages) {
+        for (const img of uploadedImages) {
             const waterAccount = accountData.water_accounts[0] || {};
             const electricityAccount = accountData.electricity_accounts[0] || {};
             const telephoneAccount = accountData.telephone_accounts[0] || {};
@@ -1046,7 +1070,7 @@
             const imageData = {
                 entity_type: currentEntityType,
                 entity_id: parseInt(currentEntityId),
-                image_url: imageUrl,
+                image_url: img.image_url,
                 description: document.getElementById('imageDescription').value,
                 notes: document.getElementById('imageNotes').value,
                 water_account_number: waterAccount.account_number || '',
