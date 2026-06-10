@@ -307,13 +307,11 @@
             font-size: 0.85rem;
         }
         
-        /* Button group for print actions */
         .btn-group-print {
             display: flex;
             gap: 8px;
         }
         
-        /* Change Password Modal specific styles */
         .password-strength {
             height: 4px;
             margin-top: 5px;
@@ -506,9 +504,10 @@
                 for (const user of allUsers) {
                     const isActive = currentUserId == user.id;
                     const roleIcon = user.role === 'senior_technician' ? '⭐' : '👤';
+                    const assistantBadge = user.is_assistant_leader ? ' <span class="badge bg-info ms-1">Asst</span>' : '';
                     html += `
-                        <a class="dropdown-item ${isActive ? 'active' : ''}" href="#" onclick="selectUser(${user.id}, '${escapeHtml(user.name)}', '${user.role}', ${user.is_authorized || false}, ${user.can_edit_technicians || false}); return false;">
-                            <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(user.name)}
+                        <a class="dropdown-item ${isActive ? 'active' : ''}" href="#" onclick="selectUser(${user.id}, '${escapeHtml(user.name)}', '${user.role}', ${user.is_authorized || false}, ${user.can_edit_technicians || false}, ${user.is_assistant_leader || false}); return false;">
+                            <i class="bi bi-person"></i> ${roleIcon} ${escapeHtml(user.name)}${assistantBadge}
                             ${isActive ? ' ✓' : ''}
                             <br><small class="text-muted">${user.role === 'senior_technician' ? 'Senior Tech' : 'Tech'}</small>
                         </a>
@@ -528,8 +527,8 @@
             return div.innerHTML;
         }
         
-        function selectUser(id, name, role, isAuthorized, canEdit) {
-            pendingUser = { id, name, role, isAuthorized, canEdit };
+        function selectUser(id, name, role, isAuthorized, canEdit, isAssistantLeader) {
+            pendingUser = { id, name, role, isAuthorized, canEdit, isAssistantLeader };
             document.getElementById('passwordUserName').textContent = name;
             document.getElementById('passwordInput').value = '';
             new bootstrap.Modal(document.getElementById('passwordModal')).show();
@@ -553,6 +552,7 @@
                     localStorage.setItem('userRole', pendingUser.role);
                     localStorage.setItem('isAuthorized', pendingUser.isAuthorized);
                     localStorage.setItem('canEditTechnicians', pendingUser.canEdit);
+                    localStorage.setItem('isAssistantLeader', pendingUser.isAssistantLeader);
                     
                     document.getElementById('currentUserName').textContent = pendingUser.name;
                     bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
@@ -717,11 +717,13 @@
             name: localStorage.getItem('userName'),
             role: localStorage.getItem('userRole'),
             isAuthorized: localStorage.getItem('isAuthorized') === 'true',
-            canEditTechnicians: localStorage.getItem('canEditTechnicians') === 'true'
+            canEditTechnicians: localStorage.getItem('canEditTechnicians') === 'true',
+            isAssistantLeader: localStorage.getItem('isAssistantLeader') === 'true'
         });
         
         window.isTeamLeader = () => localStorage.getItem('isAuthorized') === 'true';
         window.canEditTechnicians = () => localStorage.getItem('canEditTechnicians') === 'true';
+        window.isAssistantLeader = () => localStorage.getItem('isAssistantLeader') === 'true';
         window.showToast = showToast;
         
         function loadStoredUser() {
