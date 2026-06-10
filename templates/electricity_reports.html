@@ -285,6 +285,17 @@
         return div.innerHTML;
     }
     
+    // ============ CLEAN TEXT FUNCTION - REMOVES NONNULLABLE ============
+    function cleanText(text) {
+        if (!text) return '';
+        let cleaned = String(text);
+        cleaned = cleaned.replace(/NonNullable/gi, '');
+        cleaned = cleaned.replace(/Non-Nullable/gi, '');
+        cleaned = cleaned.replace(/null/gi, '');
+        cleaned = cleaned.replace(/undefined/gi, '');
+        return cleaned.trim();
+    }
+    
     function checkUserRole() {
         currentUser = window.getCurrentUser();
         isTeamLeader = currentUser && currentUser.isAuthorized === true;
@@ -415,19 +426,16 @@
             if (currentReport) {
                 displayReportModal();
                 
-                // Show/hide buttons based on permissions
                 const editBtn = document.getElementById('editBtn');
                 const deleteBtn = document.getElementById('deleteBtn');
                 const acknowledgeBtn = document.getElementById('acknowledgeBtn');
                 
-                // Only report creator can edit/delete (and only if not acknowledged)
                 const isCreator = currentReport.technician_id == currentTechnicianId;
                 const canEditDelete = isCreator && !currentReport.team_leader_acknowledged;
                 
                 if (editBtn) editBtn.style.display = canEditDelete ? 'inline-block' : 'none';
                 if (deleteBtn) deleteBtn.style.display = canEditDelete ? 'inline-block' : 'none';
                 
-                // Only Team Leader can acknowledge (and only if not acknowledged)
                 if (acknowledgeBtn) {
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
@@ -558,7 +566,6 @@
     
     function editReport() { 
         if (currentReportId) {
-            // Check if user is the creator
             if (currentReport && currentReport.technician_id != currentTechnicianId) {
                 window.showToast('You can only edit your own reports', 'error');
                 return;
@@ -576,7 +583,6 @@
     async function deleteReport() {
         if (!currentReportId) return;
         
-        // Check if user is the creator
         if (currentReport && currentReport.technician_id != currentTechnicianId) {
             window.showToast('You can only delete your own reports', 'error');
             return;
@@ -598,15 +604,7 @@
         }
     }
     
-    function cleanText(text) {
-        if (!text) return '';
-        let cleaned = String(text);
-        cleaned = cleaned.replace(/NonNullable/gi, '');
-        cleaned = cleaned.replace(/Non-Nullable/gi, '');
-        cleaned = cleaned.replace(/null/gi, '');
-        return cleaned.trim();
-    }
-    
+    // ============ FIXED PRINT FUNCTION WITH cleanText ============
     function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
@@ -634,8 +632,9 @@
         const reportTypeName = 'Electricity';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
+        // CLEAN ALL TEXT FIELDS - REMOVES NonNullable
         let complaintDetails = cleanText(report.complaint_details || '-');
-        let actionTaken = cleanText(report.action_taken || '-');
+        let actionTaken = cleanText(report.action_taken || '');
         let technicianNotes = cleanText(report.technician_notes || '');
         let teamLeaderNotes = cleanText(report.team_leader_notes || '');
         let accountNumber = cleanText(report.account_number || '');
@@ -647,11 +646,12 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
-        if (complaintDetails.includes('\n')) {
+        if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
-        if (actionTaken.includes('\n')) {
+        if (actionTaken && actionTaken.includes('\n')) {
             actionTaken = actionTaken.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
         
@@ -672,6 +672,11 @@
                 commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
+        }
+        
+        let assistantCheckHtml = '';
+        if (report.checked_by_assistant) {
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -720,25 +725,19 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
-                    </tr>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    </tr>
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    </tr>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    </tr>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    </tr>
                     ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
-                    ${actionTaken && actionTaken !== '-' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
-                    </tr>
-                    ${report.checked_by_assistant ? `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>` : ''}
+                    ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
