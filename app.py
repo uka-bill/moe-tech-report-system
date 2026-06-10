@@ -227,6 +227,7 @@ def create_technician():
             "specializations": json.dumps(specializations) if specializations else '[]',
             "is_authorized": data.get('is_authorized', False),
             "can_edit_technicians": data.get('can_edit_technicians', False),
+            "is_assistant_leader": data.get('is_assistant_leader', False),
             "password": password,
             "created_at": get_brunei_time_iso()
         }
@@ -250,7 +251,7 @@ def update_technician(tech_id):
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
         update_data = {}
-        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians', 'password']
+        allowed_fields = ['name', 'role', 'employee_id', 'phone', 'email', 'is_authorized', 'can_edit_technicians', 'is_assistant_leader', 'password']
         for field in allowed_fields:
             if field in data and data[field] is not None:
                 update_data[field] = data[field]
@@ -334,6 +335,25 @@ def change_technician_password():
         return jsonify({'success': False, 'error': 'Failed to update password'}), 500
     except Exception as e:
         app.logger.error(f"Error changing password: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/technicians/reset-password', methods=['POST'])
+def reset_technician_password():
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        data = request.get_json()
+        technician_id = data.get('technician_id')
+        new_password = data.get('new_password')
+        if not technician_id or not new_password:
+            return jsonify({'success': False, 'error': 'Technician ID and new password required'}), 400
+        response = supabase.table("technicians").update({"password": new_password}).eq("id", technician_id).execute()
+        if response.data:
+            app.logger.info(f"Password reset for technician ID {technician_id}")
+            return jsonify({'success': True, 'message': 'Password reset successfully'})
+        return jsonify({'success': False, 'error': 'Failed to reset password'}), 500
+    except Exception as e:
+        app.logger.error(f"Error resetting password: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ SCHOOLS API ============
@@ -609,17 +629,57 @@ def acknowledge_report(report_id):
         app.logger.error(f"Error acknowledging report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/technical-reports/<int:report_id>', methods=['DELETE'])
-def delete_technical_report(report_id):
+# ============ ASSISTANT TEAM LEADER CHECK ENDPOINT ============
+
+@app.route('/api/technical-reports/<int:report_id>/check', methods=['POST'])
+def check_report_by_assistant(report_id):
+    """Assistant Team Leader marks report as checked/read"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        response = supabase.table("technical_reports").delete().eq("id", report_id).execute()
+        
+        data = request.get_json()
+        assistant_id = data.get('assistant_id')
+        
+        if not assistant_id:
+            return jsonify({'success': False, 'error': 'Assistant ID required'}), 400
+        
+        # Verify user is assistant team leader
+        user_response = supabase.table("technicians").select("is_assistant_leader, name").eq("id", assistant_id).execute()
+        
+        if not user_response.data:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        if not user_response.data[0].get('is_assistant_leader', False):
+            return jsonify({'success': False, 'error': 'You are not authorized as Assistant Team Leader'}), 403
+        
+        assistant_name = user_response.data[0].get('name', 'Assistant Leader')
+        
+        # Check if already checked
+        report_response = supabase.table("technical_reports").select("checked_by_assistant").eq("id", report_id).execute()
+        
+        if report_response.data and report_response.data[0].get('checked_by_assistant', False):
+            return jsonify({'success': False, 'error': 'Report already checked by assistant'}), 400
+        
+        # Update the report
+        update_data = {
+            "checked_by_assistant": True,
+            "checked_by_assistant_id": assistant_id,
+            "checked_by_assistant_name": assistant_name,
+            "checked_by_assistant_at": get_brunei_time_iso(),
+            "updated_at": get_brunei_time_iso()
+        }
+        
+        response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
+        
         if response.data:
-            return jsonify({'success': True, 'message': 'Report deleted successfully'})
-        return jsonify({'success': False, 'error': 'Report not found'}), 404
+            app.logger.info(f"Report {report_id} checked by Assistant Team Leader: {assistant_name}")
+            return jsonify({'success': True, 'message': 'Report marked as checked', 'report': response.data[0]})
+        else:
+            return jsonify({'success': False, 'error': 'Report not found'}), 404
+            
     except Exception as e:
-        app.logger.error(f"Error deleting technical report: {e}")
+        app.logger.error(f"Error checking report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ MAPPING AND PROFILING API ============
@@ -951,8 +1011,8 @@ def init_app():
     create_directories()
     init_supabase_storage()
     app.logger.info("=" * 60)
-    app.logger.info("MOE Technical Report System Starting")
-    app.logger.info("Ministry of Education - Brunei Darussalam")
+    app.logger.info("UKA Technical Report System Starting")
+    app.logger.info("Unit Kemudahan Asas, Ministry of Education - Brunei Darussalam")
     app.logger.info("=" * 60)
 
 init_app()
