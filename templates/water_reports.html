@@ -450,6 +450,7 @@
     let allReports = [];
     let filteredReports = [];
     let currentView = localStorage.getItem('waterReportView') || 'table';
+    let isInitialLoad = true;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -511,7 +512,20 @@
         } else {
             document.querySelector('.view-toggle-btn:last-child').classList.add('active');
         }
-        displayReports();
+        // Only update display, don't reload data
+        updateDisplayVisibility();
+    }
+    
+    function updateDisplayVisibility() {
+        const tableView = document.getElementById('tableViewContainer');
+        const cardView = document.getElementById('cardViewContainer');
+        if (currentView === 'table') {
+            if (tableView) tableView.style.display = 'block';
+            if (cardView) cardView.style.display = 'none';
+        } else {
+            if (tableView) tableView.style.display = 'none';
+            if (cardView) cardView.style.display = 'block';
+        }
     }
     
     function expandAllSections() {
@@ -520,6 +534,7 @@
             body.style.display = 'block';
             const icon = document.querySelector('.section-toggle-icon');
             if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+            localStorage.setItem('water-section-collapsed', 'false');
         }
     }
     
@@ -529,6 +544,7 @@
             body.style.display = 'none';
             const icon = document.querySelector('.section-toggle-icon');
             if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+            localStorage.setItem('water-section-collapsed', 'true');
         }
     }
     
@@ -538,9 +554,11 @@
         if (body.style.display === 'none') {
             body.style.display = 'block';
             icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+            localStorage.setItem('water-section-collapsed', 'false');
         } else {
             body.style.display = 'none';
             icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+            localStorage.setItem('water-section-collapsed', 'true');
         }
     }
     
@@ -617,18 +635,16 @@
         document.getElementById('statAcknowledged').textContent = acknowledged;
         document.getElementById('pendingCount').textContent = pending;
         
-        displayReports();
-    }
-    
-    function displayReports() {
-        // Build Table View
         buildTableView(filteredReports);
-        
-        // Build Card View
         buildCardView(filteredReports);
         
-        // Set initial view
-        setView(currentView);
+        // Set initial view only once
+        if (isInitialLoad) {
+            setView(currentView);
+            isInitialLoad = false;
+        } else {
+            updateDisplayVisibility();
+        }
     }
     
     function buildTableView(reports) {
@@ -1059,7 +1075,7 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${accountNumber ? `</table><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
