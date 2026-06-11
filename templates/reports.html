@@ -9,6 +9,183 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+    .stats-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    .filter-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .view-toggle {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #f0f0f0;
+        padding: 5px;
+        border-radius: 30px;
+    }
+    .view-toggle-btn {
+        padding: 6px 18px;
+        border-radius: 25px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+    .view-toggle-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .section-header:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
+    }
+    .section-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-count {
+        background: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--primary-dark);
+    }
+    .section-toggle-icon {
+        font-size: 1.2rem;
+    }
+    .reports-table-container {
+        margin-bottom: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        background: white;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .reports-table th {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+    .reports-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .reports-table tr:hover td {
+        background-color: #f8f5fc;
+    }
+    .priority-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .priority-medium {
+        color: #fd7e14;
+        font-weight: bold;
+    }
+    .priority-low {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .status-pending {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-acknowledged {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .checked-badge {
+        background-color: #17a2b8;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        display: inline-block;
+    }
+    .report-id-link {
+        font-weight: 600;
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    .report-id-link:hover {
+        text-decoration: underline;
+    }
+    .expand-all-btn, .collapse-all-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .expand-all-btn:hover, .collapse-all-btn:hover {
+        background: var(--primary-dark);
+    }
+    .empty-section {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    .search-box input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    
+    /* Card View Styles (original) */
     .report-card {
         background: white;
         border-radius: 12px;
@@ -40,119 +217,23 @@
     .type-water { background-color: #e3f2fd; color: #1976d2; }
     .type-electricity { background-color: #fff3e0; color: #f57c00; }
     .type-telephone { background-color: #e8f5e9; color: #388e3c; }
-    .priority-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
+    .card-view-container {
+        display: block;
     }
-    .priority-high { background-color: #f8d7da; color: #721c24; }
-    .priority-medium { background-color: #fff3cd; color: #856404; }
-    .priority-low { background-color: #d4edda; color: #155724; }
-    .status-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
+    .table-view-container {
+        display: none;
     }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-acknowledged { background-color: #d4edda; color: #155724; }
-    .checked-badge {
-        background-color: #17a2b8;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        display: inline-block;
+    .view-active .card-view-container {
+        display: block;
     }
-    .filter-select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
+    .view-active .table-view-container {
+        display: none;
     }
-    .stats-badge {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
+    .view-table .card-view-container {
+        display: none;
     }
-    .empty-reports {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 12px;
-    }
-    .empty-reports i {
-        font-size: 64px;
-        color: #ccc;
-        margin-bottom: 20px;
-    }
-    .image-preview {
-        width: 100px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .comment-section {
-        background-color: #f8f5fc;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
-        border-left: 3px solid var(--primary-color);
-    }
-    .comment-item {
-        background: white;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #eee;
-    }
-    .comment-author {
-        font-weight: bold;
-        color: var(--primary-dark);
-        font-size: 12px;
-    }
-    .comment-date {
-        font-size: 10px;
-        color: #999;
-        margin-left: 10px;
-    }
-    .btn-add-comment {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 5px 15px;
-        border-radius: 5px;
-        font-size: 12px;
-    }
-    .btn-acknowledge {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 8px 20px;
-        border-radius: 5px;
-    }
-    
-    @media print {
-        .no-print, .navbar, footer, .filter-card, .stats-badge, 
-        .btn, .btn-primary, .btn-warning, .btn-danger, .btn-secondary,
-        .modal-footer button, .modal-header .btn-close {
-            display: none !important;
-        }
-        body {
-            background: white;
-            padding: 0;
-            margin: 0;
-        }
-        .card, .report-card, .modal-content {
-            box-shadow: none;
-            border: none;
-            padding: 0;
-            margin: 0;
-        }
+    .view-table .table-view-container {
+        display: block;
     }
 </style>
 
@@ -163,17 +244,37 @@
     </div>
 </div>
 
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Reports</h5>
+                <h2 id="statTotal">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Pending Acknowledgment</h5>
+                <h2 id="statPending">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Acknowledged</h5>
+                <h2 id="statAcknowledged">0</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
 <div class="filter-card">
     <div class="row">
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Report Type</label>
-            <select class="filter-select" id="filterType" onchange="loadReports()">
-                <option value="all">All Types</option>
-                <option value="water">💧 Water</option>
-                <option value="electricity">⚡ Electricity</option>
-                <option value="telephone">📞 Telephone</option>
-            </select>
-        </div>
         <div class="col-md-3">
             <label class="form-label fw-bold">Status</label>
             <select class="filter-select" id="filterStatus" onchange="loadReports()">
@@ -188,20 +289,39 @@
                 <option value="all">All Technicians</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Search</label>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
+            </div>
+        </div>
+        <div class="col-md-2">
             <label class="form-label fw-bold">&nbsp;</label>
-            <button class="btn btn-primary w-100" onclick="loadReports()">
-                <i class="bi bi-search"></i> Refresh
-            </button>
+            <div class="d-flex gap-2">
+                <div class="view-toggle">
+                    <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
+                    <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="loadReports()">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="reportsContainer">
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">Loading reports...</p>
-    </div>
+<!-- Expand/Collapse All Buttons -->
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
+    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
+</div>
+
+<div id="reportsContainer" class="view-table">
+    <!-- Table View Container -->
+    <div class="table-view-container" id="tableViewContainer"></div>
+    
+    <!-- Card View Container -->
+    <div class="card-view-container" id="cardViewContainer"></div>
 </div>
 
 <!-- Hidden iframe for printing -->
@@ -273,6 +393,9 @@
     let isTeamLeader = false;
     let currentUser = null;
     let currentTechnicianId = null;
+    let allReports = [];
+    let filteredReports = [];
+    let currentView = localStorage.getItem('reportView') || 'table';
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -295,7 +418,6 @@
         return div.innerHTML;
     }
     
-    // ============ CLEAN TEXT FUNCTION - REMOVES NONNULLABLE ============
     function cleanText(text) {
         if (!text) return '';
         let cleaned = String(text);
@@ -318,6 +440,56 @@
         return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
     }
     
+    function setView(view) {
+        currentView = view;
+        localStorage.setItem('reportView', view);
+        const container = document.getElementById('reportsContainer');
+        if (view === 'card') {
+            container.classList.remove('view-table');
+            container.classList.add('view-active');
+        } else {
+            container.classList.remove('view-active');
+            container.classList.add('view-table');
+        }
+        document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
+        if (view === 'card') {
+            document.querySelector('.view-toggle-btn:first-child').classList.add('active');
+        } else {
+            document.querySelector('.view-toggle-btn:last-child').classList.add('active');
+        }
+        displayReports();
+    }
+    
+    function expandAllSections() {
+        document.querySelectorAll('.section-body').forEach(body => {
+            body.style.display = 'block';
+        });
+        document.querySelectorAll('.section-toggle-icon').forEach(icon => {
+            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        });
+    }
+    
+    function collapseAllSections() {
+        document.querySelectorAll('.section-body').forEach(body => {
+            body.style.display = 'none';
+        });
+        document.querySelectorAll('.section-toggle-icon').forEach(icon => {
+            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        });
+    }
+    
+    function toggleSection(sectionId) {
+        const body = document.getElementById(sectionId);
+        const icon = document.querySelector(`[onclick="toggleSection('${sectionId}')"] .section-toggle-icon`);
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        } else {
+            body.style.display = 'none';
+            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        }
+    }
+    
     async function loadTechniciansForFilter() {
         try {
             const response = await fetch('/api/technicians');
@@ -334,49 +506,20 @@
     }
     
     async function loadReports() {
-        const type = document.getElementById('filterType').value;
-        const status = document.getElementById('filterStatus').value;
-        const technicianId = document.getElementById('filterTechnician').value;
-        
         const container = document.getElementById('reportsContainer');
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading reports...</p></div>';
         
         try {
-            let url = '/api/technical-reports';
-            if (type !== 'all') url += `?type=${type}`;
-            
-            const response = await fetch(url);
+            const response = await fetch('/api/technical-reports');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            let reports = await response.json();
-            if (!reports) reports = [];
+            allReports = await response.json();
+            if (!allReports) allReports = [];
             
-            if (technicianId !== 'all') {
-                reports = reports.filter(r => r.technician_id == technicianId);
-            }
-            if (status !== 'all') {
-                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
-                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
-            }
-            
-            document.getElementById('totalCount').textContent = reports.length;
-            
-            if (reports.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-reports">
-                        <i class="bi bi-inbox"></i>
-                        <h4>No Reports Found</h4>
-                        <p class="text-muted">There are no reports matching your filters.</p>
-                        <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            displayReports(reports);
+            filterReports();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
@@ -389,10 +532,168 @@
         }
     }
     
-    function displayReports(reports) {
-        const container = document.getElementById('reportsContainer');
+    function filterReports() {
+        const status = document.getElementById('filterStatus').value;
+        const technicianId = document.getElementById('filterTechnician').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         
-        container.innerHTML = reports.map(report => {
+        filteredReports = [...allReports];
+        
+        if (technicianId !== 'all') {
+            filteredReports = filteredReports.filter(r => r.technician_id == technicianId);
+        }
+        if (status !== 'all') {
+            if (status === 'pending') filteredReports = filteredReports.filter(r => !r.team_leader_acknowledged);
+            if (status === 'acknowledged') filteredReports = filteredReports.filter(r => r.team_leader_acknowledged);
+        }
+        if (searchTerm) {
+            filteredReports = filteredReports.filter(r => 
+                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
+                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
+                r.id.toString().includes(searchTerm)
+            );
+        }
+        
+        const total = filteredReports.length;
+        const pending = filteredReports.filter(r => !r.team_leader_acknowledged).length;
+        const acknowledged = filteredReports.filter(r => r.team_leader_acknowledged).length;
+        
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statAcknowledged').textContent = acknowledged;
+        document.getElementById('totalCount').textContent = total;
+        
+        displayReports();
+    }
+    
+    function displayReports() {
+        const waterReports = filteredReports.filter(r => r.report_type === 'water');
+        const electricityReports = filteredReports.filter(r => r.report_type === 'electricity');
+        const telephoneReports = filteredReports.filter(r => r.report_type === 'telephone');
+        
+        // Build Table View
+        buildTableView('water', waterReports);
+        buildTableView('electricity', electricityReports);
+        buildTableView('telephone', telephoneReports);
+        
+        // Build Card View
+        buildCardView(waterReports, electricityReports, telephoneReports);
+        
+        // Set initial view
+        setView(currentView);
+    }
+    
+    function buildTableView(type, reports) {
+        const container = document.getElementById('tableViewContainer');
+        if (!container) return;
+        
+        const typeMap = {
+            'water': { name: 'Water Reports', icon: '💧', color: '#1976d2', bg: '#e3f2fd' },
+            'electricity': { name: 'Electricity Reports', icon: '⚡', color: '#f57c00', bg: '#fff3e0' },
+            'telephone': { name: 'Telephone Reports', icon: '📞', color: '#388e3c', bg: '#e8f5e9' }
+        };
+        
+        const info = typeMap[type];
+        const sectionId = `table-section-${type}`;
+        const bodyId = `table-body-${type}`;
+        const isCollapsed = localStorage.getItem(`section-${type}-collapsed`) === 'true';
+        
+        let existingSection = document.getElementById(sectionId);
+        if (existingSection) {
+            existingSection.remove();
+        }
+        
+        const sectionHtml = `
+            <div id="${sectionId}" class="mb-4">
+                <div class="section-header" onclick="toggleSection('${bodyId}')">
+                    <div class="section-title">
+                        <span>${info.icon}</span>
+                        <span>${info.name}</span>
+                        <span class="section-count">${reports.length}</span>
+                    </div>
+                    <div class="section-toggle-icon">
+                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                </div>
+                <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
+                    ${reports.length === 0 ? '<div class="empty-section">No reports found</div>' : `
+                        <table class="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Entity</th>
+                                    <th>Problem Type</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Technician</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${reports.slice(0, 25).map(report => {
+                                    const priorityClass = `priority-${report.priority}`;
+                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                                    const isAcknowledged = report.team_leader_acknowledged;
+                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                                    const isChecked = report.checked_by_assistant === true;
+                                    
+                                    return `
+                                        <tr onclick="openReportDetail(${report.id})">
+                                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                            <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                            <td>${escapeHtml(report.problem_type || '-')}</td>
+                                            <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
+                                            <td>${statusHtml}</td>
+                                            <td>${escapeHtml(report.technician_name || '-')}</td>
+                                            <td>${formatDateOnly(report.created_at)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
+                    `}
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', sectionHtml);
+        
+        // Store collapse state
+        window[`toggleSection_${bodyId}`] = function() {
+            const body = document.getElementById(bodyId);
+            const icon = document.querySelector(`#${sectionId} .section-toggle-icon`);
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                localStorage.setItem(`section-${type}-collapsed`, 'false');
+            } else {
+                body.style.display = 'none';
+                icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+                localStorage.setItem(`section-${type}-collapsed`, 'true');
+            }
+        };
+    }
+    
+    function buildCardView(waterReports, electricityReports, telephoneReports) {
+        const container = document.getElementById('cardViewContainer');
+        if (!container) return;
+        
+        const allCardReports = [...waterReports, ...electricityReports, ...telephoneReports];
+        
+        if (allCardReports.length === 0) {
+            container.innerHTML = `
+                <div class="empty-reports">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No Reports Found</h4>
+                    <p class="text-muted">There are no reports matching your filters.</p>
+                    <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = allCardReports.map(report => {
             const typeClass = `type-${report.report_type}`;
             const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const priorityClass = `priority-${report.priority}`;
@@ -472,7 +773,7 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" style="width:100px;height:80px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
@@ -619,7 +920,6 @@
         }
     }
     
-    // ============ FIXED PRINT FUNCTION WITH cleanText ============
     function printReport() {
         if (!currentReport && currentReportId) {
             window.showToast('No report to print', 'error');
@@ -647,7 +947,6 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // CLEAN ALL TEXT FIELDS - REMOVES NonNullable
         let complaintDetails = cleanText(report.complaint_details || '-');
         let actionTaken = cleanText(report.action_taken || '');
         let technicianNotes = cleanText(report.technician_notes || '');
@@ -661,9 +960,7 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
-        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
-        // Format multiline text
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
@@ -692,7 +989,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -742,27 +1039,21 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
-                    </tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    </tr>
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    </tr>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    </tr>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    </tr>
-                    ${technicianNotes ? `<td><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
                     ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
-                    </tr>
                     ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
-                }</table>
+                </table>
                 
                 ${imagesHtml}
                 ${commentsHtml}
