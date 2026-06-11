@@ -9,6 +9,199 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+    .stats-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    .filter-select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .view-toggle {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #f0f0f0;
+        padding: 5px;
+        border-radius: 30px;
+    }
+    .view-toggle-btn {
+        padding: 6px 18px;
+        border-radius: 25px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+    .view-toggle-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .section-header:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
+    }
+    .section-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-count {
+        background: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--primary-dark);
+    }
+    .section-toggle-icon {
+        font-size: 1.2rem;
+    }
+    .reports-table-container {
+        margin-bottom: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        background: white;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .reports-table th {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+    .reports-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .reports-table tr:hover td {
+        background-color: #f8f5fc;
+    }
+    .priority-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .priority-medium {
+        color: #fd7e14;
+        font-weight: bold;
+    }
+    .priority-low {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .status-pending {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-acknowledged {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .checked-badge {
+        background-color: #17a2b8;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        display: inline-block;
+    }
+    .report-id-link {
+        font-weight: 600;
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    .report-id-link:hover {
+        text-decoration: underline;
+    }
+    .expand-all-btn, .collapse-all-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .expand-all-btn:hover, .collapse-all-btn:hover {
+        background: var(--primary-dark);
+    }
+    .empty-section {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+    .search-box input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .btn-edit, .btn-delete {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .btn-edit {
+        background-color: #ffc107;
+        color: #333;
+    }
+    .btn-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    /* Card View Styles */
     .report-card {
         background: white;
         border-radius: 12px;
@@ -57,46 +250,23 @@
     }
     .status-pending { background-color: #fff3cd; color: #856404; }
     .status-acknowledged { background-color: #d4edda; color: #155724; }
-    .checked-badge {
-        background-color: #17a2b8;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 10px;
-        display: inline-block;
+    .card-view-container {
+        display: block;
     }
-    .btn-delete {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        margin-left: 8px;
+    .table-view-container {
+        display: none;
     }
-    .btn-delete:hover { background-color: #c82333; }
-    .btn-edit {
-        background-color: #ffc107;
-        color: #333;
-        border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        margin-left: 8px;
+    .view-active .card-view-container {
+        display: block;
     }
-    .btn-edit:hover { background-color: #e0a800; }
-    .filter-select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
+    .view-active .table-view-container {
+        display: none;
     }
-    .stats-badge {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 12px;
+    .view-table .card-view-container {
+        display: none;
+    }
+    .view-table .table-view-container {
+        display: block;
     }
     .empty-reports {
         text-align: center;
@@ -140,14 +310,6 @@
         color: #999;
         margin-left: 10px;
     }
-    .btn-add-comment {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 5px 15px;
-        border-radius: 5px;
-        font-size: 12px;
-    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -157,9 +319,38 @@
     </div>
 </div>
 
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total My Reports</h5>
+                <h2 id="statTotal">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Pending Acknowledgment</h5>
+                <h2 id="statPending">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Acknowledged</h5>
+                <h2 id="statAcknowledged">0</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
 <div class="filter-card">
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-bold">Report Type</label>
             <select class="filter-select" id="filterType" onchange="loadReports()">
                 <option value="all">All Types</option>
@@ -168,28 +359,44 @@
                 <option value="telephone">📞 Telephone</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-bold">Status</label>
             <select class="filter-select" id="filterStatus" onchange="loadReports()">
                 <option value="all">All Status</option>
-                <option value="pending">⏳ Pending Review</option>
+                <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
         <div class="col-md-4">
+            <label class="form-label fw-bold">Search</label>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
+            </div>
+        </div>
+        <div class="col-md-2">
             <label class="form-label fw-bold">&nbsp;</label>
-            <button class="btn btn-primary w-100" onclick="loadReports()">
-                <i class="bi bi-search"></i> Refresh
-            </button>
+            <div class="d-flex gap-2">
+                <div class="view-toggle">
+                    <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
+                    <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="loadReports()">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<div id="reportsContainer">
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">Loading your reports...</p>
-    </div>
+<!-- Expand/Collapse All Buttons -->
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
+    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
+</div>
+
+<div id="reportsContainer" class="view-table">
+    <div class="table-view-container" id="tableViewContainer"></div>
+    <div class="card-view-container" id="cardViewContainer"></div>
 </div>
 
 <!-- Report Detail Modal -->
@@ -233,32 +440,91 @@
     let currentReport = null;
     let currentReportId = null;
     let currentTechnicianId = null;
+    let allReports = [];
+    let filteredReports = [];
+    let currentView = localStorage.getItem('myReportsView') || 'table';
     
-    function getImageUrl(imgPath) { 
-        if (!imgPath) return ''; 
-        if (imgPath.startsWith('http')) return imgPath; 
-        return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath); 
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
     
-    function formatDate(dateString) { 
-        if (!dateString) return '-'; 
-        const date = new Date(dateString); 
-        date.setHours(date.getHours() + 8); 
-        return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); 
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        date.setHours(date.getHours() + 8);
+        return date.toLocaleDateString('en-GB');
     }
     
-    function formatDateOnly(dateString) { 
-        if (!dateString) return '-'; 
-        const date = new Date(dateString); 
-        date.setHours(date.getHours() + 8); 
-        return date.toLocaleDateString('en-GB'); 
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
-    function escapeHtml(text) { 
-        if (!text) return ''; 
-        const div = document.createElement('div'); 
-        div.textContent = text; 
-        return div.innerHTML; 
+    function cleanText(text) {
+        if (!text) return '';
+        let cleaned = String(text);
+        cleaned = cleaned.replace(/NonNullable/gi, '');
+        cleaned = cleaned.replace(/Non-Nullable/gi, '');
+        cleaned = cleaned.replace(/null/gi, '');
+        cleaned = cleaned.replace(/undefined/gi, '');
+        return cleaned.trim();
+    }
+    
+    function getImageUrl(imgPath) {
+        if (!imgPath) return '';
+        if (imgPath.startsWith('http')) return imgPath;
+        return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
+    }
+    
+    function setView(view) {
+        currentView = view;
+        localStorage.setItem('myReportsView', view);
+        const container = document.getElementById('reportsContainer');
+        if (view === 'card') {
+            container.classList.remove('view-table');
+            container.classList.add('view-active');
+        } else {
+            container.classList.remove('view-active');
+            container.classList.add('view-table');
+        }
+        document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
+        if (view === 'card') {
+            document.querySelector('.view-toggle-btn:first-child').classList.add('active');
+        } else {
+            document.querySelector('.view-toggle-btn:last-child').classList.add('active');
+        }
+        displayReports();
+    }
+    
+    function expandAllSections() {
+        const bodies = document.querySelectorAll('.section-body');
+        const icons = document.querySelectorAll('.section-toggle-icon');
+        bodies.forEach(body => body.style.display = 'block');
+        icons.forEach(icon => icon.innerHTML = '<i class="bi bi-chevron-up"></i>');
+    }
+    
+    function collapseAllSections() {
+        const bodies = document.querySelectorAll('.section-body');
+        const icons = document.querySelectorAll('.section-toggle-icon');
+        bodies.forEach(body => body.style.display = 'none');
+        icons.forEach(icon => icon.innerHTML = '<i class="bi bi-chevron-down"></i>');
+    }
+    
+    function toggleSection(sectionId, buttonElement) {
+        const body = document.getElementById(sectionId);
+        const icon = buttonElement.querySelector('.section-toggle-icon');
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        } else {
+            body.style.display = 'none';
+            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        }
     }
     
     async function getCurrentTechnician() {
@@ -275,46 +541,20 @@
     }
     
     async function loadReports() {
-        const type = document.getElementById('filterType').value;
-        const status = document.getElementById('filterStatus').value;
-        
-        let url = `/api/technical-reports?technician_id=${currentTechnicianId}`;
-        if (type !== 'all') url += `&type=${type}`;
-        
         const container = document.getElementById('reportsContainer');
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading...</p></div>';
         
         try {
-            const response = await fetch(url);
+            const response = await fetch(`/api/technical-reports?technician_id=${currentTechnicianId}`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            let reports = await response.json();
-            if (!reports) reports = [];
+            allReports = await response.json();
+            if (!allReports) allReports = [];
             
-            if (status !== 'all') {
-                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
-                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
-            }
-            
-            const pending = reports.filter(r => !r.team_leader_acknowledged).length;
-            document.getElementById('pendingCount').textContent = pending;
-            
-            if (reports.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-reports">
-                        <i class="bi bi-inbox"></i>
-                        <h4>No Reports Found</h4>
-                        <p class="text-muted">You have not submitted any reports yet.</p>
-                        <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            displayReports(reports);
+            filterReports();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
@@ -327,18 +567,152 @@
         }
     }
     
-    function displayReports(reports) {
-        const container = document.getElementById('reportsContainer');
+    function filterReports() {
+        const type = document.getElementById('filterType').value;
+        const status = document.getElementById('filterStatus').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        filteredReports = [...allReports];
+        
+        if (type !== 'all') {
+            filteredReports = filteredReports.filter(r => r.report_type === type);
+        }
+        if (status !== 'all') {
+            if (status === 'pending') filteredReports = filteredReports.filter(r => !r.team_leader_acknowledged);
+            if (status === 'acknowledged') filteredReports = filteredReports.filter(r => r.team_leader_acknowledged);
+        }
+        if (searchTerm) {
+            filteredReports = filteredReports.filter(r => 
+                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
+                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
+                r.id.toString().includes(searchTerm)
+            );
+        }
+        
+        const total = filteredReports.length;
+        const pending = filteredReports.filter(r => !r.team_leader_acknowledged).length;
+        const acknowledged = filteredReports.filter(r => r.team_leader_acknowledged).length;
+        
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statAcknowledged').textContent = acknowledged;
+        document.getElementById('pendingCount').textContent = pending;
+        
+        displayReports();
+    }
+    
+    function displayReports() {
+        // Build Table View - Single section for My Reports
+        buildTableView(filteredReports);
+        
+        // Build Card View
+        buildCardView(filteredReports);
+        
+        // Set initial view
+        setView(currentView);
+    }
+    
+    function buildTableView(reports) {
+        const container = document.getElementById('tableViewContainer');
+        if (!container) return;
+        
+        const sectionId = 'myreports-section';
+        const bodyId = 'section-body';
+        const isCollapsed = localStorage.getItem('myreports-section-collapsed') === 'true';
+        
+        container.innerHTML = `
+            <div id="${sectionId}" class="mb-4">
+                <div class="section-header" onclick="toggleSection('${bodyId}', this)">
+                    <div class="section-title">
+                        <span>📋</span>
+                        <span>My Reports</span>
+                        <span class="section-count">${reports.length}</span>
+                    </div>
+                    <div class="section-toggle-icon">
+                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                </div>
+                <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
+                    ${reports.length === 0 ? '<div class="empty-section">No reports found</div>' : `
+                        <table class="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Entity</th>
+                                    <th>Problem Type</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Assistant Check</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${reports.slice(0, 25).map(report => {
+                                    const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+                                    const priorityClass = `priority-${report.priority}`;
+                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                                    const isAcknowledged = report.team_leader_acknowledged;
+                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                                    const isChecked = report.checked_by_assistant === true;
+                                    const canEdit = !isAcknowledged;
+                                    
+                                    return `
+                                        <tr>
+                                            <td><span class="report-id-link" onclick="openReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                            <td>${typeIcon} ${report.report_type}</td>
+                                            <td onclick="openReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                            <td onclick="openReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
+                                            <td class="${priorityClass}" onclick="openReportDetail(${report.id})">${priorityIcon} ${report.priority.toUpperCase()}</td>
+                                            <td onclick="openReportDetail(${report.id})">${statusHtml}</td>
+                                            <td>${isChecked ? `<span class="checked-badge">✓ by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span>` : '<span class="text-muted">-</span>'}
+                                            <td onclick="openReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
+                                            <td>
+                                                ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
+                                                <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
+                    `}
+                </div>
+            </div>
+        `;
+        
+        if (isCollapsed) {
+            document.getElementById(bodyId).style.display = 'none';
+        }
+    }
+    
+    function buildCardView(reports) {
+        const container = document.getElementById('cardViewContainer');
+        if (!container) return;
+        
+        if (reports.length === 0) {
+            container.innerHTML = `
+                <div class="empty-reports">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No Reports Found</h4>
+                    <p class="text-muted">You have not submitted any reports yet.</p>
+                    <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                </div>
+            `;
+            return;
+        }
         
         container.innerHTML = reports.map(report => {
             const typeClass = `type-${report.report_type}`;
             const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const priorityClass = `priority-${report.priority}`;
             const isAcknowledged = report.team_leader_acknowledged;
-            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending Review';
+            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending';
             const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const canEdit = !isAcknowledged;
             const isChecked = report.checked_by_assistant === true;
+            const canEdit = !isAcknowledged;
             
             return `
                 <div class="report-card" onclick="openReportDetail(${report.id})">
@@ -546,32 +920,20 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // Helper function to clean text from any unwanted formatting
-        function cleanPrintText(text) {
-            if (!text) return '';
-            let cleaned = String(text);
-            cleaned = cleaned.replace(/NonNullable/gi, '');
-            cleaned = cleaned.replace(/Non-Nullable/gi, '');
-            cleaned = cleaned.replace(/null/gi, '');
-            cleaned = cleaned.replace(/undefined/gi, '');
-            return cleaned.trim();
-        }
+        let complaintDetails = cleanText(report.complaint_details || '-');
+        let actionTaken = cleanText(report.action_taken || '');
+        let technicianNotes = cleanText(report.technician_notes || '');
+        let teamLeaderNotes = cleanText(report.team_leader_notes || '');
+        let accountNumber = cleanText(report.account_number || '');
+        let meterNumber = cleanText(report.meter_number || '');
+        let phoneNumber = cleanText(report.phone_number || '');
+        let referenceNumber = cleanText(report.reference_number || '');
+        let referenceType = cleanText(report.reference_type || '');
+        let problemType = cleanText(report.problem_type || '-');
+        let entityName = cleanText(report.entity_name || report.entity_type || '');
+        let technicianName = cleanText(report.technician_name || 'Unknown');
+        let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
         
-        let complaintDetails = cleanPrintText(report.complaint_details || '-');
-        let actionTaken = cleanPrintText(report.action_taken || '');
-        let technicianNotes = cleanPrintText(report.technician_notes || '');
-        let teamLeaderNotes = cleanPrintText(report.team_leader_notes || '');
-        let accountNumber = cleanPrintText(report.account_number || '');
-        let meterNumber = cleanPrintText(report.meter_number || '');
-        let phoneNumber = cleanPrintText(report.phone_number || '');
-        let referenceNumber = cleanPrintText(report.reference_number || '');
-        let referenceType = cleanPrintText(report.reference_type || '');
-        let problemType = cleanPrintText(report.problem_type || '-');
-        let entityName = cleanPrintText(report.entity_name || report.entity_type || '');
-        let technicianName = cleanPrintText(report.technician_name || 'Unknown');
-        let teamLeaderName = cleanPrintText(report.team_leader_name || 'Team Leader');
-        
-        // Format multiline text for print
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
@@ -592,16 +954,15 @@
         if (report.comments && report.comments.length > 0) {
             commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
-                let commentText = cleanPrintText(c.text);
+                let commentText = cleanText(c.text);
                 commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
         }
         
-        // Assistant Check HTML
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<div style="margin-top:15px;"><strong>Assistant Team Leader Check:</strong> ${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</div>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -651,22 +1012,20 @@
                 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
-                    </tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    </tr>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
-                    ${report.checked_by_assistant ? `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>` : ''}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
+                    ${assistantCheckHtml}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
