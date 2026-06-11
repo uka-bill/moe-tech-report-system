@@ -68,6 +68,100 @@
     .btn-sm {
         margin: 2px;
     }
+    .reports-table-container {
+        margin-bottom: 20px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        background: white;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .reports-table th {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
+    }
+    .reports-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .reports-table tr:hover td {
+        background-color: #f8f5fc;
+    }
+    .section-header {
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .section-header:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
+    }
+    .section-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-count {
+        background: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: var(--primary-dark);
+    }
+    .section-toggle-icon {
+        font-size: 1.2rem;
+    }
+    .expand-all-btn, .collapse-all-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .expand-all-btn:hover, .collapse-all-btn:hover {
+        background: var(--primary-dark);
+    }
+    .empty-section {
+        text-align: center;
+        padding: 40px;
+        color: #999;
+    }
+    .report-id-link {
+        font-weight: 600;
+        color: var(--primary-color);
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .report-id-link:hover {
+        text-decoration: underline;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -80,68 +174,8 @@
     </div>
 </div>
 
-<!-- Pending High Priority Reports -->
-<div class="card mb-4">
-    <div class="card-header bg-warning text-dark">
-        <i class="bi bi-exclamation-triangle"></i> Pending Acknowledgement - High Priority Reports
-        <span class="badge bg-danger ms-2" id="highPriorityCount">0</span>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Location</th>
-                        <th>Problem</th>
-                        <th>Priority</th>
-                        <th>Technician</th>
-                        <th>Assistant Check</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="pendingAckTable">
-                    <tr><td colspan="9" class="text-center">Loading reports...</td
-                </tbody>
-             </div>
-        </div>
-    </div>
-</div>
-
-<!-- All Pending Reports -->
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="bi bi-clock-history"></i> All Reports Awaiting Review
-        <span class="badge bg-warning ms-2" id="pendingCount">0</span>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Location</th>
-                        <th>Problem</th>
-                        <th>Priority</th>
-                        <th>Technician</th>
-                        <th>Assistant Check</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="unacknowledgedTable">
-                    <tr><td colspan="9" class="text-center">Loading reports...</td
-                </tbody>
-             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistics -->
-<div class="row">
+<!-- Statistics Cards -->
+<div class="row mb-4">
     <div class="col-md-4">
         <div class="card text-white bg-primary">
             <div class="card-body">
@@ -165,6 +199,46 @@
                 <h2 id="statAcknowledged">0</h2>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Expand/Collapse All Buttons -->
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
+    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
+</div>
+
+<!-- High Priority Reports Section -->
+<div id="highPrioritySection" class="mb-4">
+    <div class="section-header" onclick="toggleSection('highPriorityBody', this)">
+        <div class="section-title">
+            <span>🔴</span>
+            <span>High Priority Reports - Pending Acknowledgment</span>
+            <span class="section-count" id="highPriorityCount">0</span>
+        </div>
+        <div class="section-toggle-icon">
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div id="highPriorityBody" class="reports-table-container" style="display: none;">
+        <div class="text-center py-3">Loading...</div>
+    </div>
+</div>
+
+<!-- All Pending Reports Section -->
+<div id="pendingSection" class="mb-4">
+    <div class="section-header" onclick="toggleSection('pendingBody', this)">
+        <div class="section-title">
+            <span>⏳</span>
+            <span>All Pending Reports</span>
+            <span class="section-count" id="pendingCount">0</span>
+        </div>
+        <div class="section-toggle-icon">
+            <i class="bi bi-chevron-down"></i>
+        </div>
+    </div>
+    <div id="pendingBody" class="reports-table-container" style="display: none;">
+        <div class="text-center py-3">Loading...</div>
     </div>
 </div>
 
@@ -210,11 +284,15 @@
     </div>
 </div>
 
+<!-- Hidden iframe for printing -->
+<iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
+
 <script>
     let isAuthorizedUser = false;
     let isAssistantLeader = false;
     let currentReportId = null;
     let currentReport = null;
+    let allReports = [];
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -245,6 +323,64 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    function cleanText(text) {
+        if (!text) return '';
+        let cleaned = String(text);
+        cleaned = cleaned.replace(/NonNullable/gi, '');
+        cleaned = cleaned.replace(/Non-Nullable/gi, '');
+        cleaned = cleaned.replace(/null/gi, '');
+        cleaned = cleaned.replace(/undefined/gi, '');
+        return cleaned.trim();
+    }
+    
+    function getImageUrl(imgPath) {
+        if (!imgPath) return '';
+        if (imgPath.startsWith('http')) return imgPath;
+        return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
+    }
+    
+    function expandAllSections() {
+        const bodies = ['highPriorityBody', 'pendingBody'];
+        bodies.forEach(bodyId => {
+            const body = document.getElementById(bodyId);
+            if (body) {
+                body.style.display = 'block';
+                const section = body.closest('.mb-4');
+                if (section) {
+                    const icon = section.querySelector('.section-toggle-icon');
+                    if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                }
+            }
+        });
+    }
+    
+    function collapseAllSections() {
+        const bodies = ['highPriorityBody', 'pendingBody'];
+        bodies.forEach(bodyId => {
+            const body = document.getElementById(bodyId);
+            if (body) {
+                body.style.display = 'none';
+                const section = body.closest('.mb-4');
+                if (section) {
+                    const icon = section.querySelector('.section-toggle-icon');
+                    if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+                }
+            }
+        });
+    }
+    
+    function toggleSection(bodyId, element) {
+        const body = document.getElementById(bodyId);
+        const icon = element.querySelector('.section-toggle-icon');
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        } else {
+            body.style.display = 'none';
+            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        }
     }
     
     // Check authorization from localStorage
@@ -296,7 +432,7 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const allReports = await response.json();
+            allReports = await response.json();
             console.log('All reports loaded:', allReports.length);
             
             // Filter reports - only show reports that are NOT acknowledged
@@ -306,8 +442,6 @@
             
             console.log('Unacknowledged reports:', unacknowledgedReports.length);
             console.log('High priority unack:', highPriorityUnack.length);
-            console.log('isAuthorizedUser:', isAuthorizedUser);
-            console.log('isAssistantLeader:', isAssistantLeader);
             
             // Update statistics
             document.getElementById('statTotal').textContent = allReports.length;
@@ -327,88 +461,139 @@
             }
             
             // Display tables
-            displayPendingAck(highPriorityUnack);
-            displayUnacknowledged(unacknowledgedReports);
+            displayHighPriorityTable(highPriorityUnack);
+            displayPendingTable(unacknowledgedReports);
             
         } catch (error) {
             console.error('Error loading reports:', error);
-            document.getElementById('pendingAckTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading reports: ' + error.message + '</td>';
-            document.getElementById('unacknowledgedTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading reports: ' + error.message + '</td>';
+            document.getElementById('highPriorityBody').innerHTML = '<div class="text-center py-3 text-danger">Error loading reports: ' + error.message + '</div>';
+            document.getElementById('pendingBody').innerHTML = '<div class="text-center py-3 text-danger">Error loading reports: ' + error.message + '</div>';
         }
     }
     
-    function displayPendingAck(reports) {
-        const tbody = document.getElementById('pendingAckTable');
-        if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No high priority reports pending</td>';
+    function displayHighPriorityTable(reports) {
+        const container = document.getElementById('highPriorityBody');
+        if (!container) return;
+        
+        if (reports.length === 0) {
+            container.innerHTML = '<div class="empty-section">No high priority reports pending</div>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => {
-            const isChecked = report.checked_by_assistant === true;
-            
-            return `
-            <tr style="background-color: #fff3cd;">
-                <td>#${report.id}</td>
-                <td><span class="badge ${report.report_type === 'water' ? 'bg-info' : report.report_type === 'electricity' ? 'bg-warning' : 'bg-success'}">${report.report_type}</span></td>
-                <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                <td>${escapeHtml(report.problem_type || '-')}</td>
-                <td><span class="status-badge priority-high">HIGH</span></td>
-                <td>${escapeHtml(report.technician_name || '-')}</td>
-                <td>
-                    ${isChecked ? 
-                        `<span class="checked-badge"><i class="bi bi-check-circle"></i> Checked by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
-                        (isAssistantLeader ? 
-                            `<button class="btn btn-sm btn-check-report" onclick="markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark as Checked</button>` : 
-                            '<span class="text-muted">Not checked</span>'
-                        )
-                    }
-                </td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                    <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
-                    <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
-                </td>
-             </tr>
-        `}).join('');
+        container.innerHTML = `
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Entity</th>
+                        <th>Problem Type</th>
+                        <th>Priority</th>
+                        <th>Technician</th>
+                        <th>Assistant Check</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reports.slice(0, 25).map(report => {
+                        const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+                        const isChecked = report.checked_by_assistant === true;
+                        
+                        return `
+                            <tr style="background-color: #fff3cd;">
+                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                <td>${typeIcon} ${report.report_type}</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
+                                <td class="priority-high" onclick="viewReportDetail(${report.id})">🔴 HIGH</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.technician_name || '-')}</td>
+                                <td>
+                                    ${isChecked ? 
+                                        `<span class="checked-badge"><i class="bi bi-check-circle"></i> by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
+                                        (isAssistantLeader ? 
+                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark as Checked</button>` : 
+                                            '<span class="text-muted">Not checked</span>'
+                                        )
+                                    }
+                                </td>
+                                <td onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
+                                <td>
+                                    ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
+                                    <button class="btn btn-sm btn-info" onclick="event.stopPropagation(); viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
+                                 </td>
+                             </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
+        `;
     }
     
-    function displayUnacknowledged(reports) {
-        const tbody = document.getElementById('unacknowledgedTable');
-        if (!reports || reports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No reports pending acknowledgment</td>';
+    function displayPendingTable(reports) {
+        const container = document.getElementById('pendingBody');
+        if (!container) return;
+        
+        if (reports.length === 0) {
+            container.innerHTML = '<div class="empty-section">No reports pending acknowledgment</div>';
             return;
         }
         
-        tbody.innerHTML = reports.map(report => {
-            const isChecked = report.checked_by_assistant === true;
-            
-            return `
-            <tr>
-                <td>#${report.id}</td>
-                <td><span class="badge ${report.report_type === 'water' ? 'bg-info' : report.report_type === 'electricity' ? 'bg-warning' : 'bg-success'}">${report.report_type}</span></td>
-                <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                <td>${escapeHtml(report.problem_type || '-')}</td>
-                <td><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span></td>
-                <td>${escapeHtml(report.technician_name || '-')}</td>
-                <td>
-                    ${isChecked ? 
-                        `<span class="checked-badge"><i class="bi bi-check-circle"></i> Checked by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
-                        (isAssistantLeader ? 
-                            `<button class="btn btn-sm btn-check-report" onclick="markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark as Checked</button>` : 
-                            '<span class="text-muted">Not checked</span>'
-                        )
-                    }
-                </td>
-                <td>${formatDate(report.created_at)}</td>
-                <td>
-                    ${isAuthorizedUser ? `<button class="btn btn-sm btn-success" onclick="openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                    <button class="btn btn-sm btn-info" onclick="viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
-                    <button class="btn btn-sm btn-secondary" onclick="printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
-                </td>
-             </tr>
-        `}).join('');
+        container.innerHTML = `
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Entity</th>
+                        <th>Problem Type</th>
+                        <th>Priority</th>
+                        <th>Technician</th>
+                        <th>Assistant Check</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reports.slice(0, 25).map(report => {
+                        const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+                        const priorityClass = `priority-${report.priority}`;
+                        const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                        const priorityText = report.priority.toUpperCase();
+                        const isChecked = report.checked_by_assistant === true;
+                        
+                        return `
+                            <tr>
+                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                <td>${typeIcon} ${report.report_type}</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
+                                <td class="${priorityClass}" onclick="viewReportDetail(${report.id})">${priorityIcon} ${priorityText}</td>
+                                <td onclick="viewReportDetail(${report.id})">${escapeHtml(report.technician_name || '-')}</td>
+                                <td>
+                                    ${isChecked ? 
+                                        `<span class="checked-badge"><i class="bi bi-check-circle"></i> by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
+                                        (isAssistantLeader ? 
+                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark as Checked</button>` : 
+                                            '<span class="text-muted">Not checked</span>'
+                                        )
+                                    }
+                                 </td>
+                                <td onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
+                                <td>
+                                    ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
+                                    <button class="btn btn-sm btn-info" onclick="event.stopPropagation(); viewReportDetail(${report.id})"><i class="bi bi-eye"></i> View</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); printReport(${report.id})"><i class="bi bi-printer"></i> Print</button>
+                                 </td>
+                             </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
+        `;
     }
     
     async function markAsChecked(reportId) {
@@ -526,7 +711,7 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${img}" style="max-width: 150px; max-height: 120px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open('${img}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" style="max-width: 150px; max-height: 120px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
@@ -565,9 +750,38 @@
                 ${acknowledgmentHtml}
                 ${imagesHtml}
                 ${commentsHtml}
+                <div class="mt-3"><button class="btn btn-sm btn-secondary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
         document.getElementById('viewReportContent').innerHTML = html;
+    }
+    
+    function showAddCommentModal() { 
+        document.getElementById('newComment').value = ''; 
+        new bootstrap.Modal(document.getElementById('commentModal')).show(); 
+    }
+    
+    async function submitComment() {
+        const comment = document.getElementById('newComment').value;
+        const userName = localStorage.getItem('userName') || (isTeamLeader ? 'Team Leader' : 'Technician');
+        if (!comment.trim()) return window.showToast('Enter a comment', 'error');
+        try {
+            let comments = currentReport.comments || [];
+            comments.push({ author: userName, text: comment, created_at: new Date().toISOString() });
+            const response = await fetch(`/api/technical-reports/${currentReportId}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ comments: comments }) 
+            });
+            const data = await response.json();
+            if (data.success) { 
+                window.showToast('Comment added'); 
+                bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide(); 
+                openReportDetail(currentReportId); 
+            }
+        } catch (error) { 
+            window.showToast('Error', 'error'); 
+        }
     }
     
     function printCurrentReport() {
@@ -595,32 +809,21 @@
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const currentDate = new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         
-        // Helper function to clean text from any unwanted formatting
-        function cleanPrintText(text) {
-            if (!text) return '';
-            let cleaned = String(text);
-            cleaned = cleaned.replace(/NonNullable/gi, '');
-            cleaned = cleaned.replace(/Non-Nullable/gi, '');
-            cleaned = cleaned.replace(/null/gi, '');
-            cleaned = cleaned.replace(/undefined/gi, '');
-            return cleaned.trim();
-        }
+        let complaintDetails = cleanText(report.complaint_details || '-');
+        let actionTaken = cleanText(report.action_taken || '');
+        let technicianNotes = cleanText(report.technician_notes || '');
+        let teamLeaderNotes = cleanText(report.team_leader_notes || '');
+        let accountNumber = cleanText(report.account_number || '');
+        let meterNumber = cleanText(report.meter_number || '');
+        let phoneNumber = cleanText(report.phone_number || '');
+        let referenceNumber = cleanText(report.reference_number || '');
+        let referenceType = cleanText(report.reference_type || '');
+        let problemType = cleanText(report.problem_type || '-');
+        let entityName = cleanText(report.entity_name || report.entity_type || '');
+        let technicianName = cleanText(report.technician_name || 'Unknown');
+        let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
-        let complaintDetails = cleanPrintText(report.complaint_details || '-');
-        let actionTaken = cleanPrintText(report.action_taken || '');
-        let technicianNotes = cleanPrintText(report.technician_notes || '');
-        let teamLeaderNotes = cleanPrintText(report.team_leader_notes || '');
-        let accountNumber = cleanPrintText(report.account_number || '');
-        let meterNumber = cleanPrintText(report.meter_number || '');
-        let phoneNumber = cleanPrintText(report.phone_number || '');
-        let referenceNumber = cleanPrintText(report.reference_number || '');
-        let referenceType = cleanPrintText(report.reference_type || '');
-        let problemType = cleanPrintText(report.problem_type || '-');
-        let entityName = cleanPrintText(report.entity_name || report.entity_type || '');
-        let technicianName = cleanPrintText(report.technician_name || 'Unknown');
-        let teamLeaderName = cleanPrintText(report.team_leader_name || 'Team Leader');
-        
-        // Format multiline text for print
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
         }
@@ -641,16 +844,15 @@
         if (report.comments && report.comments.length > 0) {
             commentsHtml = '<div style="margin-top:20px;"><strong>Comments History:</strong><div style="margin-top:10px;">';
             report.comments.forEach(c => {
-                let commentText = cleanPrintText(c.text);
+                let commentText = cleanText(c.text);
                 commentsHtml += `<div style="border:1px solid #e0e0e0; padding:12px; margin-bottom:10px; border-radius:6px; background:#fafafa;"><strong>${escapeHtml(c.author)}</strong> <small style="color:#888;">${formatDate(c.created_at)}</small><p style="margin-top:8px;">${escapeHtml(commentText)}</p></div>`;
             });
             commentsHtml += '</div></div>';
         }
         
-        // Assistant Check HTML
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<div style="margin-top:15px;"><strong>Assistant Team Leader Check:</strong> ${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</div>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -699,19 +901,19 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
                     ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
                     ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
-                    ${report.checked_by_assistant ? `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
+                    ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
