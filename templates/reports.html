@@ -24,9 +24,9 @@
     }
     .section-header {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
-        padding: 12px 20px;
-        border-radius: 12px;
-        margin-bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
@@ -38,84 +38,89 @@
     }
     .section-title {
         font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         gap: 10px;
     }
     .section-count {
         background: white;
-        padding: 2px 10px;
+        padding: 2px 8px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--primary-dark);
     }
     .section-toggle-icon {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
     .category-container {
-        margin-bottom: 25px;
+        margin-bottom: 20px;
     }
-    .reports-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 15px;
-        max-height: 500px;
+    .reports-table-wrapper {
+        max-height: 450px;
         overflow-y: auto;
-        padding: 5px;
-    }
-    .report-card {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
         background: white;
-        border-radius: 12px;
-        padding: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        transition: all 0.2s;
-        cursor: pointer;
-        border-left: 4px solid var(--primary-color);
     }
-    .report-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-    }
-    .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #eee;
-    }
-    .report-id {
-        font-weight: 600;
-        color: var(--primary-color);
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
         font-size: 12px;
     }
-    .report-type-badge {
-        padding: 3px 10px;
-        border-radius: 20px;
+    .reports-table th {
+        background: #f8f9fa;
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
         font-size: 11px;
-        font-weight: 500;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        background: #f8f9fa;
+        z-index: 10;
     }
-    .type-water { background-color: #e3f2fd; color: #1976d2; }
-    .type-electricity { background-color: #fff3e0; color: #f57c00; }
-    .type-telephone { background-color: #e8f5e9; color: #388e3c; }
-    .priority-badge {
-        padding: 3px 8px;
-        border-radius: 20px;
+    .reports-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+        transition: background 0.2s;
+        vertical-align: middle;
+    }
+    .reports-table tr:hover td {
+        background-color: #f8f5fc;
+    }
+    .priority-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .priority-medium {
+        color: #fd7e14;
+        font-weight: bold;
+    }
+    .priority-low {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .status-pending {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 15px;
         font-size: 10px;
         font-weight: 500;
+        background-color: #fff3cd;
+        color: #856404;
     }
-    .priority-high { background-color: #f8d7da; color: #721c24; }
-    .priority-medium { background-color: #fff3cd; color: #856404; }
-    .priority-low { background-color: #d4edda; color: #155724; }
-    .status-badge {
-        padding: 3px 8px;
-        border-radius: 20px;
+    .status-acknowledged {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 15px;
         font-size: 10px;
         font-weight: 500;
+        background-color: #d4edda;
+        color: #155724;
     }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-acknowledged { background-color: #d4edda; color: #155724; }
     .checked-badge {
         background-color: #17a2b8;
         color: white;
@@ -123,35 +128,23 @@
         border-radius: 10px;
         font-size: 9px;
         display: inline-block;
+        margin-left: 5px;
     }
-    .report-entity {
+    .report-id-link {
         font-weight: 600;
-        font-size: 14px;
-        margin-top: 8px;
+        color: var(--primary-color);
+        text-decoration: none;
     }
-    .report-problem {
-        font-size: 12px;
-        color: #666;
-        margin-top: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .report-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-        font-size: 11px;
-        color: #999;
+    .report-id-link:hover {
+        text-decoration: underline;
     }
     .expand-all-btn, .collapse-all-btn {
         background: var(--primary-color);
         color: white;
         border: none;
-        padding: 6px 15px;
+        padding: 5px 12px;
         border-radius: 20px;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
     }
@@ -160,10 +153,9 @@
     }
     .empty-section {
         text-align: center;
-        padding: 40px;
+        padding: 30px;
         color: #999;
-        background: #f9f9f9;
-        border-radius: 12px;
+        font-size: 13px;
     }
     .search-box {
         display: flex;
@@ -174,9 +166,36 @@
         padding: 8px 12px;
         border: 1px solid #ddd;
         border-radius: 8px;
+        font-size: 13px;
+    }
+    .entity-name {
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .problem-type {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
-    /* Expandable Modal Styles */
+    /* Scrollbar styling */
+    .reports-table-wrapper::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 10px;
+    }
+    
+    /* Modal Styles */
     .modal-fullscreen {
         max-width: 95%;
         width: 95%;
@@ -193,9 +212,6 @@
         font-size: 1rem;
         cursor: pointer;
         margin-left: 10px;
-    }
-    .modal-header .btn-expand:hover {
-        opacity: 0.8;
     }
     .report-detail-container {
         font-size: 14px;
@@ -235,18 +251,9 @@
         color: #999;
         margin-left: 10px;
     }
-    
-    /* Scrollbar styling */
-    .reports-grid::-webkit-scrollbar {
-        width: 6px;
-    }
-    .reports-grid::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-    .reports-grid::-webkit-scrollbar-thumb {
-        background: var(--primary-color);
-        border-radius: 10px;
+    .priority-icon {
+        font-size: 12px;
+        margin-right: 3px;
     }
 </style>
 
@@ -616,8 +623,8 @@
                         <i class="bi bi-chevron-${waterCollapsed ? 'down' : 'up'}"></i>
                     </div>
                 </div>
-                <div id="water-body" class="reports-grid" style="display: ${waterCollapsed ? 'none' : 'grid'};">
-                    ${buildReportCards(waterReports, 'water')}
+                <div id="water-body" class="reports-table-wrapper" style="display: ${waterCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(waterReports)}
                 </div>
             </div>
             
@@ -633,8 +640,8 @@
                         <i class="bi bi-chevron-${electricityCollapsed ? 'down' : 'up'}"></i>
                     </div>
                 </div>
-                <div id="electricity-body" class="reports-grid" style="display: ${electricityCollapsed ? 'none' : 'grid'};">
-                    ${buildReportCards(electricityReports, 'electricity')}
+                <div id="electricity-body" class="reports-table-wrapper" style="display: ${electricityCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(electricityReports)}
                 </div>
             </div>
             
@@ -650,59 +657,54 @@
                         <i class="bi bi-chevron-${telephoneCollapsed ? 'down' : 'up'}"></i>
                     </div>
                 </div>
-                <div id="telephone-body" class="reports-grid" style="display: ${telephoneCollapsed ? 'none' : 'grid'};">
-                    ${buildReportCards(telephoneReports, 'telephone')}
+                <div id="telephone-body" class="reports-table-wrapper" style="display: ${telephoneCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(telephoneReports)}
                 </div>
             </div>
         `;
     }
     
-    function buildReportCards(reports, type) {
+    function buildReportTable(reports) {
         if (reports.length === 0) {
             return '<div class="empty-section">No reports found</div>';
         }
         
-        return reports.map(report => {
-            const typeClass = `type-${type}`;
-            const typeIcon = type === 'water' ? '💧' : type === 'electricity' ? '⚡' : '📞';
-            const priorityClass = `priority-${report.priority}`;
-            const priorityText = report.priority.toUpperCase();
-            const isAcknowledged = report.team_leader_acknowledged;
-            const statusText = isAcknowledged ? 'Acknowledged' : 'Pending';
-            const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const isChecked = report.checked_by_assistant === true;
-            
-            return `
-                <div class="report-card" onclick="openReportDetail(${report.id})">
-                    <div class="report-header">
-                        <div>
-                            <span class="report-id">#${report.id}</span>
-                            ${isChecked ? '<span class="checked-badge ms-1"><i class="bi bi-eye"></i></span>' : ''}
-                        </div>
-                        <div>
-                            <span class="report-type-badge ${typeClass}">${typeIcon} ${type.toUpperCase()}</span>
-                        </div>
-                    </div>
-                    <div class="report-entity">
-                        ${escapeHtml(report.entity_name || report.entity_type)}
-                    </div>
-                    <div class="report-problem" title="${escapeHtml(report.problem_type || '')}">
-                        ${escapeHtml(report.problem_type || 'No problem type')}
-                    </div>
-                    <div class="report-footer">
-                        <div>
-                            <span class="priority-badge ${priorityClass}">${priorityText}</span>
-                            <span class="status-badge ${statusClass} ms-1">${statusText}</span>
-                        </div>
-                        <div>${formatDateOnly(report.created_at)}</div>
-                    </div>
-                    <div class="report-footer mt-1">
-                        <small><i class="bi bi-person"></i> ${escapeHtml(report.technician_name || 'Unknown')}</small>
-                        <small><i class="bi bi-chat"></i> ${report.comments ? report.comments.length : 0}</small>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        return `
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Entity</th>
+                        <th>Problem Type</th>
+                        <th style="width: 80px;">Priority</th>
+                        <th style="width: 100px;">Status</th>
+                        <th>Technician</th>
+                        <th style="width: 90px;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reports.map(report => {
+                        const priorityClass = `priority-${report.priority}`;
+                        const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                        const isAcknowledged = report.team_leader_acknowledged;
+                        const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                        const isChecked = report.checked_by_assistant === true;
+                        
+                        return `
+                            <tr onclick="openReportDetail(${report.id})">
+                                <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                                <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                                <td>${statusHtml}</td>
+                                <td>${escapeHtml(report.technician_name || '-')}</td>
+                                <td>${formatDateOnly(report.created_at)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
     }
     
     async function openReportDetail(id) {
@@ -728,7 +730,6 @@
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
                 
-                // Reset modal size to default when opening
                 if (isModalExpanded) {
                     const modalDialog = document.querySelector('#reportModal .modal-dialog');
                     const expandBtn = document.getElementById('expandModalBtn');
@@ -989,7 +990,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -1040,19 +1041,20 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
+                    </tr>
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
                 </table>
                 
                 ${imagesHtml}
