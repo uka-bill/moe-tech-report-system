@@ -294,6 +294,58 @@
         color: #999;
         margin-left: 10px;
     }
+    
+    /* Expandable Modal Styles - Full Screen Option */
+    .modal-fullscreen {
+        max-width: 95%;
+        width: 95%;
+        margin: 1rem auto;
+    }
+    .modal-fullscreen .modal-body {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header .btn-expand {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .modal-header .btn-expand:hover {
+        opacity: 0.8;
+    }
+    .report-detail-container {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .report-detail-container .alert {
+        font-size: 13px;
+    }
+    .report-detail-container .row {
+        margin-bottom: 8px;
+    }
+    .report-detail-container .col-4 {
+        font-weight: 600;
+        background-color: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+    }
+    .report-detail-container .col-8 {
+        padding: 8px 12px;
+        background-color: white;
+        border-radius: 6px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+    .image-preview-large {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 8px;
+        cursor: pointer;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -336,7 +388,7 @@
     <div class="row">
         <div class="col-md-3">
             <label class="form-label fw-bold">Status</label>
-            <select class="filter-select" id="filterStatus" onchange="loadReports()">
+            <select class="filter-select" id="filterStatus" onchange="applyFilters()">
                 <option value="all">All Status</option>
                 <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
@@ -344,14 +396,14 @@
         </div>
         <div class="col-md-3">
             <label class="form-label fw-bold">Technician</label>
-            <select class="filter-select" id="filterTechnician" onchange="loadReports()">
+            <select class="filter-select" id="filterTechnician" onchange="applyFilters()">
                 <option value="all">All Technicians</option>
             </select>
         </div>
         <div class="col-md-4">
             <label class="form-label fw-bold">Search</label>
             <div class="search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="applyFilters()">
             </div>
         </div>
         <div class="col-md-2">
@@ -361,8 +413,8 @@
                     <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
                     <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
                 </div>
-                <button class="btn btn-sm btn-info" onclick="loadReports()">
-                    <i class="bi bi-search"></i>
+                <button class="btn btn-sm btn-info" onclick="refreshReports()">
+                    <i class="bi bi-arrow-repeat"></i>
                 </button>
             </div>
         </div>
@@ -383,18 +435,28 @@
 <!-- Hidden iframe for printing -->
 <iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
-<!-- Report Detail Modal -->
+<!-- Report Detail Modal - Expanded Size -->
 <div class="modal fade" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Water Report Details</h5>
+                <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()" title="Toggle Size">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalBody">Loading...</div>
+            <div class="modal-body" id="modalBody" style="max-height: 75vh; overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status"></div>
+                    <p class="mt-2">Loading report details...</p>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
+                <button type="button" class="btn btn-primary" onclick="printReport()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
                 <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
                 <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
                 <button type="button" class="btn btn-success" id="acknowledgeBtn" onclick="showAcknowledgeModal()" style="display: none;">Acknowledge</button>
@@ -450,7 +512,8 @@
     let allReports = [];
     let filteredReports = [];
     let currentView = localStorage.getItem('waterReportView') || 'table';
-    let isInitialLoad = true;
+    let isLoading = false;
+    let isModalExpanded = false;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -483,6 +546,22 @@
         return cleaned.trim();
     }
     
+    function toggleModalSize() {
+        const modalDialog = document.querySelector('#reportModal .modal-dialog');
+        const expandBtn = document.getElementById('expandModalBtn');
+        if (isModalExpanded) {
+            modalDialog.classList.remove('modal-fullscreen');
+            modalDialog.classList.add('modal-xl');
+            expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            isModalExpanded = false;
+        } else {
+            modalDialog.classList.remove('modal-xl');
+            modalDialog.classList.add('modal-fullscreen');
+            expandBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
+            isModalExpanded = true;
+        }
+    }
+    
     function checkUserRole() {
         currentUser = window.getCurrentUser();
         isTeamLeader = currentUser && currentUser.isAuthorized === true;
@@ -511,20 +590,6 @@
             document.querySelector('.view-toggle-btn:first-child').classList.add('active');
         } else {
             document.querySelector('.view-toggle-btn:last-child').classList.add('active');
-        }
-        // Only update display, don't reload data
-        updateDisplayVisibility();
-    }
-    
-    function updateDisplayVisibility() {
-        const tableView = document.getElementById('tableViewContainer');
-        const cardView = document.getElementById('cardViewContainer');
-        if (currentView === 'table') {
-            if (tableView) tableView.style.display = 'block';
-            if (cardView) cardView.style.display = 'none';
-        } else {
-            if (tableView) tableView.style.display = 'none';
-            if (cardView) cardView.style.display = 'block';
         }
     }
     
@@ -577,9 +642,16 @@
         }
     }
     
+    async function refreshReports() {
+        await loadReports();
+    }
+    
     async function loadReports() {
+        if (isLoading) return;
+        isLoading = true;
+        
         const container = document.getElementById('reportsContainer');
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info"></div><p>Loading reports...</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-info"></div><p>Loading water reports...</p></div>';
         
         try {
             const response = await fetch('/api/technical-reports?type=water');
@@ -591,20 +663,22 @@
             allReports = await response.json();
             if (!allReports) allReports = [];
             
-            filterReports();
+            applyFilters();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
                 <div class="text-center py-5 text-danger">
                     <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
                     <p>Error loading reports: ${error.message}</p>
-                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                    <button class="btn btn-primary mt-2" onclick="refreshReports()">Try Again</button>
                 </div>
             `;
+        } finally {
+            isLoading = false;
         }
     }
     
-    function filterReports() {
+    function applyFilters() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -638,12 +712,19 @@
         buildTableView(filteredReports);
         buildCardView(filteredReports);
         
-        // Set initial view only once
-        if (isInitialLoad) {
-            setView(currentView);
-            isInitialLoad = false;
+        // Ensure the correct view is shown
+        updateDisplayVisibility();
+    }
+    
+    function updateDisplayVisibility() {
+        const tableView = document.getElementById('tableViewContainer');
+        const cardView = document.getElementById('cardViewContainer');
+        if (currentView === 'table') {
+            if (tableView) tableView.style.display = 'block';
+            if (cardView) cardView.style.display = 'none';
         } else {
-            updateDisplayVisibility();
+            if (tableView) tableView.style.display = 'none';
+            if (cardView) cardView.style.display = 'block';
         }
     }
     
@@ -654,6 +735,18 @@
         const sectionId = 'water-section';
         const bodyId = 'section-body';
         const isCollapsed = localStorage.getItem('water-section-collapsed') === 'true';
+        
+        if (reports.length === 0) {
+            container.innerHTML = `
+                <div class="empty-reports">
+                    <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
+                    <h4>No Water Reports Found</h4>
+                    <p class="text-muted">There are no water reports matching your filters.</p>
+                    <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                </div>
+            `;
+            return;
+        }
         
         container.innerHTML = `
             <div id="${sectionId}" class="mb-4">
@@ -668,43 +761,41 @@
                     </div>
                 </div>
                 <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
-                    ${reports.length === 0 ? '<div class="empty-section">No water reports found</div>' : `
-                        <table class="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Entity</th>
-                                    <th>Problem Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Technician</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reports.slice(0, 25).map(report => {
-                                    const priorityClass = `priority-${report.priority}`;
-                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                                    const isAcknowledged = report.team_leader_acknowledged;
-                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                                    const isChecked = report.checked_by_assistant === true;
-                                    
-                                    return `
-                                        <tr onclick="openReportDetail(${report.id})">
-                                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                                            <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                                            <td>${escapeHtml(report.problem_type || '-')}</td>
-                                            <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
-                                            <td>${statusHtml}</td>
-                                            <td>${escapeHtml(report.technician_name || '-')}</td>
-                                            <td>${formatDateOnly(report.created_at)}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
-                    `}
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Entity</th>
+                                <th>Problem Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Technician</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${reports.slice(0, 25).map(report => {
+                                const priorityClass = `priority-${report.priority}`;
+                                const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                                const isAcknowledged = report.team_leader_acknowledged;
+                                const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                                const isChecked = report.checked_by_assistant === true;
+                                
+                                return `
+                                    <tr onclick="openReportDetail(${report.id})">
+                                        <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                        <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                        <td>${escapeHtml(report.problem_type || '-')}</td>
+                                        <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
+                                        <td>${statusHtml}</td>
+                                        <td>${escapeHtml(report.technician_name || '-')}</td>
+                                        <td>${formatDateOnly(report.created_at)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
                 </div>
             </div>
         `;
@@ -721,7 +812,7 @@
         if (reports.length === 0) {
             container.innerHTML = `
                 <div class="empty-reports">
-                    <i class="bi bi-inbox"></i>
+                    <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
                     <h4>No Water Reports Found</h4>
                     <p class="text-muted">There are no water reports matching your filters.</p>
                     <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
@@ -791,6 +882,15 @@
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
                 
+                // Reset modal size to default when opening
+                const modalDialog = document.querySelector('#reportModal .modal-dialog');
+                if (modalDialog && isModalExpanded) {
+                    modalDialog.classList.remove('modal-fullscreen');
+                    modalDialog.classList.add('modal-xl');
+                    document.getElementById('expandModalBtn').innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+                    isModalExpanded = false;
+                }
+                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -808,12 +908,12 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-3 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview-large" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+            commentsHtml = `<div class="comment-section mt-3"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item mb-2"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let acknowledgmentHtml = '';
@@ -829,22 +929,37 @@
         }
         
         const html = `
-            <div>
+            <div class="report-detail-container">
                 <div class="alert alert-info">
                     <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
                     Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Entity:</div><div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Entity:</div>
+                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                </div>
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
                 ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Problem Type:</div><div class="col-8">${escapeHtml(report.problem_type)}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Complaint Details:</div><div class="col-8">${escapeHtml(report.complaint_details)}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Problem Type:</div>
+                    <div class="col-8">${escapeHtml(report.problem_type)}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Priority:</div>
+                    <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Complaint Details:</div>
+                    <div class="col-8">${escapeHtml(report.complaint_details)}</div>
+                </div>
                 ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
                 ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Submitted By:</div><div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Submitted By:</div>
+                    <div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div>
+                </div>
                 ${assistantCheckHtml}
                 ${acknowledgmentHtml}
                 ${imagesHtml}
@@ -905,7 +1020,7 @@
             if (data.success) { 
                 window.showToast('Report acknowledged'); 
                 bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); 
-                loadReports(); 
+                refreshReports(); 
                 openReportDetail(currentReportId); 
             } else {
                 window.showToast(data.error || 'Failed to acknowledge', 'error');
@@ -946,7 +1061,7 @@
             if (data.success) { 
                 window.showToast('Report deleted'); 
                 bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); 
-                loadReports(); 
+                refreshReports(); 
             } else { 
                 window.showToast(data.error || 'Cannot delete', 'error'); 
             }
@@ -1024,7 +1139,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -1075,7 +1190,7 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${accountNumber ? `</table><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
