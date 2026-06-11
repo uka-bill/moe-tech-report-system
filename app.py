@@ -768,6 +768,8 @@ def delete_mapping_location(location_id):
         app.logger.error(f"Error deleting mapping location: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============ MAPPING IMAGES API WITH PABX SUPPORT ============
+
 @app.route('/api/mapping/images', methods=['GET'])
 def get_mapping_images():
     try:
@@ -792,12 +794,17 @@ def create_mapping_image():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
+        
+        # Log received data for debugging
+        app.logger.info(f"Creating mapping image with data keys: {list(data.keys()) if data else 'None'}")
+        
         image_data = {
             "entity_type": data.get('entity_type'),
             "entity_id": int(data.get('entity_id')),
             "image_url": data.get('image_url'),
             "description": data.get('description', ''),
             "notes": data.get('notes', ''),
+            # Single account fields (backward compatibility)
             "water_account_number": data.get('water_account_number', ''),
             "water_meter_number": data.get('water_meter_number', ''),
             "electricity_account_number": data.get('electricity_account_number', ''),
@@ -808,16 +815,31 @@ def create_mapping_image():
             "canteen_water_meter_number": data.get('canteen_water_meter_number', ''),
             "canteen_electricity_account_number": data.get('canteen_electricity_account_number', ''),
             "canteen_electricity_meter_number": data.get('canteen_electricity_meter_number', ''),
+            # PABX single fields
+            "pabx_name": data.get('pabx_name', ''),
+            "pabx_pilot_no": data.get('pabx_pilot_no', ''),
+            "pabx_trailing_no": data.get('pabx_trailing_no', []),
+            "pabx_extension_no": data.get('pabx_extension_no', []),
+            # JSON storage for multiple accounts
+            "water_accounts_json": data.get('water_accounts_json', '[]'),
+            "electricity_accounts_json": data.get('electricity_accounts_json', '[]'),
+            "telephone_accounts_json": data.get('telephone_accounts_json', '[]'),
+            "canteen_water_accounts_json": data.get('canteen_water_accounts_json', '[]'),
+            "canteen_electricity_accounts_json": data.get('canteen_electricity_accounts_json', '[]'),
+            "pabx_entries_json": data.get('pabx_entries_json', '[]'),
             "uploaded_by": data.get('uploaded_by'),
             "uploaded_at": get_brunei_time_iso()
         }
+        
         response = supabase.table("mapping_images").insert(image_data).execute()
+        
         if response.data:
             app.logger.info(f"Mapping image created: ID {response.data[0]['id']}")
             return jsonify({'success': True, 'data': response.data[0]})
         return jsonify({'success': False, 'error': 'Failed to save image record'}), 500
     except Exception as e:
         app.logger.error(f"Error creating mapping image: {e}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/mapping/images/<int:image_id>', methods=['PUT'])
@@ -826,19 +848,31 @@ def update_mapping_image(image_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        allowed_fields = ['description', 'notes', 'water_account_number', 'water_meter_number',
-                         'electricity_account_number', 'electricity_meter_number',
-                         'telephone_account_number', 'telephone_number',
-                         'canteen_water_account_number', 'canteen_water_meter_number',
-                         'canteen_electricity_account_number', 'canteen_electricity_meter_number']
+        
+        allowed_fields = [
+            'description', 'notes', 
+            'water_account_number', 'water_meter_number',
+            'electricity_account_number', 'electricity_meter_number',
+            'telephone_account_number', 'telephone_number',
+            'canteen_water_account_number', 'canteen_water_meter_number',
+            'canteen_electricity_account_number', 'canteen_electricity_meter_number',
+            'pabx_name', 'pabx_pilot_no', 'pabx_trailing_no', 'pabx_extension_no',
+            'water_accounts_json', 'electricity_accounts_json', 'telephone_accounts_json',
+            'canteen_water_accounts_json', 'canteen_electricity_accounts_json',
+            'pabx_entries_json'
+        ]
         update_data = {}
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
+        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
+        
         response = supabase.table("mapping_images").update(update_data).eq("id", image_id).execute()
+        
         if response.data:
+            app.logger.info(f"Mapping image updated: ID {image_id}")
             return jsonify({'success': True, 'data': response.data[0]})
         return jsonify({'success': False, 'error': 'Image not found'}), 404
     except Exception as e:
@@ -993,6 +1027,18 @@ def health_check():
 @app.route('/api/health')
 def api_health():
     return jsonify({'status': 'ok', 'timestamp': get_brunei_time_iso()})
+
+# ============ DEBUG ENDPOINTS ============
+
+@app.route('/api/debug/supabase', methods=['GET'])
+def debug_supabase():
+    """Debug endpoint to check Supabase configuration"""
+    return jsonify({
+        'has_service_key': SUPABASE_SERVICE_KEY != SUPABASE_ANON_KEY,
+        'service_key_length': len(SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else 0,
+        'storage_client_exists': supabase is not None,
+        'storage_bucket': SUPABASE_STORAGE_BUCKET
+    })
 
 # ============ ERROR HANDLERS ============
 
