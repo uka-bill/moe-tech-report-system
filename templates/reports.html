@@ -24,8 +24,8 @@
     }
     .section-header {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
-        padding: 8px 15px;
-        border-radius: 8px;
+        padding: 10px 15px;
+        border-radius: 10px;
         margin-bottom: 10px;
         cursor: pointer;
         display: flex;
@@ -38,28 +38,28 @@
     }
     .section-title {
         font-weight: bold;
-        font-size: 0.95rem;
+        font-size: 1rem;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
     .section-count {
         background: white;
-        padding: 2px 6px;
-        border-radius: 15px;
-        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
         color: var(--primary-dark);
     }
     .section-toggle-icon {
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
     .category-container {
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
     .reports-table-wrapper {
-        max-height: 450px;
+        max-height: 500px;
         overflow-y: auto;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid #e0e0e0;
         background: white;
     }
@@ -82,7 +82,7 @@
         z-index: 10;
     }
     .reports-table td {
-        padding: 6px 10px;
+        padding: 8px 10px;
         border-bottom: 1px solid #e9ecef;
         cursor: pointer;
         transition: background 0.2s;
@@ -90,6 +90,20 @@
     }
     .reports-table tr:hover td {
         background-color: #f8f5fc;
+    }
+    .group-header-row {
+        background-color: #e8f0fe;
+        font-weight: bold;
+    }
+    .group-header-row td {
+        background-color: #e8f0fe;
+        border-bottom: 2px solid var(--primary-color);
+        padding: 8px 10px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    .group-header-row:hover td {
+        background-color: #e8f0fe;
     }
     .priority-high {
         color: #dc3545;
@@ -146,9 +160,9 @@
         background: var(--primary-color);
         color: white;
         border: none;
-        padding: 4px 10px;
-        border-radius: 15px;
-        font-size: 10px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
     }
@@ -157,20 +171,64 @@
     }
     .empty-section {
         text-align: center;
-        padding: 25px;
+        padding: 30px;
         color: #999;
+        font-size: 13px;
+    }
+    .date-filter-bar {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #e0e0e0;
+    }
+    .filter-label {
         font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
     }
-    .search-box {
-        display: flex;
-        gap: 10px;
+    .filter-info {
+        font-size: 12px;
+        margin-top: 10px;
+        padding: 8px;
+        background: #e8f0fe;
+        border-radius: 8px;
+        color: var(--primary-dark);
     }
-    .search-box input {
-        flex: 1;
+    .date-filter-select {
+        width: 100%;
         padding: 6px 10px;
+        border-radius: 6px;
         border: 1px solid #ddd;
+        font-size: 13px;
+    }
+    .btn-apply {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 6px 15px;
         border-radius: 6px;
         font-size: 12px;
+        cursor: pointer;
+        width: 100%;
+    }
+    .btn-apply:hover {
+        background-color: var(--primary-dark);
+    }
+    .btn-clear {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 5px;
+    }
+    .btn-clear:hover {
+        background-color: #5a6268;
     }
     .entity-name {
         max-width: 180px;
@@ -304,34 +362,62 @@
     </div>
 </div>
 
+<!-- Date Filter Bar -->
+<div class="date-filter-bar">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="filter-label">Month</div>
+            <select id="filterMonth" class="date-filter-select">
+                <option value="all">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="filter-label">Year</div>
+            <select id="filterYear" class="date-filter-select">
+                <option value="all">All Years</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <div class="filter-label">&nbsp;</div>
+            <button class="btn-apply" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply Filter</button>
+            <button class="btn-clear" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Show All</button>
+        </div>
+    </div>
+    <div id="filterInfo" class="filter-info" style="display: none;"></div>
+</div>
+
 <!-- Filters -->
 <div class="filter-card py-2">
     <div class="row g-2">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label fw-bold small mb-1">Status</label>
-            <select class="form-select form-select-sm" id="filterStatus" onchange="loadReports()">
+            <select class="form-select form-select-sm" id="filterStatus" onchange="applyFilters()">
                 <option value="all">All Status</option>
                 <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label fw-bold small mb-1">Technician</label>
-            <select class="form-select form-select-sm" id="filterTechnician" onchange="loadReports()">
+            <select class="form-select form-select-sm" id="filterTechnician" onchange="applyFilters()">
                 <option value="all">All Technicians</option>
             </select>
         </div>
         <div class="col-md-4">
             <label class="form-label fw-bold small mb-1">Search</label>
-            <div class="search-box">
-                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search..." onkeyup="filterReports()">
-            </div>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold small mb-1">&nbsp;</label>
-            <button class="btn btn-primary btn-sm w-100" onclick="loadReports()">
-                <i class="bi bi-search"></i> Refresh
-            </button>
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="applyFilters()">
         </div>
     </div>
 </div>
@@ -420,7 +506,10 @@
     let currentUser = null;
     let currentTechnicianId = null;
     let allReports = [];
+    let filteredReports = [];
     let isModalExpanded = false;
+    let currentFilterYear = 'all';
+    let currentFilterMonth = 'all';
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -434,6 +523,17 @@
         const date = new Date(dateString);
         date.setHours(date.getHours() + 8);
         return date.toLocaleDateString('en-GB');
+    }
+    
+    function getMonthYear(dateString) {
+        if (!dateString) return { month: 0, year: 0 };
+        const date = new Date(dateString);
+        return { month: date.getMonth() + 1, year: date.getFullYear() };
+    }
+    
+    function getMonthName(month) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return months[month - 1] || '';
     }
     
     function escapeHtml(text) {
@@ -548,20 +648,83 @@
         }
     }
     
-    function filterReports() {
+    function populateYearDropdown() {
+        const years = new Set();
+        allReports.forEach(report => {
+            const { year } = getMonthYear(report.created_at);
+            if (year) years.add(year);
+        });
+        const sortedYears = Array.from(years).sort((a, b) => b - a);
+        const yearSelect = document.getElementById('filterYear');
+        let options = '<option value="all">All Years</option>';
+        sortedYears.forEach(year => {
+            options += `<option value="${year}" ${currentFilterYear == year ? 'selected' : ''}>${year}</option>`;
+        });
+        yearSelect.innerHTML = options;
+    }
+    
+    function applyDateFilter() {
+        currentFilterMonth = document.getElementById('filterMonth').value;
+        currentFilterYear = document.getElementById('filterYear').value;
+        applyFilters();
+        
+        if (currentFilterMonth !== 'all' && currentFilterYear !== 'all') {
+            const monthName = getMonthName(parseInt(currentFilterMonth));
+            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from ${monthName} ${currentFilterYear}`;
+            document.getElementById('filterInfo').style.display = 'block';
+        } else if (currentFilterYear !== 'all') {
+            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from year ${currentFilterYear}`;
+            document.getElementById('filterInfo').style.display = 'block';
+        } else if (currentFilterMonth !== 'all') {
+            const monthName = getMonthName(parseInt(currentFilterMonth));
+            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from month ${monthName} (all years)`;
+            document.getElementById('filterInfo').style.display = 'block';
+        } else {
+            document.getElementById('filterInfo').style.display = 'none';
+        }
+    }
+    
+    function clearDateFilter() {
+        document.getElementById('filterMonth').value = 'all';
+        document.getElementById('filterYear').value = 'all';
+        currentFilterMonth = 'all';
+        currentFilterYear = 'all';
+        document.getElementById('filterInfo').style.display = 'none';
+        applyFilters();
+    }
+    
+    function applyFilters() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filterMonth = currentFilterMonth;
+        const filterYear = currentFilterYear;
         
         let filtered = [...allReports];
         
+        // Apply date filter
+        if (filterMonth !== 'all' || filterYear !== 'all') {
+            filtered = filtered.filter(r => {
+                const { month, year } = getMonthYear(r.created_at);
+                let match = true;
+                if (filterMonth !== 'all') match = match && month == filterMonth;
+                if (filterYear !== 'all') match = match && year == filterYear;
+                return match;
+            });
+        }
+        
+        // Apply technician filter
         if (technicianId !== 'all') {
             filtered = filtered.filter(r => r.technician_id == technicianId);
         }
+        
+        // Apply status filter
         if (status !== 'all') {
             if (status === 'pending') filtered = filtered.filter(r => !r.team_leader_acknowledged);
             if (status === 'acknowledged') filtered = filtered.filter(r => r.team_leader_acknowledged);
         }
+        
+        // Apply search filter
         if (searchTerm) {
             filtered = filtered.filter(r => 
                 (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
@@ -579,7 +742,11 @@
         document.getElementById('statAcknowledged').textContent = acknowledged;
         document.getElementById('totalCount').textContent = total;
         
-        displayReports(filtered);
+        const waterReports = filtered.filter(r => r.report_type === 'water');
+        const electricityReports = filtered.filter(r => r.report_type === 'electricity');
+        const telephoneReports = filtered.filter(r => r.report_type === 'telephone');
+        
+        displayReports(waterReports, electricityReports, telephoneReports);
     }
     
     async function loadReports() {
@@ -596,7 +763,8 @@
             allReports = await response.json();
             if (!allReports) allReports = [];
             
-            filterReports();
+            populateYearDropdown();
+            applyFilters();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
@@ -609,16 +777,80 @@
         }
     }
     
-    function displayReports(reports) {
-        const waterReports = reports.filter(r => r.report_type === 'water');
-        const electricityReports = reports.filter(r => r.report_type === 'electricity');
-        const telephoneReports = reports.filter(r => r.report_type === 'telephone');
-        
+    function displayReports(waterReports, electricityReports, telephoneReports) {
         const waterCollapsed = localStorage.getItem('water-section-collapsed') === 'true';
         const electricityCollapsed = localStorage.getItem('electricity-section-collapsed') === 'true';
         const telephoneCollapsed = localStorage.getItem('telephone-section-collapsed') === 'true';
         
         const container = document.getElementById('reportsContainer');
+        
+        // Group reports by technician
+        const groupByTechnician = (reports) => {
+            const groups = {};
+            reports.forEach(report => {
+                const techId = report.technician_id;
+                const techName = report.technician_name || 'Unknown';
+                if (!groups[techId]) {
+                    groups[techId] = {
+                        id: techId,
+                        name: techName,
+                        reports: []
+                    };
+                }
+                groups[techId].reports.push(report);
+            });
+            return Object.values(groups);
+        };
+        
+        const buildTableWithGroups = (reports, typeColor) => {
+            if (reports.length === 0) {
+                return '<div class="empty-section">No reports found</div>';
+            }
+            
+            const groups = groupByTechnician(reports);
+            
+            let tableHtml = `<table class="reports-table"><thead><tr>
+                                <th style="width: 55px;">ID</th>
+                                <th>Entity</th>
+                                <th>Problem Type</th>
+                                <th style="width: 70px;">Priority</th>
+                                <th style="width: 90px;">Status</th>
+                                <th>Date</th>
+                            </tr></thead><tbody>`;
+            
+            groups.forEach(group => {
+                // Add group header row (separator by technician)
+                tableHtml += `<tr class="group-header-row">
+                                <td colspan="6">
+                                    <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
+                                    <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
+                                </td>
+                             </tr>`;
+                
+                // Add report rows for this technician
+                group.reports.forEach(report => {
+                    const priorityClass = `priority-${report.priority}`;
+                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                    const isAcknowledged = report.team_leader_acknowledged;
+                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                    const isChecked = report.checked_by_assistant === true;
+                    
+                    tableHtml += `
+                        <tr onclick="openReportDetail(${report.id})">
+                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                            <td>${statusHtml}</td>
+                            <td class="date-cell">${formatDateOnly(report.created_at)}</td>
+                        </tr>
+                    `;
+                });
+            });
+            
+            tableHtml += `</tbody></table>`;
+            return tableHtml;
+        };
         
         container.innerHTML = `
             <!-- Water Reports Section -->
@@ -634,7 +866,7 @@
                     </div>
                 </div>
                 <div id="water-body" class="reports-table-wrapper" style="display: ${waterCollapsed ? 'none' : 'block'};">
-                    ${buildReportTable(waterReports)}
+                    ${buildTableWithGroups(waterReports, '#17a2b8')}
                 </div>
             </div>
             
@@ -651,7 +883,7 @@
                     </div>
                 </div>
                 <div id="electricity-body" class="reports-table-wrapper" style="display: ${electricityCollapsed ? 'none' : 'block'};">
-                    ${buildReportTable(electricityReports)}
+                    ${buildTableWithGroups(electricityReports, '#f57c00')}
                 </div>
             </div>
             
@@ -668,52 +900,9 @@
                     </div>
                 </div>
                 <div id="telephone-body" class="reports-table-wrapper" style="display: ${telephoneCollapsed ? 'none' : 'block'};">
-                    ${buildReportTable(telephoneReports)}
+                    ${buildTableWithGroups(telephoneReports, '#28a745')}
                 </div>
             </div>
-        `;
-    }
-    
-    function buildReportTable(reports) {
-        if (reports.length === 0) {
-            return '<div class="empty-section">No reports found</div>';
-        }
-        
-        return `
-            <table class="reports-table">
-                <thead>
-                    <tr>
-                        <th style="width: 55px;">ID</th>
-                        <th>Entity</th>
-                        <th>Problem Type</th>
-                        <th style="width: 70px;">Priority</th>
-                        <th style="width: 90px;">Status</th>
-                        <th>Technician</th>
-                        <th style="width: 80px;">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${reports.map(report => {
-                        const priorityClass = `priority-${report.priority}`;
-                        const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                        const isAcknowledged = report.team_leader_acknowledged;
-                        const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                        const isChecked = report.checked_by_assistant === true;
-                        
-                        return `
-                            <tr onclick="openReportDetail(${report.id})">
-                                <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                                <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
-                                <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
-                                <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
-                                <td>${statusHtml}</td>
-                                <td class="technician-name">${escapeHtml(report.technician_name || '-')}</td>
-                                <td class="date-cell">${formatDateOnly(report.created_at)}</td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
         `;
     }
     
@@ -1049,21 +1238,21 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</tr>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></tr>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</tr>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</tr>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</tr>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</tr>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</tr>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</tr>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</tr>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</tr>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</tr>` : ''}
                 </table>
                 
                 ${imagesHtml}
