@@ -158,6 +158,10 @@
         font-size: 10px;
         cursor: pointer;
     }
+    .entity-readonly {
+        background-color: #e9ecef;
+        opacity: 0.8;
+    }
 </style>
 
 <div class="card">
@@ -468,6 +472,8 @@
     let isEditMode = false;
     let editReportId = null;
     let isUploading = false;
+    let schoolsList = [];
+    let departmentsList = [];
 
     const urlParams = new URLSearchParams(window.location.search);
     editReportId = urlParams.get('id');
@@ -656,34 +662,45 @@
     async function loadSchools() {
         try {
             const response = await fetch('/api/schools');
-            return await response.json();
+            schoolsList = await response.json();
+            return schoolsList;
         } catch { return []; }
     }
 
     async function loadDepartments() {
         try {
             const response = await fetch('/api/departments');
-            return await response.json();
+            departmentsList = await response.json();
+            return departmentsList;
         } catch { return []; }
     }
 
-    document.getElementById('entityType').addEventListener('change', async function() {
+    // Function to populate entity dropdown based on type
+    async function populateEntityDropdown(entityType, selectedId = null) {
         const entitySelect = document.getElementById('entityId');
-        if (this.value === 'school') {
+        if (entityType === 'school') {
             const schools = await loadSchools();
-            entitySelect.innerHTML = '<option value="">Select School</option>' + schools.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+            let options = '<option value="">Select School</option>';
+            options += schools.map(s => `<option value="${s.id}" ${selectedId == s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+            entitySelect.innerHTML = options;
             entitySelect.disabled = false;
-        } else if (this.value === 'department') {
+        } else if (entityType === 'department') {
             const departments = await loadDepartments();
-            entitySelect.innerHTML = '<option value="">Select Department</option>' + departments.map(d => {
+            let options = '<option value="">Select Department</option>';
+            options += departments.map(d => {
                 const displayName = d.unit_name || d.name;
-                return `<option value="${d.id}">${escapeHtml(displayName)}</option>`;
+                return `<option value="${d.id}" ${selectedId == d.id ? 'selected' : ''}>${escapeHtml(displayName)}</option>`;
             }).join('');
+            entitySelect.innerHTML = options;
             entitySelect.disabled = false;
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
             entitySelect.disabled = true;
         }
+    }
+
+    document.getElementById('entityType').addEventListener('change', async function() {
+        await populateEntityDropdown(this.value);
     });
 
     document.querySelectorAll('input[name="reportType"]').forEach(radio => {
@@ -828,17 +845,11 @@
             document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
             updateAccountFields(report.report_type);
             
-            // Set entity type and load entities
+            // Set entity type and populate dropdown with selected value
             document.getElementById('entityType').value = report.entity_type;
-            const changeEvent = new Event('change');
-            document.getElementById('entityType').dispatchEvent(changeEvent);
             
-            // Wait for entity list to load, then set value
-            setTimeout(() => {
-                if (report.entity_id) {
-                    document.getElementById('entityId').value = report.entity_id;
-                }
-            }, 500);
+            // Populate entity dropdown with the selected value
+            await populateEntityDropdown(report.entity_type, report.entity_id);
             
             // Set form fields
             document.getElementById('problemType').value = report.problem_type || '';
@@ -1025,6 +1036,10 @@
         await getCurrentTechnician();
         updateAccountFields('water');
         document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
+        
+        // Pre-load schools and departments for faster editing
+        await loadSchools();
+        await loadDepartments();
         
         if (isEditMode && editReportId) {
             await loadReportForEdit(editReportId);
