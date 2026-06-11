@@ -289,6 +289,20 @@
         border-radius: 6px;
         font-size: 13px;
     }
+    .pabx-entry {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .pabx-entry input {
+        flex: 1;
+        min-width: 120px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -384,6 +398,7 @@
                         <textarea class="form-control" id="imageDescription" rows="2" placeholder="Describe what this map shows..."></textarea>
                     </div>
                     
+                    <!-- Water Account Details Section -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <span>💧 Water Account Details</span>
@@ -399,6 +414,7 @@
                         </div>
                     </div>
                     
+                    <!-- Electricity Account Details Section -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <span>⚡ Electricity Account Details</span>
@@ -414,6 +430,7 @@
                         </div>
                     </div>
                     
+                    <!-- Telephone Account Details Section -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <span>📞 Telephone Account Details</span>
@@ -429,6 +446,7 @@
                         </div>
                     </div>
                     
+                    <!-- Canteen Account Details Section -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <span>🍽️ Canteen Account Details</span>
@@ -444,6 +462,24 @@
                             <div class="account-entry mt-2">
                                 <input type="text" class="form-control" name="canteen_electricity_account_number[]" placeholder="Canteen Electricity Account Number">
                                 <button type="button" class="btn-add-account" onclick="addCanteenElectricityMeterField(this)">+ Electricity Meter</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PABX Details Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <span>📞 PABX Details</span>
+                            <button type="button" class="btn-add-account" onclick="addPABXField()">
+                                <i class="bi bi-plus-circle"></i> Add PABX
+                            </button>
+                        </div>
+                        <div id="pabxContainer">
+                            <div class="pabx-entry" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;">
+                                <input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;">
+                                <button type="button" class="btn-add-account" onclick="addPABXTrailingNo(this)">+ Trailing No.</button>
+                                <button type="button" class="btn-add-account" onclick="addPABXExtensionNo(this)">+ Extension No.</button>
                             </div>
                         </div>
                     </div>
@@ -479,40 +515,63 @@
                         <textarea class="form-control" id="editImageDescription" rows="2"></textarea>
                     </div>
                     
+                    <!-- Water Account Details Edit Section -->
                     <div class="edit-account-section">
-                        <div class="edit-account-title">💧 Water Account Details</div>
-                        <div class="edit-account-row">
-                            <input type="text" id="editWaterAccountNumber" class="form-control" placeholder="Water Account Number">
-                            <input type="text" id="editWaterMeterNumber" class="form-control" placeholder="Water Meter Number">
+                        <div class="edit-account-title">
+                            💧 Water Account Details
+                            <button type="button" class="btn-add-account" style="float: right;" onclick="addEditWaterAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
                         </div>
+                        <div id="editWaterAccountsContainer"></div>
                     </div>
                     
+                    <!-- Electricity Account Details Edit Section -->
                     <div class="edit-account-section">
-                        <div class="edit-account-title">⚡ Electricity Account Details</div>
-                        <div class="edit-account-row">
-                            <input type="text" id="editElectricityAccountNumber" class="form-control" placeholder="Electricity Account Number">
-                            <input type="text" id="editElectricityMeterNumber" class="form-control" placeholder="Electricity Meter Number">
+                        <div class="edit-account-title">
+                            ⚡ Electricity Account Details
+                            <button type="button" class="btn-add-account" style="float: right;" onclick="addEditElectricityAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
                         </div>
+                        <div id="editElectricityAccountsContainer"></div>
                     </div>
                     
+                    <!-- Telephone Account Details Edit Section -->
                     <div class="edit-account-section">
-                        <div class="edit-account-title">📞 Telephone Account Details</div>
-                        <div class="edit-account-row">
-                            <input type="text" id="editTelephoneAccountNumber" class="form-control" placeholder="Telephone Account Number">
-                            <input type="text" id="editTelephoneNumber" class="form-control" placeholder="Telephone Number">
+                        <div class="edit-account-title">
+                            📞 Telephone Account Details
+                            <button type="button" class="btn-add-account" style="float: right;" onclick="addEditTelephoneAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Account
+                            </button>
                         </div>
+                        <div id="editTelephoneAccountsContainer"></div>
                     </div>
                     
+                    <!-- Canteen Account Details Edit Section -->
                     <div class="edit-account-section">
-                        <div class="edit-account-title">🍽️ Canteen Account Details</div>
-                        <div class="edit-account-row">
-                            <input type="text" id="editCanteenWaterAccountNumber" class="form-control" placeholder="Canteen Water Account Number">
-                            <input type="text" id="editCanteenWaterMeterNumber" class="form-control" placeholder="Canteen Water Meter Number">
+                        <div class="edit-account-title">
+                            🍽️ Canteen Account Details
+                            <button type="button" class="btn-add-account" style="float: right;" onclick="addEditCanteenWaterAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Water Account
+                            </button>
+                            <button type="button" class="btn-add-account" style="float: right; margin-right: 5px;" onclick="addEditCanteenElectricityAccountField()">
+                                <i class="bi bi-plus-circle"></i> Add Electricity Account
+                            </button>
                         </div>
-                        <div class="edit-account-row mt-2">
-                            <input type="text" id="editCanteenElectricityAccountNumber" class="form-control" placeholder="Canteen Electricity Account Number">
-                            <input type="text" id="editCanteenElectricityMeterNumber" class="form-control" placeholder="Canteen Electricity Meter Number">
+                        <div id="editCanteenWaterAccountsContainer"></div>
+                        <div id="editCanteenElectricityAccountsContainer" style="margin-top: 10px;"></div>
+                    </div>
+                    
+                    <!-- PABX Details Edit Section -->
+                    <div class="edit-account-section">
+                        <div class="edit-account-title">
+                            📞 PABX Details
+                            <button type="button" class="btn-add-account" style="float: right;" onclick="addEditPABXField()">
+                                <i class="bi bi-plus-circle"></i> Add PABX
+                            </button>
                         </div>
+                        <div id="editPABXContainer"></div>
                     </div>
                     
                     <div class="mb-3">
@@ -600,6 +659,8 @@
         });
     }
 
+    // ============ ADD IMAGE MODAL FUNCTIONS ============
+    
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
         const newEntry = document.createElement('div');
@@ -722,12 +783,224 @@
         button.disabled = true;
     }
 
+    // ============ PABX FUNCTIONS FOR ADD IMAGE MODAL ============
+    
+    function addPABXField() {
+        const container = document.getElementById('pabxContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'pabx-entry';
+        newEntry.style.display = 'flex';
+        newEntry.style.gap = '10px';
+        newEntry.style.marginBottom = '10px';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;">
+            <input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;">
+            <button type="button" class="btn-add-account" onclick="addPABXTrailingNo(this)">+ Trailing No.</button>
+            <button type="button" class="btn-add-account" onclick="addPABXExtensionNo(this)">+ Extension No.</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addPABXTrailingNo(button) {
+        const pabxEntry = button.parentElement;
+        const trailingInput = document.createElement('input');
+        trailingInput.type = 'text';
+        trailingInput.className = 'form-control';
+        trailingInput.placeholder = 'Trailing No.';
+        trailingInput.name = 'pabx_trailing_no[]';
+        const buttons = pabxEntry.querySelectorAll('button');
+        pabxEntry.insertBefore(trailingInput, buttons[0]);
+        button.textContent = '+ Trailing No. (Added)';
+        button.disabled = true;
+    }
+
+    function addPABXExtensionNo(button) {
+        const pabxEntry = button.parentElement;
+        const extensionInput = document.createElement('input');
+        extensionInput.type = 'text';
+        extensionInput.className = 'form-control';
+        extensionInput.placeholder = 'Extension No.';
+        extensionInput.name = 'pabx_extension_no[]';
+        const buttons = pabxEntry.querySelectorAll('button');
+        pabxEntry.insertBefore(extensionInput, buttons[0]);
+        button.textContent = '+ Extension No. (Added)';
+        button.disabled = true;
+    }
+
+    // ============ EDIT MODAL FUNCTIONS ============
+    
+    function addEditWaterAccountField() {
+        const container = document.getElementById('editWaterAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'edit-account-row';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="Water Account Number">
+            <button type="button" class="btn-add-account" onclick="addEditWaterMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditWaterMeterField(button) {
+        const row = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Water Meter Number';
+        const buttons = row.querySelectorAll('button');
+        row.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addEditElectricityAccountField() {
+        const container = document.getElementById('editElectricityAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'edit-account-row';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="Electricity Account Number">
+            <button type="button" class="btn-add-account" onclick="addEditElectricityMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditElectricityMeterField(button) {
+        const row = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Electricity Meter Number';
+        const buttons = row.querySelectorAll('button');
+        row.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addEditTelephoneAccountField() {
+        const container = document.getElementById('editTelephoneAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'edit-account-row';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="Telephone Account Number">
+            <button type="button" class="btn-add-account" onclick="addEditTelephoneNumberField(this)">+ Number</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditTelephoneNumberField(button) {
+        const row = button.parentElement;
+        const phoneInput = document.createElement('input');
+        phoneInput.type = 'text';
+        phoneInput.className = 'form-control';
+        phoneInput.placeholder = 'Telephone Number';
+        const buttons = row.querySelectorAll('button');
+        row.insertBefore(phoneInput, buttons[0]);
+        button.textContent = '+ Number (Added)';
+        button.disabled = true;
+    }
+
+    function addEditCanteenWaterAccountField() {
+        const container = document.getElementById('editCanteenWaterAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'edit-account-row';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="Canteen Water Account Number">
+            <button type="button" class="btn-add-account" onclick="addEditCanteenWaterMeterField(this)">+ Water Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditCanteenWaterMeterField(button) {
+        const row = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Canteen Water Meter Number';
+        const buttons = row.querySelectorAll('button');
+        row.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Water Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addEditCanteenElectricityAccountField() {
+        const container = document.getElementById('editCanteenElectricityAccountsContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'edit-account-row';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="Canteen Electricity Account Number">
+            <button type="button" class="btn-add-account" onclick="addEditCanteenElectricityMeterField(this)">+ Electricity Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditCanteenElectricityMeterField(button) {
+        const row = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Canteen Electricity Meter Number';
+        const buttons = row.querySelectorAll('button');
+        row.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Electricity Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addEditPABXField() {
+        const container = document.getElementById('editPABXContainer');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'pabx-entry';
+        newEntry.style.display = 'flex';
+        newEntry.style.gap = '10px';
+        newEntry.style.marginBottom = '10px';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" placeholder="PABX Name" style="flex: 1.5;">
+            <input type="text" class="form-control" placeholder="Pilot No." style="flex: 1;">
+            <button type="button" class="btn-add-account" onclick="addEditPABXTrailingNo(this)">+ Trailing No.</button>
+            <button type="button" class="btn-add-account" onclick="addEditPABXExtensionNo(this)">+ Extension No.</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
+    }
+
+    function addEditPABXTrailingNo(button) {
+        const pabxEntry = button.parentElement;
+        const trailingInput = document.createElement('input');
+        trailingInput.type = 'text';
+        trailingInput.className = 'form-control';
+        trailingInput.placeholder = 'Trailing No.';
+        const buttons = pabxEntry.querySelectorAll('button');
+        pabxEntry.insertBefore(trailingInput, buttons[0]);
+        button.textContent = '+ Trailing No. (Added)';
+        button.disabled = true;
+    }
+
+    function addEditPABXExtensionNo(button) {
+        const pabxEntry = button.parentElement;
+        const extensionInput = document.createElement('input');
+        extensionInput.type = 'text';
+        extensionInput.className = 'form-control';
+        extensionInput.placeholder = 'Extension No.';
+        const buttons = pabxEntry.querySelectorAll('button');
+        pabxEntry.insertBefore(extensionInput, buttons[0]);
+        button.textContent = '+ Extension No. (Added)';
+        button.disabled = true;
+    }
+
+    // ============ COLLECT DATA FUNCTIONS ============
+    
     function getAllAccountData() {
         const accountData = {
             water_accounts: [], electricity_accounts: [], telephone_accounts: [],
-            canteen_water_accounts: [], canteen_electricity_accounts: []
+            canteen_water_accounts: [], canteen_electricity_accounts: [],
+            pabx_entries: []
         };
         
+        // Water accounts
         document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -738,6 +1011,7 @@
             }
         });
         
+        // Electricity accounts
         document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -748,6 +1022,7 @@
             }
         });
         
+        // Telephone accounts
         document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -758,6 +1033,7 @@
             }
         });
         
+        // Canteen water accounts
         document.querySelectorAll('#canteenAccountsContainer .account-entry:has(input[name="canteen_water_account_number[]"])').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -768,6 +1044,7 @@
             }
         });
         
+        // Canteen electricity accounts
         document.querySelectorAll('#canteenAccountsContainer .account-entry:has(input[name="canteen_electricity_account_number[]"])').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -778,10 +1055,123 @@
             }
         });
         
+        // PABX entries
+        document.querySelectorAll('#pabxContainer .pabx-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            const pabxData = {
+                name: inputs[0] ? inputs[0].value : '',
+                pilot_no: inputs[1] ? inputs[1].value : '',
+                trailing_numbers: [],
+                extension_numbers: []
+            };
+            
+            // Collect trailing numbers (after the first two inputs)
+            for (let i = 2; i < inputs.length; i++) {
+                if (inputs[i].placeholder === 'Trailing No.') {
+                    if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
+                } else if (inputs[i].placeholder === 'Extension No.') {
+                    if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
+                }
+            }
+            
+            if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
+                accountData.pabx_entries.push(pabxData);
+            }
+        });
+        
         return accountData;
     }
 
-    // ============ UPDATED: Show unit_name for departments instead of name ============
+    function getAllEditAccountData() {
+        const accountData = {
+            water_accounts: [], electricity_accounts: [], telephone_accounts: [],
+            canteen_water_accounts: [], canteen_electricity_accounts: [],
+            pabx_entries: []
+        };
+        
+        // Edit Water accounts
+        document.querySelectorAll('#editWaterAccountsContainer .edit-account-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.water_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Edit Electricity accounts
+        document.querySelectorAll('#editElectricityAccountsContainer .edit-account-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.electricity_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Edit Telephone accounts
+        document.querySelectorAll('#editTelephoneAccountsContainer .edit-account-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.telephone_accounts.push({
+                    account_number: inputs[0].value,
+                    phone_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Edit Canteen water accounts
+        document.querySelectorAll('#editCanteenWaterAccountsContainer .edit-account-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.canteen_water_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Edit Canteen electricity accounts
+        document.querySelectorAll('#editCanteenElectricityAccountsContainer .edit-account-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
+                accountData.canteen_electricity_accounts.push({
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
+                });
+            }
+        });
+        
+        // Edit PABX entries
+        document.querySelectorAll('#editPABXContainer .pabx-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            const pabxData = {
+                name: inputs[0] ? inputs[0].value : '',
+                pilot_no: inputs[1] ? inputs[1].value : '',
+                trailing_numbers: [],
+                extension_numbers: []
+            };
+            
+            for (let i = 2; i < inputs.length; i++) {
+                if (inputs[i].placeholder === 'Trailing No.') {
+                    if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
+                } else if (inputs[i].placeholder === 'Extension No.') {
+                    if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
+                }
+            }
+            
+            if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
+                accountData.pabx_entries.push(pabxData);
+            }
+        });
+        
+        return accountData;
+    }
+
+    // ============ ENTITY LIST FUNCTIONS ============
+    
     async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
         if (!currentEntityType) {
@@ -801,7 +1191,6 @@
         }
     }
 
-    // ============ UPDATED: For departments, show unit_name instead of name ============
     function displayEntityList(entities) {
         const container = document.getElementById('entityList');
         if (!entities || entities.length === 0) {
@@ -810,7 +1199,6 @@
         }
         
         container.innerHTML = entities.map(entity => {
-            // For departments, use unit_name as the display name
             let displayName = entity.name;
             if (currentEntityType === 'department' && entity.unit_name) {
                 displayName = entity.unit_name;
@@ -893,6 +1281,7 @@
             if (img.telephone_account_number) parts.push(`📞 Telephone: ${img.telephone_account_number} ${img.telephone_number ? '/ ' + img.telephone_number : ''}`);
             if (img.canteen_water_account_number) parts.push(`🍽️ Canteen Water: ${img.canteen_water_account_number} ${img.canteen_water_meter_number ? '/ ' + img.canteen_water_meter_number : ''}`);
             if (img.canteen_electricity_account_number) parts.push(`🍽️ Canteen Electricity: ${img.canteen_electricity_account_number} ${img.canteen_electricity_meter_number ? '/ ' + img.canteen_electricity_meter_number : ''}`);
+            if (img.pabx_name) parts.push(`📞 PABX: ${img.pabx_name} / Pilot: ${img.pabx_pilot_no || ''}`);
             if (parts.length) accountHtml = `<div class="account-details"><strong>📍 Account Details:</strong><br>${parts.join('<br>')}</div>`;
             
             return `
@@ -941,6 +1330,7 @@
         document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button></div>';
         document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button></div>';
         document.getElementById('canteenAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="canteen_water_account_number[]" placeholder="Canteen Water Account Number"><button type="button" class="btn-add-account" onclick="addCanteenWaterMeterField(this)">+ Water Meter</button></div><div class="account-entry mt-2"><input type="text" class="form-control" name="canteen_electricity_account_number[]" placeholder="Canteen Electricity Account Number"><button type="button" class="btn-add-account" onclick="addCanteenElectricityMeterField(this)">+ Electricity Meter</button></div>';
+        document.getElementById('pabxContainer').innerHTML = '<div class="pabx-entry" style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;"><input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;"><button type="button" class="btn-add-account" onclick="addPABXTrailingNo(this)">+ Trailing No.</button><button type="button" class="btn-add-account" onclick="addPABXExtensionNo(this)">+ Extension No.</button></div>';
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
     }
 
@@ -948,37 +1338,231 @@
         const image = currentImages.find(img => img.id === imageId);
         if (!image) return;
         currentImageId = imageId;
+        
         document.getElementById('editImageId').value = imageId;
         document.getElementById('editImageDescription').value = image.description || '';
         document.getElementById('editImageNotes').value = image.notes || '';
-        document.getElementById('editWaterAccountNumber').value = image.water_account_number || '';
-        document.getElementById('editWaterMeterNumber').value = image.water_meter_number || '';
-        document.getElementById('editElectricityAccountNumber').value = image.electricity_account_number || '';
-        document.getElementById('editElectricityMeterNumber').value = image.electricity_meter_number || '';
-        document.getElementById('editTelephoneAccountNumber').value = image.telephone_account_number || '';
-        document.getElementById('editTelephoneNumber').value = image.telephone_number || '';
-        document.getElementById('editCanteenWaterAccountNumber').value = image.canteen_water_account_number || '';
-        document.getElementById('editCanteenWaterMeterNumber').value = image.canteen_water_meter_number || '';
-        document.getElementById('editCanteenElectricityAccountNumber').value = image.canteen_electricity_account_number || '';
-        document.getElementById('editCanteenElectricityMeterNumber').value = image.canteen_electricity_meter_number || '';
+        
+        // Clear containers
+        document.getElementById('editWaterAccountsContainer').innerHTML = '';
+        document.getElementById('editElectricityAccountsContainer').innerHTML = '';
+        document.getElementById('editTelephoneAccountsContainer').innerHTML = '';
+        document.getElementById('editCanteenWaterAccountsContainer').innerHTML = '';
+        document.getElementById('editCanteenElectricityAccountsContainer').innerHTML = '';
+        document.getElementById('editPABXContainer').innerHTML = '';
+        
+        // Parse JSON data if stored
+        let waterAccounts = [];
+        let electricityAccounts = [];
+        let telephoneAccounts = [];
+        let canteenWaterAccounts = [];
+        let canteenElectricityAccounts = [];
+        let pabxEntries = [];
+        
+        if (image.water_accounts_json) {
+            try { waterAccounts = JSON.parse(image.water_accounts_json); } catch(e) {}
+        } else if (image.water_account_number) {
+            waterAccounts = [{ account_number: image.water_account_number || '', meter_number: image.water_meter_number || '' }];
+        }
+        
+        if (image.electricity_accounts_json) {
+            try { electricityAccounts = JSON.parse(image.electricity_accounts_json); } catch(e) {}
+        } else if (image.electricity_account_number) {
+            electricityAccounts = [{ account_number: image.electricity_account_number || '', meter_number: image.electricity_meter_number || '' }];
+        }
+        
+        if (image.telephone_accounts_json) {
+            try { telephoneAccounts = JSON.parse(image.telephone_accounts_json); } catch(e) {}
+        } else if (image.telephone_account_number) {
+            telephoneAccounts = [{ account_number: image.telephone_account_number || '', phone_number: image.telephone_number || '' }];
+        }
+        
+        if (image.canteen_water_accounts_json) {
+            try { canteenWaterAccounts = JSON.parse(image.canteen_water_accounts_json); } catch(e) {}
+        } else if (image.canteen_water_account_number) {
+            canteenWaterAccounts = [{ account_number: image.canteen_water_account_number || '', meter_number: image.canteen_water_meter_number || '' }];
+        }
+        
+        if (image.canteen_electricity_accounts_json) {
+            try { canteenElectricityAccounts = JSON.parse(image.canteen_electricity_accounts_json); } catch(e) {}
+        } else if (image.canteen_electricity_account_number) {
+            canteenElectricityAccounts = [{ account_number: image.canteen_electricity_account_number || '', meter_number: image.canteen_electricity_meter_number || '' }];
+        }
+        
+        if (image.pabx_entries_json) {
+            try { pabxEntries = JSON.parse(image.pabx_entries_json); } catch(e) {}
+        } else if (image.pabx_name) {
+            pabxEntries = [{
+                name: image.pabx_name || '',
+                pilot_no: image.pabx_pilot_no || '',
+                trailing_numbers: image.pabx_trailing_no || [],
+                extension_numbers: image.pabx_extension_no || []
+            }];
+        }
+        
+        // Populate Water Accounts
+        waterAccounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.className = 'edit-account-row';
+            let meterButtonHtml = '';
+            if (acc.meter_number) {
+                meterButtonHtml = `<input type="text" class="form-control" placeholder="Water Meter Number" value="${escapeHtml(acc.meter_number)}"><button type="button" class="btn-add-account" disabled>+ Meter (Added)</button>`;
+            } else {
+                meterButtonHtml = `<button type="button" class="btn-add-account" onclick="addEditWaterMeterField(this)">+ Meter</button>`;
+            }
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Water Account Number" value="${escapeHtml(acc.account_number)}">
+                ${meterButtonHtml}
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editWaterAccountsContainer').appendChild(row);
+        });
+        
+        // Populate Electricity Accounts
+        electricityAccounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.className = 'edit-account-row';
+            let meterButtonHtml = '';
+            if (acc.meter_number) {
+                meterButtonHtml = `<input type="text" class="form-control" placeholder="Electricity Meter Number" value="${escapeHtml(acc.meter_number)}"><button type="button" class="btn-add-account" disabled>+ Meter (Added)</button>`;
+            } else {
+                meterButtonHtml = `<button type="button" class="btn-add-account" onclick="addEditElectricityMeterField(this)">+ Meter</button>`;
+            }
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Electricity Account Number" value="${escapeHtml(acc.account_number)}">
+                ${meterButtonHtml}
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editElectricityAccountsContainer').appendChild(row);
+        });
+        
+        // Populate Telephone Accounts
+        telephoneAccounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.className = 'edit-account-row';
+            let phoneButtonHtml = '';
+            if (acc.phone_number) {
+                phoneButtonHtml = `<input type="text" class="form-control" placeholder="Telephone Number" value="${escapeHtml(acc.phone_number)}"><button type="button" class="btn-add-account" disabled>+ Number (Added)</button>`;
+            } else {
+                phoneButtonHtml = `<button type="button" class="btn-add-account" onclick="addEditTelephoneNumberField(this)">+ Number</button>`;
+            }
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Telephone Account Number" value="${escapeHtml(acc.account_number)}">
+                ${phoneButtonHtml}
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editTelephoneAccountsContainer').appendChild(row);
+        });
+        
+        // Populate Canteen Water Accounts
+        canteenWaterAccounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.className = 'edit-account-row';
+            let meterButtonHtml = '';
+            if (acc.meter_number) {
+                meterButtonHtml = `<input type="text" class="form-control" placeholder="Canteen Water Meter Number" value="${escapeHtml(acc.meter_number)}"><button type="button" class="btn-add-account" disabled>+ Water Meter (Added)</button>`;
+            } else {
+                meterButtonHtml = `<button type="button" class="btn-add-account" onclick="addEditCanteenWaterMeterField(this)">+ Water Meter</button>`;
+            }
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Canteen Water Account Number" value="${escapeHtml(acc.account_number)}">
+                ${meterButtonHtml}
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editCanteenWaterAccountsContainer').appendChild(row);
+        });
+        
+        // Populate Canteen Electricity Accounts
+        canteenElectricityAccounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.className = 'edit-account-row';
+            let meterButtonHtml = '';
+            if (acc.meter_number) {
+                meterButtonHtml = `<input type="text" class="form-control" placeholder="Canteen Electricity Meter Number" value="${escapeHtml(acc.meter_number)}"><button type="button" class="btn-add-account" disabled>+ Electricity Meter (Added)</button>`;
+            } else {
+                meterButtonHtml = `<button type="button" class="btn-add-account" onclick="addEditCanteenElectricityMeterField(this)">+ Electricity Meter</button>`;
+            }
+            row.innerHTML = `
+                <input type="text" class="form-control" placeholder="Canteen Electricity Account Number" value="${escapeHtml(acc.account_number)}">
+                ${meterButtonHtml}
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editCanteenElectricityAccountsContainer').appendChild(row);
+        });
+        
+        // Populate PABX Entries
+        pabxEntries.forEach(pabx => {
+            const entry = document.createElement('div');
+            entry.className = 'pabx-entry';
+            entry.style.display = 'flex';
+            entry.style.gap = '10px';
+            entry.style.marginBottom = '10px';
+            
+            let trailingHtml = '';
+            let extensionHtml = '';
+            
+            pabx.trailing_numbers.forEach(trail => {
+                trailingHtml += `<input type="text" class="form-control" placeholder="Trailing No." value="${escapeHtml(trail)}">`;
+            });
+            pabx.extension_numbers.forEach(ext => {
+                extensionHtml += `<input type="text" class="form-control" placeholder="Extension No." value="${escapeHtml(ext)}">`;
+            });
+            
+            entry.innerHTML = `
+                <input type="text" class="form-control" placeholder="PABX Name" value="${escapeHtml(pabx.name)}" style="flex: 1.5;">
+                <input type="text" class="form-control" placeholder="Pilot No." value="${escapeHtml(pabx.pilot_no)}" style="flex: 1;">
+                ${trailingHtml}
+                <button type="button" class="btn-add-account" onclick="addEditPABXTrailingNo(this)">+ Trailing No.</button>
+                ${extensionHtml}
+                <button type="button" class="btn-add-account" onclick="addEditPABXExtensionNo(this)">+ Extension No.</button>
+                <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+            `;
+            document.getElementById('editPABXContainer').appendChild(entry);
+        });
+        
         new bootstrap.Modal(document.getElementById('editImageModal')).show();
     }
 
     async function saveImageEdit() {
+        const accountData = getAllEditAccountData();
+        
+        // Build the update data
+        let waterAccount = accountData.water_accounts[0] || {};
+        let electricityAccount = accountData.electricity_accounts[0] || {};
+        let telephoneAccount = accountData.telephone_accounts[0] || {};
+        let canteenWaterAccount = accountData.canteen_water_accounts[0] || {};
+        let canteenElectricityAccount = accountData.canteen_electricity_accounts[0] || {};
+        let pabxEntry = accountData.pabx_entries[0] || {};
+        
         const updateData = {
             description: document.getElementById('editImageDescription').value,
             notes: document.getElementById('editImageNotes').value,
-            water_account_number: document.getElementById('editWaterAccountNumber').value,
-            water_meter_number: document.getElementById('editWaterMeterNumber').value,
-            electricity_account_number: document.getElementById('editElectricityAccountNumber').value,
-            electricity_meter_number: document.getElementById('editElectricityMeterNumber').value,
-            telephone_account_number: document.getElementById('editTelephoneAccountNumber').value,
-            telephone_number: document.getElementById('editTelephoneNumber').value,
-            canteen_water_account_number: document.getElementById('editCanteenWaterAccountNumber').value,
-            canteen_water_meter_number: document.getElementById('editCanteenWaterMeterNumber').value,
-            canteen_electricity_account_number: document.getElementById('editCanteenElectricityAccountNumber').value,
-            canteen_electricity_meter_number: document.getElementById('editCanteenElectricityMeterNumber').value
+            water_account_number: waterAccount.account_number || '',
+            water_meter_number: waterAccount.meter_number || '',
+            electricity_account_number: electricityAccount.account_number || '',
+            electricity_meter_number: electricityAccount.meter_number || '',
+            telephone_account_number: telephoneAccount.account_number || '',
+            telephone_number: telephoneAccount.phone_number || '',
+            canteen_water_account_number: canteenWaterAccount.account_number || '',
+            canteen_water_meter_number: canteenWaterAccount.meter_number || '',
+            canteen_electricity_account_number: canteenElectricityAccount.account_number || '',
+            canteen_electricity_meter_number: canteenElectricityAccount.meter_number || '',
+            pabx_name: pabxEntry.name || '',
+            pabx_pilot_no: pabxEntry.pilot_no || '',
+            water_accounts_json: JSON.stringify(accountData.water_accounts),
+            electricity_accounts_json: JSON.stringify(accountData.electricity_accounts),
+            telephone_accounts_json: JSON.stringify(accountData.telephone_accounts),
+            canteen_water_accounts_json: JSON.stringify(accountData.canteen_water_accounts),
+            canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
+            pabx_entries_json: JSON.stringify(accountData.pabx_entries)
         };
+        
+        // Also add arrays for backward compatibility
+        if (accountData.pabx_entries.length > 0) {
+            updateData.pabx_trailing_no = accountData.pabx_entries[0].trailing_numbers || [];
+            updateData.pabx_extension_no = accountData.pabx_entries[0].extension_numbers || [];
+        }
+        
         try {
             const response = await fetch(`/api/mapping/images/${currentImageId}`, {
                 method: 'PUT',
@@ -999,6 +1583,7 @@
         }
     }
 
+    // Image upload handler
     document.getElementById('mapImageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -1061,11 +1646,12 @@
         let successCount = 0;
         
         for (const img of uploadedImages) {
-            const waterAccount = accountData.water_accounts[0] || {};
-            const electricityAccount = accountData.electricity_accounts[0] || {};
-            const telephoneAccount = accountData.telephone_accounts[0] || {};
-            const canteenWaterAccount = accountData.canteen_water_accounts[0] || {};
-            const canteenElectricityAccount = accountData.canteen_electricity_accounts[0] || {};
+            let waterAccount = accountData.water_accounts[0] || {};
+            let electricityAccount = accountData.electricity_accounts[0] || {};
+            let telephoneAccount = accountData.telephone_accounts[0] || {};
+            let canteenWaterAccount = accountData.canteen_water_accounts[0] || {};
+            let canteenElectricityAccount = accountData.canteen_electricity_accounts[0] || {};
+            let pabxEntry = accountData.pabx_entries[0] || {};
             
             const imageData = {
                 entity_type: currentEntityType,
@@ -1083,8 +1669,24 @@
                 canteen_water_meter_number: canteenWaterAccount.meter_number || '',
                 canteen_electricity_account_number: canteenElectricityAccount.account_number || '',
                 canteen_electricity_meter_number: canteenElectricityAccount.meter_number || '',
+                pabx_name: pabxEntry.name || '',
+                pabx_pilot_no: pabxEntry.pilot_no || '',
+                water_accounts_json: JSON.stringify(accountData.water_accounts),
+                electricity_accounts_json: JSON.stringify(accountData.electricity_accounts),
+                telephone_accounts_json: JSON.stringify(accountData.telephone_accounts),
+                canteen_water_accounts_json: JSON.stringify(accountData.canteen_water_accounts),
+                canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
+                pabx_entries_json: JSON.stringify(accountData.pabx_entries),
                 uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
             };
+            
+            // Add arrays
+            if (pabxEntry.trailing_numbers && pabxEntry.trailing_numbers.length) {
+                imageData.pabx_trailing_no = pabxEntry.trailing_numbers;
+            }
+            if (pabxEntry.extension_numbers && pabxEntry.extension_numbers.length) {
+                imageData.pabx_extension_no = pabxEntry.extension_numbers;
+            }
             
             try {
                 const response = await fetch('/api/mapping/images', {
@@ -1119,6 +1721,9 @@
         if (image.telephone_account_number) detailsHtml += `<p><strong>📞 Telephone:</strong> ${image.telephone_account_number} ${image.telephone_number ? '/ ' + image.telephone_number : ''}</p>`;
         if (image.canteen_water_account_number) detailsHtml += `<p><strong>🍽️ Canteen Water:</strong> ${image.canteen_water_account_number} ${image.canteen_water_meter_number ? '/ ' + image.canteen_water_meter_number : ''}</p>`;
         if (image.canteen_electricity_account_number) detailsHtml += `<p><strong>🍽️ Canteen Electricity:</strong> ${image.canteen_electricity_account_number} ${image.canteen_electricity_meter_number ? '/ ' + image.canteen_electricity_meter_number : ''}</p>`;
+        if (image.pabx_name) detailsHtml += `<p><strong>📞 PABX:</strong> ${image.pabx_name} / Pilot: ${image.pabx_pilot_no || ''}</p>`;
+        if (image.pabx_trailing_no && image.pabx_trailing_no.length) detailsHtml += `<p><strong>Trailing Numbers:</strong> ${image.pabx_trailing_no.join(', ')}</p>`;
+        if (image.pabx_extension_no && image.pabx_extension_no.length) detailsHtml += `<p><strong>Extension Numbers:</strong> ${image.pabx_extension_no.join(', ')}</p>`;
         if (image.notes) detailsHtml += `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>`;
         detailsHtml += `<p class="text-muted"><small>Uploaded: ${formatDateOnly(image.uploaded_at)}</small></p></div></div>`;
         document.getElementById('viewImageDetails').innerHTML = detailsHtml;
@@ -1192,6 +1797,22 @@
     window.addCanteenAccountField = addCanteenAccountField;
     window.addCanteenWaterMeterField = addCanteenWaterMeterField;
     window.addCanteenElectricityMeterField = addCanteenElectricityMeterField;
+    window.addPABXField = addPABXField;
+    window.addPABXTrailingNo = addPABXTrailingNo;
+    window.addPABXExtensionNo = addPABXExtensionNo;
+    window.addEditWaterAccountField = addEditWaterAccountField;
+    window.addEditWaterMeterField = addEditWaterMeterField;
+    window.addEditElectricityAccountField = addEditElectricityAccountField;
+    window.addEditElectricityMeterField = addEditElectricityMeterField;
+    window.addEditTelephoneAccountField = addEditTelephoneAccountField;
+    window.addEditTelephoneNumberField = addEditTelephoneNumberField;
+    window.addEditCanteenWaterAccountField = addEditCanteenWaterAccountField;
+    window.addEditCanteenWaterMeterField = addEditCanteenWaterMeterField;
+    window.addEditCanteenElectricityAccountField = addEditCanteenElectricityAccountField;
+    window.addEditCanteenElectricityMeterField = addEditCanteenElectricityMeterField;
+    window.addEditPABXField = addEditPABXField;
+    window.addEditPABXTrailingNo = addEditPABXTrailingNo;
+    window.addEditPABXExtensionNo = addEditPABXExtensionNo;
     window.removeImage = removeImage;
     window.uploadMapImage = uploadMapImage;
     window.showAddImageModal = showAddImageModal;
