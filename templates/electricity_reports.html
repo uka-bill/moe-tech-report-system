@@ -22,78 +22,59 @@
         border-radius: 8px;
         border: 1px solid #ddd;
     }
-    .view-toggle {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        background: #f0f0f0;
-        padding: 5px;
-        border-radius: 30px;
-    }
-    .view-toggle-btn {
-        padding: 6px 18px;
-        border-radius: 25px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-    .view-toggle-btn.active {
-        background: #f57c00;
-        color: white;
-    }
     .section-header {
         background: linear-gradient(135deg, #fff3e0 0%, #fff 100%);
-        padding: 12px 20px;
-        border-radius: 12px;
+        padding: 8px 15px;
+        border-radius: 8px;
         margin-bottom: 10px;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
         transition: all 0.2s;
-        border-left: 4px solid #f57c00;
+        border-left: 3px solid #f57c00;
     }
     .section-header:hover {
         background: linear-gradient(135deg, #fff 0%, #fff3e0 100%);
     }
     .section-title {
         font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     .section-count {
         background: white;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
+        padding: 2px 6px;
+        border-radius: 15px;
+        font-size: 0.7rem;
         color: #f57c00;
     }
     .section-toggle-icon {
-        font-size: 1.2rem;
+        font-size: 0.9rem;
     }
-    .reports-table-container {
-        margin-bottom: 20px;
-        border-radius: 12px;
-        overflow: hidden;
+    .category-container {
+        margin-bottom: 15px;
+    }
+    .reports-table-wrapper {
+        max-height: 450px;
+        overflow-y: auto;
+        border-radius: 8px;
         border: 1px solid #e0e0e0;
         background: white;
-        max-height: 500px;
-        overflow-y: auto;
     }
     .reports-table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 12px;
     }
     .reports-table th {
         background: #f8f9fa;
-        padding: 12px 15px;
+        padding: 8px 10px;
         text-align: left;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         color: #495057;
         border-bottom: 2px solid #dee2e6;
         position: sticky;
@@ -102,41 +83,44 @@
         z-index: 10;
     }
     .reports-table td {
-        padding: 10px 15px;
+        padding: 6px 10px;
         border-bottom: 1px solid #e9ecef;
-        font-size: 13px;
         cursor: pointer;
         transition: background 0.2s;
+        vertical-align: middle;
     }
     .reports-table tr:hover td {
         background-color: #f8f5fc;
     }
     .priority-high {
         color: #dc3545;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .priority-medium {
         color: #fd7e14;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .priority-low {
         color: #28a745;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .status-pending {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
         font-weight: 500;
         background-color: #fff3cd;
         color: #856404;
     }
     .status-acknowledged {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
         font-weight: 500;
         background-color: #d4edda;
         color: #155724;
@@ -144,36 +128,51 @@
     .checked-badge {
         background-color: #17a2b8;
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 10px;
+        padding: 2px 5px;
+        border-radius: 8px;
+        font-size: 8px;
         display: inline-block;
+        margin-left: 4px;
     }
     .report-id-link {
         font-weight: 600;
         color: #f57c00;
         text-decoration: none;
+        font-size: 11px;
     }
     .report-id-link:hover {
         text-decoration: underline;
     }
-    .expand-all-btn, .collapse-all-btn {
-        background: #f57c00;
-        color: white;
-        border: none;
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
+    .entity-name {
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11px;
     }
-    .expand-all-btn:hover, .collapse-all-btn:hover {
-        background: #e65100;
+    .problem-type {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11px;
+    }
+    .technician-name {
+        font-size: 11px;
+    }
+    .date-cell {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    .priority-icon {
+        font-size: 10px;
+        margin-right: 2px;
     }
     .empty-section {
         text-align: center;
-        padding: 40px;
+        padding: 25px;
         color: #999;
+        font-size: 12px;
     }
     .search-box {
         display: flex;
@@ -181,93 +180,55 @@
     }
     .search-box input {
         flex: 1;
-        padding: 8px 12px;
+        padding: 6px 10px;
         border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 6px;
+        font-size: 12px;
     }
     
-    /* Card View Styles */
-    .report-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        transition: all 0.2s;
+    .reports-table-wrapper::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-thumb {
+        background: #f57c00;
+        border-radius: 10px;
+    }
+    
+    /* Modal Styles */
+    .modal-fullscreen {
+        max-width: 95%;
+        width: 95%;
+        margin: 1rem auto;
+    }
+    .modal-fullscreen .modal-body {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header .btn-expand {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1rem;
         cursor: pointer;
-        border-left: 4px solid #f57c00;
+        margin-left: 10px;
     }
-    .report-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    .report-detail-container {
+        font-size: 14px;
+        line-height: 1.6;
     }
-    .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
+    .report-detail-container .row {
+        margin-bottom: 8px;
     }
-    .report-type-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 500;
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-    .priority-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    .priority-high { background-color: #f8d7da; color: #721c24; }
-    .priority-medium { background-color: #fff3cd; color: #856404; }
-    .priority-low { background-color: #d4edda; color: #155724; }
-    .status-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-acknowledged { background-color: #d4edda; color: #155724; }
-    .card-view-container {
-        display: block;
-    }
-    .table-view-container {
-        display: none;
-    }
-    .view-active .card-view-container {
-        display: block;
-    }
-    .view-active .table-view-container {
-        display: none;
-    }
-    .view-table .card-view-container {
-        display: none;
-    }
-    .view-table .table-view-container {
-        display: block;
-    }
-    .empty-reports {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 12px;
-    }
-    .empty-reports i {
-        font-size: 64px;
-        color: #ccc;
-        margin-bottom: 20px;
-    }
-    .image-preview {
-        width: 100px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 5px;
+    .image-preview-large {
+        max-width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        border-radius: 8px;
         cursor: pointer;
     }
     .comment-section {
@@ -296,88 +257,72 @@
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <h2><i class="bi bi-lightning-charge text-warning"></i> Electricity Reports</h2>
     <div class="stats-badge">
-        <i class="bi bi-envelope"></i> Pending Review: <span id="pendingCount">0</span>
+        <i class="bi bi-envelope"></i> Pending: <span id="pendingCount">0</span>
     </div>
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-4">
         <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Total Electricity Reports</h5>
-                <h2 id="statTotal">0</h2>
+            <div class="card-body py-2">
+                <h6 class="card-title mb-0">Total Electricity Reports</h6>
+                <h3 class="mb-0" id="statTotal">0</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Pending Acknowledgment</h5>
-                <h2 id="statPending">0</h2>
+            <div class="card-body py-2">
+                <h6 class="card-title mb-0">Pending Acknowledgment</h6>
+                <h3 class="mb-0" id="statPending">0</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Acknowledged</h5>
-                <h2 id="statAcknowledged">0</h2>
+            <div class="card-body py-2">
+                <h6 class="card-title mb-0">Acknowledged</h6>
+                <h3 class="mb-0" id="statAcknowledged">0</h3>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="filter-card">
-    <div class="row">
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Status</label>
-            <select class="filter-select" id="filterStatus" onchange="loadReports()">
+<div class="filter-card py-2">
+    <div class="row g-2">
+        <div class="col-md-4">
+            <label class="form-label fw-bold small mb-1">Status</label>
+            <select class="form-select form-select-sm" id="filterStatus" onchange="loadReports()">
                 <option value="all">All Status</option>
                 <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Technician</label>
-            <select class="filter-select" id="filterTechnician" onchange="loadReports()">
+        <div class="col-md-4">
+            <label class="form-label fw-bold small mb-1">Technician</label>
+            <select class="form-select form-select-sm" id="filterTechnician" onchange="loadReports()">
                 <option value="all">All Technicians</option>
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-bold">Search</label>
-            <div class="search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
-            </div>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label fw-bold">&nbsp;</label>
-            <div class="d-flex gap-2">
-                <div class="view-toggle">
-                    <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
-                    <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
-                </div>
-                <button class="btn btn-sm btn-warning" onclick="loadReports()">
-                    <i class="bi bi-search"></i>
-                </button>
-            </div>
+            <label class="form-label fw-bold small mb-1">&nbsp;</label>
+            <button class="btn btn-warning btn-sm w-100" onclick="loadReports()">
+                <i class="bi bi-search"></i> Refresh
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Expand/Collapse All Buttons -->
-<div class="d-flex justify-content-end gap-2 mb-3">
-    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
-    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
-</div>
-
-<div id="reportsContainer" class="view-table">
-    <div class="table-view-container" id="tableViewContainer"></div>
-    <div class="card-view-container" id="cardViewContainer"></div>
+<div id="reportsContainer">
+    <div class="text-center py-4">
+        <div class="spinner-border text-warning spinner-border-sm" role="status"></div>
+        <p class="mt-2 small">Loading electricity reports...</p>
+    </div>
 </div>
 
 <!-- Hidden iframe for printing -->
@@ -385,19 +330,22 @@
 
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title">Electricity Report Details</h5>
+                <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalBody">Loading...</div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
-                <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
-                <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
-                <button type="button" class="btn btn-success" id="acknowledgeBtn" onclick="showAcknowledgeModal()" style="display: none;">Acknowledge</button>
+            <div class="modal-body" id="modalBody" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">Print</button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="editReport()" id="editBtn">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="deleteReport()" id="deleteBtn">Delete</button>
+                <button type="button" class="btn btn-success btn-sm" id="acknowledgeBtn" onclick="showAcknowledgeModal()" style="display: none;">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -407,16 +355,16 @@
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <textarea class="form-control" id="acknowledgeComment" rows="5" placeholder="Enter your review comments..."></textarea>
+                <textarea class="form-control" id="acknowledgeComment" rows="4" placeholder="Enter your review comments..."></textarea>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="submitAcknowledge()">Acknowledge</button>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" onclick="submitAcknowledge()">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -426,16 +374,16 @@
 <div class="modal fade" id="commentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title">Add Comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment..."></textarea>
+                <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your comment..."></textarea>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitComment()">Add Comment</button>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitComment()">Add Comment</button>
             </div>
         </div>
     </div>
@@ -448,8 +396,7 @@
     let currentUser = null;
     let currentTechnicianId = null;
     let allReports = [];
-    let filteredReports = [];
-    let currentView = localStorage.getItem('electricityReportView') || 'table';
+    let isModalExpanded = false;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -482,6 +429,22 @@
         return cleaned.trim();
     }
     
+    function toggleModalSize() {
+        const modalDialog = document.querySelector('#reportModal .modal-dialog');
+        const expandBtn = document.getElementById('expandModalBtn');
+        if (isModalExpanded) {
+            modalDialog.classList.remove('modal-fullscreen');
+            modalDialog.classList.add('modal-xl');
+            expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            isModalExpanded = false;
+        } else {
+            modalDialog.classList.remove('modal-xl');
+            modalDialog.classList.add('modal-fullscreen');
+            expandBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
+            isModalExpanded = true;
+        }
+    }
+    
     function checkUserRole() {
         currentUser = window.getCurrentUser();
         isTeamLeader = currentUser && currentUser.isAuthorized === true;
@@ -492,56 +455,6 @@
         if (!imgPath) return '';
         if (imgPath.startsWith('http')) return imgPath;
         return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
-    }
-    
-    function setView(view) {
-        currentView = view;
-        localStorage.setItem('electricityReportView', view);
-        const container = document.getElementById('reportsContainer');
-        if (view === 'card') {
-            container.classList.remove('view-table');
-            container.classList.add('view-active');
-        } else {
-            container.classList.remove('view-active');
-            container.classList.add('view-table');
-        }
-        document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
-        if (view === 'card') {
-            document.querySelector('.view-toggle-btn:first-child').classList.add('active');
-        } else {
-            document.querySelector('.view-toggle-btn:last-child').classList.add('active');
-        }
-        displayReports();
-    }
-    
-    function expandAllSections() {
-        const body = document.getElementById('section-body');
-        if (body) {
-            body.style.display = 'block';
-            const icon = document.querySelector('.section-toggle-icon');
-            if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-        }
-    }
-    
-    function collapseAllSections() {
-        const body = document.getElementById('section-body');
-        if (body) {
-            body.style.display = 'none';
-            const icon = document.querySelector('.section-toggle-icon');
-            if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-        }
-    }
-    
-    function toggleSection() {
-        const body = document.getElementById('section-body');
-        const icon = document.querySelector('.section-toggle-icon');
-        if (body.style.display === 'none') {
-            body.style.display = 'block';
-            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-        } else {
-            body.style.display = 'none';
-            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-        }
     }
     
     async function loadTechniciansForFilter() {
@@ -560,8 +473,11 @@
     }
     
     async function loadReports() {
+        const status = document.getElementById('filterStatus').value;
+        const technicianId = document.getElementById('filterTechnician').value;
+        
         const container = document.getElementById('reportsContainer');
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-warning"></div><p>Loading reports...</p></div>';
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-warning spinner-border-sm"></div><p class="mt-2 small">Loading electricity reports...</p></div>';
         
         try {
             const response = await fetch('/api/technical-reports?type=electricity');
@@ -570,181 +486,94 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            allReports = await response.json();
-            if (!allReports) allReports = [];
+            let reports = await response.json();
+            if (!reports) reports = [];
             
-            filterReports();
+            if (technicianId !== 'all') {
+                reports = reports.filter(r => r.technician_id == technicianId);
+            }
+            if (status !== 'all') {
+                if (status === 'pending') reports = reports.filter(r => !r.team_leader_acknowledged);
+                if (status === 'acknowledged') reports = reports.filter(r => r.team_leader_acknowledged);
+            }
+            
+            const pendingCount = reports.filter(r => !r.team_leader_acknowledged).length;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            
+            const total = reports.length;
+            const pending = reports.filter(r => !r.team_leader_acknowledged).length;
+            const acknowledged = reports.filter(r => r.team_leader_acknowledged).length;
+            
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statAcknowledged').textContent = acknowledged;
+            
+            displayReports(reports);
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
-                <div class="text-center py-5 text-danger">
-                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
-                    <p>Error loading reports: ${error.message}</p>
-                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p class="small">Error loading reports: ${error.message}</p>
+                    <button class="btn btn-primary btn-sm" onclick="loadReports()">Try Again</button>
                 </div>
             `;
         }
     }
     
-    function filterReports() {
-        const status = document.getElementById('filterStatus').value;
-        const technicianId = document.getElementById('filterTechnician').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        
-        filteredReports = [...allReports];
-        
-        if (technicianId !== 'all') {
-            filteredReports = filteredReports.filter(r => r.technician_id == technicianId);
-        }
-        if (status !== 'all') {
-            if (status === 'pending') filteredReports = filteredReports.filter(r => !r.team_leader_acknowledged);
-            if (status === 'acknowledged') filteredReports = filteredReports.filter(r => r.team_leader_acknowledged);
-        }
-        if (searchTerm) {
-            filteredReports = filteredReports.filter(r => 
-                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
-                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
-                r.id.toString().includes(searchTerm)
-            );
-        }
-        
-        const total = filteredReports.length;
-        const pending = filteredReports.filter(r => !r.team_leader_acknowledged).length;
-        const acknowledged = filteredReports.filter(r => r.team_leader_acknowledged).length;
-        
-        document.getElementById('statTotal').textContent = total;
-        document.getElementById('statPending').textContent = pending;
-        document.getElementById('statAcknowledged').textContent = acknowledged;
-        document.getElementById('pendingCount').textContent = pending;
-        
-        displayReports();
-    }
-    
-    function displayReports() {
-        buildTableView(filteredReports);
-        buildCardView(filteredReports);
-        setView(currentView);
-    }
-    
-    function buildTableView(reports) {
-        const container = document.getElementById('tableViewContainer');
-        if (!container) return;
-        
-        const sectionId = 'electricity-section';
-        const bodyId = 'section-body';
-        const isCollapsed = localStorage.getItem('electricity-section-collapsed') === 'true';
-        
-        container.innerHTML = `
-            <div id="${sectionId}" class="mb-4">
-                <div class="section-header" onclick="toggleSection()">
-                    <div class="section-title">
-                        <span>⚡</span>
-                        <span>Electricity Reports</span>
-                        <span class="section-count">${reports.length}</span>
-                    </div>
-                    <div class="section-toggle-icon">
-                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
-                    </div>
-                </div>
-                <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
-                    ${reports.length === 0 ? '<div class="empty-section">No electricity reports found</div>' : `
-                        <table class="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Entity</th>
-                                    <th>Problem Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Technician</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reports.slice(0, 25).map(report => {
-                                    const priorityClass = `priority-${report.priority}`;
-                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                                    const isAcknowledged = report.team_leader_acknowledged;
-                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                                    const isChecked = report.checked_by_assistant === true;
-                                    
-                                    return `
-                                        <tr onclick="openReportDetail(${report.id})">
-                                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                                            <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                                            <td>${escapeHtml(report.problem_type || '-')}</td>
-                                            <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
-                                            <td>${statusHtml}</td>
-                                            <td>${escapeHtml(report.technician_name || '-')}</td>
-                                            <td>${formatDateOnly(report.created_at)}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
-                    `}
-                </div>
-            </div>
-        `;
-        
-        if (isCollapsed) {
-            document.getElementById(bodyId).style.display = 'none';
-        }
-    }
-    
-    function buildCardView(reports) {
-        const container = document.getElementById('cardViewContainer');
-        if (!container) return;
+    function displayReports(reports) {
+        const container = document.getElementById('reportsContainer');
         
         if (reports.length === 0) {
             container.innerHTML = `
-                <div class="empty-reports">
-                    <i class="bi bi-inbox"></i>
-                    <h4>No Electricity Reports Found</h4>
-                    <p class="text-muted">There are no electricity reports matching your filters.</p>
-                    <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                <div class="empty-reports text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 32px; color: #ccc;"></i>
+                    <h5 class="mt-2">No Electricity Reports Found</h5>
+                    <p class="small text-muted">There are no electricity reports matching your filters.</p>
+                    <a href="/new-report" class="btn btn-primary btn-sm mt-2">Create New Report</a>
                 </div>
             `;
             return;
         }
         
-        container.innerHTML = reports.map(report => {
-            const priorityClass = `priority-${report.priority}`;
-            const isAcknowledged = report.team_leader_acknowledged;
-            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending';
-            const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const isChecked = report.checked_by_assistant === true;
-            
-            return `
-                <div class="report-card" onclick="openReportDetail(${report.id})">
-                    <div class="report-header">
-                        <div>
-                            <span class="report-type-badge">⚡ ELECTRICITY</span>
-                            <span class="priority-badge ${priorityClass} ms-2">${report.priority.toUpperCase()}</span>
-                            ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">🔴 TENDER</span>' : ''}
-                            ${isChecked ? `<span class="checked-badge ms-2"><i class="bi bi-eye"></i> Checked</span>` : ''}
-                        </div>
-                        <div>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <strong>${escapeHtml(report.entity_name || report.entity_type)}</strong>
-                            <div class="text-muted small">Report #${report.utility_number || report.id}</div>
-                            <div class="mt-2">${escapeHtml(report.problem_type || 'No problem type')}</div>
-                            <div class="text-muted small mt-1">${escapeHtml((report.complaint_details || '').substring(0, 100))}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div><i class="bi bi-person"></i> Submitted by: <strong>${escapeHtml(report.technician_name || 'Unknown')}</strong></div>
-                            <div class="small text-muted"><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
-                            ${report.action_taken ? `<div class="small text-success"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        container.innerHTML = `
+            <div class="reports-table-wrapper">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 55px;">ID</th>
+                            <th>Entity</th>
+                            <th>Problem Type</th>
+                            <th style="width: 70px;">Priority</th>
+                            <th style="width: 90px;">Status</th>
+                            <th>Technician</th>
+                            <th style="width: 80px;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reports.map(report => {
+                            const priorityClass = `priority-${report.priority}`;
+                            const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                            const isAcknowledged = report.team_leader_acknowledged;
+                            const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                            const isChecked = report.checked_by_assistant === true;
+                            
+                            return `
+                                <tr onclick="openReportDetail(${report.id})">
+                                    <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                    <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                    <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                                    <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                                    <td>${statusHtml}</td>
+                                    <td class="technician-name">${escapeHtml(report.technician_name || '-')}</td>
+                                    <td class="date-cell">${formatDateOnly(report.created_at)}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
     
     async function openReportDetail(id) {
@@ -770,6 +599,17 @@
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
                 
+                if (isModalExpanded) {
+                    const modalDialog = document.querySelector('#reportModal .modal-dialog');
+                    const expandBtn = document.getElementById('expandModalBtn');
+                    if (modalDialog) {
+                        modalDialog.classList.remove('modal-fullscreen');
+                        modalDialog.classList.add('modal-xl');
+                        expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+                        isModalExpanded = false;
+                    }
+                }
+                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -787,12 +627,12 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-3 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview-large" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+            commentsHtml = `<div class="comment-section mt-3"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item mb-2"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let acknowledgmentHtml = '';
@@ -808,22 +648,37 @@
         }
         
         const html = `
-            <div>
+            <div class="report-detail-container">
                 <div class="alert alert-info">
                     <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
                     Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Entity:</div><div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Entity:</div>
+                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                </div>
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
                 ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Problem Type:</div><div class="col-8">${escapeHtml(report.problem_type)}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Complaint Details:</div><div class="col-8">${escapeHtml(report.complaint_details)}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Problem Type:</div>
+                    <div class="col-8">${escapeHtml(report.problem_type)}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Priority:</div>
+                    <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Complaint Details:</div>
+                    <div class="col-8">${escapeHtml(report.complaint_details)}</div>
+                </div>
                 ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
                 ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Submitted By:</div><div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Submitted By:</div>
+                    <div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div>
+                </div>
                 ${assistantCheckHtml}
                 ${acknowledgmentHtml}
                 ${imagesHtml}
@@ -974,6 +829,7 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
@@ -1003,7 +859,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -1052,12 +908,12 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</tr>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
@@ -1065,7 +921,7 @@
                     ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `</tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
                 
