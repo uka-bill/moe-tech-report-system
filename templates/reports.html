@@ -185,7 +185,7 @@
         border-radius: 8px;
     }
     
-    /* Card View Styles (original) */
+    /* Card View Styles */
     .report-card {
         background: white;
         border-radius: 12px;
@@ -217,6 +217,23 @@
     .type-water { background-color: #e3f2fd; color: #1976d2; }
     .type-electricity { background-color: #fff3e0; color: #f57c00; }
     .type-telephone { background-color: #e8f5e9; color: #388e3c; }
+    .priority-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .priority-high { background-color: #f8d7da; color: #721c24; }
+    .priority-medium { background-color: #fff3cd; color: #856404; }
+    .priority-low { background-color: #d4edda; color: #155724; }
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .status-pending { background-color: #fff3cd; color: #856404; }
+    .status-acknowledged { background-color: #d4edda; color: #155724; }
     .card-view-container {
         display: block;
     }
@@ -234,6 +251,84 @@
     }
     .view-table .table-view-container {
         display: block;
+    }
+    .empty-reports {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-reports i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+    .image-preview {
+        width: 100px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .comment-section {
+        background-color: #f8f5fc;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 15px;
+        border-left: 3px solid var(--primary-color);
+    }
+    .comment-item {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+    }
+    .comment-author {
+        font-weight: bold;
+        color: var(--primary-dark);
+        font-size: 12px;
+    }
+    .comment-date {
+        font-size: 10px;
+        color: #999;
+        margin-left: 10px;
+    }
+    
+    /* Expandable Modal Styles */
+    .modal-fullscreen {
+        max-width: 95%;
+        width: 95%;
+        margin: 1rem auto;
+    }
+    .modal-fullscreen .modal-body {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header .btn-expand {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .modal-header .btn-expand:hover {
+        opacity: 0.8;
+    }
+    .report-detail-container {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .report-detail-container .row {
+        margin-bottom: 8px;
+    }
+    .image-preview-large {
+        max-width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        border-radius: 8px;
+        cursor: pointer;
     }
 </style>
 
@@ -277,7 +372,7 @@
     <div class="row">
         <div class="col-md-3">
             <label class="form-label fw-bold">Status</label>
-            <select class="filter-select" id="filterStatus" onchange="loadReports()">
+            <select class="filter-select" id="filterStatus" onchange="applyFilters()">
                 <option value="all">All Status</option>
                 <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
@@ -285,14 +380,14 @@
         </div>
         <div class="col-md-3">
             <label class="form-label fw-bold">Technician</label>
-            <select class="filter-select" id="filterTechnician" onchange="loadReports()">
+            <select class="filter-select" id="filterTechnician" onchange="applyFilters()">
                 <option value="all">All Technicians</option>
             </select>
         </div>
         <div class="col-md-4">
             <label class="form-label fw-bold">Search</label>
             <div class="search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="applyFilters()">
             </div>
         </div>
         <div class="col-md-2">
@@ -302,8 +397,8 @@
                     <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
                     <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="loadReports()">
-                    <i class="bi bi-search"></i>
+                <button class="btn btn-sm btn-primary" onclick="refreshReports()">
+                    <i class="bi bi-arrow-repeat"></i>
                 </button>
             </div>
         </div>
@@ -317,25 +412,25 @@
 </div>
 
 <div id="reportsContainer" class="view-table">
-    <!-- Table View Container -->
     <div class="table-view-container" id="tableViewContainer"></div>
-    
-    <!-- Card View Container -->
     <div class="card-view-container" id="cardViewContainer"></div>
 </div>
 
 <!-- Hidden iframe for printing -->
 <iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
-<!-- Report Detail Modal -->
+<!-- Report Detail Modal - Expandable -->
 <div class="modal fade" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Report Details</h5>
+                <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()" title="Toggle Fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalBody">Loading...</div>
+            <div class="modal-body" id="modalBody" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-primary" onclick="printReport()">
@@ -395,7 +490,9 @@
     let currentTechnicianId = null;
     let allReports = [];
     let filteredReports = [];
-    let currentView = localStorage.getItem('reportView') || 'table';
+    let currentView = localStorage.getItem('reportsView') || 'table';
+    let isModalExpanded = false;
+    let isLoading = false;
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -428,6 +525,22 @@
         return cleaned.trim();
     }
     
+    function toggleModalSize() {
+        const modalDialog = document.querySelector('#reportModal .modal-dialog');
+        const expandBtn = document.getElementById('expandModalBtn');
+        if (isModalExpanded) {
+            modalDialog.classList.remove('modal-fullscreen');
+            modalDialog.classList.add('modal-xl');
+            expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            isModalExpanded = false;
+        } else {
+            modalDialog.classList.remove('modal-xl');
+            modalDialog.classList.add('modal-fullscreen');
+            expandBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
+            isModalExpanded = true;
+        }
+    }
+    
     function checkUserRole() {
         currentUser = window.getCurrentUser();
         isTeamLeader = currentUser && currentUser.isAuthorized === true;
@@ -442,7 +555,7 @@
     
     function setView(view) {
         currentView = view;
-        localStorage.setItem('reportView', view);
+        localStorage.setItem('reportsView', view);
         const container = document.getElementById('reportsContainer');
         if (view === 'card') {
             container.classList.remove('view-table');
@@ -457,36 +570,57 @@
         } else {
             document.querySelector('.view-toggle-btn:last-child').classList.add('active');
         }
-        displayReports();
     }
     
     function expandAllSections() {
-        document.querySelectorAll('.section-body').forEach(body => {
-            body.style.display = 'block';
+        const bodies = ['water-body', 'electricity-body', 'telephone-body'];
+        bodies.forEach(bodyId => {
+            const body = document.getElementById(bodyId);
+            if (body) {
+                body.style.display = 'block';
+                const section = body.closest('.mb-4');
+                if (section) {
+                    const icon = section.querySelector('.section-toggle-icon');
+                    if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+                }
+            }
         });
-        document.querySelectorAll('.section-toggle-icon').forEach(icon => {
-            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-        });
+        localStorage.setItem('water-section-collapsed', 'false');
+        localStorage.setItem('electricity-section-collapsed', 'false');
+        localStorage.setItem('telephone-section-collapsed', 'false');
     }
     
     function collapseAllSections() {
-        document.querySelectorAll('.section-body').forEach(body => {
-            body.style.display = 'none';
+        const bodies = ['water-body', 'electricity-body', 'telephone-body'];
+        bodies.forEach(bodyId => {
+            const body = document.getElementById(bodyId);
+            if (body) {
+                body.style.display = 'none';
+                const section = body.closest('.mb-4');
+                if (section) {
+                    const icon = section.querySelector('.section-toggle-icon');
+                    if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+                }
+            }
         });
-        document.querySelectorAll('.section-toggle-icon').forEach(icon => {
-            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-        });
+        localStorage.setItem('water-section-collapsed', 'true');
+        localStorage.setItem('electricity-section-collapsed', 'true');
+        localStorage.setItem('telephone-section-collapsed', 'true');
     }
     
-    function toggleSection(sectionId) {
-        const body = document.getElementById(sectionId);
-        const icon = document.querySelector(`[onclick="toggleSection('${sectionId}')"] .section-toggle-icon`);
+    function toggleSection(bodyId, element) {
+        const body = document.getElementById(bodyId);
+        const icon = element.querySelector('.section-toggle-icon');
         if (body.style.display === 'none') {
             body.style.display = 'block';
             icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+            const sectionType = bodyId.replace('-body', '');
+            localStorage.setItem(`${sectionType}-section-collapsed`, 'false');
         } else {
             body.style.display = 'none';
             icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+            const sectionType = bodyId.replace('-body', '');
+            localStorage.setItem(`${sectionType}-section-collapsed`, 'true');
         }
     }
     
@@ -505,7 +639,14 @@
         }
     }
     
+    async function refreshReports() {
+        await loadReports();
+    }
+    
     async function loadReports() {
+        if (isLoading) return;
+        isLoading = true;
+        
         const container = document.getElementById('reportsContainer');
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading reports...</p></div>';
         
@@ -519,20 +660,22 @@
             allReports = await response.json();
             if (!allReports) allReports = [];
             
-            filterReports();
+            applyFilters();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
                 <div class="text-center py-5 text-danger">
                     <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
                     <p>Error loading reports: ${error.message}</p>
-                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                    <button class="btn btn-primary mt-2" onclick="refreshReports()">Try Again</button>
                 </div>
             `;
+        } finally {
+            isLoading = false;
         }
     }
     
-    function filterReports() {
+    function applyFilters() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -563,125 +706,137 @@
         document.getElementById('statAcknowledged').textContent = acknowledged;
         document.getElementById('totalCount').textContent = total;
         
-        displayReports();
-    }
-    
-    function displayReports() {
+        // Split reports by type
         const waterReports = filteredReports.filter(r => r.report_type === 'water');
         const electricityReports = filteredReports.filter(r => r.report_type === 'electricity');
         const telephoneReports = filteredReports.filter(r => r.report_type === 'telephone');
         
-        // Build Table View
-        buildTableView('water', waterReports);
-        buildTableView('electricity', electricityReports);
-        buildTableView('telephone', telephoneReports);
-        
-        // Build Card View
+        buildTableView(waterReports, electricityReports, telephoneReports);
         buildCardView(waterReports, electricityReports, telephoneReports);
         
         // Set initial view
         setView(currentView);
     }
     
-    function buildTableView(type, reports) {
+    function buildTableView(waterReports, electricityReports, telephoneReports) {
         const container = document.getElementById('tableViewContainer');
         if (!container) return;
         
-        const typeMap = {
-            'water': { name: 'Water Reports', icon: '💧', color: '#1976d2', bg: '#e3f2fd' },
-            'electricity': { name: 'Electricity Reports', icon: '⚡', color: '#f57c00', bg: '#fff3e0' },
-            'telephone': { name: 'Telephone Reports', icon: '📞', color: '#388e3c', bg: '#e8f5e9' }
-        };
+        const waterCollapsed = localStorage.getItem('water-section-collapsed') === 'true';
+        const electricityCollapsed = localStorage.getItem('electricity-section-collapsed') === 'true';
+        const telephoneCollapsed = localStorage.getItem('telephone-section-collapsed') === 'true';
         
-        const info = typeMap[type];
-        const sectionId = `table-section-${type}`;
-        const bodyId = `table-body-${type}`;
-        const isCollapsed = localStorage.getItem(`section-${type}-collapsed`) === 'true';
-        
-        let existingSection = document.getElementById(sectionId);
-        if (existingSection) {
-            existingSection.remove();
-        }
-        
-        const sectionHtml = `
-            <div id="${sectionId}" class="mb-4">
-                <div class="section-header" onclick="toggleSection('${bodyId}')">
+        // Water Section
+        const waterSectionHtml = `
+            <div id="water-section" class="mb-4">
+                <div class="section-header" onclick="toggleSection('water-body', this)">
                     <div class="section-title">
-                        <span>${info.icon}</span>
-                        <span>${info.name}</span>
-                        <span class="section-count">${reports.length}</span>
+                        <span>💧</span>
+                        <span>Water Reports</span>
+                        <span class="section-count">${waterReports.length}</span>
                     </div>
                     <div class="section-toggle-icon">
-                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
+                        <i class="bi bi-chevron-${waterCollapsed ? 'down' : 'up'}"></i>
                     </div>
                 </div>
-                <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
-                    ${reports.length === 0 ? '<div class="empty-section">No reports found</div>' : `
-                        <table class="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Entity</th>
-                                    <th>Problem Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Technician</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reports.slice(0, 25).map(report => {
-                                    const priorityClass = `priority-${report.priority}`;
-                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                                    const isAcknowledged = report.team_leader_acknowledged;
-                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                                    const isChecked = report.checked_by_assistant === true;
-                                    
-                                    return `
-                                        <tr onclick="openReportDetail(${report.id})">
-                                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                                            <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
-                                            <td>${escapeHtml(report.problem_type || '-')}</td>
-                                            <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
-                                            <td>${statusHtml}</td>
-                                            <td>${escapeHtml(report.technician_name || '-')}</td>
-                                            <td>${formatDateOnly(report.created_at)}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
-                    `}
+                <div id="water-body" class="reports-table-container" style="display: ${waterCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(waterReports, '#17a2b8')}
                 </div>
             </div>
         `;
         
-        container.insertAdjacentHTML('beforeend', sectionHtml);
+        // Electricity Section
+        const electricitySectionHtml = `
+            <div id="electricity-section" class="mb-4">
+                <div class="section-header" onclick="toggleSection('electricity-body', this)">
+                    <div class="section-title">
+                        <span>⚡</span>
+                        <span>Electricity Reports</span>
+                        <span class="section-count">${electricityReports.length}</span>
+                    </div>
+                    <div class="section-toggle-icon">
+                        <i class="bi bi-chevron-${electricityCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                </div>
+                <div id="electricity-body" class="reports-table-container" style="display: ${electricityCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(electricityReports, '#f57c00')}
+                </div>
+            </div>
+        `;
         
-        // Store collapse state
-        window[`toggleSection_${bodyId}`] = function() {
-            const body = document.getElementById(bodyId);
-            const icon = document.querySelector(`#${sectionId} .section-toggle-icon`);
-            if (body.style.display === 'none') {
-                body.style.display = 'block';
-                icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-                localStorage.setItem(`section-${type}-collapsed`, 'false');
-            } else {
-                body.style.display = 'none';
-                icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-                localStorage.setItem(`section-${type}-collapsed`, 'true');
-            }
-        };
+        // Telephone Section
+        const telephoneSectionHtml = `
+            <div id="telephone-section" class="mb-4">
+                <div class="section-header" onclick="toggleSection('telephone-body', this)">
+                    <div class="section-title">
+                        <span>📞</span>
+                        <span>Telephone Reports</span>
+                        <span class="section-count">${telephoneReports.length}</span>
+                    </div>
+                    <div class="section-toggle-icon">
+                        <i class="bi bi-chevron-${telephoneCollapsed ? 'down' : 'up'}"></i>
+                    </div>
+                </div>
+                <div id="telephone-body" class="reports-table-container" style="display: ${telephoneCollapsed ? 'none' : 'block'};">
+                    ${buildReportTable(telephoneReports, '#28a745')}
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = waterSectionHtml + electricitySectionHtml + telephoneSectionHtml;
+    }
+    
+    function buildReportTable(reports, color) {
+        if (reports.length === 0) {
+            return '<div class="empty-section">No reports found</div>';
+        }
+        
+        return `
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Entity</th>
+                        <th>Problem Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Technician</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reports.slice(0, 25).map(report => {
+                        const priorityClass = `priority-${report.priority}`;
+                        const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                        const isAcknowledged = report.team_leader_acknowledged;
+                        const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                        const isChecked = report.checked_by_assistant === true;
+                        
+                        return `
+                            <tr onclick="openReportDetail(${report.id})">
+                                <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                <td>${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td>${escapeHtml(report.problem_type || '-')}</td>
+                                <td class="${priorityClass}">${priorityIcon} ${report.priority.toUpperCase()}</td>
+                                <td>${statusHtml}</td>
+                                <td>${escapeHtml(report.technician_name || '-')}</td>
+                                <td>${formatDateOnly(report.created_at)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
+        `;
     }
     
     function buildCardView(waterReports, electricityReports, telephoneReports) {
         const container = document.getElementById('cardViewContainer');
         if (!container) return;
         
-        const allCardReports = [...waterReports, ...electricityReports, ...telephoneReports];
+        const allReports = [...waterReports, ...electricityReports, ...telephoneReports];
         
-        if (allCardReports.length === 0) {
+        if (allReports.length === 0) {
             container.innerHTML = `
                 <div class="empty-reports">
                     <i class="bi bi-inbox"></i>
@@ -693,7 +848,7 @@
             return;
         }
         
-        container.innerHTML = allCardReports.map(report => {
+        container.innerHTML = allReports.map(report => {
             const typeClass = `type-${report.report_type}`;
             const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
             const priorityClass = `priority-${report.priority}`;
@@ -756,6 +911,18 @@
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
                 
+                // Reset modal size to default when opening
+                if (isModalExpanded) {
+                    const modalDialog = document.querySelector('#reportModal .modal-dialog');
+                    const expandBtn = document.getElementById('expandModalBtn');
+                    if (modalDialog) {
+                        modalDialog.classList.remove('modal-fullscreen');
+                        modalDialog.classList.add('modal-xl');
+                        expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+                        isModalExpanded = false;
+                    }
+                }
+                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -773,12 +940,12 @@
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" style="width:100px;height:80px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-3 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview-large" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+            commentsHtml = `<div class="comment-section mt-3"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item mb-2"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let acknowledgmentHtml = '';
@@ -794,22 +961,37 @@
         }
         
         const html = `
-            <div>
+            <div class="report-detail-container">
                 <div class="alert alert-info">
                     <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
                     Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Entity:</div><div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Entity:</div>
+                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                </div>
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
                 ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Problem Type:</div><div class="col-8">${escapeHtml(report.problem_type)}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Priority:</div><div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div></div>
-                <div class="row mb-2"><div class="col-4 fw-bold">Complaint Details:</div><div class="col-8">${escapeHtml(report.complaint_details)}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Problem Type:</div>
+                    <div class="col-8">${escapeHtml(report.problem_type)}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Priority:</div>
+                    <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Complaint Details:</div>
+                    <div class="col-8">${escapeHtml(report.complaint_details)}</div>
+                </div>
                 ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
                 ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
-                <div class="row mb-2"><div class="col-4 fw-bold">Submitted By:</div><div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div></div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Submitted By:</div>
+                    <div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div>
+                </div>
                 ${assistantCheckHtml}
                 ${acknowledgmentHtml}
                 ${imagesHtml}
@@ -870,7 +1052,7 @@
             if (data.success) { 
                 window.showToast('Report acknowledged'); 
                 bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide(); 
-                loadReports(); 
+                refreshReports(); 
                 openReportDetail(currentReportId); 
             } else {
                 window.showToast(data.error || 'Failed to acknowledge', 'error');
@@ -911,7 +1093,7 @@
             if (data.success) { 
                 window.showToast('Report deleted'); 
                 bootstrap.Modal.getInstance(document.getElementById('reportModal'))?.hide(); 
-                loadReports(); 
+                refreshReports(); 
             } else { 
                 window.showToast(data.error || 'Cannot delete', 'error'); 
             }
@@ -960,6 +1142,7 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
         
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
@@ -989,7 +1172,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
