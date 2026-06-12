@@ -205,16 +205,16 @@
         border: 1px solid #ddd;
         font-size: 12px;
     }
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 11px;
+        border-radius: 5px;
+    }
     .btn-apply, .btn-apply-filters {
         background-color: var(--primary-color);
         color: white;
         border: none;
-        padding: 6px 15px;
-        border-radius: 6px;
-        font-size: 12px;
         cursor: pointer;
-        width: 100%;
-        margin-top: 18px;
     }
     .btn-apply:hover, .btn-apply-filters:hover {
         background-color: var(--primary-dark);
@@ -223,12 +223,7 @@
         background-color: #6c757d;
         color: white;
         border: none;
-        padding: 6px 15px;
-        border-radius: 6px;
-        font-size: 12px;
         cursor: pointer;
-        width: 100%;
-        margin-top: 5px;
     }
     .btn-clear:hover, .btn-clear-filters:hover {
         background-color: #5a6268;
@@ -375,8 +370,8 @@
 
 <!-- Date Filter Section (Month + Year) -->
 <div class="date-filter-bar">
-    <div class="row">
-        <div class="col-md-4">
+    <div class="row align-items-end">
+        <div class="col-md-3">
             <div class="filter-label">Month</div>
             <select id="filterMonth" class="date-filter-select">
                 <option value="all">All Months</option>
@@ -394,7 +389,7 @@
                 <option value="12">December</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">Year</div>
             <select id="filterYear" class="date-filter-select">
                 <option value="all">All Years</option>
@@ -412,18 +407,22 @@
                 <option value="2035">2035</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">&nbsp;</div>
-            <button class="btn-apply" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply Date</button>
-            <button class="btn-clear" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Clear Date</button>
+            <div class="d-flex gap-2">
+                <button class="btn-apply btn-sm" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply</button>
+                <button class="btn-clear btn-sm" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Clear</button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div id="dateFilterInfo" style="display: none; font-size: 11px; color: #666;"></div>
         </div>
     </div>
-    <div id="dateFilterInfo" style="display: none;"></div>
 </div>
 
 <!-- Report Filter Section (Status + Technician + Search) -->
 <div class="filter-card py-2">
-    <div class="row g-2">
+    <div class="row align-items-end">
         <div class="col-md-3">
             <label class="form-label fw-bold small mb-1">Status</label>
             <select class="form-select form-select-sm" id="filterStatus">
@@ -443,9 +442,10 @@
             <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search by Entity, Problem Type, or ID...">
         </div>
         <div class="col-md-2">
-            <label class="form-label fw-bold small mb-1">&nbsp;</label>
-            <button class="btn-apply-filters" onclick="applyFilters()"><i class="bi bi-search"></i> Apply</button>
-            <button class="btn-clear-filters" onclick="clearFilters()"><i class="bi bi-eraser"></i> Clear All</button>
+            <div class="d-flex gap-2">
+                <button class="btn-apply-filters btn-sm" onclick="applyFilters()"><i class="bi bi-search"></i> Apply</button>
+                <button class="btn-clear-filters btn-sm" onclick="clearFilters()"><i class="bi bi-eraser"></i> Clear All</button>
+            </div>
         </div>
     </div>
 </div>
@@ -534,7 +534,6 @@
     let currentUser = null;
     let currentTechnicianId = null;
     let allReports = [];
-    let filteredReports = [];
     let isModalExpanded = false;
     let currentFilterMonth = 'all';
     let currentFilterYear = 'all';
@@ -691,14 +690,14 @@
         const dateFilterInfo = document.getElementById('dateFilterInfo');
         if (currentFilterMonth !== 'all' && currentFilterYear !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
-            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from ${monthName} ${currentFilterYear}`;
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} ${currentFilterYear}`;
             dateFilterInfo.style.display = 'block';
         } else if (currentFilterYear !== 'all') {
-            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from year ${currentFilterYear}`;
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing year ${currentFilterYear}`;
             dateFilterInfo.style.display = 'block';
         } else if (currentFilterMonth !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
-            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from month ${monthName} (all years)`;
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} (all years)`;
             dateFilterInfo.style.display = 'block';
         } else {
             dateFilterInfo.style.display = 'none';
@@ -853,7 +852,7 @@
                                     <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
                                     <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
                                   </td>
-                               </tr>`;
+                                </tr>`;
                 
                 // Add report rows for this technician
                 group.reports.forEach(report => {
@@ -870,12 +869,12 @@
                             <td>
                                 <div class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</div>
                                 ${referenceText !== '-' ? `<div class="reference-cell" title="${escapeHtml(referenceText)}">📄 ${escapeHtml(referenceText)}</div>` : ''}
-                             </td>
+                            </td>
                             <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                             <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
                             <td>${statusHtml}</td>
                             <td class="date-cell">${formatDateOnly(report.created_at)}</td>
-                         </tr>
+                        </tr>
                     `;
                 });
             });
@@ -1279,13 +1278,13 @@
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    ${technicianNotes ? `<td><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
                     ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
                     ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
-                </tr>
+                </table>
                 
                 ${imagesHtml}
                 ${commentsHtml}
