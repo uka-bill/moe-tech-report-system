@@ -71,19 +71,20 @@
     }
     .reports-table th {
         background: #f8f9fa;
-        padding: 8px 10px;
+        padding: 8px 8px;
         text-align: left;
         font-weight: 600;
-        font-size: 11px;
+        font-size: 10px;
         color: #495057;
         border-bottom: 2px solid #dee2e6;
         position: sticky;
         top: 0;
         background: #f8f9fa;
         z-index: 10;
+        white-space: nowrap;
     }
     .reports-table td {
-        padding: 8px 10px;
+        padding: 8px 8px;
         border-bottom: 1px solid #e9ecef;
         cursor: pointer;
         transition: background 0.2s;
@@ -99,9 +100,9 @@
     .group-header-row td {
         background-color: #e8f0fe;
         border-bottom: 2px solid #17a2b8;
-        padding: 8px 10px;
+        padding: 8px 8px;
         font-weight: 600;
-        color: #17a2b8;
+        color: #0c5460;
     }
     .group-header-row:hover td {
         background-color: #e8f0fe;
@@ -157,18 +158,27 @@
     .report-id-link:hover {
         text-decoration: underline;
     }
-    .expand-all-btn, .collapse-all-btn {
-        background: #17a2b8;
-        color: white;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 20px;
+    .entity-name, .reference-number-cell, .reference-date-cell {
         font-size: 11px;
-        cursor: pointer;
-        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 130px;
     }
-    .expand-all-btn:hover, .collapse-all-btn:hover {
-        background: #138496;
+    .problem-type {
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11px;
+    }
+    .date-cell {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    .priority-icon {
+        font-size: 10px;
+        margin-right: 2px;
     }
     .empty-section {
         text-align: center;
@@ -176,6 +186,7 @@
         color: #999;
         font-size: 13px;
     }
+    
     /* Date Filter Bar */
     .date-filter-bar {
         background: #f8f9fa;
@@ -229,51 +240,8 @@
     .btn-clear:hover, .btn-clear-filters:hover {
         background-color: #5a6268;
     }
-    .entity-name {
-        max-width: 150px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 11px;
-    }
-    .reference-cell {
-        font-size: 10px;
-        color: #666;
-        max-width: 120px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .problem-type {
-        max-width: 130px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 11px;
-    }
-    .date-cell {
-        font-size: 10px;
-        white-space: nowrap;
-    }
-    .priority-icon {
-        font-size: 10px;
-        margin-right: 2px;
-    }
     
-    .reports-table-wrapper::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-    }
-    .reports-table-wrapper::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-    .reports-table-wrapper::-webkit-scrollbar-thumb {
-        background: #17a2b8;
-        border-radius: 10px;
-    }
-    
-    /* Statistics Cards - Dashboard Style */
+    /* Statistics Cards */
     .stat-card {
         background: white;
         border-radius: 16px;
@@ -318,6 +286,19 @@
     .form-control-sm {
         font-size: 12px;
         padding: 6px 10px;
+    }
+    
+    .reports-table-wrapper::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-thumb {
+        background: #17a2b8;
+        border-radius: 10px;
     }
     
     /* Modal Styles */
@@ -385,12 +366,12 @@
     </div>
 </div>
 
-<!-- Statistics Cards - Dashboard Style -->
+<!-- Statistics Cards -->
 <div class="row mb-3">
     <div class="col-md-4 mb-2">
         <div class="stat-card">
             <div class="stat-icon primary">
-                <i class="bi bi-droplet"></i>
+                <i class="bi bi-file-text"></i>
             </div>
             <div>
                 <div class="stat-number" id="statTotal">0</div>
@@ -422,10 +403,10 @@
     </div>
 </div>
 
-<!-- Date Filter Section (Month + Year) -->
+<!-- Date Filter Section -->
 <div class="date-filter-bar">
     <div class="row align-items-end">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">Month</div>
             <select id="filterMonth" class="date-filter-select">
                 <option value="all">All Months</option>
@@ -443,7 +424,7 @@
                 <option value="12">December</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">Year</div>
             <select id="filterYear" class="date-filter-select">
                 <option value="all">All Years</option>
@@ -461,21 +442,23 @@
                 <option value="2035">2035</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">&nbsp;</div>
             <div class="d-flex gap-2">
                 <button class="btn-apply btn-sm" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply</button>
                 <button class="btn-clear btn-sm" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Clear</button>
             </div>
         </div>
+        <div class="col-md-3">
+            <div id="dateFilterInfo" style="display: none; font-size: 11px; color: #666;"></div>
+        </div>
     </div>
-    <div id="dateFilterInfo" style="display: none; font-size: 11px; margin-top: 8px; color: #666;"></div>
 </div>
 
 <!-- Report Filter Section -->
 <div class="filter-card py-2">
     <div class="row align-items-end">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-bold small mb-1">Status</label>
             <select class="form-select form-select-sm" id="filterStatus">
                 <option value="all">All Status</option>
@@ -483,25 +466,23 @@
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-bold small mb-1">Technician</label>
             <select class="form-select form-select-sm" id="filterTechnician">
                 <option value="all">All Technicians</option>
             </select>
         </div>
         <div class="col-md-4">
-            <div class="d-flex gap-2" style="margin-top: 18px;">
+            <label class="form-label fw-bold small mb-1">Search</label>
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search by Entity, Problem Type, or ID...">
+        </div>
+        <div class="col-md-2">
+            <div class="d-flex gap-2">
                 <button class="btn-apply-filters btn-sm" onclick="applyFilters()"><i class="bi bi-search"></i> Apply</button>
                 <button class="btn-clear-filters btn-sm" onclick="clearFilters()"><i class="bi bi-eraser"></i> Clear All</button>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Expand/Collapse All Buttons -->
-<div class="d-flex justify-content-end gap-2 mb-2">
-    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
-    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
 </div>
 
 <div id="reportsContainer">
@@ -600,13 +581,6 @@
         return date.toLocaleDateString('en-GB');
     }
     
-    function formatReference(report) {
-        if (report.reference_number) {
-            return `${report.reference_number}${report.reference_date ? ` (${report.reference_date})` : ''}`;
-        }
-        return '-';
-    }
-    
     function getMonthYear(dateString) {
         if (!dateString) return { month: 0, year: 0 };
         const date = new Date(dateString);
@@ -663,40 +637,6 @@
         return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
     }
     
-    function expandAllSections() {
-        const body = document.getElementById('section-body');
-        if (body) {
-            body.style.display = 'block';
-            const icon = document.querySelector('.section-toggle-icon');
-            if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-        }
-        localStorage.setItem('water-section-collapsed', 'false');
-    }
-    
-    function collapseAllSections() {
-        const body = document.getElementById('section-body');
-        if (body) {
-            body.style.display = 'none';
-            const icon = document.querySelector('.section-toggle-icon');
-            if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-        }
-        localStorage.setItem('water-section-collapsed', 'true');
-    }
-    
-    function toggleSection() {
-        const body = document.getElementById('section-body');
-        const icon = document.querySelector('.section-toggle-icon');
-        if (body.style.display === 'none') {
-            body.style.display = 'block';
-            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-            localStorage.setItem('water-section-collapsed', 'false');
-        } else {
-            body.style.display = 'none';
-            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-            localStorage.setItem('water-section-collapsed', 'true');
-        }
-    }
-    
     async function loadTechniciansForFilter() {
         try {
             const response = await fetch('/api/technicians');
@@ -746,12 +686,14 @@
     function clearFilters() {
         document.getElementById('filterStatus').value = 'all';
         document.getElementById('filterTechnician').value = 'all';
+        document.getElementById('searchInput').value = '';
         clearDateFilter();
     }
     
     function applyFilters() {
         const status = document.getElementById('filterStatus').value;
         const technicianId = document.getElementById('filterTechnician').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const filterMonth = currentFilterMonth;
         const filterYear = currentFilterYear;
         
@@ -774,6 +716,15 @@
         if (status !== 'all') {
             if (status === 'pending') filtered = filtered.filter(r => !r.team_leader_acknowledged);
             if (status === 'acknowledged') filtered = filtered.filter(r => r.team_leader_acknowledged);
+        }
+        
+        if (searchTerm) {
+            filtered = filtered.filter(r => 
+                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
+                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
+                r.id.toString().includes(searchTerm) ||
+                (r.reference_number && r.reference_number.toLowerCase().includes(searchTerm))
+            );
         }
         
         const total = filtered.length;
@@ -816,13 +767,24 @@
     }
     
     function displayReports(reports) {
-        const isCollapsed = localStorage.getItem('water-section-collapsed') === 'true';
         const container = document.getElementById('reportsContainer');
         
+        if (reports.length === 0) {
+            container.innerHTML = `
+                <div class="empty-reports text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 32px; color: #ccc;"></i>
+                    <h5 class="mt-2">No Water Reports Found</h5>
+                    <p class="small text-muted">There are no water reports matching your filters.</p>
+                    <a href="/new-report" class="btn btn-primary btn-sm mt-2">Create New Report</a>
+                </div>
+            `;
+            return;
+        }
+        
         // Group reports by technician
-        const groupByTechnician = (reports) => {
+        const groupByTechnician = (reportsList) => {
             const groups = {};
-            reports.forEach(report => {
+            reportsList.forEach(report => {
                 const techId = report.technician_id;
                 const techName = report.technician_name || 'Unknown';
                 if (!groups[techId]) {
@@ -837,75 +799,56 @@
             return Object.values(groups);
         };
         
-        const buildTableWithGroups = (reports) => {
-            if (reports.length === 0) {
-                return '<div class="empty-section">No water reports found</div>';
-            }
-            
-            const groups = groupByTechnician(reports);
-            
-            let tableHtml = `<table class="reports-table"><thead><tr>
-                                <th style="width: 50px;">ID</th>
-                                <th>Entity / Reference</th>
-                                <th>Problem Type</th>
-                                <th style="width: 65px;">Priority</th>
-                                <th style="width: 85px;">Status</th>
-                                <th style="width: 75px;">Date</th>
-                            </td></thead><tbody>`;
-            
-            groups.forEach(group => {
-                tableHtml += `<tr class="group-header-row">
-                                <td colspan="6">
-                                    <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
-                                    <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
-                                  </td>
-                                </tr>`;
-                
-                group.reports.forEach(report => {
-                    const priorityClass = `priority-${report.priority}`;
-                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                    const isAcknowledged = report.team_leader_acknowledged;
-                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                    const isChecked = report.checked_by_assistant === true;
-                    const referenceText = formatReference(report);
-                    
-                    tableHtml += `
-                        <tr onclick="openReportDetail(${report.id})">
-                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                            <td>
-                                <div class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</div>
-                                ${referenceText !== '-' ? `<div class="reference-cell" title="${escapeHtml(referenceText)}">📄 ${escapeHtml(referenceText)}</div>` : ''}
-                             </td>
-                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
-                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
-                            <td>${statusHtml}</td>
-                            <td class="date-cell">${formatDateOnly(report.created_at)}</td>
-                        </tr>
-                    `;
-                });
-            });
-            
-            tableHtml += `</tbody></table>`;
-            return tableHtml;
-        };
+        const groups = groupByTechnician(reports);
         
-        container.innerHTML = `
-            <div class="category-container">
-                <div class="section-header" onclick="toggleSection()">
-                    <div class="section-title">
-                        <span>💧</span>
-                        <span>Water Reports</span>
-                        <span class="section-count">${reports.length}</span>
-                    </div>
-                    <div class="section-toggle-icon">
-                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
-                    </div>
-                </div>
-                <div id="section-body" class="reports-table-wrapper" style="display: ${isCollapsed ? 'none' : 'block'};">
-                    ${buildTableWithGroups(reports)}
-                </div>
-            </div>
-        `;
+        let tableHtml = `<div class="reports-table-wrapper">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;">ID</th>
+                        <th style="min-width: 120px;">Entity Name</th>
+                        <th style="min-width: 100px;">Reference Number</th>
+                        <th style="min-width: 80px;">Reference Date</th>
+                        <th style="min-width: 130px;">Problem Type</th>
+                        <th style="width: 65px;">Priority</th>
+                        <th style="width: 85px;">Status</th>
+                        <th style="width: 75px;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        groups.forEach(group => {
+            tableHtml += `<tr class="group-header-row">
+                            <td colspan="8">
+                                <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
+                                <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
+                             </td>
+                           </tr>`;
+            
+            group.reports.forEach(report => {
+                const priorityClass = `priority-${report.priority}`;
+                const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                const isAcknowledged = report.team_leader_acknowledged;
+                const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                const isChecked = report.checked_by_assistant === true;
+                
+                tableHtml += `
+                    <tr onclick="openReportDetail(${report.id})">
+                        <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                        <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                        <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td>
+                        <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
+                        <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                        <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                        <td>${statusHtml}</td>
+                        <td class="date-cell">${formatDateOnly(report.created_at)}</td>
+                    </tr>
+                `;
+            });
+        });
+        
+        tableHtml += `</tbody></table></div>`;
+        container.innerHTML = tableHtml;
     }
     
     async function openReportDetail(id) {
@@ -989,7 +932,8 @@
                     <div class="col-4 fw-bold">Entity:</div>
                     <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
                 </div>
-                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Number:</div><div class="col-8">${escapeHtml(report.reference_number)}</div></div>` : ''}
+                ${report.reference_date ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Date:</div><div class="col-8">${escapeHtml(report.reference_date)}</div></div>` : ''}
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
@@ -1162,6 +1106,7 @@
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
         let assistantName = cleanText(report.checked_by_assistant_name || '');
+        let referenceDate = cleanText(report.reference_date || '');
         
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
@@ -1191,7 +1136,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
+            assistantCheckHtml = `<table><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -1242,7 +1187,8 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td>` : ''}
+                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td>` : ''}
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
@@ -1254,7 +1200,7 @@
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
                     ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                    ${teamLeaderNotes ? `<td><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
