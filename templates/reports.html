@@ -70,19 +70,20 @@
     }
     .reports-table th {
         background: #f8f9fa;
-        padding: 8px 10px;
+        padding: 8px 8px;
         text-align: left;
         font-weight: 600;
-        font-size: 11px;
+        font-size: 10px;
         color: #495057;
         border-bottom: 2px solid #dee2e6;
         position: sticky;
         top: 0;
         background: #f8f9fa;
         z-index: 10;
+        white-space: nowrap;
     }
     .reports-table td {
-        padding: 8px 10px;
+        padding: 8px 8px;
         border-bottom: 1px solid #e9ecef;
         cursor: pointer;
         transition: background 0.2s;
@@ -98,7 +99,7 @@
     .group-header-row td {
         background-color: #e8f0fe;
         border-bottom: 2px solid var(--primary-color);
-        padding: 8px 10px;
+        padding: 8px 8px;
         font-weight: 600;
         color: var(--primary-dark);
     }
@@ -228,31 +229,18 @@
     .btn-clear:hover, .btn-clear-filters:hover {
         background-color: #5a6268;
     }
-    .entity-name {
-        max-width: 150px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .entity-name, .reference-number-cell, .reference-date-cell {
         font-size: 11px;
-        font-weight: 500;
-    }
-    .reference-cell {
-        font-size: 10px;
-        color: #666;
-        max-width: 120px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-top: 2px;
+        max-width: 130px;
     }
     .problem-type {
         max-width: 130px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: 11px;
-    }
-    .technician-name {
         font-size: 11px;
     }
     .date-cell {
@@ -610,13 +598,6 @@
         return date.toLocaleDateString('en-GB');
     }
     
-    function formatReference(report) {
-        if (report.reference_number) {
-            return `${report.reference_number}${report.reference_date ? ` (${report.reference_date})` : ''}`;
-        }
-        return '';
-    }
-    
     function getMonthYear(dateString) {
         if (!dateString) return { month: 0, year: 0 };
         const date = new Date(dateString);
@@ -889,10 +870,12 @@
             
             const groups = groupByTechnician(reports);
             
-            let tableHtml = `<table class="reports-table"><thead><tr>
-                                <th style="width: 50px;">ID</th>
-                                <th>Entity / Reference</th>
-                                <th>Problem Type</th>
+            let tableHtml = `<table class="reports-table"><thead></tr>
+                                <th style="width: 45px;">ID</th>
+                                <th style="min-width: 120px;">Entity Name</th>
+                                <th style="min-width: 100px;">Reference Number</th>
+                                <th style="min-width: 80px;">Reference Date</th>
+                                <th style="min-width: 130px;">Problem Type</th>
                                 <th style="width: 65px;">Priority</th>
                                 <th style="width: 85px;">Status</th>
                                 <th style="width: 75px;">Date</th>
@@ -900,10 +883,10 @@
             
             groups.forEach(group => {
                 tableHtml += `<tr class="group-header-row">
-                                <td colspan="6">
+                                <td colspan="8">
                                     <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
                                     <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
-                                 </td>
+                                  </td>
                               </tr>`;
                 
                 group.reports.forEach(report => {
@@ -912,20 +895,18 @@
                     const isAcknowledged = report.team_leader_acknowledged;
                     const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
                     const isChecked = report.checked_by_assistant === true;
-                    const referenceText = formatReference(report);
                     
                     tableHtml += `
                         <tr onclick="openReportDetail(${report.id})">
                             <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                            <td>
-                                <div class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</div>
-                                ${referenceText ? `<div class="reference-cell" title="${escapeHtml(referenceText)}">📄 ${escapeHtml(referenceText)}</div>` : ''}
-                            </td>
+                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td>
+                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
                             <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                             <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
                             <td>${statusHtml}</td>
                             <td class="date-cell">${formatDateOnly(report.created_at)}</td>
-                        </table>
+                        </tr>
                     `;
                 });
             });
@@ -1066,7 +1047,8 @@
                     <div class="col-4 fw-bold">Entity:</div>
                     <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
                 </div>
-                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Number:</div><div class="col-8">${escapeHtml(report.reference_number)}</div></div>` : ''}
+                ${report.reference_date ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Date:</div><div class="col-8">${escapeHtml(report.reference_date)}</div></div>` : ''}
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
@@ -1239,6 +1221,7 @@
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
         let assistantName = cleanText(report.checked_by_assistant_name || '');
+        let referenceDate = cleanText(report.reference_date || '');
         
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
@@ -1319,21 +1302,17 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    </tr>
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td></td>` : ''}
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td>` : ''}
+                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td>` : ''}
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    </tr>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    </tr>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    </tr>
                     ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
                     ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
                     <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
-                    </tr>
                     ${assistantCheckHtml}
                     ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
                     ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
