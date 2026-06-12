@@ -175,43 +175,45 @@
         color: #999;
         font-size: 13px;
     }
+    /* Simplified Date Filter Bar - Compact */
     .date-filter-bar {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #e0e0e0;
+        background: white;
+        padding: 10px 0;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
     }
     .filter-label {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
         color: #495057;
     }
     .filter-info {
-        font-size: 12px;
-        margin-top: 10px;
-        padding: 8px;
+        font-size: 11px;
+        margin-top: 8px;
+        padding: 5px 10px;
         background: #e8f0fe;
-        border-radius: 8px;
+        border-radius: 6px;
         color: var(--primary-dark);
+        display: inline-block;
     }
     .date-filter-select {
         width: 100%;
-        padding: 6px 10px;
-        border-radius: 6px;
+        padding: 5px 8px;
+        border-radius: 5px;
         border: 1px solid #ddd;
-        font-size: 13px;
+        font-size: 12px;
     }
     .btn-apply {
         background-color: var(--primary-color);
         color: white;
         border: none;
-        padding: 6px 15px;
-        border-radius: 6px;
-        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 11px;
         cursor: pointer;
         width: 100%;
+        margin-top: 18px;
     }
     .btn-apply:hover {
         background-color: var(--primary-dark);
@@ -220,9 +222,9 @@
         background-color: #6c757d;
         color: white;
         border: none;
-        padding: 6px 15px;
-        border-radius: 6px;
-        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 11px;
         cursor: pointer;
         width: 100%;
         margin-top: 5px;
@@ -231,14 +233,22 @@
         background-color: #5a6268;
     }
     .entity-name {
-        max-width: 180px;
+        max-width: 150px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         font-size: 11px;
     }
+    .reference-cell {
+        font-size: 10px;
+        color: #666;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .problem-type {
-        max-width: 150px;
+        max-width: 130px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -362,10 +372,10 @@
     </div>
 </div>
 
-<!-- Date Filter Bar -->
+<!-- Simplified Date Filter Bar -->
 <div class="date-filter-bar">
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">Month</div>
             <select id="filterMonth" class="date-filter-select">
                 <option value="all">All Months</option>
@@ -383,19 +393,22 @@
                 <option value="12">December</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">Year</div>
             <select id="filterYear" class="date-filter-select">
                 <option value="all">All Years</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="filter-label">&nbsp;</div>
-            <button class="btn-apply" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply Filter</button>
+            <button class="btn-apply" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply</button>
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">&nbsp;</div>
             <button class="btn-clear" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Show All</button>
         </div>
     </div>
-    <div id="filterInfo" class="filter-info" style="display: none;"></div>
+    <div id="filterInfo" style="display: none;"></div>
 </div>
 
 <!-- Filters -->
@@ -506,7 +519,6 @@
     let currentUser = null;
     let currentTechnicianId = null;
     let allReports = [];
-    let filteredReports = [];
     let isModalExpanded = false;
     let currentFilterYear = 'all';
     let currentFilterMonth = 'all';
@@ -523,6 +535,13 @@
         const date = new Date(dateString);
         date.setHours(date.getHours() + 8);
         return date.toLocaleDateString('en-GB');
+    }
+    
+    function formatReference(report) {
+        if (report.reference_number) {
+            return `${report.reference_number}${report.reference_date ? ` (${report.reference_date})` : ''}`;
+        }
+        return '-';
     }
     
     function getMonthYear(dateString) {
@@ -668,19 +687,20 @@
         currentFilterYear = document.getElementById('filterYear').value;
         applyFilters();
         
+        const filterInfo = document.getElementById('filterInfo');
         if (currentFilterMonth !== 'all' && currentFilterYear !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
-            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from ${monthName} ${currentFilterYear}`;
-            document.getElementById('filterInfo').style.display = 'block';
+            filterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from ${monthName} ${currentFilterYear}`;
+            filterInfo.style.display = 'block';
         } else if (currentFilterYear !== 'all') {
-            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from year ${currentFilterYear}`;
-            document.getElementById('filterInfo').style.display = 'block';
+            filterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from year ${currentFilterYear}`;
+            filterInfo.style.display = 'block';
         } else if (currentFilterMonth !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
-            document.getElementById('filterInfo').innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from month ${monthName} (all years)`;
-            document.getElementById('filterInfo').style.display = 'block';
+            filterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing reports from month ${monthName} (all years)`;
+            filterInfo.style.display = 'block';
         } else {
-            document.getElementById('filterInfo').style.display = 'none';
+            filterInfo.style.display = 'none';
         }
     }
     
@@ -802,7 +822,7 @@
             return Object.values(groups);
         };
         
-        const buildTableWithGroups = (reports, typeColor) => {
+        const buildTableWithGroups = (reports) => {
             if (reports.length === 0) {
                 return '<div class="empty-section">No reports found</div>';
             }
@@ -810,12 +830,12 @@
             const groups = groupByTechnician(reports);
             
             let tableHtml = `<table class="reports-table"><thead><tr>
-                                <th style="width: 55px;">ID</th>
-                                <th>Entity</th>
+                                <th style="width: 50px;">ID</th>
+                                <th>Entity / Reference</th>
                                 <th>Problem Type</th>
-                                <th style="width: 70px;">Priority</th>
-                                <th style="width: 90px;">Status</th>
-                                <th>Date</th>
+                                <th style="width: 65px;">Priority</th>
+                                <th style="width: 85px;">Status</th>
+                                <th style="width: 75px;">Date</th>
                             </tr></thead><tbody>`;
             
             groups.forEach(group => {
@@ -824,8 +844,8 @@
                                 <td colspan="6">
                                     <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
                                     <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
-                                </td>
-                             </tr>`;
+                                 </td>
+                              </tr>`;
                 
                 // Add report rows for this technician
                 group.reports.forEach(report => {
@@ -834,16 +854,20 @@
                     const isAcknowledged = report.team_leader_acknowledged;
                     const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
                     const isChecked = report.checked_by_assistant === true;
+                    const referenceText = formatReference(report);
                     
                     tableHtml += `
                         <tr onclick="openReportDetail(${report.id})">
                             <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                            <td>
+                                <div class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</div>
+                                ${referenceText !== '-' ? `<div class="reference-cell" title="${escapeHtml(referenceText)}">📄 ${escapeHtml(referenceText)}</div>` : ''}
+                            </td>
                             <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                             <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
                             <td>${statusHtml}</td>
                             <td class="date-cell">${formatDateOnly(report.created_at)}</td>
-                        </tr>
+                         </tr>
                     `;
                 });
             });
@@ -866,7 +890,7 @@
                     </div>
                 </div>
                 <div id="water-body" class="reports-table-wrapper" style="display: ${waterCollapsed ? 'none' : 'block'};">
-                    ${buildTableWithGroups(waterReports, '#17a2b8')}
+                    ${buildTableWithGroups(waterReports)}
                 </div>
             </div>
             
@@ -883,7 +907,7 @@
                     </div>
                 </div>
                 <div id="electricity-body" class="reports-table-wrapper" style="display: ${electricityCollapsed ? 'none' : 'block'};">
-                    ${buildTableWithGroups(electricityReports, '#f57c00')}
+                    ${buildTableWithGroups(electricityReports)}
                 </div>
             </div>
             
@@ -900,7 +924,7 @@
                     </div>
                 </div>
                 <div id="telephone-body" class="reports-table-wrapper" style="display: ${telephoneCollapsed ? 'none' : 'block'};">
-                    ${buildTableWithGroups(telephoneReports, '#28a745')}
+                    ${buildTableWithGroups(telephoneReports)}
                 </div>
             </div>
         `;
@@ -987,10 +1011,10 @@
                     <div class="col-4 fw-bold">Entity:</div>
                     <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
                 </div>
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
                 ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
-                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Problem Type:</div>
                     <div class="col-8">${escapeHtml(report.problem_type)}</div>
@@ -1189,7 +1213,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</tr>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
         }
         
         return `<!DOCTYPE html>
@@ -1238,21 +1262,21 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</tr>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</tr>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</tr>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</tr>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</tr>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</tr>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</tr>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</tr>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</tr>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
+                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
+                    ${meterNumber ? `<td><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</tr>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</tr>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
                 </table>
                 
                 ${imagesHtml}
