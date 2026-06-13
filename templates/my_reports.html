@@ -22,31 +22,10 @@
         border-radius: 8px;
         border: 1px solid #ddd;
     }
-    .view-toggle {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        background: #f0f0f0;
-        padding: 5px;
-        border-radius: 30px;
-    }
-    .view-toggle-btn {
-        padding: 6px 18px;
-        border-radius: 25px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-size: 13px;
-        transition: all 0.2s;
-    }
-    .view-toggle-btn.active {
-        background: var(--primary-color);
-        color: white;
-    }
     .section-header {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
-        padding: 12px 20px;
-        border-radius: 12px;
+        padding: 10px 15px;
+        border-radius: 10px;
         margin-bottom: 10px;
         cursor: pointer;
         display: flex;
@@ -59,83 +38,103 @@
     }
     .section-title {
         font-weight: bold;
-        font-size: 1.1rem;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         gap: 10px;
     }
     .section-count {
         background: white;
-        padding: 2px 10px;
+        padding: 2px 8px;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--primary-dark);
     }
     .section-toggle-icon {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
-    .reports-table-container {
+    .category-container {
         margin-bottom: 20px;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #e0e0e0;
-        background: white;
+    }
+    .reports-table-wrapper {
         max-height: 500px;
         overflow-y: auto;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        background: white;
     }
     .reports-table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 12px;
     }
     .reports-table th {
         background: #f8f9fa;
-        padding: 12px 15px;
+        padding: 8px 8px;
         text-align: left;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 10px;
         color: #495057;
         border-bottom: 2px solid #dee2e6;
         position: sticky;
         top: 0;
         background: #f8f9fa;
         z-index: 10;
+        white-space: nowrap;
     }
     .reports-table td {
-        padding: 10px 15px;
+        padding: 8px 8px;
         border-bottom: 1px solid #e9ecef;
-        font-size: 13px;
         cursor: pointer;
         transition: background 0.2s;
+        vertical-align: middle;
     }
     .reports-table tr:hover td {
         background-color: #f8f5fc;
     }
+    .group-header-row {
+        background-color: #e8f0fe;
+        font-weight: bold;
+    }
+    .group-header-row td {
+        background-color: #e8f0fe;
+        border-bottom: 2px solid var(--primary-color);
+        padding: 8px 8px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    .group-header-row:hover td {
+        background-color: #e8f0fe;
+    }
     .priority-high {
         color: #dc3545;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .priority-medium {
         color: #fd7e14;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .priority-low {
         color: #28a745;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 11px;
     }
     .status-pending {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
         font-weight: 500;
         background-color: #fff3cd;
         color: #856404;
     }
     .status-acknowledged {
         display: inline-block;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 10px;
         font-weight: 500;
         background-color: #d4edda;
         color: #155724;
@@ -143,46 +142,48 @@
     .checked-badge {
         background-color: #17a2b8;
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 10px;
+        padding: 2px 5px;
+        border-radius: 8px;
+        font-size: 8px;
         display: inline-block;
+        margin-left: 4px;
     }
     .report-id-link {
         font-weight: 600;
         color: var(--primary-color);
         text-decoration: none;
+        font-size: 11px;
     }
     .report-id-link:hover {
         text-decoration: underline;
     }
-    .expand-all-btn, .collapse-all-btn {
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
+    .entity-name, .reference-number-cell, .reference-date-cell {
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 130px;
     }
-    .expand-all-btn:hover, .collapse-all-btn:hover {
-        background: var(--primary-dark);
+    .problem-type {
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 11px;
+    }
+    .date-cell {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+    .priority-icon {
+        font-size: 10px;
+        margin-right: 2px;
     }
     .empty-section {
         text-align: center;
-        padding: 40px;
+        padding: 30px;
         color: #999;
-    }
-    .search-box {
-        display: flex;
-        gap: 10px;
-    }
-    .search-box input {
-        flex: 1;
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        font-size: 13px;
     }
     .btn-edit, .btn-delete {
         background: none;
@@ -190,7 +191,7 @@
         cursor: pointer;
         padding: 4px 8px;
         border-radius: 4px;
-        font-size: 12px;
+        font-size: 11px;
     }
     .btn-edit {
         background-color: #ffc107;
@@ -200,90 +201,154 @@
         background-color: #dc3545;
         color: white;
     }
+    .btn-edit:hover, .btn-delete:hover {
+        transform: translateY(-1px);
+    }
     
-    /* Card View Styles */
-    .report-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
+    /* Date Filter Bar */
+    .date-filter-bar {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
         margin-bottom: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        transition: all 0.2s;
-        cursor: pointer;
-        border-left: 4px solid var(--primary-color);
+        border: 1px solid #e0e0e0;
     }
-    .report-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    .filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 3px;
+        color: #495057;
     }
-    .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
+    .filter-info {
+        font-size: 11px;
+        margin-top: 8px;
+        padding: 5px 10px;
+        background: #e8f0fe;
+        border-radius: 6px;
+        color: var(--primary-dark);
+        display: inline-block;
     }
-    .report-type-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
+    .date-filter-select {
+        width: 100%;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
         font-size: 12px;
-        font-weight: 500;
     }
-    .type-water { background-color: #e3f2fd; color: #1976d2; }
-    .type-electricity { background-color: #fff3e0; color: #f57c00; }
-    .type-telephone { background-color: #e8f5e9; color: #388e3c; }
-    .priority-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
+    .btn-sm {
+        padding: 5px 12px;
         font-size: 11px;
-        font-weight: 500;
-    }
-    .priority-high { background-color: #f8d7da; color: #721c24; }
-    .priority-medium { background-color: #fff3cd; color: #856404; }
-    .priority-low { background-color: #d4edda; color: #155724; }
-    .status-badge {
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-    .status-pending { background-color: #fff3cd; color: #856404; }
-    .status-acknowledged { background-color: #d4edda; color: #155724; }
-    .card-view-container {
-        display: block;
-    }
-    .table-view-container {
-        display: none;
-    }
-    .view-active .card-view-container {
-        display: block;
-    }
-    .view-active .table-view-container {
-        display: none;
-    }
-    .view-table .card-view-container {
-        display: none;
-    }
-    .view-table .table-view-container {
-        display: block;
-    }
-    .empty-reports {
-        text-align: center;
-        padding: 60px 20px;
-        background: white;
-        border-radius: 12px;
-    }
-    .empty-reports i {
-        font-size: 64px;
-        color: #ccc;
-        margin-bottom: 20px;
-    }
-    .image-preview {
-        width: 100px;
-        height: 80px;
-        object-fit: cover;
         border-radius: 5px;
+    }
+    .btn-apply, .btn-apply-filters {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-apply:hover, .btn-apply-filters:hover {
+        background-color: var(--primary-dark);
+    }
+    .btn-clear, .btn-clear-filters {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-clear:hover, .btn-clear-filters:hover {
+        background-color: #5a6268;
+    }
+    
+    /* Statistics Cards */
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 12px 15px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid #eef2f7;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+    .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .stat-icon.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+    .stat-icon.success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 2px;
+        color: #2c3e50;
+        line-height: 1.2;
+    }
+    .stat-label {
+        color: #7f8d8d;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .form-control-sm {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .reports-table-wrapper::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .reports-table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 10px;
+    }
+    
+    /* Modal Styles */
+    .modal-fullscreen {
+        max-width: 95%;
+        width: 95%;
+        margin: 1rem auto;
+    }
+    .modal-fullscreen .modal-body {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header .btn-expand {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .report-detail-container {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .report-detail-container .row {
+        margin-bottom: 8px;
+    }
+    .image-preview-large {
+        max-width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        border-radius: 8px;
         cursor: pointer;
     }
     .comment-section {
@@ -312,7 +377,7 @@
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <h2><i class="bi bi-file-text"></i> My Reports</h2>
     <div class="stats-badge">
         <i class="bi bi-envelope"></i> My Pending: <span id="pendingCount">0</span>
@@ -320,39 +385,100 @@
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Total My Reports</h5>
-                <h2 id="statTotal">0</h2>
+<div class="row mb-3">
+    <div class="col-md-4 mb-2">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="bi bi-file-text"></i>
+            </div>
+            <div>
+                <div class="stat-number" id="statTotal">0</div>
+                <div class="stat-label">Total My Reports</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Pending Acknowledgment</h5>
-                <h2 id="statPending">0</h2>
+    <div class="col-md-4 mb-2">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+                <div class="stat-number" id="statPending">0</div>
+                <div class="stat-label">Pending Acknowledgment</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Acknowledged</h5>
-                <h2 id="statAcknowledged">0</h2>
+    <div class="col-md-4 mb-2">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <div>
+                <div class="stat-number" id="statAcknowledged">0</div>
+                <div class="stat-label">Acknowledged</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Filters -->
-<div class="filter-card">
-    <div class="row">
+<!-- Date Filter Section -->
+<div class="date-filter-bar">
+    <div class="row align-items-end">
         <div class="col-md-3">
-            <label class="form-label fw-bold">Report Type</label>
-            <select class="filter-select" id="filterType" onchange="loadReports()">
+            <div class="filter-label">Month</div>
+            <select id="filterMonth" class="date-filter-select">
+                <option value="all">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">Year</div>
+            <select id="filterYear" class="date-filter-select">
+                <option value="all">All Years</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+                <option value="2031">2031</option>
+                <option value="2032">2032</option>
+                <option value="2033">2033</option>
+                <option value="2034">2034</option>
+                <option value="2035">2035</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="filter-label">&nbsp;</div>
+            <div class="d-flex gap-2">
+                <button class="btn-apply btn-sm" onclick="applyDateFilter()"><i class="bi bi-funnel"></i> Apply</button>
+                <button class="btn-clear btn-sm" onclick="clearDateFilter()"><i class="bi bi-x-circle"></i> Clear</button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div id="dateFilterInfo" style="display: none; font-size: 11px; color: #666;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Filter Section -->
+<div class="filter-card py-2">
+    <div class="row align-items-end">
+        <div class="col-md-3">
+            <label class="form-label fw-bold small mb-1">Report Type</label>
+            <select class="form-select form-select-sm" id="filterType">
                 <option value="all">All Types</option>
                 <option value="water">💧 Water</option>
                 <option value="electricity">⚡ Electricity</option>
@@ -360,59 +486,50 @@
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label fw-bold">Status</label>
-            <select class="filter-select" id="filterStatus" onchange="loadReports()">
+            <label class="form-label fw-bold small mb-1">Status</label>
+            <select class="form-select form-select-sm" id="filterStatus">
                 <option value="all">All Status</option>
                 <option value="pending">⏳ Pending</option>
                 <option value="acknowledged">✓ Acknowledged</option>
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label fw-bold">Search</label>
-            <div class="search-box">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by Entity, Problem Type, or ID..." onkeyup="filterReports()">
-            </div>
+            <label class="form-label fw-bold small mb-1">Search</label>
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search by Entity, Problem Type, or ID...">
         </div>
         <div class="col-md-2">
-            <label class="form-label fw-bold">&nbsp;</label>
             <div class="d-flex gap-2">
-                <div class="view-toggle">
-                    <button class="view-toggle-btn" onclick="setView('card')">📋 Card</button>
-                    <button class="view-toggle-btn" onclick="setView('table')">📊 Table</button>
-                </div>
-                <button class="btn btn-sm btn-primary" onclick="loadReports()">
-                    <i class="bi bi-search"></i>
-                </button>
+                <button class="btn-apply-filters btn-sm" onclick="applyFilters()"><i class="bi bi-search"></i> Apply</button>
+                <button class="btn-clear-filters btn-sm" onclick="clearFilters()"><i class="bi bi-eraser"></i> Clear All</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Expand/Collapse All Buttons -->
-<div class="d-flex justify-content-end gap-2 mb-3">
-    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
-    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
-</div>
-
-<div id="reportsContainer" class="view-table">
-    <div class="table-view-container" id="tableViewContainer"></div>
-    <div class="card-view-container" id="cardViewContainer"></div>
+<div id="reportsContainer">
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+        <p class="mt-2 small">Loading your reports...</p>
+    </div>
 </div>
 
 <!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title">My Report Details</h5>
+                <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="modalBody">Loading...</div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">Print</button>
-                <button type="button" class="btn btn-warning" onclick="editReport()" id="editBtn">Edit</button>
-                <button type="button" class="btn btn-danger" onclick="deleteReport()" id="deleteBtn">Delete</button>
+            <div class="modal-body" id="modalBody" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">Print</button>
+                <button type="button" class="btn btn-warning btn-sm" onclick="editReport()" id="editBtn">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="deleteReport()" id="deleteBtn">Delete</button>
             </div>
         </div>
     </div>
@@ -421,16 +538,16 @@
 <div class="modal fade" id="commentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header py-2">
                 <h5 class="modal-title">Add Comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <textarea class="form-control" id="newComment" rows="4" placeholder="Enter your comment..."></textarea>
+                <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your comment..."></textarea>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitComment()">Add Comment</button>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitComment()">Add Comment</button>
             </div>
         </div>
     </div>
@@ -441,8 +558,9 @@
     let currentReportId = null;
     let currentTechnicianId = null;
     let allReports = [];
-    let filteredReports = [];
-    let currentView = localStorage.getItem('myReportsView') || 'table';
+    let isModalExpanded = false;
+    let currentFilterMonth = 'all';
+    let currentFilterYear = 'all';
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -456,6 +574,17 @@
         const date = new Date(dateString);
         date.setHours(date.getHours() + 8);
         return date.toLocaleDateString('en-GB');
+    }
+    
+    function getMonthYear(dateString) {
+        if (!dateString) return { month: 0, year: 0 };
+        const date = new Date(dateString);
+        return { month: date.getMonth() + 1, year: date.getFullYear() };
+    }
+    
+    function getMonthName(month) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return months[month - 1] || '';
     }
     
     function escapeHtml(text) {
@@ -475,56 +604,26 @@
         return cleaned.trim();
     }
     
+    function toggleModalSize() {
+        const modalDialog = document.querySelector('#reportModal .modal-dialog');
+        const expandBtn = document.getElementById('expandModalBtn');
+        if (isModalExpanded) {
+            modalDialog.classList.remove('modal-fullscreen');
+            modalDialog.classList.add('modal-xl');
+            expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+            isModalExpanded = false;
+        } else {
+            modalDialog.classList.remove('modal-xl');
+            modalDialog.classList.add('modal-fullscreen');
+            expandBtn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
+            isModalExpanded = true;
+        }
+    }
+    
     function getImageUrl(imgPath) {
         if (!imgPath) return '';
         if (imgPath.startsWith('http')) return imgPath;
         return window.location.origin + (imgPath.startsWith('/') ? imgPath : '/' + imgPath);
-    }
-    
-    function setView(view) {
-        currentView = view;
-        localStorage.setItem('myReportsView', view);
-        const container = document.getElementById('reportsContainer');
-        if (view === 'card') {
-            container.classList.remove('view-table');
-            container.classList.add('view-active');
-        } else {
-            container.classList.remove('view-active');
-            container.classList.add('view-table');
-        }
-        document.querySelectorAll('.view-toggle-btn').forEach(btn => btn.classList.remove('active'));
-        if (view === 'card') {
-            document.querySelector('.view-toggle-btn:first-child').classList.add('active');
-        } else {
-            document.querySelector('.view-toggle-btn:last-child').classList.add('active');
-        }
-        displayReports();
-    }
-    
-    function expandAllSections() {
-        const bodies = document.querySelectorAll('.section-body');
-        const icons = document.querySelectorAll('.section-toggle-icon');
-        bodies.forEach(body => body.style.display = 'block');
-        icons.forEach(icon => icon.innerHTML = '<i class="bi bi-chevron-up"></i>');
-    }
-    
-    function collapseAllSections() {
-        const bodies = document.querySelectorAll('.section-body');
-        const icons = document.querySelectorAll('.section-toggle-icon');
-        bodies.forEach(body => body.style.display = 'none');
-        icons.forEach(icon => icon.innerHTML = '<i class="bi bi-chevron-down"></i>');
-    }
-    
-    function toggleSection(sectionId, buttonElement) {
-        const body = document.getElementById(sectionId);
-        const icon = buttonElement.querySelector('.section-toggle-icon');
-        if (body.style.display === 'none') {
-            body.style.display = 'block';
-            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
-        } else {
-            body.style.display = 'none';
-            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
-        }
     }
     
     async function getCurrentTechnician() {
@@ -540,9 +639,96 @@
         }
     }
     
+    function applyDateFilter() {
+        currentFilterMonth = document.getElementById('filterMonth').value;
+        currentFilterYear = document.getElementById('filterYear').value;
+        applyFilters();
+        
+        const dateFilterInfo = document.getElementById('dateFilterInfo');
+        if (currentFilterMonth !== 'all' && currentFilterYear !== 'all') {
+            const monthName = getMonthName(parseInt(currentFilterMonth));
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} ${currentFilterYear}`;
+            dateFilterInfo.style.display = 'block';
+        } else if (currentFilterYear !== 'all') {
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing year ${currentFilterYear}`;
+            dateFilterInfo.style.display = 'block';
+        } else if (currentFilterMonth !== 'all') {
+            const monthName = getMonthName(parseInt(currentFilterMonth));
+            dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} (all years)`;
+            dateFilterInfo.style.display = 'block';
+        } else {
+            dateFilterInfo.style.display = 'none';
+        }
+    }
+    
+    function clearDateFilter() {
+        document.getElementById('filterMonth').value = 'all';
+        document.getElementById('filterYear').value = 'all';
+        currentFilterMonth = 'all';
+        currentFilterYear = 'all';
+        document.getElementById('dateFilterInfo').style.display = 'none';
+        applyFilters();
+    }
+    
+    function clearFilters() {
+        document.getElementById('filterType').value = 'all';
+        document.getElementById('filterStatus').value = 'all';
+        document.getElementById('searchInput').value = '';
+        clearDateFilter();
+    }
+    
+    function applyFilters() {
+        const reportType = document.getElementById('filterType').value;
+        const status = document.getElementById('filterStatus').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filterMonth = currentFilterMonth;
+        const filterYear = currentFilterYear;
+        
+        let filtered = [...allReports];
+        
+        if (filterMonth !== 'all' || filterYear !== 'all') {
+            filtered = filtered.filter(r => {
+                const { month, year } = getMonthYear(r.created_at);
+                let match = true;
+                if (filterMonth !== 'all') match = match && month == filterMonth;
+                if (filterYear !== 'all') match = match && year == filterYear;
+                return match;
+            });
+        }
+        
+        if (reportType !== 'all') {
+            filtered = filtered.filter(r => r.report_type === reportType);
+        }
+        
+        if (status !== 'all') {
+            if (status === 'pending') filtered = filtered.filter(r => !r.team_leader_acknowledged);
+            if (status === 'acknowledged') filtered = filtered.filter(r => r.team_leader_acknowledged);
+        }
+        
+        if (searchTerm) {
+            filtered = filtered.filter(r => 
+                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
+                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
+                r.id.toString().includes(searchTerm) ||
+                (r.reference_number && r.reference_number.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        const total = filtered.length;
+        const pending = filtered.filter(r => !r.team_leader_acknowledged).length;
+        const acknowledged = filtered.filter(r => r.team_leader_acknowledged).length;
+        
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statAcknowledged').textContent = acknowledged;
+        document.getElementById('pendingCount').textContent = pending;
+        
+        displayReports(filtered);
+    }
+    
     async function loadReports() {
         const container = document.getElementById('reportsContainer');
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading...</p></div>';
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="mt-2 small">Loading reports...</p></div>';
         
         try {
             const response = await fetch(`/api/technical-reports?technician_id=${currentTechnicianId}`);
@@ -554,198 +740,151 @@
             allReports = await response.json();
             if (!allReports) allReports = [];
             
-            filterReports();
+            applyFilters();
         } catch (error) {
             console.error('Error loading reports:', error);
             container.innerHTML = `
-                <div class="text-center py-5 text-danger">
-                    <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
-                    <p>Error loading reports: ${error.message}</p>
-                    <button class="btn btn-primary mt-2" onclick="loadReports()">Try Again</button>
+                <div class="text-center py-4 text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p class="small">Error loading reports: ${error.message}</p>
+                    <button class="btn btn-primary btn-sm" onclick="loadReports()">Try Again</button>
                 </div>
             `;
         }
     }
     
-    function filterReports() {
-        const type = document.getElementById('filterType').value;
-        const status = document.getElementById('filterStatus').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        
-        filteredReports = [...allReports];
-        
-        if (type !== 'all') {
-            filteredReports = filteredReports.filter(r => r.report_type === type);
-        }
-        if (status !== 'all') {
-            if (status === 'pending') filteredReports = filteredReports.filter(r => !r.team_leader_acknowledged);
-            if (status === 'acknowledged') filteredReports = filteredReports.filter(r => r.team_leader_acknowledged);
-        }
-        if (searchTerm) {
-            filteredReports = filteredReports.filter(r => 
-                (r.entity_name && r.entity_name.toLowerCase().includes(searchTerm)) ||
-                (r.problem_type && r.problem_type.toLowerCase().includes(searchTerm)) ||
-                r.id.toString().includes(searchTerm)
-            );
-        }
-        
-        const total = filteredReports.length;
-        const pending = filteredReports.filter(r => !r.team_leader_acknowledged).length;
-        const acknowledged = filteredReports.filter(r => r.team_leader_acknowledged).length;
-        
-        document.getElementById('statTotal').textContent = total;
-        document.getElementById('statPending').textContent = pending;
-        document.getElementById('statAcknowledged').textContent = acknowledged;
-        document.getElementById('pendingCount').textContent = pending;
-        
-        displayReports();
-    }
-    
-    function displayReports() {
-        // Build Table View - Single section for My Reports
-        buildTableView(filteredReports);
-        
-        // Build Card View
-        buildCardView(filteredReports);
-        
-        // Set initial view
-        setView(currentView);
-    }
-    
-    function buildTableView(reports) {
-        const container = document.getElementById('tableViewContainer');
-        if (!container) return;
-        
-        const sectionId = 'myreports-section';
-        const bodyId = 'section-body';
-        const isCollapsed = localStorage.getItem('myreports-section-collapsed') === 'true';
-        
-        container.innerHTML = `
-            <div id="${sectionId}" class="mb-4">
-                <div class="section-header" onclick="toggleSection('${bodyId}', this)">
-                    <div class="section-title">
-                        <span>📋</span>
-                        <span>My Reports</span>
-                        <span class="section-count">${reports.length}</span>
-                    </div>
-                    <div class="section-toggle-icon">
-                        <i class="bi bi-chevron-${isCollapsed ? 'down' : 'up'}"></i>
-                    </div>
-                </div>
-                <div id="${bodyId}" class="reports-table-container" style="display: ${isCollapsed ? 'none' : 'block'};">
-                    ${reports.length === 0 ? '<div class="empty-section">No reports found</div>' : `
-                        <table class="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Entity</th>
-                                    <th>Problem Type</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Assistant Check</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reports.slice(0, 25).map(report => {
-                                    const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-                                    const priorityClass = `priority-${report.priority}`;
-                                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
-                                    const isAcknowledged = report.team_leader_acknowledged;
-                                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
-                                    const isChecked = report.checked_by_assistant === true;
-                                    const canEdit = !isAcknowledged;
-                                    
-                                    return `
-                                        <tr>
-                                            <td><span class="report-id-link" onclick="openReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                                            <td>${typeIcon} ${report.report_type}</td>
-                                            <td onclick="openReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
-                                            <td onclick="openReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
-                                            <td class="${priorityClass}" onclick="openReportDetail(${report.id})">${priorityIcon} ${report.priority.toUpperCase()}</td>
-                                            <td onclick="openReportDetail(${report.id})">${statusHtml}</td>
-                                            <td>${isChecked ? `<span class="checked-badge">✓ by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span>` : '<span class="text-muted">-</span>'}
-                                            <td onclick="openReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
-                                            <td>
-                                                ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
-                                                <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                        ${reports.length > 25 ? `<div class="text-center p-2 text-muted small">Showing 25 of ${reports.length} reports. Use filters to narrow down.</div>` : ''}
-                    `}
-                </div>
-            </div>
-        `;
-        
-        if (isCollapsed) {
-            document.getElementById(bodyId).style.display = 'none';
-        }
-    }
-    
-    function buildCardView(reports) {
-        const container = document.getElementById('cardViewContainer');
-        if (!container) return;
+    function displayReports(reports) {
+        const container = document.getElementById('reportsContainer');
         
         if (reports.length === 0) {
             container.innerHTML = `
-                <div class="empty-reports">
-                    <i class="bi bi-inbox"></i>
-                    <h4>No Reports Found</h4>
-                    <p class="text-muted">You have not submitted any reports yet.</p>
-                    <a href="/new-report" class="btn btn-primary mt-2">Create New Report</a>
+                <div class="empty-reports text-center py-4">
+                    <i class="bi bi-inbox" style="font-size: 32px; color: #ccc;"></i>
+                    <h5 class="mt-2">No Reports Found</h5>
+                    <p class="small text-muted">You have not submitted any reports yet.</p>
+                    <a href="/new-report" class="btn btn-primary btn-sm mt-2">Create New Report</a>
                 </div>
             `;
             return;
         }
         
-        container.innerHTML = reports.map(report => {
-            const typeClass = `type-${report.report_type}`;
-            const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
-            const priorityClass = `priority-${report.priority}`;
-            const isAcknowledged = report.team_leader_acknowledged;
-            const statusText = isAcknowledged ? '✓ Acknowledged' : '⏳ Pending';
-            const statusClass = isAcknowledged ? 'status-acknowledged' : 'status-pending';
-            const isChecked = report.checked_by_assistant === true;
-            const canEdit = !isAcknowledged;
+        // Group reports by type (Water, Electricity, Telephone)
+        const waterReports = reports.filter(r => r.report_type === 'water');
+        const electricityReports = reports.filter(r => r.report_type === 'electricity');
+        const telephoneReports = reports.filter(r => r.report_type === 'telephone');
+        
+        const buildTable = (reportList, typeName, typeIcon) => {
+            if (reportList.length === 0) return '';
             
-            return `
-                <div class="report-card" onclick="openReportDetail(${report.id})">
-                    <div class="report-header">
-                        <div>
-                            <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span>
-                            <span class="priority-badge ${priorityClass} ms-2">${report.priority.toUpperCase()}</span>
-                            ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">🔴 TENDER</span>' : ''}
-                            ${isChecked ? `<span class="checked-badge ms-2"><i class="bi bi-eye"></i> Checked</span>` : ''}
-                        </div>
-                        <div>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
+            // Group by technician within each type
+            const groupByTechnician = (list) => {
+                const groups = {};
+                list.forEach(report => {
+                    const techId = report.technician_id;
+                    const techName = report.technician_name || 'Unknown';
+                    if (!groups[techId]) {
+                        groups[techId] = {
+                            id: techId,
+                            name: techName,
+                            reports: []
+                        };
+                    }
+                    groups[techId].reports.push(report);
+                });
+                return Object.values(groups);
+            };
+            
+            const groups = groupByTechnician(reportList);
+            
+            let tableHtml = `<div class="category-container">
+                <div class="section-header" onclick="toggleSection('${typeName}-body', this)">
+                    <div class="section-title">
+                        <span>${typeIcon}</span>
+                        <span>${typeName} Reports</span>
+                        <span class="section-count">${reportList.length}</span>
                     </div>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <strong>${escapeHtml(report.entity_name || report.entity_type)}</strong>
-                            <div class="text-muted small">Report #${report.utility_number || report.id}</div>
-                            <div class="mt-2">${escapeHtml(report.problem_type || 'No problem type')}</div>
-                            <div class="text-muted small mt-1">${escapeHtml((report.complaint_details || '').substring(0, 100))}${(report.complaint_details || '').length > 100 ? '...' : ''}</div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div><i class="bi bi-calendar"></i> ${formatDateOnly(report.created_at)}</div>
-                            ${report.action_taken ? `<div class="small text-success"><i class="bi bi-check-circle"></i> Action taken</div>` : ''}
-                            <div class="mt-2">
-                                ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
-                                <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
-                            </div>
-                        </div>
+                    <div class="section-toggle-icon">
+                        <i class="bi bi-chevron-down"></i>
                     </div>
                 </div>
-            `;
-        }).join('');
+                <div id="${typeName}-body" class="reports-table-wrapper" style="display: none;">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px;">ID</th>
+                                <th style="min-width: 120px;">Entity Name</th>
+                                <th style="min-width: 100px;">Reference Number</th>
+                                <th style="min-width: 80px;">Reference Date</th>
+                                <th style="min-width: 130px;">Problem Type</th>
+                                <th style="width: 65px;">Priority</th>
+                                <th style="width: 85px;">Status</th>
+                                <th style="width: 75px;">Date</th>
+                                <th style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            groups.forEach(group => {
+                tableHtml += `<tr class="group-header-row">
+                                <td colspan="9">
+                                    <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
+                                    <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
+                                  </td>
+                               </td>`;
+                
+                group.reports.forEach(report => {
+                    const priorityClass = `priority-${report.priority}`;
+                    const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
+                    const isAcknowledged = report.team_leader_acknowledged;
+                    const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                    const isChecked = report.checked_by_assistant === true;
+                    const canEdit = !isAcknowledged;
+                    
+                    tableHtml += `
+                        <tr onclick="openReportDetail(${report.id})">
+                            <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td>
+                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
+                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                            <td>${statusHtml}</td>
+                            <td class="date-cell">${formatDateOnly(report.created_at)}</td>
+                            <td>
+                                ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
+                                <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
+                              </td>
+                           </tr>
+                    `;
+                });
+            });
+            
+            tableHtml += `</tbody>
+                    60
+                </div>
+            </div>`;
+            
+            return tableHtml;
+        };
+        
+        let allTablesHtml = '';
+        allTablesHtml += buildTable(waterReports, 'Water', '💧');
+        allTablesHtml += buildTable(electricityReports, 'Electricity', '⚡');
+        allTablesHtml += buildTable(telephoneReports, 'Telephone', '📞');
+        
+        container.innerHTML = allTablesHtml;
+    }
+    
+    function toggleSection(bodyId, element) {
+        const body = document.getElementById(bodyId);
+        const icon = element.querySelector('.section-toggle-icon');
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
+        } else {
+            body.style.display = 'none';
+            icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
+        }
     }
     
     async function openReportDetail(id) {
@@ -764,6 +903,18 @@
                 if (deleteBtn) {
                     deleteBtn.style.display = currentReport.team_leader_acknowledged ? 'none' : 'inline-block';
                 }
+                
+                if (isModalExpanded) {
+                    const modalDialog = document.querySelector('#reportModal .modal-dialog');
+                    const expandBtn = document.getElementById('expandModalBtn');
+                    if (modalDialog) {
+                        modalDialog.classList.remove('modal-fullscreen');
+                        modalDialog.classList.add('modal-xl');
+                        expandBtn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
+                        isModalExpanded = false;
+                    }
+                }
+                
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) { 
@@ -773,20 +924,20 @@
     
     function displayReportModal() {
         const report = currentReport;
-        const typeClass = `type-${report.report_type}`;
         const typeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
+        const typeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
         const priorityClass = `priority-${report.priority}`;
         const isAcknowledged = report.team_leader_acknowledged;
         const isChecked = report.checked_by_assistant === true;
         
         let imagesHtml = '';
         if (report.images && report.images.length > 0) {
-            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview" style="width:100px;height:80px;object-fit:cover;border-radius:5px;cursor:pointer;" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-3 mt-2">${report.images.map(img => `<img src="${getImageUrl(img)}" class="image-preview-large" onclick="window.open('${getImageUrl(img)}')" onerror="this.style.display='none'">`).join('')}</div></div>`;
         }
         
         let commentsHtml = '';
         if (report.comments && report.comments.length > 0) {
-            commentsHtml = `<div class="comment-section"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+            commentsHtml = `<div class="comment-section mt-3"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item mb-2"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
         }
         
         let assistantCheckHtml = '';
@@ -802,32 +953,43 @@
         }
         
         const html = `
-            <div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Report #:</strong> ${report.utility_number || report.id}<br>
-                        <strong>Type:</strong> <span class="report-type-badge ${typeClass}">${typeIcon} ${report.report_type.toUpperCase()}</span><br>
-                        <strong>Submitted:</strong> ${formatDate(report.created_at)}<br>
-                        <strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${report.priority.toUpperCase()}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Status:</strong> ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}<br>
-                        <strong>Location:</strong> ${escapeHtml(report.entity_name || report.entity_type)}
-                    </div>
+            <div class="report-detail-container">
+                <div class="alert alert-info">
+                    <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
+                    Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
-                <hr>
-                <h6>Problem / Issue</h6>
-                <p><strong>Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
-                <p><strong>Description:</strong><br>${escapeHtml(report.complaint_details || '-')}</p>
-                ${report.action_taken ? `<h6>Action Taken</h6><p>${escapeHtml(report.action_taken)}</p>` : ''}
-                ${report.technician_notes ? `<h6>My Notes</h6><p>${escapeHtml(report.technician_notes)}</p>` : ''}
-                ${imagesHtml}
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Entity:</div>
+                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                </div>
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Number:</div><div class="col-8">${escapeHtml(report.reference_number)}</div></div>` : ''}
+                ${report.reference_date ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Date:</div><div class="col-8">${escapeHtml(report.reference_date)}</div></div>` : ''}
+                ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
+                ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
+                ${report.phone_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Problem Type:</div>
+                    <div class="col-8">${escapeHtml(report.problem_type)}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Priority:</div>
+                    <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Complaint Details:</div>
+                    <div class="col-8">${escapeHtml(report.complaint_details)}</div>
+                </div>
+                ${report.action_taken ? `<div class="row mb-2"><div class="col-4 fw-bold">Action Taken:</div><div class="col-8">${escapeHtml(report.action_taken)}</div></div>` : ''}
+                ${report.technician_notes ? `<div class="row mb-2"><div class="col-4 fw-bold">Technician Notes:</div><div class="col-8">${escapeHtml(report.technician_notes)}</div></div>` : ''}
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Submitted By:</div>
+                    <div class="col-8">${escapeHtml(report.technician_name || 'Unknown')}</div>
+                </div>
                 ${assistantCheckHtml}
                 ${acknowledgmentHtml}
+                ${imagesHtml}
                 ${commentsHtml}
-                <div class="mt-3">
-                    <button class="btn btn-sm btn-outline-primary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button>
-                </div>
+                <div class="mt-3"><button class="btn btn-sm btn-secondary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
         document.getElementById('modalBody').innerHTML = html;
@@ -933,6 +1095,8 @@
         let entityName = cleanText(report.entity_name || report.entity_type || '');
         let technicianName = cleanText(report.technician_name || 'Unknown');
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
+        let assistantName = cleanText(report.checked_by_assistant_name || '');
+        let referenceDate = cleanText(report.reference_date || '');
         
         if (complaintDetails && complaintDetails.includes('\n')) {
             complaintDetails = complaintDetails.split('\n').map(line => `• ${line.trim()}`).join('<br>');
@@ -962,7 +1126,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(report.checked_by_assistant_name)} on ${formatDate(report.checked_by_assistant_at)}</td>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></table>`;
         }
         
         return `<!DOCTYPE html>
@@ -1011,12 +1175,13 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}</td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td>` : ''}
+                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td>` : ''}
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
                     ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
                     <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
                     <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
                     <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
