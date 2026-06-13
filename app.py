@@ -42,12 +42,14 @@ def format_brunei_time(date_string):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+# Moderate compression settings - balance between quality and storage
+app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024  # 3MB max upload (reduced from 5MB)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-app.config['MAX_IMAGE_DIMENSION'] = 1200
-app.config['IMAGE_QUALITY'] = 75
+# COMPRESSION SETTINGS - MODERATE LEVEL
+app.config['MAX_IMAGE_DIMENSION'] = 1024  # Max 1024px (was 1200px) - reduces size by ~30%
+app.config['IMAGE_QUALITY'] = 60          # 60% quality (was 75) - reduces size by ~40%
 
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
@@ -105,8 +107,18 @@ def init_supabase_storage():
     return True
 
 def compress_image(file_content, filename):
+    """
+    Compress image with moderate settings:
+    - Max dimension: 1024px
+    - Quality: 60%
+    - Format: JPEG
+    - Progressive loading for better user experience
+    """
     try:
+        original_size_kb = len(file_content) / 1024
         img = Image.open(io_lib.BytesIO(file_content))
+        
+        # Convert RGBA to RGB (remove transparency)
         if img.mode in ('RGBA', 'LA', 'P'):
             rgb_img = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -117,16 +129,33 @@ def compress_image(file_content, filename):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
         
+        # Resize image to max 1024px
         max_dimension = app.config['MAX_IMAGE_DIMENSION']
         if img.width > max_dimension or img.height > max_dimension:
             ratio = min(max_dimension / img.width, max_dimension / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
+            # Use LANCZOS for high-quality downscaling
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # Secondary resize for very large images (extra safety)
+        if img.width > 1024 or img.height > 1024:
+            ratio = min(1024 / img.width, 1024 / img.height)
+            new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
         
         output = io_lib.BytesIO()
-        img.save(output, format='JPEG', quality=app.config['IMAGE_QUALITY'], optimize=True)
+        # Save with moderate compression settings
+        img.save(output, format='JPEG', 
+                 quality=app.config['IMAGE_QUALITY'],
+                 optimize=True,
+                 progressive=True)  # Progressive JPEG for faster perceived loading
         compressed_content = output.getvalue()
-        app.logger.info(f"Image compressed: {len(file_content)/1024:.1f}KB -> {len(compressed_content)/1024:.1f}KB")
+        
+        # Log compression ratio
+        compressed_size_kb = len(compressed_content) / 1024
+        compression_ratio = (1 - compressed_size_kb / original_size_kb) * 100
+        app.logger.info(f"Image compressed: {original_size_kb:.1f}KB -> {compressed_size_kb:.1f}KB ({compression_ratio:.1f}% saved)")
+        
         return compressed_content, 'jpg'
     except Exception as e:
         app.logger.error(f"Image compression error: {e}")
@@ -801,9 +830,9 @@ def get_mapping_images():
             if 'pabx_pilot_no' not in img_dict or img_dict['pabx_pilot_no'] is None:
                 img_dict['pabx_pilot_no'] = ''
             if 'pabx_trailing_no' not in img_dict or img_dict['pabx_trailing_no'] is None:
-                img_dict['pabx_trailing_no'] = ''
+                img_dict['pabx_trailing_no'] = []
             if 'pabx_extension_no' not in img_dict or img_dict['pabx_extension_no'] is None:
-                img_dict['pabx_extension_no'] = ''
+                img_dict['pabx_extension_no'] = []
             images.append(img_dict)
         
         return jsonify(images)
@@ -820,6 +849,16 @@ def create_mapping_image():
         
         # Log received data for debugging
         app.logger.info(f"Creating mapping image with data keys: {list(data.keys()) if data else 'None'}")
+        
+        # Handle PABX trailing/extension as arrays (for PostgreSQL ARRAY type)
+        pabx_trailing_no = data.get('pabx_trailing_no', [])
+        pabx_extension_no = data.get('pabx_extension_no', [])
+        
+        # Ensure they are arrays (not strings)
+        if isinstance(pabx_trailing_no, str):
+            pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
+        if isinstance(pabx_extension_no, str):
+            pabx_extension_no = [pabx_extension_no] if pabx_extension_no else []
         
         image_data = {
             "entity_type": data.get('entity_type'),
@@ -841,8 +880,8 @@ def create_mapping_image():
             # PABX individual fields
             "pabx_name": data.get('pabx_name', ''),
             "pabx_pilot_no": data.get('pabx_pilot_no', ''),
-            "pabx_trailing_no": data.get('pabx_trailing_no', ''),
-            "pabx_extension_no": data.get('pabx_extension_no', ''),
+            "pabx_trailing_no": pabx_trailing_no,  # Send as array
+            "pabx_extension_no": pabx_extension_no,  # Send as array
             # JSON storage for multiple accounts
             "water_accounts_json": data.get('water_accounts_json', '[]'),
             "electricity_accounts_json": data.get('electricity_accounts_json', '[]'),
@@ -874,6 +913,16 @@ def update_mapping_image(image_id):
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
         
+        # Handle PABX trailing/extension as arrays
+        pabx_trailing_no = data.get('pabx_trailing_no', [])
+        pabx_extension_no = data.get('pabx_extension_no', [])
+        
+        # Ensure they are arrays (not strings)
+        if isinstance(pabx_trailing_no, str):
+            pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
+        if isinstance(pabx_extension_no, str):
+            pabx_extension_no = [pabx_extension_no] if pabx_extension_no else []
+        
         allowed_fields = [
             'description', 'notes', 
             'water_account_number', 'water_meter_number',
@@ -881,7 +930,7 @@ def update_mapping_image(image_id):
             'telephone_account_number', 'telephone_number',
             'canteen_water_account_number', 'canteen_water_meter_number',
             'canteen_electricity_account_number', 'canteen_electricity_meter_number',
-            'pabx_name', 'pabx_pilot_no', 'pabx_trailing_no', 'pabx_extension_no',
+            'pabx_name', 'pabx_pilot_no',
             'water_accounts_json', 'electricity_accounts_json', 'telephone_accounts_json',
             'canteen_water_accounts_json', 'canteen_electricity_accounts_json',
             # Tracking fields for last editor
@@ -891,6 +940,12 @@ def update_mapping_image(image_id):
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
+        
+        # Add PABX array fields separately
+        if 'pabx_trailing_no' in data:
+            update_data['pabx_trailing_no'] = pabx_trailing_no
+        if 'pabx_extension_no' in data:
+            update_data['pabx_extension_no'] = pabx_extension_no
         
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
@@ -1085,6 +1140,7 @@ def init_app():
     app.logger.info("=" * 60)
     app.logger.info("UKA Technical Report System Starting")
     app.logger.info("Unit Kemudahan Asas, Ministry of Education - Brunei Darussalam")
+    app.logger.info(f"Compression Settings: Max {app.config['MAX_IMAGE_DIMENSION']}px, Quality {app.config['IMAGE_QUALITY']}%")
     app.logger.info("=" * 60)
 
 init_app()
