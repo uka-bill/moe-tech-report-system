@@ -2,19 +2,50 @@
 
 {% block content %}
 <style>
-    .filter-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    :root {
+        --primary-color: #9b59b6;
+        --primary-dark: #8e44ad;
+        --primary-light: #d4b8e8;
+        --secondary-color: #f3e5f5;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-header h2 i {
+        margin-right: 12px;
+    }
+    .page-header p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 0.85rem;
     }
     .stats-badge {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
-        padding: 5px 12px;
+        padding: 6px 14px;
         border-radius: 20px;
         font-size: 12px;
+        font-weight: 500;
+    }
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
     }
     .filter-select {
         width: 100%;
@@ -24,34 +55,39 @@
     }
     .section-header {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
-        padding: 10px 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 12px;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
         transition: all 0.2s;
+        border-left: 4px solid var(--primary-color);
     }
     .section-header:hover {
         background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
+        transform: translateX(3px);
     }
     .section-title {
-        font-weight: bold;
-        font-size: 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
         display: flex;
         align-items: center;
         gap: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .section-count {
         background: white;
-        padding: 2px 8px;
+        padding: 2px 10px;
         border-radius: 20px;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         color: var(--primary-dark);
+        font-weight: 600;
     }
     .section-toggle-icon {
-        font-size: 1rem;
+        font-size: 0.9rem;
+        color: var(--primary-dark);
     }
     .category-container {
         margin-bottom: 20px;
@@ -59,9 +95,10 @@
     .reports-table-wrapper {
         max-height: 500px;
         overflow-y: auto;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
+        border-radius: 16px;
+        border: 1px solid #eef2f7;
         background: white;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     }
     .reports-table {
         width: 100%;
@@ -69,42 +106,41 @@
         font-size: 12px;
     }
     .reports-table th {
-        background: #f8f9fa;
-        padding: 8px 8px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 10px 12px;
         text-align: left;
         font-weight: 600;
-        font-size: 10px;
+        font-size: 11px;
         color: #495057;
         border-bottom: 2px solid #dee2e6;
         position: sticky;
         top: 0;
-        background: #f8f9fa;
         z-index: 10;
-        white-space: nowrap;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .reports-table td {
-        padding: 8px 8px;
-        border-bottom: 1px solid #e9ecef;
+        padding: 8px 12px;
+        border-bottom: 1px solid #eef2f7;
         cursor: pointer;
         transition: background 0.2s;
         vertical-align: middle;
     }
     .reports-table tr:hover td {
-        background-color: #f8f5fc;
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
     }
     .group-header-row {
-        background-color: #e8f0fe;
+        background: linear-gradient(135deg, #e8f0fe 0%, #d4e0f0 100%);
         font-weight: bold;
     }
     .group-header-row td {
-        background-color: #e8f0fe;
+        background: linear-gradient(135deg, #e8f0fe 0%, #d4e0f0 100%);
         border-bottom: 2px solid var(--primary-color);
-        padding: 8px 8px;
+        padding: 8px 12px;
         font-weight: 600;
         color: var(--primary-dark);
     }
     .group-header-row:hover td {
-        background-color: #e8f0fe;
+        background: linear-gradient(135deg, #e8f0fe 0%, #d4e0f0 100%);
     }
     .priority-high {
         color: #dc3545;
@@ -123,30 +159,31 @@
     }
     .status-pending {
         display: inline-block;
-        padding: 2px 6px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 10px;
-        font-weight: 500;
-        background-color: #fff3cd;
+        font-weight: 600;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
         color: #856404;
     }
     .status-acknowledged {
         display: inline-block;
-        padding: 2px 6px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 10px;
-        font-weight: 500;
-        background-color: #d4edda;
+        font-weight: 600;
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
         color: #155724;
     }
     .checked-badge {
-        background-color: #17a2b8;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         color: white;
-        padding: 2px 5px;
-        border-radius: 8px;
-        font-size: 8px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 9px;
         display: inline-block;
         margin-left: 4px;
+        font-weight: 500;
     }
     .report-id-link {
         font-weight: 600;
@@ -156,6 +193,7 @@
     }
     .report-id-link:hover {
         text-decoration: underline;
+        color: var(--primary-dark);
     }
     .entity-name, .reference-number-cell, .reference-date-cell {
         font-size: 11px;
@@ -174,6 +212,7 @@
     .date-cell {
         font-size: 10px;
         white-space: nowrap;
+        color: #6c757d;
     }
     .priority-icon {
         font-size: 10px;
@@ -181,24 +220,26 @@
     }
     .empty-section {
         text-align: center;
-        padding: 30px;
-        color: #999;
+        padding: 40px;
+        color: #6c757d;
         font-size: 13px;
     }
     .btn-edit, .btn-delete {
         background: none;
         border: none;
         cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
+        padding: 5px 10px;
+        border-radius: 8px;
         font-size: 11px;
+        transition: all 0.2s;
     }
     .btn-edit {
-        background-color: #ffc107;
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
         color: #333;
+        margin-right: 5px;
     }
     .btn-delete {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
     }
     .btn-edit:hover, .btn-delete:hover {
@@ -207,63 +248,67 @@
     
     /* Date Filter Bar */
     .date-filter-bar {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #e0e0e0;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #eef2f7;
     }
     .filter-label {
         font-size: 11px;
         font-weight: 600;
-        margin-bottom: 3px;
+        margin-bottom: 5px;
         color: #495057;
     }
     .filter-info {
         font-size: 11px;
         margin-top: 8px;
-        padding: 5px 10px;
-        background: #e8f0fe;
+        padding: 5px 12px;
+        background: linear-gradient(135deg, #e8f0fe 0%, #d4e0f0 100%);
         border-radius: 6px;
         color: var(--primary-dark);
         display: inline-block;
     }
     .date-filter-select {
         width: 100%;
-        padding: 6px 10px;
-        border-radius: 6px;
-        border: 1px solid #ddd;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
         font-size: 12px;
+        background: white;
     }
     .btn-sm {
-        padding: 5px 12px;
+        padding: 6px 14px;
         font-size: 11px;
-        border-radius: 5px;
+        border-radius: 8px;
     }
     .btn-apply, .btn-apply-filters {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         color: white;
         border: none;
         cursor: pointer;
+        font-weight: 500;
     }
     .btn-apply:hover, .btn-apply-filters:hover {
-        background-color: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
     }
     .btn-clear, .btn-clear-filters {
-        background-color: #6c757d;
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         color: white;
         border: none;
         cursor: pointer;
+        font-weight: 500;
     }
     .btn-clear:hover, .btn-clear-filters:hover {
-        background-color: #5a6268;
+        transform: translateY(-1px);
     }
     
     /* Statistics Cards */
     .stat-card {
         background: white;
         border-radius: 16px;
-        padding: 12px 15px;
+        padding: 15px 20px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         transition: all 0.3s ease;
         height: 100%;
@@ -273,17 +318,17 @@
         gap: 15px;
     }
     .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
     }
     .stat-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 24px;
     }
     .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
     .stat-icon.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
@@ -296,7 +341,7 @@
         line-height: 1.2;
     }
     .stat-label {
-        color: #7f8d8d;
+        color: #6c757d;
         font-size: 11px;
         font-weight: 500;
     }
@@ -307,15 +352,15 @@
     }
     
     .reports-table-wrapper::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
     }
     .reports-table-wrapper::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: 10px;
     }
     .reports-table-wrapper::-webkit-scrollbar-thumb {
-        background: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         border-radius: 10px;
     }
     
@@ -340,30 +385,37 @@
     .report-detail-container {
         font-size: 14px;
         line-height: 1.6;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .report-detail-container .row {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
     .image-preview-large {
         max-width: 100%;
         max-height: 300px;
         object-fit: contain;
-        border-radius: 8px;
+        border-radius: 12px;
         cursor: pointer;
+        transition: transform 0.2s;
+        border: 1px solid #eef2f7;
+    }
+    .image-preview-large:hover {
+        transform: scale(1.02);
     }
     .comment-section {
-        background-color: #f8f5fc;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
+        padding: 18px;
+        border-radius: 12px;
+        margin-top: 18px;
         border-left: 3px solid var(--primary-color);
     }
     .comment-item {
         background: white;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #eee;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .comment-author {
         font-weight: bold;
@@ -372,21 +424,55 @@
     }
     .comment-date {
         font-size: 10px;
-        color: #999;
-        margin-left: 10px;
+        color: #6c757d;
+        margin-left: 12px;
+    }
+    .modal-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
+    }
+    .btn-secondary-custom {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-secondary-custom:hover {
+        transform: translateY(-1px);
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-print:hover {
+        transform: translateY(-1px);
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
     <h2><i class="bi bi-file-text"></i> My Reports</h2>
+    <p>View, edit, and track your submitted technical reports</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div class="stats-badge">
         <i class="bi bi-envelope"></i> My Pending: <span id="pendingCount">0</span>
     </div>
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-3">
-    <div class="col-md-4 mb-2">
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
         <div class="stat-card">
             <div class="stat-icon primary">
                 <i class="bi bi-file-text"></i>
@@ -397,7 +483,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-2">
+    <div class="col-md-4 mb-3">
         <div class="stat-card">
             <div class="stat-icon warning">
                 <i class="bi bi-clock-history"></i>
@@ -408,7 +494,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4 mb-2">
+    <div class="col-md-4 mb-3">
         <div class="stat-card">
             <div class="stat-icon success">
                 <i class="bi bi-check2-circle"></i>
@@ -468,7 +554,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div id="dateFilterInfo" style="display: none; font-size: 11px; color: #666;"></div>
+            <div id="dateFilterInfo" style="display: none;" class="filter-info"></div>
         </div>
     </div>
 </div>
@@ -517,7 +603,7 @@
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header py-2">
+            <div class="modal-header-custom">
                 <h5 class="modal-title">My Report Details</h5>
                 <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()">
                     <i class="bi bi-arrows-fullscreen"></i>
@@ -525,11 +611,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="modalBody" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">Print</button>
-                <button type="button" class="btn btn-warning btn-sm" onclick="editReport()" id="editBtn">Edit</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="deleteReport()" id="deleteBtn">Delete</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn-print" onclick="printReport()"><i class="bi bi-printer"></i> Print</button>
+                <button type="button" class="btn-edit" onclick="editReport()" id="editBtn">Edit</button>
+                <button type="button" class="btn-delete" onclick="deleteReport()" id="deleteBtn">Delete</button>
             </div>
         </div>
     </div>
@@ -538,16 +624,16 @@
 <div class="modal fade" id="commentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header py-2">
+            <div class="modal-header-custom">
                 <h5 class="modal-title">Add Comment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your comment..."></textarea>
             </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="submitComment()">Add Comment</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary-custom" onclick="submitComment()">Add Comment</button>
             </div>
         </div>
     </div>
@@ -648,14 +734,14 @@
         if (currentFilterMonth !== 'all' && currentFilterYear !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
             dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} ${currentFilterYear}`;
-            dateFilterInfo.style.display = 'block';
+            dateFilterInfo.style.display = 'inline-block';
         } else if (currentFilterYear !== 'all') {
             dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing year ${currentFilterYear}`;
-            dateFilterInfo.style.display = 'block';
+            dateFilterInfo.style.display = 'inline-block';
         } else if (currentFilterMonth !== 'all') {
             const monthName = getMonthName(parseInt(currentFilterMonth));
             dateFilterInfo.innerHTML = `<i class="bi bi-calendar-check"></i> Showing ${monthName} (all years)`;
-            dateFilterInfo.style.display = 'block';
+            dateFilterInfo.style.display = 'inline-block';
         } else {
             dateFilterInfo.style.display = 'none';
         }
@@ -747,7 +833,7 @@
                 <div class="text-center py-4 text-danger">
                     <i class="bi bi-exclamation-triangle"></i>
                     <p class="small">Error loading reports: ${error.message}</p>
-                    <button class="btn btn-primary btn-sm" onclick="loadReports()">Try Again</button>
+                    <button class="btn-primary-custom btn-sm mt-2" onclick="loadReports()">Try Again</button>
                 </div>
             `;
         }
@@ -758,17 +844,16 @@
         
         if (reports.length === 0) {
             container.innerHTML = `
-                <div class="empty-reports text-center py-4">
-                    <i class="bi bi-inbox" style="font-size: 32px; color: #ccc;"></i>
+                <div class="empty-section">
+                    <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
                     <h5 class="mt-2">No Reports Found</h5>
                     <p class="small text-muted">You have not submitted any reports yet.</p>
-                    <a href="/new-report" class="btn btn-primary btn-sm mt-2">Create New Report</a>
+                    <a href="/new-report" class="btn-primary-custom btn-sm mt-2">Create New Report</a>
                 </div>
             `;
             return;
         }
         
-        // Group reports by type (Water, Electricity, Telephone)
         const waterReports = reports.filter(r => r.report_type === 'water');
         const electricityReports = reports.filter(r => r.report_type === 'electricity');
         const telephoneReports = reports.filter(r => r.report_type === 'telephone');
@@ -776,7 +861,6 @@
         const buildTable = (reportList, typeName, typeIcon) => {
             if (reportList.length === 0) return '';
             
-            // Group by technician within each type
             const groupByTechnician = (list) => {
                 const groups = {};
                 list.forEach(report => {
@@ -811,7 +895,7 @@
                     <table class="reports-table">
                         <thead>
                             <tr>
-                                <th style="width: 45px;">ID</th>
+                                <th style="width: 50px;">ID</th>
                                 <th style="min-width: 120px;">Entity Name</th>
                                 <th style="min-width: 100px;">Reference Number</th>
                                 <th style="min-width: 80px;">Reference Date</th>
@@ -820,7 +904,7 @@
                                 <th style="width: 85px;">Status</th>
                                 <th style="width: 75px;">Date</th>
                                 <th style="width: 100px;">Actions</th>
-                            </tr>
+                            </table>
                         </thead>
                         <tbody>`;
             
@@ -830,7 +914,7 @@
                                     <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
                                     <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
                                   </td>
-                               </td>`;
+                                </tr>`;
                 
                 group.reports.forEach(report => {
                     const priorityClass = `priority-${report.priority}`;
@@ -843,18 +927,18 @@
                     tableHtml += `
                         <tr onclick="openReportDetail(${report.id})">
                             <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
-                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td>
-                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
-                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
-                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
-                            <td>${statusHtml}</td>
-                            <td class="date-cell">${formatDateOnly(report.created_at)}</td>
+                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td
+                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td
+                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td
+                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td
+                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td
+                            <td>${statusHtml}</td
+                            <td class="date-cell">${formatDateOnly(report.created_at)}</td
                             <td>
                                 ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
                                 <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
-                              </td>
-                           </tr>
+                              </td
+                            </tr>
                     `;
                 });
             });
@@ -942,19 +1026,19 @@
         
         let assistantCheckHtml = '';
         if (isChecked) {
-            assistantCheckHtml = `<div class="alert alert-info mt-2"><i class="bi bi-eye"></i> <strong>Checked by Assistant Team Leader</strong><br>By: ${escapeHtml(report.checked_by_assistant_name)}<br>Date: ${formatDate(report.checked_by_assistant_at)}</div>`;
+            assistantCheckHtml = `<div class="alert alert-info mt-2" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: none; border-left: 4px solid #17a2b8;"><i class="bi bi-eye"></i> <strong>Checked by Assistant Team Leader</strong><br>By: ${escapeHtml(report.checked_by_assistant_name)}<br>Date: ${formatDate(report.checked_by_assistant_at)}</div>`;
         }
         
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success mt-2"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         } else {
-            acknowledgmentHtml = `<div class="alert alert-warning mt-2"><i class="bi bi-clock-history"></i> This report is pending review by the Team Leader.</div>`;
+            acknowledgmentHtml = `<div class="alert alert-warning mt-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%); border: none; border-left: 4px solid #ffc107;"><i class="bi bi-clock-history"></i> This report is pending review by the Team Leader.</div>`;
         }
         
         const html = `
             <div class="report-detail-container">
-                <div class="alert alert-info">
+                <div class="alert alert-info" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none; border-left: 4px solid #17a2b8;">
                     <strong>Report #${report.id}</strong> | ${typeName} ${typeIcon}<br>
                     Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
@@ -989,7 +1073,7 @@
                 ${acknowledgmentHtml}
                 ${imagesHtml}
                 ${commentsHtml}
-                <div class="mt-3"><button class="btn btn-sm btn-secondary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
+                <div class="mt-3"><button class="btn-secondary-custom" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
         document.getElementById('modalBody').innerHTML = html;
@@ -1126,7 +1210,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></table>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td</tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -1175,22 +1259,22 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td>` : ''}
-                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td>` : ''}
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}  </td</tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td</tr>
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td</tr>` : ''}
+                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td</tr>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td</tr>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td</tr>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td</tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td</tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td</tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td</tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td</tr>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td</tr>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td</tr>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td</tr>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td</tr>` : ''}
                 </table>
                 
                 ${imagesHtml}
