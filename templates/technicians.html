@@ -2,6 +2,49 @@
 
 {% block content %}
 <style>
+    :root {
+        --primary-color: #9b59b6;
+        --primary-dark: #8e44ad;
+        --primary-light: #d4b8e8;
+        --secondary-color: #f3e5f5;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-header h2 i {
+        margin-right: 12px;
+    }
+    .page-header p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
     .specialization-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -11,46 +54,19 @@
         margin: 2px;
     }
     .spec-water {
-        background-color: #e3f2fd;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%);
         color: #1976d2;
         border-left: 3px solid #1976d2;
     }
     .spec-electricity {
-        background-color: #fff3e0;
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
         color: #f57c00;
         border-left: 3px solid #f57c00;
     }
     .spec-telephone {
-        background-color: #e8f5e9;
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
         color: #388e3c;
         border-left: 3px solid #388e3c;
-    }
-    .checkbox-group {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-    .checkbox-group label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        padding: 8px 15px;
-        border-radius: 8px;
-        background-color: #f8f5fc;
-        transition: all 0.2s;
-        border: 1px solid #e0e0e0;
-    }
-    .checkbox-group label:hover {
-        background-color: var(--secondary-color);
-        border-color: var(--primary-color);
-    }
-    .checkbox-group input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: var(--primary-color);
     }
     .filter-spec-buttons {
         display: flex;
@@ -59,118 +75,196 @@
         margin-bottom: 15px;
     }
     .filter-spec-btn {
-        padding: 6px 14px;
-        border-radius: 20px;
-        border: 1px solid #ddd;
-        background: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        border: none;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         cursor: pointer;
         transition: all 0.2s;
         font-size: 13px;
+        font-weight: 500;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .filter-spec-btn:hover {
-        border-color: var(--primary-color);
-        background-color: var(--secondary-color);
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        transform: translateY(-1px);
     }
     .filter-spec-btn.active {
-        background: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         color: white;
-        border-color: var(--primary-color);
+        box-shadow: 0 2px 10px rgba(155, 89, 182, 0.3);
+    }
+    .card-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0 !important;
+        padding: 15px 20px;
+        font-weight: 600;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card-header-custom i {
+        margin-right: 10px;
+    }
+    .stat-badge {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #2e7d32;
+    }
+    .modal-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
+    }
+    .modal-header-custom .btn-close {
+        filter: brightness(0) invert(1);
     }
     .employee-id-badge {
         font-family: monospace;
         font-weight: bold;
-        background-color: #f0f0f0;
-        padding: 4px 8px;
-        border-radius: 6px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 5px 10px;
+        border-radius: 8px;
         font-size: 12px;
     }
     .role-badge-senior {
-        background-color: #ffc107;
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
         color: #856404;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 4px 10px;
+        border-radius: 15px;
         font-size: 11px;
-        font-weight: 500;
+        font-weight: 600;
     }
     .role-badge-tech {
-        background-color: #17a2b8;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 4px 10px;
+        border-radius: 15px;
         font-size: 11px;
-        font-weight: 500;
+        font-weight: 600;
     }
     .authorized-badge {
-        background-color: #28a745;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 11px;
         font-weight: 500;
     }
     .unauthorized-badge {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 11px;
         font-weight: 500;
     }
     .can-edit-badge {
-        background-color: #17a2b8;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 11px;
         font-weight: 500;
     }
     .assistant-badge {
-        background-color: #6c757d;
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 11px;
         font-weight: 500;
     }
     .permission-note {
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
         border-left: 4px solid #ffc107;
-        padding: 10px 15px;
-        border-radius: 8px;
+        padding: 12px 18px;
+        border-radius: 12px;
         margin-bottom: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .team-leader-note {
-        background-color: #e8f5e9;
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
         border-left: 4px solid #28a745;
-        padding: 10px 15px;
-        border-radius: 8px;
+        padding: 12px 18px;
+        border-radius: 12px;
         margin-bottom: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .action-buttons {
-        white-space: nowrap;
+    .btn-action {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        transition: all 0.2s;
     }
-    .action-buttons .btn {
-        margin: 0 2px;
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    }
+    .btn-danger-custom {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .btn-danger-custom:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
     }
     .btn-reset-pwd {
-        background-color: #ff9800;
+        background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
         color: white;
         border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
+        padding: 6px 10px;
+        border-radius: 8px;
         font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
+        margin-right: 4px;
     }
     .btn-reset-pwd:hover {
-        background-color: #e68900;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 8px 18px;
+        border-radius: 25px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        transition: all 0.2s;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .checkbox-group label:hover {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
         transform: translateY(-1px);
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <h2><i class="bi bi-people"></i> Technicians Management</h2>
-    <button class="btn btn-primary" id="addTechBtn" onclick="showAddTechModal()">
+    <p>Manage technician profiles, roles, specializations, and permissions</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="stat-badge" id="totalTechsBadge">
+        <i class="bi bi-person-badge"></i> Total Technicians: <span id="totalTechnicians">0</span>
+    </div>
+    <button class="btn-primary-custom" id="addTechBtn" onclick="showAddTechModal()">
         <i class="bi bi-plus-circle"></i> Add Technician
     </button>
 </div>
@@ -200,7 +294,7 @@
 </div>
 
 <div class="card">
-    <div class="card-header">
+    <div class="card-header-custom">
         <i class="bi bi-list-ul"></i> Technician Directory
     </div>
     <div class="card-body">
@@ -235,7 +329,7 @@
 <div class="modal fade" id="techModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title" id="techModalTitle">Add Technician</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -303,7 +397,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveTechnician()">Save Technician</button>
+                <button type="button" class="btn-primary-custom" onclick="saveTechnician()">Save Technician</button>
             </div>
         </div>
     </div>
@@ -313,7 +407,7 @@
 <div class="modal fade" id="resetPasswordModal" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-key"></i> Reset Password</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -323,13 +417,13 @@
                     <h6 id="resetTechName" class="mt-2">Technician Name</h6>
                     <p class="small text-muted mt-2">Employee ID: <strong id="resetEmployeeId"></strong></p>
                 </div>
-                <div class="alert alert-warning p-2 small">
+                <div class="alert alert-warning p-2 small" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%); border: none;">
                     <i class="bi bi-exclamation-triangle"></i> Resetting password will set it to <strong>Employee ID</strong>.
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning btn-sm" onclick="confirmResetPassword()">Reset Password</button>
+                <button type="button" class="btn-warning btn-sm" onclick="confirmResetPassword()">Reset Password</button>
             </div>
         </div>
     </div>
@@ -343,15 +437,11 @@
     let resetTechName = null;
     let resetEmployeeId = null;
     
-    // Check if current user is Team Leader (can edit)
     function checkPermission() {
-        // Read from localStorage
         const canEditTechnicians = localStorage.getItem('canEditTechnicians') === 'true';
         const userName = localStorage.getItem('userName');
         
         console.log('Technicians page - User:', userName, 'Can Edit:', canEditTechnicians);
-        
-        // Set global variable
         isTeamLeader = canEditTechnicians;
         
         const addBtn = document.getElementById('addTechBtn');
@@ -376,11 +466,8 @@
             const response = await fetch('/api/technicians');
             allTechnicians = await response.json();
             console.log('Loaded technicians:', allTechnicians.length);
-            
-            // First check permission (sets isTeamLeader)
+            document.getElementById('totalTechnicians').textContent = allTechnicians.length;
             checkPermission();
-            
-            // Then display technicians
             applyFilter();
         } catch (error) {
             console.error('Error loading technicians:', error);
@@ -390,12 +477,8 @@
     
     function filterBySpec(spec) {
         currentFilter = spec;
-        document.querySelectorAll('.filter-spec-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.textContent.includes(spec === 'water' ? 'Water' : spec === 'electricity' ? 'Electricity' : spec === 'telephone' ? 'Telephone' : 'All')) {
-                btn.classList.add('active');
-            }
-        });
+        document.querySelectorAll('.filter-spec-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
         applyFilter();
     }
     
@@ -431,7 +514,6 @@
         
         let rowNum = 1;
         tbody.innerHTML = technicians.map((tech) => {
-            // Parse specializations
             let specs = tech.specializations;
             if (typeof specs === 'string') try { specs = JSON.parse(specs); } catch(e) { specs = []; }
             if (!Array.isArray(specs)) specs = [];
@@ -443,18 +525,17 @@
             const canEditBadge = tech.can_edit_technicians ? '<span class="can-edit-badge">✓ Can Edit</span>' : '<span class="unauthorized-badge">✗ View Only</span>';
             const assistantBadge = tech.is_assistant_leader ? '<span class="assistant-badge">👥 Assistant Leader</span>' : '<span class="text-muted">-</span>';
             
-            // Action buttons - ONLY show if current user is Team Leader
             let actions = '';
             if (isTeamLeader === true) {
                 actions = `
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-warning" onclick="openResetPasswordModal(${tech.id}, '${escapeHtml(tech.name)}', '${escapeHtml(tech.employee_id)}')" title="Reset Password to Employee ID">
+                        <button class="btn-reset-pwd" onclick="openResetPasswordModal(${tech.id}, '${escapeHtml(tech.name)}', '${escapeHtml(tech.employee_id)}')" title="Reset Password to Employee ID">
                             <i class="bi bi-key"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editTechnician(${tech.id})" title="Edit Role & Authorization">
+                        <button class="btn-action btn-sm" onclick="editTechnician(${tech.id})" title="Edit Role & Authorization">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteTechnician(${tech.id})" title="Delete Technician">
+                        <button class="btn-danger-custom btn-sm" onclick="deleteTechnician(${tech.id})" title="Delete Technician">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -480,8 +561,6 @@
             `;
         }).join('');
     }
-    
-    // ============ RESET PASSWORD FUNCTIONS ============
     
     function openResetPasswordModal(id, name, employeeId) {
         if (!isTeamLeader) {
@@ -521,8 +600,6 @@
             if (window.showToast) window.showToast('Error resetting password', 'error');
         }
     }
-    
-    // ============ EXISTING FUNCTIONS ============
     
     function showAddTechModal() {
         if (!isTeamLeader) { 
@@ -621,7 +698,6 @@
                 bootstrap.Modal.getInstance(document.getElementById('techModal')).hide();
                 loadTechnicians();
                 
-                // If editing own account, update localStorage
                 const currentUserId = localStorage.getItem('userId');
                 if (id && parseInt(id) === parseInt(currentUserId)) {
                     localStorage.setItem('isAuthorized', data.is_authorized);
@@ -664,7 +740,6 @@
         }
     }
     
-    // Initialize on page load
     loadTechnicians();
 </script>
 {% endblock %}
