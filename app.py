@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 import os
 from supabase import create_client
 import uuid
@@ -783,7 +783,23 @@ def get_mapping_images():
         if entity_id:
             query = query.eq("entity_id", int(entity_id))
         response = query.order("uploaded_at", desc=True).execute()
-        return jsonify(response.data if response.data else [])
+        
+        # Convert any None values to appropriate defaults for frontend
+        images = []
+        for img in response.data if response.data else []:
+            img_dict = dict(img)
+            # Ensure fields exist (for older records without these fields)
+            if 'uploaded_by_name' not in img_dict or img_dict['uploaded_by_name'] is None:
+                img_dict['uploaded_by_name'] = ''
+            if 'last_edited_by' not in img_dict:
+                img_dict['last_edited_by'] = None
+            if 'last_edited_by_name' not in img_dict or img_dict['last_edited_by_name'] is None:
+                img_dict['last_edited_by_name'] = ''
+            if 'last_edited_at' not in img_dict:
+                img_dict['last_edited_at'] = None
+            images.append(img_dict)
+        
+        return jsonify(images)
     except Exception as e:
         app.logger.error(f"Error getting mapping images: {e}")
         return jsonify([]), 500
@@ -827,7 +843,12 @@ def create_mapping_image():
             "canteen_water_accounts_json": data.get('canteen_water_accounts_json', '[]'),
             "canteen_electricity_accounts_json": data.get('canteen_electricity_accounts_json', '[]'),
             "pabx_entries_json": data.get('pabx_entries_json', '[]'),
+            # Tracking fields
             "uploaded_by": data.get('uploaded_by'),
+            "uploaded_by_name": data.get('uploaded_by_name', ''),
+            "last_edited_by": data.get('last_edited_by'),
+            "last_edited_by_name": data.get('last_edited_by_name', ''),
+            "last_edited_at": data.get('last_edited_at'),
             "uploaded_at": get_brunei_time_iso()
         }
         
@@ -859,7 +880,9 @@ def update_mapping_image(image_id):
             'pabx_name', 'pabx_pilot_no', 'pabx_trailing_no', 'pabx_extension_no',
             'water_accounts_json', 'electricity_accounts_json', 'telephone_accounts_json',
             'canteen_water_accounts_json', 'canteen_electricity_accounts_json',
-            'pabx_entries_json'
+            'pabx_entries_json',
+            # Tracking fields for last editor
+            'last_edited_by', 'last_edited_by_name', 'last_edited_at'
         ]
         update_data = {}
         for field in allowed_fields:
