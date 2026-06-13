@@ -776,7 +776,7 @@
                         </div>
                     </div>
                     
-                    <!-- PABX Details Section -->
+                    <!-- PABX Details Section - Using individual fields instead of JSON -->
                     <div class="form-section">
                         <div class="form-section-title">
                             <span>📞 PABX Details</span>
@@ -788,9 +788,9 @@
                             <div class="pabx-entry">
                                 <input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;">
                                 <input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;">
+                                <input type="text" class="form-control" name="pabx_trailing_no[]" placeholder="Trailing No." style="flex: 1;">
+                                <input type="text" class="form-control" name="pabx_extension_no[]" placeholder="Extension No." style="flex: 1;">
                                 <div class="btn-group-inline">
-                                    <button type="button" class="btn-add-field" onclick="addPABXTrailingNo(this)">+ Trailing No.</button>
-                                    <button type="button" class="btn-add-field" onclick="addPABXExtensionNo(this)">+ Extension No.</button>
                                     <button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
@@ -878,7 +878,7 @@
                         <div id="editCanteenElectricityAccountsContainer" style="margin-top: 10px;"></div>
                     </div>
                     
-                    <!-- PABX Details Edit Section -->
+                    <!-- PABX Details Edit Section - Using individual fields -->
                     <div class="edit-account-section">
                         <div class="edit-account-title">
                             📞 PABX Details
@@ -1275,35 +1275,13 @@
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;">
             <input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;">
+            <input type="text" class="form-control" name="pabx_trailing_no[]" placeholder="Trailing No." style="flex: 1;">
+            <input type="text" class="form-control" name="pabx_extension_no[]" placeholder="Extension No." style="flex: 1;">
             <div class="btn-group-inline">
-                <button type="button" class="btn-add-field" onclick="addPABXTrailingNo(this)">+ Trailing No.</button>
-                <button type="button" class="btn-add-field" onclick="addPABXExtensionNo(this)">+ Extension No.</button>
                 <button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>
             </div>
         `;
         container.appendChild(newEntry);
-    }
-
-    function addPABXTrailingNo(button) {
-        const pabxEntry = button.closest('.pabx-entry');
-        const trailingInput = document.createElement('input');
-        trailingInput.type = 'text';
-        trailingInput.className = 'form-control';
-        trailingInput.placeholder = 'Trailing No.';
-        trailingInput.name = 'pabx_trailing_no[]';
-        const buttonGroup = pabxEntry.querySelector('.btn-group-inline');
-        pabxEntry.insertBefore(trailingInput, buttonGroup);
-    }
-
-    function addPABXExtensionNo(button) {
-        const pabxEntry = button.closest('.pabx-entry');
-        const extensionInput = document.createElement('input');
-        extensionInput.type = 'text';
-        extensionInput.className = 'form-control';
-        extensionInput.placeholder = 'Extension No.';
-        extensionInput.name = 'pabx_extension_no[]';
-        const buttonGroup = pabxEntry.querySelector('.btn-group-inline');
-        pabxEntry.insertBefore(extensionInput, buttonGroup);
     }
 
     function addEditWaterAccountField() {
@@ -1433,33 +1411,13 @@
         newEntry.innerHTML = `
             <input type="text" class="form-control" placeholder="PABX Name" style="flex: 1.5;">
             <input type="text" class="form-control" placeholder="Pilot No." style="flex: 1;">
+            <input type="text" class="form-control" placeholder="Trailing No." style="flex: 1;">
+            <input type="text" class="form-control" placeholder="Extension No." style="flex: 1;">
             <div class="btn-group-inline">
-                <button type="button" class="btn-add-field" onclick="addEditPABXTrailingNo(this)">+ Trailing No.</button>
-                <button type="button" class="btn-add-field" onclick="addEditPABXExtensionNo(this)">+ Extension No.</button>
                 <button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>
             </div>
         `;
         container.appendChild(newEntry);
-    }
-
-    function addEditPABXTrailingNo(button) {
-        const pabxEntry = button.closest('.pabx-entry');
-        const trailingInput = document.createElement('input');
-        trailingInput.type = 'text';
-        trailingInput.className = 'form-control';
-        trailingInput.placeholder = 'Trailing No.';
-        const buttonGroup = pabxEntry.querySelector('.btn-group-inline');
-        pabxEntry.insertBefore(trailingInput, buttonGroup);
-    }
-
-    function addEditPABXExtensionNo(button) {
-        const pabxEntry = button.closest('.pabx-entry');
-        const extensionInput = document.createElement('input');
-        extensionInput.type = 'text';
-        extensionInput.className = 'form-control';
-        extensionInput.placeholder = 'Extension No.';
-        const buttonGroup = pabxEntry.querySelector('.btn-group-inline');
-        pabxEntry.insertBefore(extensionInput, buttonGroup);
     }
 
     function getAllAccountData() {
@@ -1534,23 +1492,19 @@
             }
         });
         
+        // Collect PABX data as individual fields (not JSON)
         document.querySelectorAll('#pabxContainer .pabx-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
-            const pabxData = {
-                name: inputs[0] ? inputs[0].value : '',
-                pilot_no: inputs[1] ? inputs[1].value : '',
-                trailing_numbers: [],
-                extension_numbers: []
-            };
-            for (let i = 2; i < inputs.length; i++) {
-                if (inputs[i].placeholder === 'Trailing No.') {
-                    if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
-                } else if (inputs[i].placeholder === 'Extension No.') {
-                    if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
+            if (inputs[0] && inputs[0].value.trim()) {
+                const pabxData = {
+                    name: inputs[0].value || '',
+                    pilot_no: inputs[1] ? inputs[1].value : '',
+                    trailing_no: inputs[2] ? inputs[2].value : '',
+                    extension_no: inputs[3] ? inputs[3].value : ''
+                };
+                if (pabxData.name || pabxData.pilot_no || pabxData.trailing_no || pabxData.extension_no) {
+                    accountData.pabx_entries.push(pabxData);
                 }
-            }
-            if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
-                accountData.pabx_entries.push(pabxData);
             }
         });
         
@@ -1631,21 +1585,16 @@
         
         document.querySelectorAll('#editPABXContainer .pabx-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
-            const pabxData = {
-                name: inputs[0] ? inputs[0].value : '',
-                pilot_no: inputs[1] ? inputs[1].value : '',
-                trailing_numbers: [],
-                extension_numbers: []
-            };
-            for (let i = 2; i < inputs.length; i++) {
-                if (inputs[i].placeholder === 'Trailing No.') {
-                    if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
-                } else if (inputs[i].placeholder === 'Extension No.') {
-                    if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
+            if (inputs[0] && inputs[0].value.trim()) {
+                const pabxData = {
+                    name: inputs[0].value || '',
+                    pilot_no: inputs[1] ? inputs[1].value : '',
+                    trailing_no: inputs[2] ? inputs[2].value : '',
+                    extension_no: inputs[3] ? inputs[3].value : ''
+                };
+                if (pabxData.name || pabxData.pilot_no || pabxData.trailing_no || pabxData.extension_no) {
+                    accountData.pabx_entries.push(pabxData);
                 }
-            }
-            if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
-                accountData.pabx_entries.push(pabxData);
             }
         });
         
@@ -1815,23 +1764,9 @@
             } else if (img.canteen_electricity_account_number) {
                 parts.push(`🍽️ Canteen Electricity: ${img.canteen_electricity_account_number} ${img.canteen_electricity_meter_number ? '/ ' + img.canteen_electricity_meter_number : ''}`);
             }
-            if (img.pabx_entries_json) {
-                try {
-                    const pabxEntries = JSON.parse(img.pabx_entries_json);
-                    pabxEntries.forEach(pabx => {
-                        let trailingText = '';
-                        let extensionText = '';
-                        if (pabx.trailing_numbers && pabx.trailing_numbers.length) {
-                            trailingText = ` / Trailing: ${pabx.trailing_numbers.join(', ')}`;
-                        }
-                        if (pabx.extension_numbers && pabx.extension_numbers.length) {
-                            extensionText = ` / Extensions: ${pabx.extension_numbers.join(', ')}`;
-                        }
-                        parts.push(`📞 PABX: ${pabx.name} / Pilot: ${pabx.pilot_no}${trailingText}${extensionText}`);
-                    });
-                } catch(e) {}
-            } else if (img.pabx_name) {
-                parts.push(`📞 PABX: ${img.pabx_name} / Pilot: ${img.pabx_pilot_no || ''}`);
+            // Display PABX from individual fields
+            if (img.pabx_name) {
+                parts.push(`📞 PABX: ${img.pabx_name} / Pilot: ${img.pabx_pilot_no || ''} / Trailing: ${img.pabx_trailing_no || ''} / Extension: ${img.pabx_extension_no || ''}`);
             }
             if (parts.length) accountHtml = `<div class="account-details"><strong>📍 Account Details:</strong><br>${parts.join('<br>')}</div>`;
             
@@ -1896,7 +1831,7 @@
         document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><div class="btn-group-inline"><button type="button" class="btn-add-field" onclick="addElectricityMeterField(this)">+ Meter</button><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div>';
         document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><div class="btn-group-inline"><button type="button" class="btn-add-field" onclick="addTelephoneNumberField(this)">+ Number</button><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div>';
         document.getElementById('canteenAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="canteen_water_account_number[]" placeholder="Canteen Water Account Number"><div class="btn-group-inline"><button type="button" class="btn-add-field" onclick="addCanteenWaterMeterField(this)">+ Water Meter</button><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div><div class="account-entry mt-2"><input type="text" class="form-control" name="canteen_electricity_account_number[]" placeholder="Canteen Electricity Account Number"><div class="btn-group-inline"><button type="button" class="btn-add-field" onclick="addCanteenElectricityMeterField(this)">+ Electricity Meter</button><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div>';
-        document.getElementById('pabxContainer').innerHTML = '<div class="pabx-entry"><input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;"><input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;"><div class="btn-group-inline"><button type="button" class="btn-add-field" onclick="addPABXTrailingNo(this)">+ Trailing No.</button><button type="button" class="btn-add-field" onclick="addPABXExtensionNo(this)">+ Extension No.</button><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div>';
+        document.getElementById('pabxContainer').innerHTML = '<div class="pabx-entry"><input type="text" class="form-control" name="pabx_name[]" placeholder="PABX Name" style="flex: 1.5;"><input type="text" class="form-control" name="pabx_pilot_no[]" placeholder="Pilot No." style="flex: 1;"><input type="text" class="form-control" name="pabx_trailing_no[]" placeholder="Trailing No." style="flex: 1;"><input type="text" class="form-control" name="pabx_extension_no[]" placeholder="Extension No." style="flex: 1;"><div class="btn-group-inline"><button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button></div></div>';
         new bootstrap.Modal(document.getElementById('addImageModal')).show();
     }
 
@@ -1953,14 +1888,13 @@
             canteenElectricityAccounts = [{ account_number: image.canteen_electricity_account_number || '', meter_numbers: image.canteen_electricity_meter_number ? [image.canteen_electricity_meter_number] : [] }];
         }
         
-        if (image.pabx_entries_json) {
-            try { pabxEntries = JSON.parse(image.pabx_entries_json); } catch(e) {}
-        } else if (image.pabx_name) {
+        // PABX from individual fields
+        if (image.pabx_name) {
             pabxEntries = [{
                 name: image.pabx_name || '',
                 pilot_no: image.pabx_pilot_no || '',
-                trailing_numbers: image.pabx_trailing_no || [],
-                extension_numbers: image.pabx_extension_no || []
+                trailing_no: Array.isArray(image.pabx_trailing_no) ? image.pabx_trailing_no.join(', ') : (image.pabx_trailing_no || ''),
+                extension_no: Array.isArray(image.pabx_extension_no) ? image.pabx_extension_no.join(', ') : (image.pabx_extension_no || '')
             }];
         }
         
@@ -2067,26 +2001,12 @@
         pabxEntries.forEach(pabx => {
             const entry = document.createElement('div');
             entry.className = 'pabx-entry';
-            let trailingFieldsHtml = '';
-            let extensionFieldsHtml = '';
-            if (pabx.trailing_numbers && pabx.trailing_numbers.length) {
-                pabx.trailing_numbers.forEach(trail => {
-                    trailingFieldsHtml += `<input type="text" class="form-control" placeholder="Trailing No." value="${escapeHtml(trail)}">`;
-                });
-            }
-            if (pabx.extension_numbers && pabx.extension_numbers.length) {
-                pabx.extension_numbers.forEach(ext => {
-                    extensionFieldsHtml += `<input type="text" class="form-control" placeholder="Extension No." value="${escapeHtml(ext)}">`;
-                });
-            }
             entry.innerHTML = `
                 <input type="text" class="form-control" placeholder="PABX Name" value="${escapeHtml(pabx.name)}" style="flex: 1.5;">
                 <input type="text" class="form-control" placeholder="Pilot No." value="${escapeHtml(pabx.pilot_no)}" style="flex: 1;">
-                ${trailingFieldsHtml}
-                ${extensionFieldsHtml}
+                <input type="text" class="form-control" placeholder="Trailing No." value="${escapeHtml(pabx.trailing_no)}" style="flex: 1;">
+                <input type="text" class="form-control" placeholder="Extension No." value="${escapeHtml(pabx.extension_no)}" style="flex: 1;">
                 <div class="btn-group-inline">
-                    <button type="button" class="btn-add-field" onclick="addEditPABXTrailingNo(this)">+ Trailing No.</button>
-                    <button type="button" class="btn-add-field" onclick="addEditPABXExtensionNo(this)">+ Extension No.</button>
                     <button type="button" class="btn-remove-account" onclick="this.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>
                 </div>
             `;
@@ -2108,10 +2028,17 @@
             telephone_accounts_json: JSON.stringify(accountData.telephone_accounts),
             canteen_water_accounts_json: JSON.stringify(accountData.canteen_water_accounts),
             canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
-            pabx_entries_json: JSON.stringify(accountData.pabx_entries),
             last_edited_by: currentUser ? parseInt(currentUser.id) : null,
             last_edited_at: new Date().toISOString()
         };
+        
+        // Add PABX individual fields
+        if (accountData.pabx_entries.length > 0) {
+            updateData.pabx_name = accountData.pabx_entries[0].name || '';
+            updateData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
+            updateData.pabx_trailing_no = accountData.pabx_entries[0].trailing_no || '';
+            updateData.pabx_extension_no = accountData.pabx_entries[0].extension_no || '';
+        }
         
         if (accountData.water_accounts.length > 0) {
             updateData.water_account_number = accountData.water_accounts[0].account_number || '';
@@ -2132,12 +2059,6 @@
         if (accountData.canteen_electricity_accounts.length > 0) {
             updateData.canteen_electricity_account_number = accountData.canteen_electricity_accounts[0].account_number || '';
             updateData.canteen_electricity_meter_number = accountData.canteen_electricity_accounts[0].meter_numbers && accountData.canteen_electricity_accounts[0].meter_numbers.length > 0 ? accountData.canteen_electricity_accounts[0].meter_numbers[0] : '';
-        }
-        if (accountData.pabx_entries.length > 0) {
-            updateData.pabx_name = accountData.pabx_entries[0].name || '';
-            updateData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
-            updateData.pabx_trailing_no = accountData.pabx_entries[0].trailing_numbers || [];
-            updateData.pabx_extension_no = accountData.pabx_entries[0].extension_numbers || [];
         }
         
         try {
@@ -2234,11 +2155,18 @@
                 telephone_accounts_json: JSON.stringify(accountData.telephone_accounts),
                 canteen_water_accounts_json: JSON.stringify(accountData.canteen_water_accounts),
                 canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
-                pabx_entries_json: JSON.stringify(accountData.pabx_entries),
                 uploaded_by: currentUser ? parseInt(currentUser.id) : null,
                 last_edited_by: currentUser ? parseInt(currentUser.id) : null,
                 last_edited_at: new Date().toISOString()
             };
+            
+            // Add PABX individual fields
+            if (accountData.pabx_entries.length > 0) {
+                imageData.pabx_name = accountData.pabx_entries[0].name || '';
+                imageData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
+                imageData.pabx_trailing_no = accountData.pabx_entries[0].trailing_no || '';
+                imageData.pabx_extension_no = accountData.pabx_entries[0].extension_no || '';
+            }
             
             if (accountData.water_accounts.length > 0) {
                 imageData.water_account_number = accountData.water_accounts[0].account_number || '';
@@ -2259,12 +2187,6 @@
             if (accountData.canteen_electricity_accounts.length > 0) {
                 imageData.canteen_electricity_account_number = accountData.canteen_electricity_accounts[0].account_number || '';
                 imageData.canteen_electricity_meter_number = accountData.canteen_electricity_accounts[0].meter_numbers && accountData.canteen_electricity_accounts[0].meter_numbers.length > 0 ? accountData.canteen_electricity_accounts[0].meter_numbers[0] : '';
-            }
-            if (accountData.pabx_entries.length > 0) {
-                imageData.pabx_name = accountData.pabx_entries[0].name || '';
-                imageData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
-                imageData.pabx_trailing_no = accountData.pabx_entries[0].trailing_numbers || [];
-                imageData.pabx_extension_no = accountData.pabx_entries[0].extension_numbers || [];
             }
             
             try {
@@ -2382,23 +2304,8 @@
             detailsHtml += `<p><strong>🍽️ Canteen Electricity:</strong> ${image.canteen_electricity_account_number} ${image.canteen_electricity_meter_number ? '/ ' + image.canteen_electricity_meter_number : ''}</p>`;
         }
         
-        if (image.pabx_entries_json) {
-            try {
-                const pabxEntries = JSON.parse(image.pabx_entries_json);
-                pabxEntries.forEach(pabx => {
-                    let trailingText = '';
-                    let extensionText = '';
-                    if (pabx.trailing_numbers && pabx.trailing_numbers.length) {
-                        trailingText = ` / Trailing: ${pabx.trailing_numbers.join(', ')}`;
-                    }
-                    if (pabx.extension_numbers && pabx.extension_numbers.length) {
-                        extensionText = ` / Extensions: ${pabx.extension_numbers.join(', ')}`;
-                    }
-                    detailsHtml += `<p><strong>📞 PABX:</strong> ${pabx.name} / Pilot: ${pabx.pilot_no}${trailingText}${extensionText}</p>`;
-                });
-            } catch(e) {}
-        } else if (image.pabx_name) {
-            detailsHtml += `<p><strong>📞 PABX:</strong> ${image.pabx_name} / Pilot: ${image.pabx_pilot_no || ''}</p>`;
+        if (image.pabx_name) {
+            detailsHtml += `<p><strong>📞 PABX:</strong> ${image.pabx_name} / Pilot: ${image.pabx_pilot_no || ''} / Trailing: ${image.pabx_trailing_no || ''} / Extension: ${image.pabx_extension_no || ''}</p>`;
         }
         
         if (image.notes) detailsHtml += `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>`;
@@ -2481,8 +2388,6 @@
     window.addCanteenWaterMeterField = addCanteenWaterMeterField;
     window.addCanteenElectricityMeterField = addCanteenElectricityMeterField;
     window.addPABXField = addPABXField;
-    window.addPABXTrailingNo = addPABXTrailingNo;
-    window.addPABXExtensionNo = addPABXExtensionNo;
     window.addEditWaterAccountField = addEditWaterAccountField;
     window.addEditWaterMeterField = addEditWaterMeterField;
     window.addEditElectricityAccountField = addEditElectricityAccountField;
@@ -2494,8 +2399,6 @@
     window.addEditCanteenElectricityAccountField = addEditCanteenElectricityAccountField;
     window.addEditCanteenElectricityMeterField = addEditCanteenElectricityMeterField;
     window.addEditPABXField = addEditPABXField;
-    window.addEditPABXTrailingNo = addEditPABXTrailingNo;
-    window.addEditPABXExtensionNo = addEditPABXExtensionNo;
     window.removeImage = removeImage;
     window.uploadMapImage = uploadMapImage;
     window.showAddImageModal = showAddImageModal;
