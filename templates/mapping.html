@@ -2,14 +2,23 @@
 
 {% block content %}
 <style>
+    :root {
+        --primary-color: #9b59b6;
+        --primary-dark: #8e44ad;
+        --primary-light: #d4b8e8;
+        --secondary-color: #f3e5f5;
+        --accent-color: #e8d5f5;
+    }
+
     .map-container {
         position: relative;
         width: 100%;
         min-height: 400px;
-        background-color: #f0f0f0;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        border-radius: 16px;
         overflow: hidden;
         margin-bottom: 20px;
+        border: 1px solid #eef2f7;
     }
     .map-image {
         width: 100%;
@@ -19,26 +28,34 @@
     }
     .entity-selector {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
     }
     .search-box {
         margin-bottom: 15px;
     }
     .search-box input {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
         font-size: 14px;
+        transition: all 0.2s;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .search-box input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
     }
     .tab-buttons {
         display: flex;
         gap: 10px;
         margin-bottom: 20px;
-        border-bottom: 1px solid #ddd;
+        border-bottom: 2px solid #eef2f7;
         padding-bottom: 10px;
     }
     .tab-btn {
@@ -46,13 +63,20 @@
         border: none;
         background: none;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
         color: #666;
         transition: all 0.2s;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+    .tab-btn:hover {
+        background-color: var(--secondary-color);
+        color: var(--primary-color);
     }
     .tab-btn.active {
         color: var(--primary-color);
-        border-bottom: 2px solid var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        font-weight: 600;
     }
     .tab-content {
         display: none;
@@ -62,55 +86,76 @@
     }
     .image-card {
         background: white;
-        border-radius: 12px;
+        border-radius: 16px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         overflow: hidden;
+        transition: all 0.2s;
+        border: 1px solid #eef2f7;
+    }
+    .image-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
     }
     .image-card img {
         width: 100%;
         height: 250px;
         object-fit: cover;
         cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .image-card img:hover {
+        transform: scale(1.02);
     }
     .image-card-body {
         padding: 15px;
     }
     .image-notes {
-        background-color: #f8f5fc;
-        padding: 10px;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
+        padding: 12px;
+        border-radius: 12px;
         margin-top: 10px;
         font-size: 13px;
         border-left: 3px solid var(--primary-color);
     }
     .account-details {
-        background-color: #e8f5e9;
-        padding: 10px;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        padding: 12px;
+        border-radius: 12px;
         margin-top: 10px;
         font-size: 13px;
         border-left: 3px solid #4caf50;
     }
     .btn-edit-image {
-        background-color: #ffc107;
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
         color: #333;
         border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 8px;
         font-size: 12px;
         margin-right: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
     }
     .btn-edit-image:hover {
-        background-color: #e0a800;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
     }
     .btn-delete-image {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
         border: none;
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 8px;
         font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    .btn-delete-image:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
     }
     .image-actions {
         display: flex;
@@ -120,7 +165,7 @@
     }
     .carousel-caption {
         background: rgba(0,0,0,0.7);
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 10px;
     }
     .carousel-caption h5, .carousel-caption p {
@@ -129,81 +174,90 @@
     .entity-list {
         max-height: 300px;
         overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
         margin-top: 10px;
     }
     .entity-item {
-        padding: 10px;
+        padding: 12px 15px;
         cursor: pointer;
         border-bottom: 1px solid #eee;
         transition: background 0.2s;
     }
     .entity-item:hover {
-        background-color: var(--secondary-color);
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
     }
     .entity-item.selected {
-        background-color: var(--primary-light);
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
         font-weight: bold;
+        border-left: 3px solid var(--primary-color);
     }
     .form-section {
         margin-bottom: 20px;
         padding: 15px;
         background: #f9f9f9;
-        border-radius: 8px;
-        border: 1px solid #eee;
+        border-radius: 12px;
+        border: 1px solid #eef2f7;
     }
     .form-section-title {
-        font-weight: bold;
-        margin-bottom: 10px;
+        font-weight: 600;
+        margin-bottom: 12px;
         color: var(--primary-dark);
         border-left: 3px solid var(--primary-color);
-        padding-left: 10px;
+        padding-left: 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        font-size: 14px;
     }
     .btn-add-account {
-        background-color: #28a745;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
         border: none;
-        border-radius: 6px;
-        padding: 6px 12px;
+        border-radius: 8px;
+        padding: 6px 14px;
         font-size: 12px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
     }
     .btn-add-account:hover {
-        background-color: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
     }
     .btn-add-field {
-        background-color: #17a2b8;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    .btn-add-field:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+    }
+    .btn-remove-account {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
         border: none;
         border-radius: 6px;
         padding: 4px 10px;
         font-size: 11px;
         cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .btn-add-field:hover {
-        background-color: #138496;
-    }
-    .btn-remove-account {
-        background-color: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 4px 8px;
-        font-size: 10px;
-        cursor: pointer;
+        transition: all 0.2s;
     }
     .btn-remove-account:hover {
-        background-color: #c82333;
+        transform: scale(1.05);
     }
     .account-entry {
         display: flex;
@@ -215,9 +269,17 @@
     .account-entry input {
         flex: 1;
         min-width: 150px;
-        padding: 8px;
+        padding: 8px 12px;
         border: 1px solid #ddd;
-        border-radius: 6px;
+        border-radius: 8px;
+        font-size: 13px;
+        transition: all 0.2s;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .account-entry input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
     }
     .compression-info {
         font-size: 11px;
@@ -233,36 +295,43 @@
         width: 150px;
         height: 120px;
         object-fit: cover;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 2px solid var(--primary-light);
+        transition: transform 0.2s;
+    }
+    .image-preview:hover {
+        transform: scale(1.02);
     }
     .remove-image-btn {
         position: absolute;
         top: -8px;
         right: -8px;
-        width: 24px;
-        height: 24px;
+        width: 26px;
+        height: 26px;
         border-radius: 50%;
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
         border: none;
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
+        transition: all 0.2s;
+    }
+    .remove-image-btn:hover {
+        transform: scale(1.1);
     }
     .loading-spinner {
         display: inline-block;
         width: 20px;
         height: 20px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #9b59b6;
+        border: 3px solid rgba(155, 89, 182, 0.2);
         border-radius: 50%;
+        border-top-color: var(--primary-color);
         animation: spin 1s linear infinite;
         margin-right: 10px;
     }
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        to { transform: rotate(360deg); }
     }
     .upload-progress {
         margin-top: 10px;
@@ -273,25 +342,25 @@
     .progress-bar-custom {
         height: 8px;
         background-color: #e9ecef;
-        border-radius: 4px;
+        border-radius: 10px;
         overflow: hidden;
     }
     .progress-fill {
         width: 0%;
         height: 100%;
-        background-color: #9b59b6;
+        background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         transition: width 0.3s ease;
     }
     .edit-account-section {
         background: #f9f9f9;
-        border-radius: 8px;
-        padding: 12px;
+        border-radius: 12px;
+        padding: 15px;
         margin-bottom: 15px;
         border: 1px solid #e0e0e0;
     }
     .edit-account-title {
-        font-weight: bold;
-        margin-bottom: 10px;
+        font-weight: 600;
+        margin-bottom: 12px;
         color: var(--primary-dark);
         font-size: 14px;
         display: flex;
@@ -303,17 +372,18 @@
     .edit-account-row {
         display: flex;
         gap: 10px;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         align-items: center;
         flex-wrap: wrap;
     }
     .edit-account-row input {
         flex: 1;
         min-width: 120px;
-        padding: 6px 10px;
+        padding: 8px 12px;
         border: 1px solid #ddd;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 13px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .pabx-entry {
         display: flex;
@@ -325,9 +395,68 @@
     .pabx-entry input {
         flex: 1;
         min-width: 120px;
-        padding: 8px;
+        padding: 8px 12px;
         border: 1px solid #ddd;
-        border-radius: 6px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .btn-group-inline {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: all 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+    }
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        padding: 12px 20px;
+    }
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    .modal-footer {
+        border-top: 1px solid #eef2f7;
+        padding: 12px 20px;
     }
     .btn-group-inline {
         display: flex;
@@ -710,7 +839,7 @@
         });
     }
 
-    // ============ ADD IMAGE MODAL FUNCTIONS (MULTIPLE CLICKS ALLOWED) ============
+    // ============ ADD IMAGE MODAL FUNCTIONS ============
     
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
@@ -735,7 +864,6 @@
         meterInput.name = 'water_meter_number[]';
         const buttonGroup = accountEntry.querySelector('.btn-group-inline');
         accountEntry.insertBefore(meterInput, buttonGroup);
-        // Button stays enabled - can add multiple meters
     }
 
     function addElectricityAccountField() {
@@ -835,7 +963,7 @@
         accountEntry.insertBefore(meterInput, buttonGroup);
     }
 
-    // ============ PABX FUNCTIONS FOR ADD IMAGE MODAL ============
+    // ============ PABX FUNCTIONS ============
     
     function addPABXField() {
         const container = document.getElementById('pabxContainer');
@@ -875,7 +1003,7 @@
         pabxEntry.insertBefore(extensionInput, buttonGroup);
     }
 
-    // ============ EDIT MODAL FUNCTIONS (MULTIPLE CLICKS ALLOWED) ============
+    // ============ EDIT MODAL FUNCTIONS ============
     
     function addEditWaterAccountField() {
         const container = document.getElementById('editWaterAccountsContainer');
@@ -1042,7 +1170,6 @@
             pabx_entries: []
         };
         
-        // Water accounts
         document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input[name="water_account_number[]"], input[name="water_meter_number[]"]');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1056,7 +1183,6 @@
             }
         });
         
-        // Electricity accounts
         document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input[name="electricity_account_number[]"], input[name="electricity_meter_number[]"]');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1070,7 +1196,6 @@
             }
         });
         
-        // Telephone accounts
         document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input[name="telephone_account_number[]"], input[name="telephone_number[]"]');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1084,7 +1209,6 @@
             }
         });
         
-        // Canteen water accounts
         document.querySelectorAll('#canteenAccountsContainer .account-entry:has(input[name="canteen_water_account_number[]"])').forEach(entry => {
             const inputs = entry.querySelectorAll('input[name="canteen_water_account_number[]"], input[name="canteen_water_meter_number[]"]');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1098,7 +1222,6 @@
             }
         });
         
-        // Canteen electricity accounts
         document.querySelectorAll('#canteenAccountsContainer .account-entry:has(input[name="canteen_electricity_account_number[]"])').forEach(entry => {
             const inputs = entry.querySelectorAll('input[name="canteen_electricity_account_number[]"], input[name="canteen_electricity_meter_number[]"]');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1112,7 +1235,6 @@
             }
         });
         
-        // PABX entries
         document.querySelectorAll('#pabxContainer .pabx-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             const pabxData = {
@@ -1121,7 +1243,6 @@
                 trailing_numbers: [],
                 extension_numbers: []
             };
-            
             for (let i = 2; i < inputs.length; i++) {
                 if (inputs[i].placeholder === 'Trailing No.') {
                     if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
@@ -1129,7 +1250,6 @@
                     if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
                 }
             }
-            
             if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
                 accountData.pabx_entries.push(pabxData);
             }
@@ -1145,7 +1265,6 @@
             pabx_entries: []
         };
         
-        // Edit Water accounts
         document.querySelectorAll('#editWaterAccountsContainer .edit-account-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1159,7 +1278,6 @@
             }
         });
         
-        // Edit Electricity accounts
         document.querySelectorAll('#editElectricityAccountsContainer .edit-account-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1173,7 +1291,6 @@
             }
         });
         
-        // Edit Telephone accounts
         document.querySelectorAll('#editTelephoneAccountsContainer .edit-account-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1187,7 +1304,6 @@
             }
         });
         
-        // Edit Canteen water accounts
         document.querySelectorAll('#editCanteenWaterAccountsContainer .edit-account-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1201,7 +1317,6 @@
             }
         });
         
-        // Edit Canteen electricity accounts
         document.querySelectorAll('#editCanteenElectricityAccountsContainer .edit-account-row').forEach(row => {
             const inputs = row.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1215,7 +1330,6 @@
             }
         });
         
-        // Edit PABX entries
         document.querySelectorAll('#editPABXContainer .pabx-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             const pabxData = {
@@ -1224,7 +1338,6 @@
                 trailing_numbers: [],
                 extension_numbers: []
             };
-            
             for (let i = 2; i < inputs.length; i++) {
                 if (inputs[i].placeholder === 'Trailing No.') {
                     if (inputs[i].value.trim()) pabxData.trailing_numbers.push(inputs[i].value);
@@ -1232,7 +1345,6 @@
                     if (inputs[i].value.trim()) pabxData.extension_numbers.push(inputs[i].value);
                 }
             }
-            
             if (pabxData.name || pabxData.pilot_no || pabxData.trailing_numbers.length > 0 || pabxData.extension_numbers.length > 0) {
                 accountData.pabx_entries.push(pabxData);
             }
@@ -1249,12 +1361,10 @@
             document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-muted">Select entity type first</div>';
             return;
         }
-        
         try {
             const response = await fetch(`/api/${currentEntityType}s`);
             const data = await response.json();
             entitiesList = data;
-            console.log('Loaded entities:', entitiesList);
             displayEntityList(entitiesList);
         } catch (error) {
             console.error('Error loading entities:', error);
@@ -1268,13 +1378,11 @@
             container.innerHTML = '<div class="text-center py-3 text-muted">No entities found</div>';
             return;
         }
-        
         container.innerHTML = entities.map(entity => {
             let displayName = entity.name;
             if (currentEntityType === 'department' && entity.unit_name) {
                 displayName = entity.unit_name;
             }
-            
             return `
                 <div class="entity-item" data-id="${entity.id}" data-name="${escapeHtml(displayName)}" onclick="selectEntity(${entity.id}, '${escapeHtml(displayName)}')">
                     <strong>${escapeHtml(displayName)}</strong>
@@ -1287,7 +1395,6 @@
     function filterEntityList() {
         const searchTerm = document.getElementById('entitySearch').value.toLowerCase();
         if (!entitiesList) return;
-        
         const filtered = entitiesList.filter(entity => {
             let displayName = entity.name;
             if (currentEntityType === 'department' && entity.unit_name) {
@@ -1302,14 +1409,8 @@
     async function selectEntity(id, name) {
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
-        
-        document.querySelectorAll('.entity-item').forEach(item => {
-            item.classList.remove('selected');
-            if (item.dataset.id == id) {
-                item.classList.add('selected');
-            }
-        });
-        
+        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
+        document.querySelector(`.entity-item[data-id="${id}"]`).classList.add('selected');
         await loadImages();
     }
 
@@ -1322,18 +1423,13 @@
         try {
             const response = await fetch(`/api/mapping/images?entity_type=${currentEntityType}&entity_id=${currentEntityId}`);
             const rawImages = await response.json();
-            
-            currentImages = rawImages.map(img => ({
-                ...img,
-                image_url: getFullImageUrl(img.image_url)
-            }));
-            
+            currentImages = rawImages.map(img => ({ ...img, image_url: getFullImageUrl(img.image_url) }));
             allMapImages = currentImages.filter(img => img.image_url);
             displayImages();
             updateMapView();
         } catch (error) {
             console.error('Error loading images:', error);
-            imagesListDiv.innerHTML = `<div class="text-center py-5 text-danger">Error loading images: ${error.message}<br><button class="btn btn-sm btn-primary mt-2" onclick="loadImages()">Retry</button></div>`;
+            imagesListDiv.innerHTML = `<div class="text-center py-5 text-danger">Error loading images: ${error.message}<br><button class="btn btn-primary btn-sm mt-2" onclick="loadImages()">Retry</button></div>`;
         }
     }
 
@@ -1347,8 +1443,6 @@
         container.innerHTML = currentImages.map(img => {
             let accountHtml = '';
             const parts = [];
-            
-            // Display water accounts
             if (img.water_accounts_json) {
                 try {
                     const waterAccounts = JSON.parse(img.water_accounts_json);
@@ -1363,8 +1457,6 @@
             } else if (img.water_account_number) {
                 parts.push(`💧 Water: ${img.water_account_number} ${img.water_meter_number ? '/ ' + img.water_meter_number : ''}`);
             }
-            
-            // Display electricity accounts
             if (img.electricity_accounts_json) {
                 try {
                     const electricityAccounts = JSON.parse(img.electricity_accounts_json);
@@ -1379,8 +1471,6 @@
             } else if (img.electricity_account_number) {
                 parts.push(`⚡ Electricity: ${img.electricity_account_number} ${img.electricity_meter_number ? '/ ' + img.electricity_meter_number : ''}`);
             }
-            
-            // Display telephone accounts
             if (img.telephone_accounts_json) {
                 try {
                     const telephoneAccounts = JSON.parse(img.telephone_accounts_json);
@@ -1395,8 +1485,6 @@
             } else if (img.telephone_account_number) {
                 parts.push(`📞 Telephone: ${img.telephone_account_number} ${img.telephone_number ? '/ ' + img.telephone_number : ''}`);
             }
-            
-            // Display canteen accounts
             if (img.canteen_water_accounts_json) {
                 try {
                     const canteenWaterAccounts = JSON.parse(img.canteen_water_accounts_json);
@@ -1411,7 +1499,6 @@
             } else if (img.canteen_water_account_number) {
                 parts.push(`🍽️ Canteen Water: ${img.canteen_water_account_number} ${img.canteen_water_meter_number ? '/ ' + img.canteen_water_meter_number : ''}`);
             }
-            
             if (img.canteen_electricity_accounts_json) {
                 try {
                     const canteenElectricityAccounts = JSON.parse(img.canteen_electricity_accounts_json);
@@ -1426,8 +1513,6 @@
             } else if (img.canteen_electricity_account_number) {
                 parts.push(`🍽️ Canteen Electricity: ${img.canteen_electricity_account_number} ${img.canteen_electricity_meter_number ? '/ ' + img.canteen_electricity_meter_number : ''}`);
             }
-            
-            // Display PABX
             if (img.pabx_entries_json) {
                 try {
                     const pabxEntries = JSON.parse(img.pabx_entries_json);
@@ -1446,7 +1531,6 @@
             } else if (img.pabx_name) {
                 parts.push(`📞 PABX: ${img.pabx_name} / Pilot: ${img.pabx_pilot_no || ''}`);
             }
-            
             if (parts.length) accountHtml = `<div class="account-details"><strong>📍 Account Details:</strong><br>${parts.join('<br>')}</div>`;
             
             return `
@@ -1508,7 +1592,6 @@
         document.getElementById('editImageDescription').value = image.description || '';
         document.getElementById('editImageNotes').value = image.notes || '';
         
-        // Clear containers
         document.getElementById('editWaterAccountsContainer').innerHTML = '';
         document.getElementById('editElectricityAccountsContainer').innerHTML = '';
         document.getElementById('editTelephoneAccountsContainer').innerHTML = '';
@@ -1516,7 +1599,6 @@
         document.getElementById('editCanteenElectricityAccountsContainer').innerHTML = '';
         document.getElementById('editPABXContainer').innerHTML = '';
         
-        // Parse JSON data if stored
         let waterAccounts = [];
         let electricityAccounts = [];
         let telephoneAccounts = [];
@@ -1565,7 +1647,6 @@
             }];
         }
         
-        // Populate Water Accounts
         waterAccounts.forEach(acc => {
             const row = document.createElement('div');
             row.className = 'edit-account-row';
@@ -1586,7 +1667,6 @@
             document.getElementById('editWaterAccountsContainer').appendChild(row);
         });
         
-        // Populate Electricity Accounts
         electricityAccounts.forEach(acc => {
             const row = document.createElement('div');
             row.className = 'edit-account-row';
@@ -1607,7 +1687,6 @@
             document.getElementById('editElectricityAccountsContainer').appendChild(row);
         });
         
-        // Populate Telephone Accounts
         telephoneAccounts.forEach(acc => {
             const row = document.createElement('div');
             row.className = 'edit-account-row';
@@ -1628,7 +1707,6 @@
             document.getElementById('editTelephoneAccountsContainer').appendChild(row);
         });
         
-        // Populate Canteen Water Accounts
         canteenWaterAccounts.forEach(acc => {
             const row = document.createElement('div');
             row.className = 'edit-account-row';
@@ -1649,7 +1727,6 @@
             document.getElementById('editCanteenWaterAccountsContainer').appendChild(row);
         });
         
-        // Populate Canteen Electricity Accounts
         canteenElectricityAccounts.forEach(acc => {
             const row = document.createElement('div');
             row.className = 'edit-account-row';
@@ -1670,14 +1747,11 @@
             document.getElementById('editCanteenElectricityAccountsContainer').appendChild(row);
         });
         
-        // Populate PABX Entries
         pabxEntries.forEach(pabx => {
             const entry = document.createElement('div');
             entry.className = 'pabx-entry';
-            
             let trailingFieldsHtml = '';
             let extensionFieldsHtml = '';
-            
             if (pabx.trailing_numbers && pabx.trailing_numbers.length) {
                 pabx.trailing_numbers.forEach(trail => {
                     trailingFieldsHtml += `<input type="text" class="form-control" placeholder="Trailing No." value="${escapeHtml(trail)}">`;
@@ -1688,7 +1762,6 @@
                     extensionFieldsHtml += `<input type="text" class="form-control" placeholder="Extension No." value="${escapeHtml(ext)}">`;
                 });
             }
-            
             entry.innerHTML = `
                 <input type="text" class="form-control" placeholder="PABX Name" value="${escapeHtml(pabx.name)}" style="flex: 1.5;">
                 <input type="text" class="form-control" placeholder="Pilot No." value="${escapeHtml(pabx.pilot_no)}" style="flex: 1;">
@@ -1709,7 +1782,6 @@
     async function saveImageEdit() {
         const accountData = getAllEditAccountData();
         
-        // Build the update data
         const updateData = {
             description: document.getElementById('editImageDescription').value,
             notes: document.getElementById('editImageNotes').value,
@@ -1721,7 +1793,6 @@
             pabx_entries_json: JSON.stringify(accountData.pabx_entries)
         };
         
-        // Also set single fields for backward compatibility
         if (accountData.water_accounts.length > 0) {
             updateData.water_account_number = accountData.water_accounts[0].account_number || '';
             updateData.water_meter_number = accountData.water_accounts[0].meter_numbers && accountData.water_accounts[0].meter_numbers.length > 0 ? accountData.water_accounts[0].meter_numbers[0] : '';
@@ -1847,7 +1918,6 @@
                 uploaded_by: localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
             };
             
-            // Also set single fields for backward compatibility
             if (accountData.water_accounts.length > 0) {
                 imageData.water_account_number = accountData.water_accounts[0].account_number || '';
                 imageData.water_meter_number = accountData.water_accounts[0].meter_numbers && accountData.water_accounts[0].meter_numbers.length > 0 ? accountData.water_accounts[0].meter_numbers[0] : '';
@@ -1904,7 +1974,6 @@
         document.getElementById('viewImageSrc').src = url;
         let detailsHtml = `<div class="card"><div class="card-body"><p><strong>Description:</strong> ${escapeHtml(image.description || 'No description')}</p>`;
         
-        // Display water accounts
         if (image.water_accounts_json) {
             try {
                 const waterAccounts = JSON.parse(image.water_accounts_json);
@@ -1920,7 +1989,6 @@
             detailsHtml += `<p><strong>💧 Water:</strong> ${image.water_account_number} ${image.water_meter_number ? '/ ' + image.water_meter_number : ''}</p>`;
         }
         
-        // Display electricity accounts
         if (image.electricity_accounts_json) {
             try {
                 const electricityAccounts = JSON.parse(image.electricity_accounts_json);
@@ -1936,7 +2004,6 @@
             detailsHtml += `<p><strong>⚡ Electricity:</strong> ${image.electricity_account_number} ${image.electricity_meter_number ? '/ ' + image.electricity_meter_number : ''}</p>`;
         }
         
-        // Display telephone accounts
         if (image.telephone_accounts_json) {
             try {
                 const telephoneAccounts = JSON.parse(image.telephone_accounts_json);
@@ -1952,7 +2019,6 @@
             detailsHtml += `<p><strong>📞 Telephone:</strong> ${image.telephone_account_number} ${image.telephone_number ? '/ ' + image.telephone_number : ''}</p>`;
         }
         
-        // Display canteen accounts
         if (image.canteen_water_accounts_json) {
             try {
                 const canteenWaterAccounts = JSON.parse(image.canteen_water_accounts_json);
@@ -1983,7 +2049,6 @@
             detailsHtml += `<p><strong>🍽️ Canteen Electricity:</strong> ${image.canteen_electricity_account_number} ${image.canteen_electricity_meter_number ? '/ ' + image.canteen_electricity_meter_number : ''}</p>`;
         }
         
-        // Display PABX
         if (image.pabx_entries_json) {
             try {
                 const pabxEntries = JSON.parse(image.pabx_entries_json);
