@@ -2,6 +2,42 @@
 
 {% block content %}
 <style>
+    :root {
+        --primary-color: #9b59b6;
+        --primary-dark: #8e44ad;
+        --primary-light: #d4b8e8;
+        --secondary-color: #f3e5f5;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-header h2 i {
+        margin-right: 12px;
+    }
+    .page-header p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+    .stats-badge {
+        background-color: #4caf50;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
     .status-badge {
         padding: 5px 12px;
         border-radius: 20px;
@@ -10,70 +46,77 @@
         display: inline-block;
     }
     .priority-high {
-        background-color: #f8d7da;
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
         color: #721c24;
         border-left: 3px solid #dc3545;
     }
     .priority-medium {
-        background-color: #fff3cd;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
         color: #856404;
         border-left: 3px solid #ffc107;
     }
     .priority-low {
-        background-color: #d4edda;
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
         color: #155724;
         border-left: 3px solid #28a745;
     }
     .btn-acknowledge {
-        background-color: #28a745;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
         border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 8px;
         font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
+        font-weight: 500;
     }
     .btn-acknowledge:hover {
-        background-color: #218838;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
     }
     .btn-check-report {
-        background-color: #6c757d;
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         color: white;
         border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 8px;
         font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
+        font-weight: 500;
     }
     .btn-check-report:hover {
-        background-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
     }
     .checked-badge {
-        background-color: #17a2b8;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
         color: white;
-        padding: 2px 6px;
-        border-radius: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
         font-size: 9px;
         display: inline-block;
+        font-weight: 500;
     }
     .notification-badge {
-        background-color: #dc3545;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
         border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 10px;
+        padding: 2px 8px;
+        font-size: 11px;
         margin-left: 5px;
+        font-weight: 600;
     }
     .reports-table-container {
         margin-bottom: 20px;
-        border-radius: 8px;
+        border-radius: 16px;
         overflow: hidden;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #eef2f7;
         background: white;
-        max-height: 450px;
+        max-height: 500px;
         overflow-y: auto;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     }
     .reports-table {
         width: 100%;
@@ -81,8 +124,8 @@
         font-size: 12px;
     }
     .reports-table th {
-        background: #f8f9fa;
-        padding: 8px 10px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 10px 12px;
         text-align: left;
         font-weight: 600;
         font-size: 11px;
@@ -90,18 +133,18 @@
         border-bottom: 2px solid #dee2e6;
         position: sticky;
         top: 0;
-        background: #f8f9fa;
         z-index: 10;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .reports-table td {
-        padding: 6px 10px;
-        border-bottom: 1px solid #e9ecef;
+        padding: 8px 12px;
+        border-bottom: 1px solid #eef2f7;
         cursor: pointer;
         transition: background 0.2s;
         vertical-align: middle;
     }
     .reports-table tr:hover td {
-        background-color: #f8f5fc;
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
     }
     .priority-high-cell {
         color: #dc3545;
@@ -120,71 +163,80 @@
     }
     .status-pending {
         display: inline-block;
-        padding: 2px 6px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 10px;
-        font-weight: 500;
-        background-color: #fff3cd;
+        font-weight: 600;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
         color: #856404;
     }
     .status-acknowledged {
         display: inline-block;
-        padding: 2px 6px;
-        border-radius: 12px;
+        padding: 3px 10px;
+        border-radius: 15px;
         font-size: 10px;
-        font-weight: 500;
-        background-color: #d4edda;
+        font-weight: 600;
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
         color: #155724;
     }
     .section-header {
         background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
-        padding: 8px 15px;
-        border-radius: 8px;
-        margin-bottom: 10px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 12px;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: center;
         transition: all 0.2s;
+        border-left: 4px solid var(--primary-color);
     }
     .section-header:hover {
         background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
+        transform: translateX(3px);
     }
     .section-title {
-        font-weight: bold;
+        font-weight: 600;
         font-size: 0.95rem;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .section-count {
         background: white;
-        padding: 2px 6px;
-        border-radius: 15px;
+        padding: 2px 10px;
+        border-radius: 20px;
         font-size: 0.7rem;
         color: var(--primary-dark);
+        font-weight: 600;
     }
     .section-toggle-icon {
         font-size: 0.9rem;
+        color: var(--primary-dark);
     }
     .expand-all-btn, .collapse-all-btn {
-        background: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         color: white;
         border: none;
-        padding: 4px 10px;
-        border-radius: 15px;
-        font-size: 10px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
+        font-weight: 500;
+        margin-left: 8px;
     }
     .expand-all-btn:hover, .collapse-all-btn:hover {
-        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
     }
     .empty-section {
         text-align: center;
-        padding: 25px;
-        color: #999;
-        font-size: 12px;
+        padding: 30px;
+        color: #6c757d;
+        font-size: 13px;
+        background: #fafafa;
     }
     .report-id-link {
         font-weight: 600;
@@ -195,6 +247,7 @@
     }
     .report-id-link:hover {
         text-decoration: underline;
+        color: var(--primary-dark);
     }
     .entity-name {
         max-width: 180px;
@@ -212,27 +265,56 @@
     }
     .technician-name {
         font-size: 11px;
+        font-weight: 500;
     }
     .date-cell {
         font-size: 10px;
         white-space: nowrap;
+        color: #6c757d;
     }
     .priority-icon {
         font-size: 10px;
-        margin-right: 2px;
+        margin-right: 3px;
     }
     
     .reports-table-container::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
     }
     .reports-table-container::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: 10px;
     }
     .reports-table-container::-webkit-scrollbar-thumb {
-        background: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         border-radius: 10px;
+    }
+    
+    /* Statistics Cards */
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid #eef2f7;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    .stat-card .card-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        opacity: 0.8;
+    }
+    .stat-card .display-4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0;
     }
     
     /* Modal Styles */
@@ -252,34 +334,45 @@
         font-size: 1rem;
         cursor: pointer;
         margin-left: 10px;
+        transition: all 0.2s;
+    }
+    .modal-header .btn-expand:hover {
+        transform: scale(1.1);
     }
     .report-detail-container {
         font-size: 14px;
         line-height: 1.6;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .report-detail-container .row {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
     }
     .image-preview-large {
         max-width: 100%;
         max-height: 300px;
         object-fit: contain;
-        border-radius: 8px;
+        border-radius: 12px;
         cursor: pointer;
+        transition: transform 0.2s;
+        border: 1px solid #eef2f7;
+    }
+    .image-preview-large:hover {
+        transform: scale(1.02);
     }
     .comment-section {
-        background-color: #f8f5fc;
-        padding: 15px;
-        border-radius: 10px;
-        margin-top: 15px;
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
+        padding: 18px;
+        border-radius: 12px;
+        margin-top: 18px;
         border-left: 3px solid var(--primary-color);
     }
     .comment-item {
         background: white;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #eee;
+        padding: 12px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .comment-author {
         font-weight: bold;
@@ -288,57 +381,150 @@
     }
     .comment-date {
         font-size: 10px;
-        color: #999;
-        margin-left: 10px;
+        color: #6c757d;
+        margin-left: 12px;
+    }
+    .modal-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
+    }
+    .btn-primary-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 8px 18px;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-primary-custom:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+    .btn-secondary-custom {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 8px 18px;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-secondary-custom:hover {
+        transform: translateY(-1px);
+    }
+    .btn-info-custom {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-info-custom:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+    .btn-print {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-print:hover {
+        transform: translateY(-1px);
+    }
+    .stat-card-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .stat-card-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    .stat-card-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    .auth-status-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .auth-status-badge.view-only {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+    .auth-status-badge.assistant {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="page-header">
     <h2><i class="bi bi-check2-square"></i> Team Leader Dashboard</h2>
+    <p>Review, acknowledge, and manage technical reports submitted by technicians</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <span class="badge bg-primary p-1 me-2" id="authStatus">Checking...</span>
-        <span class="badge bg-danger p-1" id="notificationCount" style="display: none;">
+        <span class="auth-status-badge" id="authStatus">Checking...</span>
+        <span class="notification-badge" id="notificationCount" style="display: none;">
             <i class="bi bi-bell"></i> <span id="pendingReportsCount">0</span>
         </span>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
+        <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
     </div>
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-3">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary">
-            <div class="card-body py-2">
-                <h6 class="card-title mb-0">Total Reports</h6>
-                <h3 class="mb-0" id="statTotal">0</h3>
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-card-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title">TOTAL REPORTS</div>
+                    <div class="display-4" id="statTotal">0</div>
+                </div>
+                <i class="bi bi-file-text" style="font-size: 2rem; opacity: 0.7;"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-warning">
-            <div class="card-body py-2">
-                <h6 class="card-title mb-0">Pending Acknowledgment</h6>
-                <h3 class="mb-0" id="statPending">0</h3>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-card-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title">PENDING</div>
+                    <div class="display-4" id="statPending">0</div>
+                </div>
+                <i class="bi bi-clock-history" style="font-size: 2rem; opacity: 0.7;"></i>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success">
-            <div class="card-body py-2">
-                <h6 class="card-title mb-0">Acknowledged</h6>
-                <h3 class="mb-0" id="statAcknowledged">0</h3>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-card-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title">ACKNOWLEDGED</div>
+                    <div class="display-4" id="statAcknowledged">0</div>
+                </div>
+                <i class="bi bi-check2-circle" style="font-size: 2rem; opacity: 0.7;"></i>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Expand/Collapse All Buttons -->
-<div class="d-flex justify-content-end gap-2 mb-2">
-    <button class="expand-all-btn" onclick="expandAllSections()"><i class="bi bi-arrows-expand"></i> Expand All</button>
-    <button class="collapse-all-btn" onclick="collapseAllSections()"><i class="bi bi-arrows-collapse"></i> Collapse All</button>
 </div>
 
 <!-- High Priority Reports Section -->
-<div id="highPrioritySection" class="mb-3">
+<div id="highPrioritySection" class="mb-4">
     <div class="section-header" onclick="toggleSection('highPriorityBody', this)">
         <div class="section-title">
             <span>🔴</span>
@@ -355,7 +541,7 @@
 </div>
 
 <!-- All Pending Reports Section -->
-<div id="pendingSection" class="mb-3">
+<div id="pendingSection" class="mb-4">
     <div class="section-header" onclick="toggleSection('pendingBody', this)">
         <div class="section-title">
             <span>⏳</span>
@@ -373,21 +559,21 @@
 
 <!-- Acknowledge Modal -->
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header py-2">
+            <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label fw-bold small">Review Comments / Notes</label>
+                    <label class="form-label fw-bold">Review Comments / Notes</label>
                     <textarea class="form-control" id="acknowledgeNotes" rows="4" placeholder="Enter your review comments..."></textarea>
                 </div>
             </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success btn-sm" onclick="submitAcknowledge()">Acknowledge</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary-custom" onclick="submitAcknowledge()">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -397,7 +583,7 @@
 <div class="modal fade" id="viewReportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header py-2">
+            <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-file-text"></i> Report Details</h5>
                 <button type="button" class="btn-expand" id="expandModalBtn" onclick="toggleModalSize()">
                     <i class="bi bi-arrows-fullscreen"></i>
@@ -405,10 +591,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="viewReportContent" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success btn-sm" id="modalAcknowledgeBtn" onclick="acknowledgeFromModal()">Acknowledge</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="printCurrentReport()">Print</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn-primary-custom" id="modalAcknowledgeBtn" onclick="acknowledgeFromModal()">Acknowledge</button>
+                <button type="button" class="btn-print" onclick="printCurrentReport()"><i class="bi bi-printer"></i> Print</button>
             </div>
         </div>
     </div>
@@ -494,7 +680,7 @@
             const body = document.getElementById(bodyId);
             if (body) {
                 body.style.display = 'block';
-                const section = body.closest('.mb-3');
+                const section = body.closest('.mb-4');
                 if (section) {
                     const icon = section.querySelector('.section-toggle-icon');
                     if (icon) icon.innerHTML = '<i class="bi bi-chevron-up"></i>';
@@ -511,7 +697,7 @@
             const body = document.getElementById(bodyId);
             if (body) {
                 body.style.display = 'none';
-                const section = body.closest('.mb-3');
+                const section = body.closest('.mb-4');
                 if (section) {
                     const icon = section.querySelector('.section-toggle-icon');
                     if (icon) icon.innerHTML = '<i class="bi bi-chevron-down"></i>';
@@ -538,7 +724,6 @@
         }
     }
     
-    // Check authorization from localStorage
     function checkAuthorization() {
         const user = window.getCurrentUser();
         console.log('Team Leader - Current User from localStorage:', user);
@@ -550,18 +735,18 @@
             const authStatus = document.getElementById('authStatus');
             if (isAuthorizedUser) {
                 authStatus.innerHTML = '✓ Authorized Team Leader';
-                authStatus.classList.add('bg-success');
-                authStatus.classList.remove('bg-primary');
+                authStatus.classList.add('auth-status-badge');
+                authStatus.classList.remove('view-only', 'assistant');
                 console.log('User IS authorized as Team Leader');
             } else if (isAssistantLeader) {
                 authStatus.innerHTML = '👥 Assistant Team Leader';
-                authStatus.classList.add('bg-info');
-                authStatus.classList.remove('bg-primary');
+                authStatus.classList.add('assistant');
+                authStatus.classList.remove('auth-status-badge', 'view-only');
                 console.log('User IS Assistant Team Leader');
             } else {
                 authStatus.innerHTML = '👁️ View Only';
-                authStatus.classList.add('bg-secondary');
-                authStatus.classList.remove('bg-primary');
+                authStatus.classList.add('view-only');
+                authStatus.classList.remove('auth-status-badge', 'assistant');
                 console.log('User is NOT authorized');
             }
         } else {
@@ -569,8 +754,8 @@
             isAssistantLeader = false;
             const authStatus = document.getElementById('authStatus');
             authStatus.innerHTML = '⚠️ No User';
-            authStatus.classList.add('bg-secondary');
-            authStatus.classList.remove('bg-primary');
+            authStatus.classList.add('view-only');
+            authStatus.classList.remove('auth-status-badge', 'assistant');
         }
         
         loadTeamLeaderData();
@@ -612,8 +797,8 @@
             
         } catch (error) {
             console.error('Error loading reports:', error);
-            document.getElementById('highPriorityBody').innerHTML = '<div class="text-center py-3 text-danger small">Error loading reports</div>';
-            document.getElementById('pendingBody').innerHTML = '<div class="text-center py-3 text-danger small">Error loading reports</div>';
+            document.getElementById('highPriorityBody').innerHTML = '<div class="empty-section"><i class="bi bi-exclamation-triangle"></i> Error loading reports</div>';
+            document.getElementById('pendingBody').innerHTML = '<div class="empty-section"><i class="bi bi-exclamation-triangle"></i> Error loading reports</div>';
         }
     }
     
@@ -629,7 +814,7 @@
         }
         
         if (reports.length === 0) {
-            container.innerHTML = '<div class="empty-section">No high priority reports pending</div>';
+            container.innerHTML = '<div class="empty-section"><i class="bi bi-check-circle"></i> No high priority reports pending</div>';
             return;
         }
         
@@ -644,7 +829,7 @@
                         <th>Technician</th>
                         <th>Assistant Check</th>
                         <th style="width: 80px;">Date</th>
-                        <th style="width: 130px;">Actions</th>
+                        <th style="width: 140px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -653,8 +838,8 @@
                         const isChecked = report.checked_by_assistant === true;
                         
                         return `
-                            <tr style="background-color: #fff3cd;">
-                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                            <tr style="background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);">
+                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i> Checked</span>' : ''}</td>
                                 <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
                                 <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="priority-high-cell" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> HIGH</td>
@@ -663,18 +848,18 @@
                                     ${isChecked ? 
                                         `<span class="checked-badge"><i class="bi bi-check-circle"></i> by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
                                         (isAssistantLeader ? 
-                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Check</button>` : 
-                                            '<span class="text-muted">-</span>'
+                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark Checked</button>` : 
+                                            '<span class="text-muted">—</span>'
                                         )
                                     }
                                 </td>
                                 <td class="date-cell" onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
                                 <td>
                                     ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                                    <button class="btn btn-sm btn-info" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
-                                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
-                                 </td>
-                             </tr>
+                                    <button class="btn-info-custom" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
+                                    <button class="btn-print" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
+                                </td>
+                            </tr>
                         `;
                     }).join('')}
                 </tbody>
@@ -694,7 +879,7 @@
         }
         
         if (reports.length === 0) {
-            container.innerHTML = '<div class="empty-section">No reports pending acknowledgment</div>';
+            container.innerHTML = '<div class="empty-section"><i class="bi bi-check-circle"></i> No reports pending acknowledgment</div>';
             return;
         }
         
@@ -709,8 +894,8 @@
                         <th>Technician</th>
                         <th>Assistant Check</th>
                         <th style="width: 80px;">Date</th>
-                        <th style="width: 130px;">Actions</th>
-                     </tr>
+                        <th style="width: 140px;">Actions</th>
+                    </tr>
                 </thead>
                 <tbody>
                     ${reports.map(report => {
@@ -721,7 +906,7 @@
                         
                         return `
                             <tr>
-                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
+                                <td><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i> Checked</span>' : ''}</td>
                                 <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
                                 <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="${priorityClass}" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> ${priorityText}</td>
@@ -730,18 +915,18 @@
                                     ${isChecked ? 
                                         `<span class="checked-badge"><i class="bi bi-check-circle"></i> by ${escapeHtml(report.checked_by_assistant_name || 'Assistant')}</span><br><small>${formatDate(report.checked_by_assistant_at)}</small>` : 
                                         (isAssistantLeader ? 
-                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Check</button>` : 
-                                            '<span class="text-muted">-</span>'
+                                            `<button class="btn-check-report" onclick="event.stopPropagation(); markAsChecked(${report.id})"><i class="bi bi-eye"></i> Mark Checked</button>` : 
+                                            '<span class="text-muted">—</span>'
                                         )
                                     }
                                 </td>
                                 <td class="date-cell" onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
                                 <td>
                                     ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})"><i class="bi bi-check2"></i> Acknowledge</button>` : ''}
-                                    <button class="btn btn-sm btn-info" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
-                                    <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
-                                 </td>
-                             </tr>
+                                    <button class="btn-info-custom" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
+                                    <button class="btn-print" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
+                                </td>
+                            </tr>
                         `;
                     }).join('')}
                 </tbody>
@@ -886,17 +1071,17 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<div class="alert alert-info mt-2"><i class="bi bi-eye"></i> <strong>Checked by Assistant Team Leader</strong><br>By: ${escapeHtml(report.checked_by_assistant_name)}<br>Date: ${formatDate(report.checked_by_assistant_at)}</div>`;
+            assistantCheckHtml = `<div class="alert alert-info mt-2" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); border: none; border-left: 4px solid #17a2b8;"><i class="bi bi-eye"></i> <strong>Checked by Assistant Team Leader</strong><br>By: ${escapeHtml(report.checked_by_assistant_name)}<br>Date: ${formatDate(report.checked_by_assistant_at)}</div>`;
         }
         
         let acknowledgmentHtml = '';
         if (report.team_leader_acknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success mt-2"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         }
         
         const html = `
             <div class="report-detail-container">
-                <div class="alert alert-info">
+                <div class="alert alert-info" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none; border-left: 4px solid #17a2b8;">
                     <strong>Report #${report.id}</strong> | ${reportTypeName} ${reportTypeIcon}<br>
                     Submitted: ${formatDate(report.created_at)} | Status: ${report.team_leader_acknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
@@ -930,7 +1115,7 @@
                 ${acknowledgmentHtml}
                 ${imagesHtml}
                 ${commentsHtml}
-                <div class="mt-3"><button class="btn btn-sm btn-secondary" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
+                <div class="mt-3"><button class="btn-secondary-custom" onclick="showAddCommentModal()"><i class="bi bi-chat-dots"></i> Add Comment</button></div>
             </div>
         `;
         document.getElementById('viewReportContent').innerHTML = html;
@@ -1029,7 +1214,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<table><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -1078,21 +1263,21 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td>
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td>` : ''}
-                    ${referenceNumber ? `<tr><th>Reference</th><td>${referenceType ? referenceType.toUpperCase() + ': ' : ''}${escapeHtml(referenceNumber)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</td>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td></tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td></tr>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
                 </table>
                 
                 ${imagesHtml}
