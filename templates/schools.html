@@ -2,33 +2,135 @@
 
 {% block content %}
 <style>
+    :root {
+        --primary-color: #9b59b6;
+        --primary-dark: #8e44ad;
+        --primary-light: #d4b8e8;
+        --secondary-color: #f3e5f5;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-header h2 i {
+        margin-right: 12px;
+    }
+    .page-header p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
     .school-code-badge {
         font-family: monospace;
         font-weight: bold;
-        background-color: #f0f0f0;
-        padding: 4px 8px;
-        border-radius: 6px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 5px 10px;
+        border-radius: 8px;
         font-size: 12px;
     }
     .school-name {
         font-weight: 600;
         color: var(--primary-dark);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .cluster-name {
-        font-size: 0.9rem;
-        color: #666;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .card-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0 !important;
+        padding: 15px 20px;
+        font-weight: 600;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card-header-custom i {
+        margin-right: 10px;
+    }
+    .stat-badge {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #2e7d32;
+    }
+    .modal-header-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
+    }
+    .modal-header-custom .btn-close {
+        filter: brightness(0) invert(1);
+    }
+    .btn-action {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    }
+    .btn-danger-custom {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .btn-danger-custom:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <h2><i class="bi bi-building"></i> Schools Management</h2>
-    <button class="btn btn-primary" onclick="showAddSchoolModal()">
-        <i class="bi bi-plus-circle"></i> Add School
+    <p>Manage school directory, contact information, and cluster assignments</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="stat-badge">
+        <i class="bi bi-file-text"></i> Total Schools: <span id="totalSchools">0</span>
+    </div>
+    <button class="btn-primary-custom" onclick="showAddSchoolModal()">
+        <i class="bi bi-plus-circle"></i> Add New School
     </button>
 </div>
 
 <div class="card">
-    <div class="card-header">
+    <div class="card-header-custom">
         <i class="bi bi-list-ul"></i> School Directory
     </div>
     <div class="card-body">
@@ -47,15 +149,13 @@
                     </tr>
                 </thead>
                 <tbody id="schoolsTable">
-                    <tr>
-                        <td colspan="8" class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div> Loading schools...
-                        <\/td>
-                    <\/tr>
+                    <tr><td colspan="8" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div> Loading schools...
+                    </td
                 </tbody>
-            </table>
+             </div>
         </div>
     </div>
 </div>
@@ -64,7 +164,7 @@
 <div class="modal fade" id="schoolModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title" id="schoolModalTitle">
                     <i class="bi bi-building"></i> Add School
                 </h5>
@@ -111,7 +211,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveSchool()">
+                <button type="button" class="btn-primary-custom" onclick="saveSchool()">
                     <i class="bi bi-save"></i> Save School
                 </button>
             </div>
@@ -124,41 +224,41 @@
         try {
             const response = await fetch('/api/schools');
             const schools = await response.json();
-            // Sort by ID to ensure correct order
             schools.sort((a, b) => a.id - b.id);
+            document.getElementById('totalSchools').textContent = schools.length;
             displaySchools(schools);
         } catch (error) {
             console.error('Error loading schools:', error);
             showToast('Error loading schools', 'error');
-            document.getElementById('schoolsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading schools. Please refresh.<\/td><\/tr>';
+            document.getElementById('schoolsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading schools. Please refresh.</td</tr>';
         }
     }
     
     function displaySchools(schools) {
         const tbody = document.getElementById('schoolsTable');
         if (!schools || schools.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No schools found. Click "Add School" to create one.<\/td><\/tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No schools found. Click "Add New School" to create one.</td</tr>';
             return;
         }
         
         tbody.innerHTML = schools.map(school => `
             <tr>
-                <td><strong>${school.id}<\/strong><br><small class="text-muted">DB ID<\/small><\/td>
-                <td><span class="school-name">${escapeHtml(school.name)}<\/span><\/td>
-                <td>${escapeHtml(school.cluster_number || '-')}<\/td>
-                <td>${escapeHtml(school.school_number || '-')}<\/td>
-                <td>${escapeHtml(school.contact_person || '-')}<br><small class="text-muted">Contact<\/small><\/td>
-                <td>${escapeHtml(school.contact_phone || '-')}<br><small class="text-muted">Phone<\/small><\/td>
-                <td>${escapeHtml(school.address ? school.address.substring(0, 40) + (school.address.length > 40 ? '...' : '') : '-')}<br><small class="text-muted">Address<\/small><\/td>
+                <td><strong>${school.id}</strong><br><small class="text-muted">DB ID</small></td>
+                <td><span class="school-name">${escapeHtml(school.name)}</span></td>
+                <td>${escapeHtml(school.cluster_number || '-')}</td>
+                <td>${escapeHtml(school.school_number || '-')}</td>
+                <td>${escapeHtml(school.contact_person || '-')}<br><small class="text-muted">Contact</small></td>
+                <td>${escapeHtml(school.contact_phone || '-')}<br><small class="text-muted">Phone</small></td>
+                <td>${escapeHtml(school.address ? school.address.substring(0, 40) + (school.address.length > 40 ? '...' : '') : '-')}<br><small class="text-muted">Address</small></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editSchool(${school.id})" title="Edit">
+                    <button class="btn-action btn-sm" onclick="editSchool(${school.id})" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSchool(${school.id})" title="Delete">
+                    <button class="btn-danger-custom btn-sm" onclick="deleteSchool(${school.id})" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
-                <\/td>
-            <\/tr>
+                </td>
+            </tr>
         `).join('');
     }
     
@@ -283,7 +383,6 @@
         }
     }
     
-    // Load schools on page load
     loadSchools();
 </script>
 {% endblock %}
