@@ -579,16 +579,6 @@
         flex-wrap: wrap;
         margin-top: 10px;
     }
-    .badge-editor {
-        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 9px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
 </style>
 
 <div class="page-header">
@@ -956,6 +946,19 @@
         return window.location.origin + '/api/images/' + imagePath;
     }
 
+    function formatDateTime(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            date.setHours(date.getHours() + 8);
+            return date.toLocaleString('en-GB', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+
     // ============ DOWNLOAD AND PRINT FUNCTIONS ============
     
     async function downloadImage(imageUrl, filename) {
@@ -970,29 +973,27 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(objectUrl);
-            window.showToast('Image downloaded successfully', 'success');
+            if (window.showToast) window.showToast('Image downloaded successfully', 'success');
         } catch (error) {
             console.error('Download error:', error);
-            window.showToast('Error downloading image', 'error');
+            if (window.showToast) window.showToast('Error downloading image', 'error');
         }
     }
 
     function downloadSingleImage(imageUrl, imageId) {
-        const image = currentImages.find(img => img.id === imageId);
         const filename = `map_image_${imageId}_${Date.now()}.jpg`;
         downloadImage(imageUrl, filename);
     }
 
     async function downloadAllImages() {
         if (!currentImages || currentImages.length === 0) {
-            window.showToast('No images to download', 'error');
+            if (window.showToast) window.showToast('No images to download', 'error');
             return;
         }
         
-        window.showToast('Preparing download...', 'info');
+        if (window.showToast) window.showToast('Preparing download...', 'info');
         
         try {
-            // Use JSZip library (will be loaded dynamically)
             if (typeof JSZip === 'undefined') {
                 const script = document.createElement('script');
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -1025,13 +1026,13 @@
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(objectUrl);
-                window.showToast(`${downloadCount} image(s) downloaded successfully`, 'success');
+                if (window.showToast) window.showToast(`${downloadCount} image(s) downloaded successfully`, 'success');
             } else {
-                window.showToast('No images could be downloaded', 'error');
+                if (window.showToast) window.showToast('No images could be downloaded', 'error');
             }
         } catch (error) {
             console.error('Zip creation error:', error);
-            window.showToast('Error creating zip file', 'error');
+            if (window.showToast) window.showToast('Error creating zip file', 'error');
         }
     }
 
@@ -1708,7 +1709,6 @@
         document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
         document.querySelector(`.entity-item[data-id="${id}"]`).classList.add('selected');
         
-        // Show download all button when entity is selected
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
         
@@ -1732,19 +1732,6 @@
         } catch (error) {
             console.error('Error loading images:', error);
             imagesListDiv.innerHTML = `<div class="text-center py-5 text-danger">Error loading images: ${error.message}<br><button class="btn-primary-custom btn-sm mt-2" onclick="loadImages()">Retry</button></div>`;
-        }
-    }
-
-    function formatDateTime(dateString) {
-        if (!dateString) return '-';
-        try {
-            const date = new Date(dateString);
-            date.setHours(date.getHours() + 8);
-            return date.toLocaleString('en-GB', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-        } catch (e) {
-            return dateString;
         }
     }
 
@@ -1848,9 +1835,8 @@
             }
             if (parts.length) accountHtml = `<div class="account-details"><strong>📍 Account Details:</strong><br>${parts.join('<br>')}</div>`;
             
-            // Get uploader and last editor info
-            const uploadedByName = img.uploaded_by_name || (img.uploaded_by ? getTechnicianName(img.uploaded_by) : 'Unknown');
-            const lastEditedByName = img.last_edited_by_name || (img.last_edited_by ? getTechnicianName(img.last_edited_by) : null);
+            const uploadedByName = img.uploaded_by ? getTechnicianName(img.uploaded_by) : 'Unknown';
+            const lastEditedByName = img.last_edited_by ? getTechnicianName(img.last_edited_by) : null;
             const showLastEdited = lastEditedByName && lastEditedByName !== uploadedByName;
             
             return `
@@ -2123,9 +2109,7 @@
             canteen_water_accounts_json: JSON.stringify(accountData.canteen_water_accounts),
             canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
             pabx_entries_json: JSON.stringify(accountData.pabx_entries),
-            // Track last editor
             last_edited_by: currentUser ? parseInt(currentUser.id) : null,
-            last_edited_by_name: currentUser ? currentUser.name : null,
             last_edited_at: new Date().toISOString()
         };
         
@@ -2164,7 +2148,7 @@
             });
             const result = await response.json();
             if (result.success) {
-                window.showToast('Image updated successfully', 'success');
+                if (window.showToast) window.showToast('Image updated successfully', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('editImageModal')).hide();
                 await loadImages();
             } else {
@@ -2172,7 +2156,7 @@
             }
         } catch (error) {
             console.error('Error updating image:', error);
-            alert('Error updating image');
+            alert('Error updating image: ' + error.message);
         }
     }
 
@@ -2252,10 +2236,7 @@
                 canteen_electricity_accounts_json: JSON.stringify(accountData.canteen_electricity_accounts),
                 pabx_entries_json: JSON.stringify(accountData.pabx_entries),
                 uploaded_by: currentUser ? parseInt(currentUser.id) : null,
-                uploaded_by_name: currentUser ? currentUser.name : null,
-                // Set last editor same as uploader initially
                 last_edited_by: currentUser ? parseInt(currentUser.id) : null,
-                last_edited_by_name: currentUser ? currentUser.name : null,
                 last_edited_at: new Date().toISOString()
             };
             
@@ -2293,18 +2274,24 @@
                     body: JSON.stringify(imageData)
                 });
                 const result = await response.json();
-                if (result.success) successCount++;
+                if (result.success) {
+                    successCount++;
+                } else {
+                    console.error('Upload error:', result.error);
+                    alert('Failed to save image: ' + (result.error || 'Unknown error'));
+                    return;
+                }
             } catch (error) {
                 console.error('Error saving image:', error);
+                alert('Error saving image: ' + error.message);
+                return;
             }
         }
         
-        if (successCount) {
-            window.showToast(`${successCount} image(s) uploaded successfully!`, 'success');
+        if (successCount > 0) {
+            if (window.showToast) window.showToast(`${successCount} image(s) uploaded successfully!`, 'success');
             bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
             await loadImages();
-        } else {
-            alert('Failed to save images');
         }
         uploadedImages = [];
         document.getElementById('imagePreviewContainer').innerHTML = '';
@@ -2314,8 +2301,8 @@
         const image = currentImages.find(img => img.id === id);
         document.getElementById('viewImageSrc').src = url;
         
-        const uploadedByName = image.uploaded_by_name || (image.uploaded_by ? getTechnicianName(image.uploaded_by) : 'Unknown');
-        const lastEditedByName = image.last_edited_by_name || (image.last_edited_by ? getTechnicianName(image.last_edited_by) : null);
+        const uploadedByName = image.uploaded_by ? getTechnicianName(image.uploaded_by) : 'Unknown';
+        const lastEditedByName = image.last_edited_by ? getTechnicianName(image.last_edited_by) : null;
         const showLastEdited = lastEditedByName && lastEditedByName !== uploadedByName;
         
         let detailsHtml = `<div class="card"><div class="card-body"><p><strong>Description:</strong> ${escapeHtml(image.description || 'No description')}</p>`;
@@ -2416,7 +2403,6 @@
         
         if (image.notes) detailsHtml += `<p><strong>Notes:</strong> ${escapeHtml(image.notes)}</p>`;
         
-        // Add uploader and editor information
         detailsHtml += `<hr><div class="image-meta">
             <i class="bi bi-person"></i> <strong>Uploaded by:</strong> ${escapeHtml(uploadedByName)}<br>
             ${showLastEdited ? `<i class="bi bi-pencil-square"></i> <strong>Last edited by:</strong> ${escapeHtml(lastEditedByName)} on ${formatDateTime(image.last_edited_at)}<br>` : ''}
@@ -2448,7 +2434,7 @@
                 const response = await fetch(`/api/mapping/images/${id}`, { method: 'DELETE' });
                 const result = await response.json();
                 if (result.success) {
-                    window.showToast('Image deleted', 'success');
+                    if (window.showToast) window.showToast('Image deleted', 'success');
                     await loadImages();
                 } else {
                     alert('Failed to delete');
@@ -2482,15 +2468,6 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-
-    function formatDateOnly(dateString) {
-        if (!dateString) return '-';
-        try {
-            return new Date(dateString).toLocaleDateString('en-GB');
-        } catch(e) {
-            return '-';
-        }
     }
 
     // Make functions global
@@ -2539,7 +2516,6 @@
     window.loadEntityList = loadEntityList;
     window.loadImages = loadImages;
     
-    // Initial load
     loadTechnicians();
 </script>
 {% endblock %}
