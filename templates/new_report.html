@@ -407,6 +407,9 @@
                         </select>
                     </div>
                 </div>
+                <div id="editEntityWarning" class="alert alert-info mt-2" style="display: none; background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none;">
+                    <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You can change the entity (school/department) for this report.
+                </div>
             </div>
             
             <!-- 3. REFERENCE INFORMATION SECTION -->
@@ -608,8 +611,9 @@
     
     if (isEditMode) {
         document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
-        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. Your changes will be saved.';
+        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. You can change the location (school/department), problem details, and other information. Your changes will be saved.';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
+        document.getElementById('editEntityWarning').style.display = 'block';
     }
 
     function getFullImageUrl(imagePath) {
@@ -936,7 +940,7 @@
         }
     }
 
-    // ============ LOAD EXISTING REPORT FOR EDIT ============
+    // ============ LOAD EXISTING REPORT FOR EDIT - FIXED TO ALLOW ENTITY CHANGE ============
     async function loadReportForEdit(id) {
         try {
             console.log('Loading report for edit:', id);
@@ -965,12 +969,25 @@
             
             console.log('Report loaded:', report);
             
+            // Set report type
             document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
             updateAccountFields(report.report_type);
             
-            document.getElementById('entityType').value = report.entity_type;
+            // CRITICAL FIX: Set entity type and enable dropdown for editing
+            const entityTypeSelect = document.getElementById('entityType');
+            entityTypeSelect.value = report.entity_type;
+            
+            // Enable entity type dropdown for editing (so technician can change it)
+            entityTypeSelect.disabled = false;
+            
+            // Load the entities and select the correct one
             await populateEntityDropdown(report.entity_type, report.entity_id);
             
+            // Ensure entity dropdown is enabled
+            const entityIdSelect = document.getElementById('entityId');
+            entityIdSelect.disabled = false;
+            
+            // Set other form fields
             document.getElementById('problemType').value = report.problem_type || '';
             document.getElementById('complaintDetails').value = report.complaint_details || '';
             document.getElementById('actionTaken').value = report.action_taken || '';
@@ -979,6 +996,7 @@
             document.getElementById('referenceNumber').value = report.reference_number || '';
             document.getElementById('referenceDate').value = report.reference_date || '';
             
+            // Set priority
             if (report.priority === 'high') {
                 document.getElementById('priorityHigh').checked = true;
                 selectPriority('high');
@@ -996,6 +1014,7 @@
                 document.getElementById('priority').disabled = true;
             }
             
+            // Set account details based on report type
             if (report.report_type === 'water') {
                 if (report.account_number) {
                     const waterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_account_number[]"]');
@@ -1031,6 +1050,7 @@
                 }
             }
             
+            // Set existing images
             uploadedImages = report.images || [];
             const previewContainer = document.getElementById('imagePreviewContainer');
             previewContainer.innerHTML = '';
@@ -1043,7 +1063,7 @@
                 previewContainer.appendChild(previewDiv);
             });
             
-            window.showToast('Report loaded for editing', 'success');
+            window.showToast('Report loaded for editing. You can now modify all fields including location.', 'success');
             
         } catch (error) {
             console.error('Error loading report for edit:', error);
