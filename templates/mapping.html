@@ -10,15 +10,60 @@
         --accent-color: #e8d5f5;
     }
 
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .page-header h2 i {
+        margin-right: 12px;
+    }
+    .page-header p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+    .btn-primary-custom {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-weight: 600;
+        transition: all 0.2s;
+        color: white;
+    }
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    }
+    .stat-badge {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #2e7d32;
+    }
+
     .map-container {
         position: relative;
         width: 100%;
-        min-height: 400px;
+        min-height: 450px;
         background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
         border-radius: 16px;
         overflow: hidden;
         margin-bottom: 20px;
         border: 1px solid #eef2f7;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
     }
     .map-image {
         width: 100%;
@@ -33,6 +78,14 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         border: 1px solid #eef2f7;
+    }
+    .entity-selector-header {
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--primary-dark);
+        border-left: 3px solid var(--primary-color);
+        padding-left: 12px;
+        font-size: 0.95rem;
     }
     .search-box {
         margin-bottom: 15px;
@@ -59,24 +112,25 @@
         padding-bottom: 10px;
     }
     .tab-btn {
-        padding: 8px 20px;
+        padding: 8px 24px;
         border: none;
         background: none;
         cursor: pointer;
         font-weight: 600;
         color: #666;
         transition: all 0.2s;
-        border-radius: 10px;
+        border-radius: 25px;
         font-size: 14px;
     }
     .tab-btn:hover {
-        background-color: var(--secondary-color);
+        background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-light) 100%);
         color: var(--primary-color);
     }
     .tab-btn.active {
-        color: var(--primary-color);
-        background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-color) 100%);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
         font-weight: 600;
+        box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
     }
     .tab-content {
         display: none;
@@ -174,14 +228,14 @@
     .entity-list {
         max-height: 300px;
         overflow-y: auto;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #eef2f7;
         border-radius: 12px;
         margin-top: 10px;
     }
     .entity-item {
         padding: 12px 15px;
         cursor: pointer;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #eef2f7;
         transition: background 0.2s;
     }
     .entity-item:hover {
@@ -195,7 +249,7 @@
     .form-section {
         margin-bottom: 20px;
         padding: 15px;
-        background: #f9f9f9;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
         border-radius: 12px;
         border: 1px solid #eef2f7;
     }
@@ -270,7 +324,7 @@
         flex: 1;
         min-width: 150px;
         padding: 8px 12px;
-        border: 1px solid #ddd;
+        border: 1px solid #e0e0e0;
         border-radius: 8px;
         font-size: 13px;
         transition: all 0.2s;
@@ -352,11 +406,11 @@
         transition: width 0.3s ease;
     }
     .edit-account-section {
-        background: #f9f9f9;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
         border-radius: 12px;
         padding: 15px;
         margin-bottom: 15px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #eef2f7;
     }
     .edit-account-title {
         font-weight: 600;
@@ -380,7 +434,7 @@
         flex: 1;
         min-width: 120px;
         padding: 8px 12px;
-        border: 1px solid #ddd;
+        border: 1px solid #e0e0e0;
         border-radius: 8px;
         font-size: 13px;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -396,7 +450,7 @@
         flex: 1;
         min-width: 120px;
         padding: 8px 12px;
-        border: 1px solid #ddd;
+        border: 1px solid #e0e0e0;
         border-radius: 8px;
         font-size: 13px;
     }
@@ -424,55 +478,39 @@
         margin-bottom: 8px;
         font-size: 13px;
     }
-    .btn-primary {
+    .modal-header-custom {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
-    }
-    .btn-secondary {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: 600;
-        transition: all 0.2s;
-    }
-    .btn-secondary:hover {
-        transform: translateY(-2px);
-    }
-    .modal-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
         padding: 12px 20px;
     }
-    .modal-header .btn-close {
+    .modal-header-custom .btn-close {
         filter: brightness(0) invert(1);
     }
     .modal-footer {
         border-top: 1px solid #eef2f7;
         padding: 12px 20px;
     }
-    .btn-group-inline {
-        display: flex;
-        gap: 5px;
-        align-items: center;
-    }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <h2><i class="bi bi-map"></i> Mapping & Profiling</h2>
-    <button class="btn btn-primary" onclick="showAddImageModal()">
+    <p>Upload and manage Google Maps screenshots showing locations of water meters, electricity meters, telephone sets, and PABX systems</p>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="stat-badge">
+        <i class="bi bi-images"></i> Total Images: <span id="totalImagesStat">0</span>
+    </div>
+    <button class="btn-primary-custom" onclick="showAddImageModal()">
         <i class="bi bi-image"></i> Upload Map Image
     </button>
 </div>
 
 <div class="entity-selector">
+    <div class="entity-selector-header">
+        <i class="bi bi-geo-alt"></i> Select Location
+    </div>
     <div class="row">
         <div class="col-md-6">
             <label class="form-label fw-bold">Entity Type</label>
@@ -508,7 +546,7 @@
     <div class="map-container" id="mapContainer">
         <div class="text-center py-5">
             <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
-            <p>Select a school/department and upload map images</p>
+            <p class="mt-2">Select a school/department and upload map images</p>
         </div>
     </div>
     <div class="text-center mt-2">
@@ -529,7 +567,7 @@
 <div class="modal fade" id="addImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-image"></i> Upload Map Image</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -670,7 +708,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="uploadMapImage()">Upload Image</button>
+                <button type="button" class="btn-primary-custom" onclick="uploadMapImage()">Upload Image</button>
             </div>
         </div>
     </div>
@@ -680,7 +718,7 @@
 <div class="modal fade" id="editImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Image Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -762,7 +800,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveImageEdit()">Save Changes</button>
+                <button type="button" class="btn-primary-custom" onclick="saveImageEdit()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -772,7 +810,7 @@
 <div class="modal fade" id="viewImageModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header-custom">
                 <h5 class="modal-title">Map Image</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -782,8 +820,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-warning" onclick="editImageFromView()">Edit Details</button>
-                <button type="button" class="btn btn-danger" onclick="deleteCurrentImage()">Delete Image</button>
+                <button type="button" class="btn-edit-image" onclick="editImageFromView()">Edit Details</button>
+                <button type="button" class="btn-delete-image" onclick="deleteCurrentImage()">Delete Image</button>
             </div>
         </div>
     </div>
@@ -839,8 +877,6 @@
         });
     }
 
-    // ============ ADD IMAGE MODAL FUNCTIONS ============
-    
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
         const newEntry = document.createElement('div');
@@ -963,8 +999,6 @@
         accountEntry.insertBefore(meterInput, buttonGroup);
     }
 
-    // ============ PABX FUNCTIONS ============
-    
     function addPABXField() {
         const container = document.getElementById('pabxContainer');
         const newEntry = document.createElement('div');
@@ -1003,8 +1037,6 @@
         pabxEntry.insertBefore(extensionInput, buttonGroup);
     }
 
-    // ============ EDIT MODAL FUNCTIONS ============
-    
     function addEditWaterAccountField() {
         const container = document.getElementById('editWaterAccountsContainer');
         const newEntry = document.createElement('div');
@@ -1161,8 +1193,6 @@
         pabxEntry.insertBefore(extensionInput, buttonGroup);
     }
 
-    // ============ COLLECT DATA FUNCTIONS ============
-    
     function getAllAccountData() {
         const accountData = {
             water_accounts: [], electricity_accounts: [], telephone_accounts: [],
@@ -1353,8 +1383,6 @@
         return accountData;
     }
 
-    // ============ ENTITY LIST FUNCTIONS ============
-    
     async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
         if (!currentEntityType) {
@@ -1425,11 +1453,12 @@
             const rawImages = await response.json();
             currentImages = rawImages.map(img => ({ ...img, image_url: getFullImageUrl(img.image_url) }));
             allMapImages = currentImages.filter(img => img.image_url);
+            document.getElementById('totalImagesStat').textContent = currentImages.length;
             displayImages();
             updateMapView();
         } catch (error) {
             console.error('Error loading images:', error);
-            imagesListDiv.innerHTML = `<div class="text-center py-5 text-danger">Error loading images: ${error.message}<br><button class="btn btn-primary btn-sm mt-2" onclick="loadImages()">Retry</button></div>`;
+            imagesListDiv.innerHTML = `<div class="text-center py-5 text-danger">Error loading images: ${error.message}<br><button class="btn-primary-custom btn-sm mt-2" onclick="loadImages()">Retry</button></div>`;
         }
     }
 
@@ -1555,7 +1584,7 @@
     function updateMapView() {
         const container = document.getElementById('mapContainer');
         if (!allMapImages.length) {
-            container.innerHTML = `<div class="text-center py-5"><i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i><p>No map images available.</p><button class="btn btn-primary mt-2" onclick="showAddImageModal()">Upload Map Image</button></div>`;
+            container.innerHTML = `<div class="text-center py-5"><i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i><p>No map images available.</p><button class="btn-primary-custom mt-2" onclick="showAddImageModal()">Upload Map Image</button></div>`;
             return;
         }
         
@@ -1840,7 +1869,6 @@
         }
     }
 
-    // Image upload handler
     document.getElementById('mapImageUpload').addEventListener('change', async function(e) {
         const files = Array.from(e.target.files);
         const previewContainer = document.getElementById('imagePreviewContainer');
@@ -2131,7 +2159,6 @@
         }
     }
 
-    // Make functions global
     window.addWaterAccountField = addWaterAccountField;
     window.addWaterMeterField = addWaterMeterField;
     window.addElectricityAccountField = addElectricityAccountField;
