@@ -768,7 +768,7 @@ def delete_mapping_location(location_id):
         app.logger.error(f"Error deleting mapping location: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ MAPPING IMAGES API WITH PABX SUPPORT ============
+# ============ MAPPING IMAGES API ============
 
 @app.route('/api/mapping/images', methods=['GET'])
 def get_mapping_images():
@@ -793,10 +793,17 @@ def get_mapping_images():
                 img_dict['uploaded_by_name'] = ''
             if 'last_edited_by' not in img_dict:
                 img_dict['last_edited_by'] = None
-            if 'last_edited_by_name' not in img_dict or img_dict['last_edited_by_name'] is None:
-                img_dict['last_edited_by_name'] = ''
             if 'last_edited_at' not in img_dict:
                 img_dict['last_edited_at'] = None
+            # Ensure PABX fields have defaults
+            if 'pabx_name' not in img_dict or img_dict['pabx_name'] is None:
+                img_dict['pabx_name'] = ''
+            if 'pabx_pilot_no' not in img_dict or img_dict['pabx_pilot_no'] is None:
+                img_dict['pabx_pilot_no'] = ''
+            if 'pabx_trailing_no' not in img_dict or img_dict['pabx_trailing_no'] is None:
+                img_dict['pabx_trailing_no'] = ''
+            if 'pabx_extension_no' not in img_dict or img_dict['pabx_extension_no'] is None:
+                img_dict['pabx_extension_no'] = ''
             images.append(img_dict)
         
         return jsonify(images)
@@ -831,23 +838,20 @@ def create_mapping_image():
             "canteen_water_meter_number": data.get('canteen_water_meter_number', ''),
             "canteen_electricity_account_number": data.get('canteen_electricity_account_number', ''),
             "canteen_electricity_meter_number": data.get('canteen_electricity_meter_number', ''),
-            # PABX single fields
+            # PABX individual fields
             "pabx_name": data.get('pabx_name', ''),
             "pabx_pilot_no": data.get('pabx_pilot_no', ''),
-            "pabx_trailing_no": data.get('pabx_trailing_no', []),
-            "pabx_extension_no": data.get('pabx_extension_no', []),
+            "pabx_trailing_no": data.get('pabx_trailing_no', ''),
+            "pabx_extension_no": data.get('pabx_extension_no', ''),
             # JSON storage for multiple accounts
             "water_accounts_json": data.get('water_accounts_json', '[]'),
             "electricity_accounts_json": data.get('electricity_accounts_json', '[]'),
             "telephone_accounts_json": data.get('telephone_accounts_json', '[]'),
             "canteen_water_accounts_json": data.get('canteen_water_accounts_json', '[]'),
             "canteen_electricity_accounts_json": data.get('canteen_electricity_accounts_json', '[]'),
-            "pabx_entries_json": data.get('pabx_entries_json', '[]'),
             # Tracking fields
             "uploaded_by": data.get('uploaded_by'),
-            "uploaded_by_name": data.get('uploaded_by_name', ''),
             "last_edited_by": data.get('last_edited_by'),
-            "last_edited_by_name": data.get('last_edited_by_name', ''),
             "last_edited_at": data.get('last_edited_at'),
             "uploaded_at": get_brunei_time_iso()
         }
@@ -880,9 +884,8 @@ def update_mapping_image(image_id):
             'pabx_name', 'pabx_pilot_no', 'pabx_trailing_no', 'pabx_extension_no',
             'water_accounts_json', 'electricity_accounts_json', 'telephone_accounts_json',
             'canteen_water_accounts_json', 'canteen_electricity_accounts_json',
-            'pabx_entries_json',
             # Tracking fields for last editor
-            'last_edited_by', 'last_edited_by_name', 'last_edited_at'
+            'last_edited_by', 'last_edited_at'
         ]
         update_data = {}
         for field in allowed_fields:
