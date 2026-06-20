@@ -350,6 +350,60 @@
         margin-top: 4px;
     }
     
+    /* Mapping Images Table */
+    .mapping-table-container {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+        margin-top: 20px;
+    }
+    .mapping-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+    .mapping-table th {
+        text-align: left;
+        padding: 12px 16px;
+        background: #f8f9fa;
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .mapping-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #eef2f7;
+        font-size: 13px;
+        vertical-align: middle;
+        color: #2c3e50;
+    }
+    .mapping-table tr:last-child td {
+        border-bottom: none;
+    }
+    .mapping-table tr:hover {
+        background: #f8f5fc;
+        cursor: pointer;
+    }
+    .entity-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-right: 6px;
+    }
+    .entity-badge.school {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    .entity-badge.department {
+        background: #f3e5f5;
+        color: #6a1b9a;
+    }
+    
     /* Backup Section */
     .backup-section {
         background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
@@ -450,6 +504,10 @@
         .btn-ack {
             padding: 4px 10px;
             font-size: 10px;
+        }
+        .mapping-table th, .mapping-table td {
+            padding: 8px 10px;
+            font-size: 11px;
         }
     }
 </style>
@@ -568,7 +626,7 @@
     </div>
 </div>
 
-<!-- Pending Acknowledgment Table - Fixed with proper container -->
+<!-- Pending Acknowledgment Table -->
 <div class="section-header">
     <h4><i class="bi bi-envelope"></i> Pending Acknowledgment</h4>
     <a href="/team-leader">Team Leader Dashboard →</a>
@@ -616,6 +674,29 @@
     </table>
 </div>
 
+<!-- ============ NEW: MAPPING IMAGES UPLOAD TABLE ============ -->
+<div class="section-header">
+    <h4><i class="bi bi-images"></i> Mapping Images Uploaded</h4>
+    <a href="/mapping">Go to Mapping →</a>
+</div>
+<div class="mapping-table-container mb-4">
+    <table class="mapping-table">
+        <thead>
+            <tr>
+                <th>Entity</th>
+                <th>Type</th>
+                <th>Total Images</th>
+                <th>Uploaded By</th>
+                <th>Upload Date & Time</th>
+                <th>Last Edited</th>
+            </tr>
+        </thead>
+        <tbody id="mappingImagesTableBody">
+            <tr><td colspan="6" class="text-center py-4">Loading mapping images data...</td></tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- Image Statistics -->
 <div class="image-stats">
     <h4><i class="bi bi-images"></i> Mapping & Image Statistics</h4>
@@ -658,6 +739,8 @@
 <script>
     let allReports = [];
     let currentUser = null;
+    let mappingImagesData = [];
+    let techniciansMap = {};
     
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -691,6 +774,120 @@
         if (type === 'electricity') return '<i class="bi bi-lightning-charge" style="color: #f57c00;"></i>';
         if (type === 'telephone') return '<i class="bi bi-telephone" style="color: #4caf50;"></i>';
         return '<i class="bi bi-file-text"></i>';
+    }
+    
+    async function loadTechnicians() {
+        try {
+            const response = await fetch('/api/technicians');
+            const techs = await response.json();
+            techs.forEach(tech => {
+                techniciansMap[tech.id] = tech.name;
+            });
+        } catch (error) {
+            console.error('Error loading technicians:', error);
+        }
+    }
+    
+    function getTechnicianName(techId) {
+        return techniciansMap[techId] || `Tech #${techId}`;
+    }
+    
+    async function loadMappingImagesSummary() {
+        try {
+            // Load all mapping images
+            const imagesResponse = await fetch('/api/mapping/images');
+            let images = await imagesResponse.json();
+            if (!images) images = [];
+            
+            // Load schools and departments
+            const schoolsResponse = await fetch('/api/schools');
+            const departmentsResponse = await fetch('/api/departments');
+            const schools = await schoolsResponse.json();
+            const departments = await departmentsResponse.json();
+            
+            // Build entity name lookup
+            const entityMap = {};
+            schools.forEach(s => { entityMap[`school_${s.id}`] = { name: s.name, type: 'school' }; });
+            departments.forEach(d => { entityMap[`department_${d.id}`] = { name: d.name, type: 'department' }; });
+            
+            // Group images by entity
+            const entityGroups = {};
+            images.forEach(img => {
+                const key = `${img.entity_type}_${img.entity_id}`;
+                if (!entityGroups[key]) {
+                    entityGroups[key] = {
+                        entity_id: img.entity_id,
+                        entity_type: img.entity_type,
+                        entity_name: entityMap[key] ? entityMap[key].name : `Unknown ${img.entity_type}`,
+                        images: [],
+                        uploaded_by: img.uploaded_by,
+                        uploaded_at: img.uploaded_at,
+                        last_edited_at: img.last_edited_at,
+                        last_edited_by: img.last_edited_by
+                    };
+                }
+                entityGroups[key].images.push(img);
+                // Track latest upload
+                if (img.uploaded_at && (!entityGroups[key].uploaded_at || img.uploaded_at > entityGroups[key].uploaded_at)) {
+                    entityGroups[key].uploaded_at = img.uploaded_at;
+                    entityGroups[key].uploaded_by = img.uploaded_by;
+                }
+                if (img.last_edited_at && (!entityGroups[key].last_edited_at || img.last_edited_at > entityGroups[key].last_edited_at)) {
+                    entityGroups[key].last_edited_at = img.last_edited_at;
+                    entityGroups[key].last_edited_by = img.last_edited_by;
+                }
+            });
+            
+            mappingImagesData = Object.values(entityGroups);
+            
+            // Sort by latest upload date
+            mappingImagesData.sort((a, b) => {
+                if (a.uploaded_at && b.uploaded_at) {
+                    return new Date(b.uploaded_at) - new Date(a.uploaded_at);
+                }
+                return 0;
+            });
+            
+            // Display in table
+            displayMappingImagesTable(mappingImagesData);
+            
+        } catch (error) {
+            console.error('Error loading mapping images summary:', error);
+            document.getElementById('mappingImagesTableBody').innerHTML = 
+                '<tr><td colspan="6" class="text-center py-4 text-danger">Error loading mapping images data</td></tr>';
+        }
+    }
+    
+    function displayMappingImagesTable(groups) {
+        const tbody = document.getElementById('mappingImagesTableBody');
+        if (!groups || groups.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No mapping images uploaded yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = groups.map(group => {
+            const entityBadge = group.entity_type === 'school' 
+                ? '<span class="entity-badge school">🏫 School</span>' 
+                : '<span class="entity-badge department">🏢 Department</span>';
+            
+            const uploadedByName = group.uploaded_by ? getTechnicianName(group.uploaded_by) : 'Unknown';
+            const lastEditedByName = group.last_edited_by ? getTechnicianName(group.last_edited_by) : null;
+            const showLastEdited = lastEditedByName && lastEditedByName !== uploadedByName;
+            
+            return `
+                <tr onclick="window.location.href='/mapping'">
+                    <td><strong>${truncateText(escapeHtml(group.entity_name), 40)}</strong></td>
+                    <td>${entityBadge}</td>
+                    <td><span class="badge" style="background: #9b59b6; color: white; padding: 5px 12px; border-radius: 20px;">${group.images.length}</span></td>
+                    <td>${escapeHtml(uploadedByName)}</td>
+                    <td>${formatDateTime(group.uploaded_at)}</td>
+                    <td>
+                        ${showLastEdited ? `${escapeHtml(lastEditedByName)}<br><small class="text-muted">${formatDateTime(group.last_edited_at)}</small>` : 
+                          (group.last_edited_at ? `<small class="text-muted">${formatDateTime(group.last_edited_at)}</small>` : '—')}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
     
     async function loadDashboardData() {
@@ -743,6 +940,9 @@
             // Load image statistics
             await loadImageStats();
             
+            // Load mapping images summary
+            await loadMappingImagesSummary();
+            
         } catch (error) {
             console.error('Error loading dashboard data:', error);
         }
@@ -782,7 +982,6 @@
             return;
         }
         
-        // Only Team Leaders can acknowledge (isAuthorized === true)
         const user = window.getCurrentUser();
         const canAcknowledge = user && user.isAuthorized === true;
         
@@ -844,18 +1043,15 @@
     
     async function loadImageStats() {
         try {
-            // Load mapping images
             const imagesResponse = await fetch('/api/mapping/images');
             let images = await imagesResponse.json();
             if (!images) images = [];
             
-            // Load schools and departments
             const schoolsResponse = await fetch('/api/schools');
             const departmentsResponse = await fetch('/api/departments');
             const schools = await schoolsResponse.json();
             const departments = await departmentsResponse.json();
             
-            // Count images by entity
             const schoolImages = {};
             const deptImages = {};
             
@@ -871,7 +1067,6 @@
             const departmentsWithImagesCount = Object.keys(deptImages).length;
             const totalImages = images.length;
             
-            // Find entity with most images
             let maxCount = 0;
             let topEntity = '-';
             for (const [id, count] of Object.entries(schoolImages)) {
@@ -905,7 +1100,6 @@
     }
     
     async function acknowledgeReport(id) {
-        // ONLY Team Leaders (isAuthorized === true) can acknowledge
         const user = window.getCurrentUser();
         if (!user || user.isAuthorized !== true) {
             if (window.showToast) {
@@ -940,7 +1134,6 @@
     }
     
     async function backupData() {
-        // Team Leaders AND Senior Technicians can backup
         const user = window.getCurrentUser();
         const canBackup = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
         
@@ -985,7 +1178,6 @@
     }
     
     async function restoreData() {
-        // Team Leaders AND Senior Technicians can restore
         const user = window.getCurrentUser();
         const canRestore = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
         
@@ -1052,6 +1244,8 @@
         fileInput.click();
     }
     
+    // Initialize
+    loadTechnicians();
     loadDashboardData();
     setInterval(loadDashboardData, 30000);
 </script>
