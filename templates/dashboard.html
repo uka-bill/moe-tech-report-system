@@ -674,7 +674,7 @@
     </table>
 </div>
 
-<!-- ============ NEW: MAPPING IMAGES UPLOAD TABLE ============ -->
+<!-- Mapping Images Uploaded Table -->
 <div class="section-header">
     <h4><i class="bi bi-images"></i> Mapping Images Uploaded</h4>
     <a href="/mapping">Go to Mapping →</a>
@@ -776,6 +776,11 @@
         return '<i class="bi bi-file-text"></i>';
     }
     
+    // ============ NEW: Navigate to Mapping with Entity ============
+    function goToMappingImages(entityType, entityId) {
+        window.location.href = `/mapping?entity_type=${entityType}&entity_id=${entityId}`;
+    }
+    
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
@@ -875,7 +880,7 @@
             const showLastEdited = lastEditedByName && lastEditedByName !== uploadedByName;
             
             return `
-                <tr onclick="window.location.href='/mapping'">
+                <tr onclick="goToMappingImages('${group.entity_type}', ${group.entity_id})" style="cursor: pointer;">
                     <td><strong>${truncateText(escapeHtml(group.entity_name), 40)}</strong></td>
                     <td>${entityBadge}</td>
                     <td><span class="badge" style="background: #9b59b6; color: white; padding: 5px 12px; border-radius: 20px;">${group.images.length}</span></td>
