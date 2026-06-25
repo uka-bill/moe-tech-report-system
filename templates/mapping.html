@@ -979,19 +979,31 @@
                 // Get the entity name from the item
                 const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
                 
-                // Click the entity item to select it and load images
-                entityItem.click();
-                
-                // Switch to images tab after a brief delay
-                setTimeout(() => {
-                    switchTab('images');
-                }, 300);
-                
                 // Update the selected entity display with the name
                 const displayElement = document.getElementById('selectedEntityDisplay');
                 if (displayElement) {
                     displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
                 }
+                
+                // Highlight the entity in the list
+                document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
+                entityItem.classList.add('selected');
+                
+                // Set current entity ID and type
+                currentEntityId = parseInt(params.entity_id);
+                currentEntityType = params.entity_type;
+                
+                // Show the download button
+                const downloadAllBtn = document.getElementById('downloadAllBtn');
+                if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
+                
+                // Load the images
+                loadImages();
+                
+                // Switch to images tab after a brief delay
+                setTimeout(() => {
+                    switchTab('images');
+                }, 300);
                 
                 return true;
             }
@@ -1694,6 +1706,23 @@
             // Only if not already executed
             if (!autoSelectExecuted) {
                 autoSelectEntityFromUrl();
+            } else {
+                // If auto-select already executed, make sure the entity is still selected
+                // (in case the list was reloaded after selection)
+                const params = getUrlParams();
+                if (params.entity_id) {
+                    const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
+                    if (entityItem) {
+                        const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
+                        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
+                        entityItem.classList.add('selected');
+                        
+                        const displayElement = document.getElementById('selectedEntityDisplay');
+                        if (displayElement && displayElement.innerHTML.includes('Unknown')) {
+                            displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
+                        }
+                    }
+                }
             }
             
         } catch (error) {
