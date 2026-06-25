@@ -938,6 +938,7 @@
     let uploadedImages = [];
     let isUploading = false;
     let techniciansMap = {};
+    let autoSelectExecuted = false;
 
     // ============ URL PARAMETER HANDLING ============
 
@@ -950,10 +951,18 @@
     }
 
     function autoSelectEntityFromUrl() {
+        // Prevent multiple executions
+        if (autoSelectExecuted) {
+            console.log('Auto-select already executed, skipping');
+            return false;
+        }
+        
         const params = getUrlParams();
         if (!params.entity_type || !params.entity_id) {
             return false; // No URL params, do nothing
         }
+        
+        autoSelectExecuted = true;
         
         // Set the entity type dropdown
         const entityTypeSelect = document.getElementById('entityType');
@@ -967,12 +976,23 @@
         const checkAndSelectEntity = function() {
             const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
             if (entityItem) {
+                // Get the entity name from the item
+                const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
+                
                 // Click the entity item to select it and load images
                 entityItem.click();
+                
                 // Switch to images tab after a brief delay
                 setTimeout(() => {
                     switchTab('images');
                 }, 300);
+                
+                // Update the selected entity display with the name
+                const displayElement = document.getElementById('selectedEntityDisplay');
+                if (displayElement) {
+                    displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
+                }
+                
                 return true;
             }
             return false;
@@ -1671,7 +1691,10 @@
             displayEntityList(entitiesList);
             
             // Check if we need to auto-select an entity from URL
-            autoSelectEntityFromUrl();
+            // Only if not already executed
+            if (!autoSelectExecuted) {
+                autoSelectEntityFromUrl();
+            }
             
         } catch (error) {
             console.error('Error loading entities:', error);
@@ -1714,10 +1737,16 @@
     }
 
     async function selectEntity(id, name) {
+        // Clear any auto-select flag since user manually selected
+        autoSelectExecuted = true;
+        
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
         document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-        document.querySelector(`.entity-item[data-id="${id}"]`).classList.add('selected');
+        const selectedItem = document.querySelector(`.entity-item[data-id="${id}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+        }
         
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
@@ -2482,10 +2511,12 @@
 
     // Check for URL parameters on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Reset the auto-select flag
+        autoSelectExecuted = false;
+        
         // If there are URL params, they will be handled when entity type loads
-        // But we need to trigger it if entity_type is already set
         const params = getUrlParams();
-        if (params.entity_type) {
+        if (params.entity_type && params.entity_id) {
             document.getElementById('entityType').value = params.entity_type;
             loadEntityList();
         }
