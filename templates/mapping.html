@@ -950,20 +950,15 @@
         };
     }
 
-    function performAutoSelect() {
-        // Prevent multiple executions
-        if (autoSelectDone) {
-            return false;
-        }
-        
+    function highlightEntityFromUrl() {
         const params = getUrlParams();
         if (!params.entity_type || !params.entity_id) {
             return false;
         }
         
-        console.log('Auto-selecting entity:', params.entity_type, params.entity_id);
+        console.log('Attempting to highlight entity:', params.entity_type, params.entity_id);
         
-        // Find the entity item
+        // Find the entity item by data-id
         const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
         if (!entityItem) {
             console.log('Entity item not found, will retry');
@@ -974,15 +969,17 @@
         const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
         console.log('Found entity:', entityName);
         
+        // Remove selected class from all items
+        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
+        
+        // Add selected class to this item
+        entityItem.classList.add('selected');
+        
         // Update the display
         const displayElement = document.getElementById('selectedEntityDisplay');
         if (displayElement) {
             displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
         }
-        
-        // Highlight the entity in the list
-        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-        entityItem.classList.add('selected');
         
         // Set current entity
         currentEntityId = parseInt(params.entity_id);
@@ -1683,16 +1680,16 @@
                 const params = getUrlParams();
                 if (params.entity_type && params.entity_id) {
                     // Try immediately
-                    const success = performAutoSelect();
+                    const success = highlightEntityFromUrl();
                     if (!success) {
                         // If not found, retry after a short delay
                         setTimeout(function() {
-                            performAutoSelect();
+                            highlightEntityFromUrl();
                         }, 500);
                         
                         // And one more time if still not found
                         setTimeout(function() {
-                            performAutoSelect();
+                            highlightEntityFromUrl();
                         }, 1000);
                     }
                 }
@@ -2519,6 +2516,7 @@
         // If there are URL params, trigger auto-select
         const params = getUrlParams();
         if (params.entity_type && params.entity_id) {
+            console.log('Page loaded with URL params:', params);
             // Set the dropdown value
             document.getElementById('entityType').value = params.entity_type;
             // Load the entity list (which will trigger auto-select)
