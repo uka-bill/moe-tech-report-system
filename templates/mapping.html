@@ -938,68 +938,6 @@
     let uploadedImages = [];
     let isUploading = false;
     let techniciansMap = {};
-    let autoSelectDone = false;
-
-    // ============ URL PARAMETER HANDLING ============
-
-    function getUrlParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            entity_type: params.get('entity_type'),
-            entity_id: params.get('entity_id')
-        };
-    }
-
-    function highlightEntityFromUrl() {
-        const params = getUrlParams();
-        if (!params.entity_type || !params.entity_id) {
-            return false;
-        }
-        
-        console.log('Attempting to highlight entity:', params.entity_type, params.entity_id);
-        
-        // Find the entity item by data-id
-        const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
-        if (!entityItem) {
-            console.log('Entity item not found, will retry');
-            return false;
-        }
-        
-        // Get the entity name
-        const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
-        console.log('Found entity:', entityName);
-        
-        // Remove selected class from all items
-        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-        
-        // Add selected class to this item
-        entityItem.classList.add('selected');
-        
-        // Update the display
-        const displayElement = document.getElementById('selectedEntityDisplay');
-        if (displayElement) {
-            displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
-        }
-        
-        // Set current entity
-        currentEntityId = parseInt(params.entity_id);
-        currentEntityType = params.entity_type;
-        
-        // Show download button
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
-        
-        // Load images
-        loadImages();
-        
-        // Switch to images tab
-        setTimeout(function() {
-            switchTab('images');
-        }, 300);
-        
-        autoSelectDone = true;
-        return true;
-    }
 
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
@@ -1674,27 +1612,6 @@
             const data = await response.json();
             entitiesList = data;
             displayEntityList(entitiesList);
-            
-            // Try to auto-select if URL params exist and not done yet
-            if (!autoSelectDone) {
-                const params = getUrlParams();
-                if (params.entity_type && params.entity_id) {
-                    // Try immediately
-                    const success = highlightEntityFromUrl();
-                    if (!success) {
-                        // If not found, retry after a short delay
-                        setTimeout(function() {
-                            highlightEntityFromUrl();
-                        }, 500);
-                        
-                        // And one more time if still not found
-                        setTimeout(function() {
-                            highlightEntityFromUrl();
-                        }, 1000);
-                    }
-                }
-            }
-            
         } catch (error) {
             console.error('Error loading entities:', error);
             document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-danger">Error loading entities</div>';
@@ -1736,16 +1653,10 @@
     }
 
     async function selectEntity(id, name) {
-        // Clear auto-select flag since user manually selected
-        autoSelectDone = true;
-        
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
         document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-        const selectedItem = document.querySelector(`.entity-item[data-id="${id}"]`);
-        if (selectedItem) {
-            selectedItem.classList.add('selected');
-        }
+        document.querySelector(`.entity-item[data-id="${id}"]`).classList.add('selected');
         
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
@@ -2507,22 +2418,6 @@
     window.filterEntityList = filterEntityList;
     window.loadEntityList = loadEntityList;
     window.loadImages = loadImages;
-
-    // Check for URL parameters on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        // Reset auto-select flag
-        autoSelectDone = false;
-        
-        // If there are URL params, trigger auto-select
-        const params = getUrlParams();
-        if (params.entity_type && params.entity_id) {
-            console.log('Page loaded with URL params:', params);
-            // Set the dropdown value
-            document.getElementById('entityType').value = params.entity_type;
-            // Load the entity list (which will trigger auto-select)
-            loadEntityList();
-        }
-    });
     
     loadTechnicians();
 </script>
