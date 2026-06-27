@@ -938,8 +938,7 @@
     let uploadedImages = [];
     let isUploading = false;
     let techniciansMap = {};
-    let autoSelectExecuted = false;
-    let isAutoSelecting = false;
+    let autoSelectDone = false;
 
     // ============ URL PARAMETER HANDLING ============
 
@@ -951,93 +950,58 @@
         };
     }
 
-    function autoSelectEntityFromUrl() {
+    function performAutoSelect() {
         // Prevent multiple executions
-        if (autoSelectExecuted) {
-            console.log('Auto-select already executed, skipping');
+        if (autoSelectDone) {
             return false;
         }
         
         const params = getUrlParams();
         if (!params.entity_type || !params.entity_id) {
-            return false; // No URL params, do nothing
+            return false;
         }
         
-        autoSelectExecuted = true;
-        isAutoSelecting = true;
+        console.log('Auto-selecting entity:', params.entity_type, params.entity_id);
         
-        // Set the entity type dropdown
-        const entityTypeSelect = document.getElementById('entityType');
-        if (entityTypeSelect) {
-            entityTypeSelect.value = params.entity_type;
+        // Find the entity item
+        const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
+        if (!entityItem) {
+            console.log('Entity item not found, will retry');
+            return false;
         }
         
-        // Load the entity list first
-        loadEntityListWithCallback(function() {
-            // Now find and select the entity
-            const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
-            if (entityItem) {
-                // Get the entity name from the item
-                const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
-                
-                // Update the selected entity display with the name
-                const displayElement = document.getElementById('selectedEntityDisplay');
-                if (displayElement) {
-                    displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
-                }
-                
-                // Highlight the entity in the list
-                document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-                entityItem.classList.add('selected');
-                
-                // Set current entity ID and type
-                currentEntityId = parseInt(params.entity_id);
-                currentEntityType = params.entity_type;
-                
-                // Show the download button
-                const downloadAllBtn = document.getElementById('downloadAllBtn');
-                if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
-                
-                // Load the images
-                loadImages();
-                
-                // Switch to images tab after a brief delay
-                setTimeout(function() {
-                    switchTab('images');
-                    isAutoSelecting = false;
-                }, 300);
-                
-                return true;
-            } else {
-                console.warn('Could not find entity with ID:', params.entity_id);
-                isAutoSelecting = false;
-                return false;
-            }
-        });
+        // Get the entity name
+        const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
+        console.log('Found entity:', entityName);
         
+        // Update the display
+        const displayElement = document.getElementById('selectedEntityDisplay');
+        if (displayElement) {
+            displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
+        }
+        
+        // Highlight the entity in the list
+        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
+        entityItem.classList.add('selected');
+        
+        // Set current entity
+        currentEntityId = parseInt(params.entity_id);
+        currentEntityType = params.entity_type;
+        
+        // Show download button
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        if (downloadAllBtn) downloadAllBtn.style.display = 'inline-block';
+        
+        // Load images
+        loadImages();
+        
+        // Switch to images tab
+        setTimeout(function() {
+            switchTab('images');
+        }, 300);
+        
+        autoSelectDone = true;
         return true;
-    }
-
-    function loadEntityListWithCallback(callback) {
-        currentEntityType = document.getElementById('entityType').value;
-        if (!currentEntityType) {
-            document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-muted">Select entity type first</div>';
-            if (callback) callback();
-            return;
-        }
-        
-        fetch(`/api/${currentEntityType}s`)
-            .then(response => response.json())
-            .then(data => {
-                entitiesList = data;
-                displayEntityList(entitiesList);
-                if (callback) callback();
-            })
-            .catch(error => {
-                console.error('Error loading entities:', error);
-                document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-danger">Error loading entities</div>';
-                if (callback) callback();
-            });
     }
 
     function getFullImageUrl(imagePath) {
@@ -1714,25 +1678,22 @@
             entitiesList = data;
             displayEntityList(entitiesList);
             
-            // Check if we need to auto-select an entity from URL
-            // Only if not already executed and not currently auto-selecting
-            if (!autoSelectExecuted && !isAutoSelecting) {
-                autoSelectEntityFromUrl();
-            } else if (autoSelectExecuted) {
-                // If auto-select already executed, make sure the entity is still selected
-                // (in case the list was reloaded after selection)
+            // Try to auto-select if URL params exist and not done yet
+            if (!autoSelectDone) {
                 const params = getUrlParams();
-                if (params.entity_id) {
-                    const entityItem = document.querySelector(`.entity-item[data-id="${params.entity_id}"]`);
-                    if (entityItem) {
-                        const entityName = entityItem.getAttribute('data-name') || 'Unknown Entity';
-                        document.querySelectorAll('.entity-item').forEach(item => item.classList.remove('selected'));
-                        entityItem.classList.add('selected');
+                if (params.entity_type && params.entity_id) {
+                    // Try immediately
+                    const success = performAutoSelect();
+                    if (!success) {
+                        // If not found, retry after a short delay
+                        setTimeout(function() {
+                            performAutoSelect();
+                        }, 500);
                         
-                        const displayElement = document.getElementById('selectedEntityDisplay');
-                        if (displayElement && (displayElement.innerHTML === 'None' || displayElement.innerHTML.includes('Unknown'))) {
-                            displayElement.innerHTML = `<strong>${escapeHtml(entityName)}</strong> (${params.entity_type === 'school' ? 'School' : 'Department'})`;
-                        }
+                        // And one more time if still not found
+                        setTimeout(function() {
+                            performAutoSelect();
+                        }, 1000);
                     }
                 }
             }
@@ -1778,9 +1739,8 @@
     }
 
     async function selectEntity(id, name) {
-        // Clear any auto-select flag since user manually selected
-        autoSelectExecuted = true;
-        isAutoSelecting = false;
+        // Clear auto-select flag since user manually selected
+        autoSelectDone = true;
         
         currentEntityId = id;
         document.getElementById('selectedEntityDisplay').innerHTML = `<strong>${escapeHtml(name)}</strong> (${currentEntityType === 'school' ? 'School' : 'Department'})`;
@@ -2553,16 +2513,16 @@
 
     // Check for URL parameters on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Reset the auto-select flag
-        autoSelectExecuted = false;
-        isAutoSelecting = false;
+        // Reset auto-select flag
+        autoSelectDone = false;
         
-        // If there are URL params, they will be handled when entity type loads
+        // If there are URL params, trigger auto-select
         const params = getUrlParams();
         if (params.entity_type && params.entity_id) {
+            // Set the dropdown value
             document.getElementById('entityType').value = params.entity_type;
-            // Load entity list and auto-select
-            autoSelectEntityFromUrl();
+            // Load the entity list (which will trigger auto-select)
+            loadEntityList();
         }
     });
     
