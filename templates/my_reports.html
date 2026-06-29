@@ -904,7 +904,7 @@
                                 <th style="width: 85px;">Status</th>
                                 <th style="width: 75px;">Date</th>
                                 <th style="width: 100px;">Actions</th>
-                            </table>
+                            </tr>
                         </thead>
                         <tbody>`;
             
@@ -913,8 +913,8 @@
                                 <td colspan="9">
                                     <i class="bi bi-person-circle"></i> <strong>${escapeHtml(group.name)}</strong> 
                                     <span style="font-size: 10px; font-weight: normal; margin-left: 8px;">(${group.reports.length} report${group.reports.length !== 1 ? 's' : ''})</span>
-                                  </td>
-                                </tr>`;
+                                </td>
+                            </tr>`;
                 
                 group.reports.forEach(report => {
                     const priorityClass = `priority-${report.priority}`;
@@ -927,24 +927,24 @@
                     tableHtml += `
                         <tr onclick="openReportDetail(${report.id})">
                             <td><span class="report-id-link">#${report.id}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i></span>' : ''}</td>
-                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td
-                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td
-                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td
-                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td
-                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td
-                            <td>${statusHtml}</td
-                            <td class="date-cell">${formatDateOnly(report.created_at)}</td
+                            <td class="entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                            <td class="reference-number-cell" title="${escapeHtml(report.reference_number || '-')}">${escapeHtml(report.reference_number || '-')}</td>
+                            <td class="reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
+                            <td class="problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
+                            <td class="${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                            <td>${statusHtml}</td>
+                            <td class="date-cell">${formatDateOnly(report.created_at)}</td>
                             <td>
                                 ${canEdit ? `<button class="btn-edit" onclick="event.stopPropagation(); editReportDirect(${report.id})"><i class="bi bi-pencil"></i> Edit</button>` : ''}
                                 <button class="btn-delete" onclick="event.stopPropagation(); deleteReportDirect(${report.id})"><i class="bi bi-trash"></i> Delete</button>
-                              </td
-                            </tr>
+                            </td>
+                        </tr>
                     `;
                 });
             });
             
             tableHtml += `</tbody>
-                    60
+                    </table>
                 </div>
             </div>`;
             
@@ -1210,7 +1210,7 @@
         
         let assistantCheckHtml = '';
         if (report.checked_by_assistant) {
-            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td</tr>`;
+            assistantCheckHtml = `<tr><th>Assistant Checked By</th><td>${escapeHtml(assistantName)} on ${formatDate(report.checked_by_assistant_at)}</td></tr>`;
         }
         
         return `<!DOCTYPE html>
@@ -1259,22 +1259,22 @@
                 </div>
                 
                 <table>
-                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}  </td</tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td</tr>
-                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td</tr>` : ''}
-                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td</tr>` : ''}
-                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td</tr>` : ''}
-                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td</tr>` : ''}
-                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td</tr>` : ''}
-                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td</tr>
-                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td</tr>
-                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td</tr>
-                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td</tr>` : ''}
-                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td</tr>` : ''}
-                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td</tr>
+                    <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}  </td></tr>
+                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td></tr>` : ''}
+                    ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td></tr>` : ''}
+                    ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
+                    ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
+                    ${phoneNumber ? `<tr><th>Phone Number</th><td>${escapeHtml(phoneNumber)}</td></tr>` : ''}
+                    <tr><th>Problem Type</th><td>${escapeHtml(problemType)}</td></tr>
+                    <tr><th>Priority</th><td class="priority-${report.priority}">${report.priority.toUpperCase()} ${report.priority_with_tender ? '<span class="bg-danger">TENDER</span>' : ''}</td></tr>
+                    <tr><th>Complaint Details</th><td style="white-space:pre-wrap;">${complaintDetails}</td></tr>
+                    ${technicianNotes ? `<tr><th>Technician's Notes</th><td style="white-space:pre-wrap;">${escapeHtml(technicianNotes)}</td></tr>` : ''}
+                    ${actionTaken && actionTaken !== '-' && actionTaken !== '' ? `<tr><th>Action Taken</th><td style="white-space:pre-wrap;">${actionTaken}</td></tr>` : ''}
+                    <tr><th>Submitted By</th><td>${escapeHtml(technicianName)}</td></tr>
                     ${assistantCheckHtml}
-                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td</tr>` : ''}
-                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td</tr>` : ''}
+                    ${report.team_leader_acknowledged ? `<tr><th>Acknowledged By</th><td>${escapeHtml(teamLeaderName)} on ${formatDate(report.team_leader_acknowledged_at)}</td></tr>` : ''}
+                    ${teamLeaderNotes ? `<tr><th>Team Leader Notes</th><td style="white-space:pre-wrap;">${escapeHtml(teamLeaderNotes)}</td></tr>` : ''}
                 </table>
                 
                 ${imagesHtml}
