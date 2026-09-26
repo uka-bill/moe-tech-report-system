@@ -316,6 +316,97 @@
         font-weight: bold;
         border-left: 3px solid var(--primary-color);
     }
+
+    /* ===== NEW: Entity item content with image count badge ===== */
+    .entity-item-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+    .image-count-badge {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+    .image-count-badge i {
+        font-size: 11px;
+    }
+    .no-image-badge {
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+        color: #6c757d;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 500;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    /* ===== NEW: Total count summary bar ===== */
+    .entity-summary-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 10px 16px;
+        border-radius: 10px;
+        margin-top: 10px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        flex-wrap: wrap;
+        gap: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    .entity-summary-bar .summary-text {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .entity-summary-bar .summary-text i {
+        color: var(--primary-color);
+        margin-right: 6px;
+    }
+    .entity-summary-bar .summary-stats {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .summary-chip {
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .summary-chip.with-image {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+    }
+    .summary-chip.without-image {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+    .summary-chip.total {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460;
+    }
+
     .form-section {
         margin-bottom: 20px;
         padding: 15px;
@@ -627,6 +718,24 @@
     <div class="row mt-2">
         <div class="col-md-12">
             <label class="form-label fw-bold">Select Entity</label>
+            <!-- NEW: Total count summary bar -->
+            <div id="entitySummaryBar" class="entity-summary-bar" style="display: none;">
+                <div class="summary-text">
+                    <i class="bi bi-info-circle"></i>
+                    <span id="entitySummaryText">Select an entity type to see summary</span>
+                </div>
+                <div class="summary-stats">
+                    <span class="summary-chip total" id="summaryTotalChip">
+                        <i class="bi bi-list-ul"></i> Total: 0
+                    </span>
+                    <span class="summary-chip with-image" id="summaryWithImageChip">
+                        <i class="bi bi-check-circle"></i> With Images: 0
+                    </span>
+                    <span class="summary-chip without-image" id="summaryWithoutImageChip">
+                        <i class="bi bi-x-circle"></i> Without Images: 0
+                    </span>
+                </div>
+            </div>
             <div id="entityList" class="entity-list">
                 <div class="text-center py-3 text-muted">Select entity type first</div>
             </div>
@@ -938,6 +1047,7 @@
     let uploadedImages = [];
     let isUploading = false;
     let techniciansMap = {};
+    let entityImageCounts = {};  // NEW: Map of "entity_type_entity_id" -> image count
 
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
@@ -1492,7 +1602,6 @@
             }
         });
         
-        // Collect PABX data as individual fields (not JSON)
         document.querySelectorAll('#pabxContainer .pabx-entry').forEach(entry => {
             const inputs = entry.querySelectorAll('input');
             if (inputs[0] && inputs[0].value.trim()) {
@@ -1601,16 +1710,40 @@
         return accountData;
     }
 
+    // ============ NEW: Load image counts for all entities ============
+    async function loadEntityImageCounts() {
+        try {
+            const response = await fetch('/api/mapping/images');
+            const images = await response.json();
+            entityImageCounts = {};
+            if (images) {
+                images.forEach(img => {
+                    const key = `${img.entity_type}_${img.entity_id}`;
+                    entityImageCounts[key] = (entityImageCounts[key] || 0) + 1;
+                });
+            }
+            console.log('Entity image counts loaded:', entityImageCounts);
+        } catch (error) {
+            console.error('Error loading image counts:', error);
+            entityImageCounts = {};
+        }
+    }
+
     async function loadEntityList() {
         currentEntityType = document.getElementById('entityType').value;
         if (!currentEntityType) {
             document.getElementById('entityList').innerHTML = '<div class="text-center py-3 text-muted">Select entity type first</div>';
+            document.getElementById('entitySummaryBar').style.display = 'none';
             return;
         }
         try {
             const response = await fetch(`/api/${currentEntityType}s`);
             const data = await response.json();
             entitiesList = data;
+            
+            // NEW: Load all mapping images to build the image count map
+            await loadEntityImageCounts();
+            
             displayEntityList(entitiesList);
         } catch (error) {
             console.error('Error loading entities:', error);
@@ -1618,21 +1751,62 @@
         }
     }
 
+    // ============ NEW: Display entity list with image count badges + summary ============
     function displayEntityList(entities) {
         const container = document.getElementById('entityList');
         if (!entities || entities.length === 0) {
             container.innerHTML = '<div class="text-center py-3 text-muted">No entities found</div>';
+            document.getElementById('entitySummaryBar').style.display = 'none';
             return;
         }
+        
+        // Count how many entities have images
+        let withImagesCount = 0;
+        let withoutImagesCount = 0;
+        entities.forEach(entity => {
+            const key = `${currentEntityType}_${entity.id}`;
+            const count = entityImageCounts[key] || 0;
+            if (count > 0) withImagesCount++;
+            else withoutImagesCount++;
+        });
+        
+        // Update the summary bar
+        const summaryBar = document.getElementById('entitySummaryBar');
+        const typeLabel = currentEntityType === 'school' ? 'school' : 'department';
+        document.getElementById('entitySummaryText').innerHTML = 
+            `<i class="bi bi-info-circle"></i> ${withImagesCount} of ${entities.length} ${typeLabel}${entities.length > 1 ? 's' : ''} have images uploaded`;
+        document.getElementById('summaryTotalChip').innerHTML = `<i class="bi bi-list-ul"></i> Total: ${entities.length}`;
+        document.getElementById('summaryWithImageChip').innerHTML = `<i class="bi bi-check-circle"></i> With Images: ${withImagesCount}`;
+        document.getElementById('summaryWithoutImageChip').innerHTML = `<i class="bi bi-x-circle"></i> Without Images: ${withoutImagesCount}`;
+        summaryBar.style.display = 'flex';
+        
+        // Display the list
         container.innerHTML = entities.map(entity => {
             let displayName = entity.name;
             if (currentEntityType === 'department' && entity.unit_name) {
                 displayName = entity.unit_name;
             }
+            
+            // Check if this entity has images
+            const key = `${currentEntityType}_${entity.id}`;
+            const imageCount = entityImageCounts[key] || 0;
+            
+            let badge = '';
+            if (imageCount > 0) {
+                badge = `<span class="image-count-badge"><i class="bi bi-image"></i> ${imageCount} image${imageCount > 1 ? 's' : ''}</span>`;
+            } else {
+                badge = `<span class="no-image-badge"><i class="bi bi-dash-circle"></i> No image</span>`;
+            }
+            
             return `
                 <div class="entity-item" data-id="${entity.id}" data-name="${escapeHtml(displayName)}" onclick="selectEntity(${entity.id}, '${escapeHtml(displayName)}')">
-                    <strong>${escapeHtml(displayName)}</strong>
-                    ${entity.address ? `<br><small class="text-muted">${escapeHtml(entity.address)}</small>` : ''}
+                    <div class="entity-item-content">
+                        <div style="flex: 1; min-width: 0;">
+                            <strong>${escapeHtml(displayName)}</strong>
+                            ${entity.address ? `<br><small class="text-muted">${escapeHtml(entity.address)}</small>` : ''}
+                        </div>
+                        ${badge}
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1764,7 +1938,6 @@
             } else if (img.canteen_electricity_account_number) {
                 parts.push(`🍽️ Canteen Electricity: ${img.canteen_electricity_account_number} ${img.canteen_electricity_meter_number ? '/ ' + img.canteen_electricity_meter_number : ''}`);
             }
-            // Display PABX from individual fields
             if (img.pabx_name) {
                 parts.push(`📞 PABX: ${img.pabx_name} / Pilot: ${img.pabx_pilot_no || ''} / Trailing: ${img.pabx_trailing_no || ''} / Extension: ${img.pabx_extension_no || ''}`);
             }
@@ -1888,7 +2061,6 @@
             canteenElectricityAccounts = [{ account_number: image.canteen_electricity_account_number || '', meter_numbers: image.canteen_electricity_meter_number ? [image.canteen_electricity_meter_number] : [] }];
         }
         
-        // PABX from individual fields
         if (image.pabx_name) {
             pabxEntries = [{
                 name: image.pabx_name || '',
@@ -2032,7 +2204,6 @@
             last_edited_at: new Date().toISOString()
         };
         
-        // Add PABX individual fields
         if (accountData.pabx_entries.length > 0) {
             updateData.pabx_name = accountData.pabx_entries[0].name || '';
             updateData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
@@ -2160,7 +2331,6 @@
                 last_edited_at: new Date().toISOString()
             };
             
-            // Add PABX individual fields
             if (accountData.pabx_entries.length > 0) {
                 imageData.pabx_name = accountData.pabx_entries[0].name || '';
                 imageData.pabx_pilot_no = accountData.pabx_entries[0].pilot_no || '';
@@ -2214,6 +2384,8 @@
             if (window.showToast) window.showToast(`${successCount} image(s) uploaded successfully!`, 'success');
             bootstrap.Modal.getInstance(document.getElementById('addImageModal')).hide();
             await loadImages();
+            // NEW: Refresh entity list to update image counts
+            await loadEntityList();
         }
         uploadedImages = [];
         document.getElementById('imagePreviewContainer').innerHTML = '';
@@ -2343,6 +2515,8 @@
                 if (result.success) {
                     if (window.showToast) window.showToast('Image deleted', 'success');
                     await loadImages();
+                    // NEW: Refresh entity list to update image counts
+                    await loadEntityList();
                 } else {
                     alert('Failed to delete');
                 }
