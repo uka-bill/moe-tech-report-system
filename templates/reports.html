@@ -142,6 +142,7 @@
     .col-type { width: 80px; min-width: 70px; max-width: 100px; }
     .col-location { width: 220px; min-width: 180px; max-width: 300px; }
     .col-problem { width: 120px; min-width: 100px; max-width: 160px; }
+    .col-priority { width: 100px; min-width: 80px; max-width: 130px; }
     .col-details { width: 200px; min-width: 140px; max-width: 280px; }
     .col-submitted { width: 120px; min-width: 100px; max-width: 150px; }
     .col-status { width: 85px; min-width: 75px; max-width: 110px; }
@@ -164,17 +165,29 @@
     .status-resolved { background: #d4edda; color: #155724; }
     .status-acknowledged { background: #cce5ff; color: #004085; }
 
-    .priority-badge {
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-size: 9px;
+    /* Priority indicator - same style as water/electricity/telephone pages */
+    .priority-high {
+        color: #dc3545;
         font-weight: 600;
-        display: inline-block;
+        font-size: 11px;
         white-space: nowrap;
     }
-    .priority-high { background: #f8d7da; color: #721c24; }
-    .priority-medium { background: #fff3cd; color: #856404; }
-    .priority-low { background: #d4edda; color: #155724; }
+    .priority-medium {
+        color: #fd7e14;
+        font-weight: 600;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .priority-low {
+        color: #28a745;
+        font-weight: 600;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    .priority-icon {
+        font-size: 10px;
+        margin-right: 3px;
+    }
 
     .type-icon {
         display: inline-flex;
@@ -329,6 +342,7 @@
         .col-type { width: 60px; min-width: 50px; }
         .col-location { width: 140px; min-width: 100px; }
         .col-problem { width: 80px; min-width: 60px; }
+        .col-priority { width: 70px; min-width: 60px; }
         .col-details { min-width: 100px; }
         .col-submitted { width: 80px; min-width: 60px; }
         .col-status { width: 65px; min-width: 55px; }
@@ -341,7 +355,7 @@
             font-size: 10px;
         }
         .status-badge { font-size: 8px; padding: 2px 5px; min-width: 45px; }
-        .priority-badge { font-size: 8px; padding: 1px 5px; }
+        .priority-high, .priority-medium, .priority-low { font-size: 9px; }
         .entity-badge { font-size: 8px; padding: 1px 5px; }
         .text-wrap-cell { font-size: 10px; max-height: 40px; }
     }
@@ -415,6 +429,7 @@
                     <th class="col-type">Type</th>
                     <th class="col-location">Location</th>
                     <th class="col-problem">Problem</th>
+                    <th class="col-priority">Priority</th>
                     <th class="col-details">Details</th>
                     <th class="col-submitted">Submitted By</th>
                     <th class="col-status text-center">Status</th>
@@ -424,7 +439,7 @@
             </thead>
             <tbody id="reportsTableBody">
                 <tr>
-                    <td colspan="9" class="text-center py-4">
+                    <td colspan="10" class="text-center py-4">
                         <div class="loading-spinner"></div> Loading reports...
                     </td>
                 </tr>
@@ -632,7 +647,7 @@
         return escapeHtml(text.substring(0, maxLength)) + '...';
     }
 
-    // ============ FIX: Status badge based on team_leader_acknowledged ============
+    // ============ Status badge based on team_leader_acknowledged ============
     function getStatusBadge(report) {
         if (report.team_leader_acknowledged) {
             return `<span class="status-badge status-acknowledged">✓ Acknowledged</span>`;
@@ -641,13 +656,15 @@
         }
     }
 
-    function getPriorityBadge(priority) {
+    // ============ Priority indicator - same as water/electricity/telephone pages ============
+    function getPriorityIndicator(priority) {
         const priorityMap = {
-            'high': 'priority-high',
-            'medium': 'priority-medium',
-            'low': 'priority-low'
+            'high': { class: 'priority-high', icon: '🔴', text: 'HIGH' },
+            'medium': { class: 'priority-medium', icon: '🟡', text: 'MEDIUM' },
+            'low': { class: 'priority-low', icon: '🟢', text: 'LOW' }
         };
-        return `<span class="priority-badge ${priorityMap[priority] || 'priority-low'}">${priority || 'Low'}</span>`;
+        const p = priorityMap[priority] || priorityMap['low'];
+        return `<span class="${p.class}"><span class="priority-icon">${p.icon}</span> ${p.text}</span>`;
     }
 
     function getTypeIcon(type) {
@@ -688,7 +705,7 @@
 
     async function loadReports() {
         const tbody = document.getElementById('reportsTableBody');
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="loading-spinner"></div> Loading reports...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4"><div class="loading-spinner"></div> Loading reports...</td></tr>';
 
         try {
             const params = new URLSearchParams();
@@ -732,7 +749,7 @@
             console.error('Error loading reports:', error);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center py-4 text-danger">
+                    <td colspan="10" class="text-center py-4 text-danger">
                         <i class="bi bi-exclamation-circle"></i> Error loading reports
                         <br><button class="btn-primary-custom btn-sm mt-2" onclick="loadReports()">Retry</button>
                     </td>
@@ -749,7 +766,7 @@
         if (!reports || reports.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <h5>No reports found</h5>
@@ -764,7 +781,7 @@
         tbody.innerHTML = reports.map((report, index) => {
             const rowNumber = reports.length - index;
             const statusBadge = getStatusBadge(report);
-            const priorityBadge = getPriorityBadge(report.priority);
+            const priorityIndicator = getPriorityIndicator(report.priority);
             const typeIcon = getTypeIcon(report.report_type);
             const entityBadge = getEntityBadge(report.entity_type);
             const locationName = report.entity_name || report.entity_type || 'Unknown';
@@ -783,12 +800,12 @@
                     <td class="col-type"><span class="type-icon">${typeIcon}</span></td>
                     <td class="col-location">
                         <span class="text-truncate-custom" title="${escapeHtml(locationName)}">${truncateText(locationName, 20)}</span>
-                        <br><span class="entity-badge ${report.entity_type === 'school' ? 'school' : 'department'}">${report.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</span>
+                        <br>${entityBadge}
                     </td>
                     <td class="col-problem">
                         <span class="text-truncate-custom" title="${escapeHtml(report.problem_type || '')}">${truncateText(report.problem_type || '-', 15)}</span>
-                        <br><span class="priority-badge ${report.priority === 'high' ? 'priority-high' : report.priority === 'medium' ? 'priority-medium' : 'priority-low'}">${report.priority || 'Low'}</span>
                     </td>
+                    <td class="col-priority">${priorityIndicator}</td>
                     <td class="col-details">
                         <span class="text-wrap-cell" title="${escapeHtml(report.complaint_details || '')}">
                             ${truncateText(report.complaint_details || '-', 60)}
@@ -836,7 +853,6 @@
     }
 
     // ============ VIEW REPORT ============
-    // NOTE: Added acknowledgment section (name, date, comments) to display team leader's notes
 
     async function viewReport(id) {
         const report = allReports.find(r => r.id === id);
@@ -850,7 +866,7 @@
         const locationName = report.entity_name || report.entity_type || 'Unknown';
         const isAcknowledged = report.team_leader_acknowledged;
 
-        // Build acknowledgment section (NEW)
+        // Acknowledgment section (shows team leader name, date, comments)
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
             acknowledgmentHtml = `
@@ -872,7 +888,7 @@
                             <p><strong>Report ID:</strong> #${report.id}</p>
                             <p><strong>Type:</strong> ${getTypeIcon(report.report_type)}</p>
                             <p><strong>Status:</strong> ${getStatusBadge(report)}</p>
-                            <p><strong>Priority:</strong> ${getPriorityBadge(report.priority)}</p>
+                            <p><strong>Priority:</strong> ${getPriorityIndicator(report.priority)}</p>
                             <p><strong>Priority with Tender:</strong> ${report.priority_with_tender ? '✅ Yes' : '❌ No'}</p>
                         </div>
                         <div class="col-md-6">
@@ -1152,10 +1168,12 @@
     });
 
     // ============ INITIALIZE ============
+    // FIX: Wait for technicians to load FIRST, then load reports
+    // This ensures "Submitted By" shows the real name, not "Technician #5"
 
-    document.addEventListener('DOMContentLoaded', function() {
-        loadTechnicians();
-        loadReports();
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadTechnicians();   // Wait for names to load
+        loadReports();             // Then load reports (names will be available)
     });
 </script>
 
