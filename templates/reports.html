@@ -699,9 +699,7 @@
 
             if (type) params.append('type', type);
             if (status) {
-                // Convert filter status to team_leader_acknowledged filter
-                // We'll do client-side filtering for status since backend doesn't have this field
-                // We'll fetch all and filter later.
+                // Status filter is handled client-side
             }
             if (entityType) params.append('entity_type', entityType);
 
@@ -709,7 +707,6 @@
             const response = await fetch(url);
             allReports = await response.json();
 
-            // Apply status filter client-side
             let filteredReports = allReports;
             if (status === 'pending') {
                 filteredReports = allReports.filter(r => !r.team_leader_acknowledged);
@@ -839,6 +836,7 @@
     }
 
     // ============ VIEW REPORT ============
+    // NOTE: Added acknowledgment section (name, date, comments) to display team leader's notes
 
     async function viewReport(id) {
         const report = allReports.find(r => r.id === id);
@@ -850,6 +848,21 @@
         const modalBody = document.getElementById('viewReportBody');
         const techName = getTechnicianName(report.technician_id);
         const locationName = report.entity_name || report.entity_type || 'Unknown';
+        const isAcknowledged = report.team_leader_acknowledged;
+
+        // Build acknowledgment section (NEW)
+        let acknowledgmentHtml = '';
+        if (isAcknowledged) {
+            acknowledgmentHtml = `
+                <hr>
+                <div class="alert alert-success" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;">
+                    <i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>
+                    <strong>By:</strong> ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
+                    <strong>Date:</strong> ${formatDateTime(report.team_leader_acknowledged_at)}<br>
+                    <strong>Comments:</strong> ${escapeHtml(report.team_leader_notes || 'No notes')}
+                </div>
+            `;
+        }
 
         modalBody.innerHTML = `
             <div class="card">
@@ -945,6 +958,8 @@
                         `).join('')}
                     </div>
                     ` : ''}
+
+                    ${acknowledgmentHtml}
                 </div>
             </div>
         `;
