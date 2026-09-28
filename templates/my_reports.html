@@ -136,6 +136,7 @@
     .col-ref-date { width: 70px; min-width: 60px; max-width: 85px; }
     .col-problem { width: 150px; min-width: 120px; max-width: 220px; }
     .col-priority { width: 60px; min-width: 55px; max-width: 70px; }
+    .col-action { width: 100px; min-width: 90px; max-width: 130px; }
     .col-status { width: 85px; min-width: 75px; max-width: 110px; }
     .col-date { width: 75px; min-width: 70px; max-width: 90px; }
     .col-actions { width: 80px; min-width: 70px; max-width: 100px; }
@@ -209,6 +210,32 @@
         padding: 40px;
         color: #6c757d;
         font-size: 13px;
+    }
+
+    /* Resolution status badges */
+    .resolution-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    .resolved-badge {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+    }
+    .pending-action-badge {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        color: #856404;
+    }
+    .need-budget-badge {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+    }
+    .need-attention-badge {
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
+        color: #721c24;
     }
 
     /* Action Buttons */
@@ -505,6 +532,7 @@
         .col-ref-date { width: 50px; min-width: 45px; }
         .col-problem { min-width: 80px; }
         .col-priority { width: 45px; min-width: 40px; }
+        .col-action { width: 80px; min-width: 70px; }
         .col-status { width: 65px; min-width: 55px; }
         .col-date { width: 60px; min-width: 55px; }
         .col-actions { width: 70px; min-width: 60px; }
@@ -706,6 +734,19 @@
     let currentFilterMonth = 'all';
     let currentFilterYear = 'all';
     let techniciansMap = {};
+
+    // ============ NEW: Resolution status badge ============
+    function getResolutionBadge(report) {
+        const status = report.resolution_status || 'pending_action';
+        const map = {
+            'resolved': { class: 'resolved-badge', icon: '✅', text: 'Resolved' },
+            'pending_action': { class: 'pending-action-badge', icon: '⏳', text: 'Pending' },
+            'need_budget': { class: 'need-budget-badge', icon: '💰', text: 'Need Budget' },
+            'need_attention': { class: 'need-attention-badge', icon: '🚨', text: 'Attention' }
+        };
+        const s = map[status] || map['pending_action'];
+        return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
 
     async function loadTechnicians() {
         try {
@@ -954,6 +995,7 @@
                                 <th class="col-ref-date">Ref Date</th>
                                 <th class="col-problem">Problem Type</th>
                                 <th class="col-priority">Priority</th>
+                                <th class="col-action">Action</th>
                                 <th class="col-status">Status</th>
                                 <th class="col-date">Date</th>
                                 <th class="col-actions">Actions</th>
@@ -979,6 +1021,7 @@
                         <td class="col-ref-date reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
                         <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                         <td class="col-priority ${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                        <td class="col-action">${getResolutionBadge(report)}</td>
                         <td class="col-status">${statusHtml}</td>
                         <td class="col-date date-cell">${formatDateOnly(report.created_at)}</td>
                         <td class="col-actions">
@@ -1106,6 +1149,10 @@
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Priority:</div>
                     <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Action Status:</div>
+                    <div class="col-8">${getResolutionBadge(report)}</div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Complaint Details:</div>
