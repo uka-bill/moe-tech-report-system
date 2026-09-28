@@ -42,14 +42,12 @@ def format_brunei_time(date_string):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
-# Moderate compression settings - balance between quality and storage
-app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024  # 3MB max upload (reduced from 5MB)
+app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-# COMPRESSION SETTINGS - MODERATE LEVEL
-app.config['MAX_IMAGE_DIMENSION'] = 1024  # Max 1024px (was 1200px) - reduces size by ~30%
-app.config['IMAGE_QUALITY'] = 60          # 60% quality (was 75) - reduces size by ~40%
+app.config['MAX_IMAGE_DIMENSION'] = 1024
+app.config['IMAGE_QUALITY'] = 60
 
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
@@ -71,7 +69,6 @@ SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', SUPABASE_ANON_KEY)
 SUPABASE_STORAGE_BUCKET = 'mapping-images'
 
-# Create clients
 try:
     supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     app.logger.info("Supabase client initialized successfully")
@@ -93,32 +90,21 @@ def create_directories():
             app.logger.error(f"Failed to create directory {directory}: {e}")
 
 def init_supabase_storage():
-    """Initialize Supabase storage bucket"""
     if not supabase:
         app.logger.error("Supabase client not available")
         return False
-    
     try:
         supabase.storage.create_bucket(SUPABASE_STORAGE_BUCKET, {'public': True})
         app.logger.info(f"Storage bucket created/verified: {SUPABASE_STORAGE_BUCKET}")
     except Exception as e:
         app.logger.info(f"Storage bucket already exists or error: {e}")
-    
     return True
 
 def compress_image(file_content, filename):
-    """
-    Compress image with moderate settings:
-    - Max dimension: 1024px
-    - Quality: 60%
-    - Format: JPEG
-    - Progressive loading for better user experience
-    """
     try:
         original_size_kb = len(file_content) / 1024
         img = Image.open(io_lib.BytesIO(file_content))
         
-        # Convert RGBA to RGB (remove transparency)
         if img.mode in ('RGBA', 'LA', 'P'):
             rgb_img = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -129,29 +115,24 @@ def compress_image(file_content, filename):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Resize image to max 1024px
         max_dimension = app.config['MAX_IMAGE_DIMENSION']
         if img.width > max_dimension or img.height > max_dimension:
             ratio = min(max_dimension / img.width, max_dimension / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
-            # Use LANCZOS for high-quality downscaling
             img = img.resize(new_size, Image.Resampling.LANCZOS)
         
-        # Secondary resize for very large images (extra safety)
         if img.width > 1024 or img.height > 1024:
             ratio = min(1024 / img.width, 1024 / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
         
         output = io_lib.BytesIO()
-        # Save with moderate compression settings
         img.save(output, format='JPEG', 
                  quality=app.config['IMAGE_QUALITY'],
                  optimize=True,
-                 progressive=True)  # Progressive JPEG for faster perceived loading
+                 progressive=True)
         compressed_content = output.getvalue()
         
-        # Log compression ratio
         compressed_size_kb = len(compressed_content) / 1024
         compression_ratio = (1 - compressed_size_kb / original_size_kb) * 100
         app.logger.info(f"Image compressed: {original_size_kb:.1f}KB -> {compressed_size_kb:.1f}KB ({compression_ratio:.1f}% saved)")
@@ -591,6 +572,7 @@ def create_technical_report():
             "priority": data.get('priority', 'medium'),
             "priority_with_tender": data.get('priority_with_tender', False),
             "status": data.get('status', 'pending'),
+            "resolution_status": data.get('resolution_status', 'pending_action'),  # NEW
             "technician_id": data.get('technician_id'),
             "technician_notes": data.get('technician_notes', ''),
             "action_taken": data.get('action_taken', ''),
@@ -609,22 +591,20 @@ def create_technical_report():
         app.logger.error(f"Error creating technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ UPDATED PUT ENDPOINT – NOW ALLOWS ENTITY TYPE AND ENTITY ID ============
 @app.route('/api/technical-reports/<int:report_id>', methods=['PUT'])
 def update_technical_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        # Allowed fields – now includes 'entity_type' and 'entity_id'
+        # NEW: 'resolution_status' added to allowed fields
         allowed_fields = ['report_type', 'entity_type', 'entity_id', 'problem_type', 'complaint_details',
-                         'priority', 'priority_with_tender', 'status', 'technician_notes', 'action_taken',
+                         'priority', 'priority_with_tender', 'status', 'resolution_status', 'technician_notes', 'action_taken',
                          'images', 'account_number', 'meter_number', 'phone_number', 'number_of_lines',
                          'reference_type', 'reference_number', 'reference_date']
         update_data = {}
         for field in allowed_fields:
             if field in data and data[field] is not None:
-                # Ensure entity_id is stored as integer
                 if field == 'entity_id':
                     update_data[field] = int(data[field])
                 else:
@@ -640,22 +620,16 @@ def update_technical_report(report_id):
         app.logger.error(f"Error updating technical report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ DELETE ENDPOINT FOR TECHNICAL REPORTS ============
 @app.route('/api/technical-reports/<int:report_id>', methods=['DELETE'])
 def delete_technical_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
-        # Check if the report exists and is not already acknowledged
         report = supabase.table("technical_reports").select("id, technician_id, team_leader_acknowledged").eq("id", report_id).execute()
         if not report.data:
             return jsonify({'success': False, 'error': 'Report not found'}), 404
-        
         if report.data[0].get('team_leader_acknowledged', False):
             return jsonify({'success': False, 'error': 'Cannot delete an acknowledged report'}), 400
-        
-        # Delete the report
         response = supabase.table("technical_reports").delete().eq("id", report_id).execute()
         if response.data:
             app.logger.info(f"Report {report_id} deleted")
@@ -665,39 +639,27 @@ def delete_technical_report(report_id):
         app.logger.error(f"Error deleting report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ ACKNOWLEDGE ENDPOINT (FIXES "RESOURCE NOT FOUND" ERROR) ============
 @app.route('/api/technical-reports/<int:report_id>/acknowledge', methods=['POST'])
 def acknowledge_report(report_id):
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
         team_leader_notes = data.get('team_leader_notes', '')
-        
         if not team_leader_id:
             return jsonify({'success': False, 'error': 'Team Leader ID required'}), 400
-        
-        # Verify user is authorized
         auth_response = supabase.table("technicians").select("is_authorized, name").eq("id", team_leader_id).execute()
         if not auth_response.data:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-        
         if not auth_response.data[0].get('is_authorized', False):
             return jsonify({'success': False, 'error': 'You are not authorized to acknowledge reports'}), 403
-        
         team_leader_name = auth_response.data[0].get('name', 'Team Leader')
-        
-        # Check if already acknowledged
         report_response = supabase.table("technical_reports").select("team_leader_acknowledged").eq("id", report_id).execute()
         if not report_response.data:
             return jsonify({'success': False, 'error': 'Report not found'}), 404
-        
         if report_response.data[0].get('team_leader_acknowledged', False):
             return jsonify({'success': False, 'error': 'Report already acknowledged'}), 400
-        
-        # Update the report
         update_data = {
             "team_leader_acknowledged": True,
             "team_leader_acknowledged_at": get_brunei_time_iso(),
@@ -706,49 +668,33 @@ def acknowledge_report(report_id):
             "team_leader_notes": team_leader_notes,
             "updated_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
         if response.data:
             app.logger.info(f"Report {report_id} acknowledged by Team Leader {team_leader_name}")
             return jsonify({'success': True, 'message': 'Report acknowledged successfully'})
         return jsonify({'success': False, 'error': 'Failed to acknowledge report'}), 500
-        
     except Exception as e:
         app.logger.error(f"Error acknowledging report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ ASSISTANT TEAM LEADER CHECK ENDPOINT ============
 @app.route('/api/technical-reports/<int:report_id>/check', methods=['POST'])
 def check_report_by_assistant(report_id):
-    """Assistant Team Leader marks report as checked/read"""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
-        
         data = request.get_json()
         assistant_id = data.get('assistant_id')
-        
         if not assistant_id:
             return jsonify({'success': False, 'error': 'Assistant ID required'}), 400
-        
-        # Verify user is assistant team leader
         user_response = supabase.table("technicians").select("is_assistant_leader, name").eq("id", assistant_id).execute()
-        
         if not user_response.data:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-        
         if not user_response.data[0].get('is_assistant_leader', False):
             return jsonify({'success': False, 'error': 'You are not authorized as Assistant Team Leader'}), 403
-        
         assistant_name = user_response.data[0].get('name', 'Assistant Leader')
-        
-        # Check if already checked
         report_response = supabase.table("technical_reports").select("checked_by_assistant").eq("id", report_id).execute()
-        
         if report_response.data and report_response.data[0].get('checked_by_assistant', False):
             return jsonify({'success': False, 'error': 'Report already checked by assistant'}), 400
-        
-        # Update the report
         update_data = {
             "checked_by_assistant": True,
             "checked_by_assistant_id": assistant_id,
@@ -756,20 +702,17 @@ def check_report_by_assistant(report_id):
             "checked_by_assistant_at": get_brunei_time_iso(),
             "updated_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
-        
         if response.data:
             app.logger.info(f"Report {report_id} checked by Assistant Team Leader: {assistant_name}")
             return jsonify({'success': True, 'message': 'Report marked as checked', 'report': response.data[0]})
         else:
             return jsonify({'success': False, 'error': 'Report not found'}), 404
-            
     except Exception as e:
         app.logger.error(f"Error checking report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ MAPPING AND PROFILING API ============
+# ============ MAPPING API ============
 
 @app.route('/api/mapping/locations', methods=['GET'])
 def get_mapping_locations():
@@ -855,8 +798,6 @@ def delete_mapping_location(location_id):
         app.logger.error(f"Error deleting mapping location: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ MAPPING IMAGES API ============
-
 @app.route('/api/mapping/images', methods=['GET'])
 def get_mapping_images():
     try:
@@ -871,18 +812,15 @@ def get_mapping_images():
             query = query.eq("entity_id", int(entity_id))
         response = query.order("uploaded_at", desc=True).execute()
         
-        # Convert any None values to appropriate defaults for frontend
         images = []
         for img in response.data if response.data else []:
             img_dict = dict(img)
-            # Ensure fields exist (for older records without these fields)
             if 'uploaded_by_name' not in img_dict or img_dict['uploaded_by_name'] is None:
                 img_dict['uploaded_by_name'] = ''
             if 'last_edited_by' not in img_dict:
                 img_dict['last_edited_by'] = None
             if 'last_edited_at' not in img_dict:
                 img_dict['last_edited_at'] = None
-            # Ensure PABX fields have defaults
             if 'pabx_name' not in img_dict or img_dict['pabx_name'] is None:
                 img_dict['pabx_name'] = ''
             if 'pabx_pilot_no' not in img_dict or img_dict['pabx_pilot_no'] is None:
@@ -905,14 +843,11 @@ def create_mapping_image():
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
         
-        # Log received data for debugging
         app.logger.info(f"Creating mapping image with data keys: {list(data.keys()) if data else 'None'}")
         
-        # Handle PABX trailing/extension as arrays (for PostgreSQL ARRAY type)
         pabx_trailing_no = data.get('pabx_trailing_no', [])
         pabx_extension_no = data.get('pabx_extension_no', [])
         
-        # Ensure they are arrays (not strings)
         if isinstance(pabx_trailing_no, str):
             pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
         if isinstance(pabx_extension_no, str):
@@ -924,7 +859,6 @@ def create_mapping_image():
             "image_url": data.get('image_url'),
             "description": data.get('description', ''),
             "notes": data.get('notes', ''),
-            # Single account fields (backward compatibility)
             "water_account_number": data.get('water_account_number', ''),
             "water_meter_number": data.get('water_meter_number', ''),
             "electricity_account_number": data.get('electricity_account_number', ''),
@@ -935,18 +869,15 @@ def create_mapping_image():
             "canteen_water_meter_number": data.get('canteen_water_meter_number', ''),
             "canteen_electricity_account_number": data.get('canteen_electricity_account_number', ''),
             "canteen_electricity_meter_number": data.get('canteen_electricity_meter_number', ''),
-            # PABX individual fields
             "pabx_name": data.get('pabx_name', ''),
             "pabx_pilot_no": data.get('pabx_pilot_no', ''),
-            "pabx_trailing_no": pabx_trailing_no,  # Send as array
-            "pabx_extension_no": pabx_extension_no,  # Send as array
-            # JSON storage for multiple accounts
+            "pabx_trailing_no": pabx_trailing_no,
+            "pabx_extension_no": pabx_extension_no,
             "water_accounts_json": data.get('water_accounts_json', '[]'),
             "electricity_accounts_json": data.get('electricity_accounts_json', '[]'),
             "telephone_accounts_json": data.get('telephone_accounts_json', '[]'),
             "canteen_water_accounts_json": data.get('canteen_water_accounts_json', '[]'),
             "canteen_electricity_accounts_json": data.get('canteen_electricity_accounts_json', '[]'),
-            # Tracking fields
             "uploaded_by": data.get('uploaded_by'),
             "last_edited_by": data.get('last_edited_by'),
             "last_edited_at": data.get('last_edited_at'),
@@ -971,11 +902,9 @@ def update_mapping_image(image_id):
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
         
-        # Handle PABX trailing/extension as arrays
         pabx_trailing_no = data.get('pabx_trailing_no', [])
         pabx_extension_no = data.get('pabx_extension_no', [])
         
-        # Ensure they are arrays (not strings)
         if isinstance(pabx_trailing_no, str):
             pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
         if isinstance(pabx_extension_no, str):
@@ -991,7 +920,6 @@ def update_mapping_image(image_id):
             'pabx_name', 'pabx_pilot_no',
             'water_accounts_json', 'electricity_accounts_json', 'telephone_accounts_json',
             'canteen_water_accounts_json', 'canteen_electricity_accounts_json',
-            # Tracking fields for last editor
             'last_edited_by', 'last_edited_at'
         ]
         update_data = {}
@@ -999,7 +927,6 @@ def update_mapping_image(image_id):
             if field in data:
                 update_data[field] = data[field]
         
-        # Add PABX array fields separately
         if 'pabx_trailing_no' in data:
             update_data['pabx_trailing_no'] = pabx_trailing_no
         if 'pabx_extension_no' in data:
@@ -1156,47 +1083,34 @@ def export_reports():
 
 @app.route('/api/backup', methods=['GET'])
 def backup_data():
-    """Export all data as JSON backup"""
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
-
-        # Check authorization
         user_id = request.args.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID required'}), 400
-
         auth_response = supabase.table("technicians").select("is_authorized, role, can_edit_technicians").eq("id", int(user_id)).execute()
         if not auth_response.data:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-
         user = auth_response.data[0]
         is_authorized = user.get('is_authorized', False)
         is_senior = user.get('role') == 'senior_technician'
         can_edit = user.get('can_edit_technicians', False)
-
         if not (is_authorized or is_senior or can_edit):
             return jsonify({'success': False, 'error': 'You are not authorized to perform backup'}), 403
-
-        # Fetch all data
         tables = ['technicians', 'schools', 'departments', 'technical_reports', 'mapping_images', 'mapping_locations']
         backup_data = {}
-        
         for table in tables:
             response = supabase.table(table).select("*").execute()
             backup_data[table] = response.data if response.data else []
-
-        # Add metadata
         backup_data['_backup_info'] = {
             'version': '1.0',
             'timestamp': get_brunei_time_iso(),
             'user_id': int(user_id),
             'total_records': sum(len(backup_data[t]) for t in tables)
         }
-
         app.logger.info(f"Backup created by user {user_id} with {backup_data['_backup_info']['total_records']} records")
         return jsonify({'success': True, 'data': backup_data})
-
     except Exception as e:
         app.logger.error(f"Backup error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1204,95 +1118,56 @@ def backup_data():
 
 @app.route('/api/restore', methods=['POST'])
 def restore_data():
-    """
-    Restore data from a backup JSON.
-    Handles foreign key constraints by using the correct order:
-    - Delete: mapping_locations → mapping_images → technical_reports → technicians → schools → departments
-    - Insert: technicians → schools → departments → technical_reports → mapping_images → mapping_locations
-    """
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
-
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
-
         backup_data = data.get('backup_data')
         user_id = data.get('user_id')
-
         if not backup_data or not user_id:
             return jsonify({'success': False, 'error': 'Missing backup data or user ID'}), 400
-
-        # Check authorization
         auth_response = supabase.table("technicians").select("is_authorized, role, can_edit_technicians").eq("id", int(user_id)).execute()
         if not auth_response.data:
             return jsonify({'success': False, 'error': 'User not found'}), 404
-
         user = auth_response.data[0]
         is_authorized = user.get('is_authorized', False)
         is_senior = user.get('role') == 'senior_technician'
         can_edit = user.get('can_edit_technicians', False)
-
         if not (is_authorized or is_senior or can_edit):
             return jsonify({'success': False, 'error': 'You are not authorized to perform restore'}), 403
-
-        # Validate backup format
         if '_backup_info' not in backup_data:
             return jsonify({'success': False, 'error': 'Invalid backup file: missing metadata'}), 400
-
-        # Define tables in order of dependencies
-        # For deletion: delete child tables first (reverse dependency order)
         delete_order = ['mapping_locations', 'mapping_images', 'technical_reports', 'technicians', 'schools', 'departments']
-        # For insertion: insert parent tables first (dependency order)
         insert_order = ['technicians', 'schools', 'departments', 'technical_reports', 'mapping_images', 'mapping_locations']
-
         restored_count = 0
-
-        # ---------- STEP 1: DELETE ALL EXISTING DATA ----------
         for table in delete_order:
             if table not in backup_data:
-                app.logger.warning(f"Table {table} not in backup, skipping deletion")
                 continue
             try:
-                # Delete all rows (neq('id', 0) works for numeric IDs)
                 supabase.table(table).delete().neq('id', 0).execute()
                 app.logger.info(f"Cleared table: {table}")
             except Exception as e:
                 app.logger.error(f"Error clearing table {table}: {e}")
-                # If clearing fails, abort restore (data integrity issue)
                 return jsonify({'success': False, 'error': f'Failed to clear table {table}: {str(e)}'}), 500
-
-        # ---------- STEP 2: INSERT DATA IN CORRECT ORDER ----------
         for table in insert_order:
             if table not in backup_data:
-                app.logger.warning(f"Table {table} not in backup, skipping insertion")
                 continue
-
             records = backup_data[table]
             if not records:
-                app.logger.info(f"Table {table} has no records to restore")
                 continue
-
-            # Insert records one by one to handle errors gracefully
             for record in records:
                 try:
-                    # Remove any fields that might cause issues (e.g., Supabase-generated fields)
-                    # We keep 'id' to maintain relationships
                     insert_record = {k: v for k, v in record.items() if k not in ['created_at', 'updated_at']}
-                    # Add timestamps if missing (they will be set by Supabase triggers anyway)
                     supabase.table(table).insert(insert_record).execute()
                     restored_count += 1
                 except Exception as e:
-                    # Log error but continue to restore remaining records
                     app.logger.error(f"Error restoring record in {table}: {e} (record: {record.get('id', 'unknown')})")
-                    # If it's a critical table (like technicians), we might want to abort
                     if table == 'technicians':
                         return jsonify({'success': False, 'error': f'Failed to restore critical table {table}: {str(e)}'}), 500
-
         app.logger.info(f"Restore completed by user {user_id}, restored {restored_count} records")
         return jsonify({'success': True, 'message': f'Restore successful, {restored_count} records restored'})
-
     except Exception as e:
         app.logger.error(f"Restore error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1316,7 +1191,6 @@ def api_health():
 
 @app.route('/api/debug/supabase', methods=['GET'])
 def debug_supabase():
-    """Debug endpoint to check Supabase configuration"""
     return jsonify({
         'has_service_key': SUPABASE_SERVICE_KEY != SUPABASE_ANON_KEY,
         'service_key_length': len(SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else 0,
