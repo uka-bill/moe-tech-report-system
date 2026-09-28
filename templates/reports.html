@@ -143,6 +143,7 @@
     .col-location { width: 220px; min-width: 180px; max-width: 300px; }
     .col-problem { width: 120px; min-width: 100px; max-width: 160px; }
     .col-priority { width: 100px; min-width: 80px; max-width: 130px; }
+    .col-action { width: 100px; min-width: 90px; max-width: 130px; }
     .col-details { width: 200px; min-width: 140px; max-width: 280px; }
     .col-submitted { width: 120px; min-width: 100px; max-width: 150px; }
     .col-status { width: 85px; min-width: 75px; max-width: 110px; }
@@ -165,7 +166,7 @@
     .status-resolved { background: #d4edda; color: #155724; }
     .status-acknowledged { background: #cce5ff; color: #004085; }
 
-    /* Priority indicator - same style as water/electricity/telephone pages */
+    /* Priority indicator */
     .priority-high {
         color: #dc3545;
         font-weight: 600;
@@ -187,6 +188,32 @@
     .priority-icon {
         font-size: 10px;
         margin-right: 3px;
+    }
+
+    /* Resolution status badges */
+    .resolution-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    .resolved-badge {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+    }
+    .pending-action-badge {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        color: #856404;
+    }
+    .need-budget-badge {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+    }
+    .need-attention-badge {
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
+        color: #721c24;
     }
 
     .type-icon {
@@ -343,6 +370,7 @@
         .col-location { width: 140px; min-width: 100px; }
         .col-problem { width: 80px; min-width: 60px; }
         .col-priority { width: 70px; min-width: 60px; }
+        .col-action { width: 80px; min-width: 70px; }
         .col-details { min-width: 100px; }
         .col-submitted { width: 80px; min-width: 60px; }
         .col-status { width: 65px; min-width: 55px; }
@@ -430,6 +458,7 @@
                     <th class="col-location">Location</th>
                     <th class="col-problem">Problem</th>
                     <th class="col-priority">Priority</th>
+                    <th class="col-action">Action</th>
                     <th class="col-details">Details</th>
                     <th class="col-submitted">Submitted By</th>
                     <th class="col-status text-center">Status</th>
@@ -439,7 +468,7 @@
             </thead>
             <tbody id="reportsTableBody">
                 <tr>
-                    <td colspan="10" class="text-center py-4">
+                    <td colspan="11" class="text-center py-4">
                         <div class="loading-spinner"></div> Loading reports...
                     </td>
                 </tr>
@@ -513,6 +542,16 @@
                                 <option value="high">High</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Action / Resolution Status</label>
+                        <select class="form-control" id="editResolutionStatus">
+                            <option value="pending_action">⏳ Pending Action</option>
+                            <option value="resolved">✅ Resolved</option>
+                            <option value="need_budget">💰 Need Budget</option>
+                            <option value="need_attention">🚨 Need Attention</option>
+                        </select>
                     </div>
 
                     <div class="mb-3">
@@ -656,7 +695,7 @@
         }
     }
 
-    // ============ Priority indicator - same as water/electricity/telephone pages ============
+    // ============ Priority indicator ============
     function getPriorityIndicator(priority) {
         const priorityMap = {
             'high': { class: 'priority-high', icon: '🔴', text: 'HIGH' },
@@ -665,6 +704,19 @@
         };
         const p = priorityMap[priority] || priorityMap['low'];
         return `<span class="${p.class}"><span class="priority-icon">${p.icon}</span> ${p.text}</span>`;
+    }
+
+    // ============ NEW: Resolution status badge ============
+    function getResolutionBadge(report) {
+        const status = report.resolution_status || 'pending_action';
+        const map = {
+            'resolved': { class: 'resolved-badge', icon: '✅', text: 'Resolved' },
+            'pending_action': { class: 'pending-action-badge', icon: '⏳', text: 'Pending' },
+            'need_budget': { class: 'need-budget-badge', icon: '💰', text: 'Need Budget' },
+            'need_attention': { class: 'need-attention-badge', icon: '🚨', text: 'Attention' }
+        };
+        const s = map[status] || map['pending_action'];
+        return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
     }
 
     function getTypeIcon(type) {
@@ -705,7 +757,7 @@
 
     async function loadReports() {
         const tbody = document.getElementById('reportsTableBody');
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4"><div class="loading-spinner"></div> Loading reports...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4"><div class="loading-spinner"></div> Loading reports...</td></tr>';
 
         try {
             const params = new URLSearchParams();
@@ -749,7 +801,7 @@
             console.error('Error loading reports:', error);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="text-center py-4 text-danger">
+                    <td colspan="11" class="text-center py-4 text-danger">
                         <i class="bi bi-exclamation-circle"></i> Error loading reports
                         <br><button class="btn-primary-custom btn-sm mt-2" onclick="loadReports()">Retry</button>
                     </td>
@@ -766,7 +818,7 @@
         if (!reports || reports.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10">
+                    <td colspan="11">
                         <div class="empty-state">
                             <i class="bi bi-inbox"></i>
                             <h5>No reports found</h5>
@@ -806,6 +858,7 @@
                         <span class="text-truncate-custom" title="${escapeHtml(report.problem_type || '')}">${truncateText(report.problem_type || '-', 15)}</span>
                     </td>
                     <td class="col-priority">${priorityIndicator}</td>
+                    <td class="col-action">${getResolutionBadge(report)}</td>
                     <td class="col-details">
                         <span class="text-wrap-cell" title="${escapeHtml(report.complaint_details || '')}">
                             ${truncateText(report.complaint_details || '-', 60)}
@@ -903,11 +956,17 @@
                     <hr>
 
                     <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Problem Type:</strong></p>
-                            <p class="text-muted">${escapeHtml(report.problem_type || '-')}</p>
+                        <div class="col-md-4">
+                            <p><strong>Action Status:</strong></p>
+                            <p>${getResolutionBadge(report)}</p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-8">
+                            <p><strong>Problem Type:</strong> ${escapeHtml(report.problem_type || '-')}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
                             <p><strong>Complaint Details:</strong></p>
                             <p class="text-muted">${escapeHtml(report.complaint_details || '-')}</p>
                         </div>
@@ -1009,6 +1068,8 @@
         document.getElementById('editReportStatus').value = report.status || 'pending';
         document.getElementById('editEntityType').value = report.entity_type || 'school';
         document.getElementById('editPriority').value = report.priority || 'medium';
+        // NEW: set resolution status
+        document.getElementById('editResolutionStatus').value = report.resolution_status || 'pending_action';
         document.getElementById('editProblemType').value = report.problem_type || '';
         document.getElementById('editComplaintDetails').value = report.complaint_details || '';
         document.getElementById('editAccountNumber').value = report.account_number || '';
@@ -1046,6 +1107,8 @@
             entity_type: document.getElementById('editEntityType').value,
             status: document.getElementById('editReportStatus').value,
             priority: document.getElementById('editPriority').value,
+            // NEW: include resolution status
+            resolution_status: document.getElementById('editResolutionStatus').value,
             problem_type: document.getElementById('editProblemType').value.trim(),
             complaint_details: document.getElementById('editComplaintDetails').value.trim(),
             account_number: document.getElementById('editAccountNumber').value.trim(),
@@ -1168,12 +1231,12 @@
     });
 
     // ============ INITIALIZE ============
-    // FIX: Wait for technicians to load FIRST, then load reports
+    // Wait for technicians to load FIRST, then load reports
     // This ensures "Submitted By" shows the real name, not "Technician #5"
 
     document.addEventListener('DOMContentLoaded', async function() {
-        await loadTechnicians();   // Wait for names to load
-        loadReports();             // Then load reports (names will be available)
+        await loadTechnicians();
+        loadReports();
     });
 </script>
 
