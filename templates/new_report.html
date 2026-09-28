@@ -37,8 +37,6 @@
         justify-content: space-between;
         align-items: center;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        flex-wrap: wrap;
-        gap: 10px;
     }
     .datetime-panel {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -109,6 +107,44 @@
         box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
         transform: scale(1.01);
     }
+
+    /* ===== NEW: Resolution Status boxes ===== */
+    .resolution-box {
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .resolution-box:hover {
+        transform: translateY(-2px);
+    }
+    .resolution-resolved {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-color: #4caf50;
+        color: #1b5e20;
+    }
+    .resolution-pending {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-color: #ff9800;
+        color: #e65100;
+    }
+    .resolution-budget {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-color: #2196f3;
+        color: #0d47a1;
+    }
+    .resolution-attention {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border-color: #f44336;
+        color: #c62828;
+    }
+    .resolution-option.selected {
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
+        transform: scale(1.01);
+    }
+
     .image-preview-container {
         position: relative;
         display: inline-block;
@@ -160,134 +196,34 @@
         background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         transition: width 0.3s ease;
     }
-
-    /* ===== NEW ACCOUNT ENTRY STYLES ===== */
-    .account-block {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 15px;
-        transition: all 0.2s;
-    }
-    .account-block:hover {
-        border-color: var(--primary-light);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .account-block-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .account-block-title {
-        font-weight: 600;
-        color: var(--primary-dark);
-        font-size: 14px;
-    }
-    .account-block-title span {
-        background: var(--primary-light);
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        color: var(--primary-dark);
-    }
-    .account-number-input {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 14px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        transition: all 0.2s;
-        margin-bottom: 10px;
-    }
-    .account-number-input:focus {
-        border-color: var(--primary-color);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
-    }
-    .sub-fields-container {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 5px;
-    }
-    .sub-field-row {
+    .account-entry {
         display: flex;
         gap: 10px;
+        margin-bottom: 10px;
         align-items: center;
         flex-wrap: wrap;
     }
-    .sub-field-row input {
+    .account-entry input {
         flex: 1;
-        min-width: 120px;
-        padding: 8px 12px;
+        padding: 10px 12px;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
-        font-size: 13px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
         transition: all 0.2s;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .sub-field-row input:focus {
+    .account-entry input:focus {
         border-color: var(--primary-color);
         outline: none;
         box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
-    }
-    .btn-add-sub {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 5px 14px;
-        font-size: 11px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-weight: 500;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-    .btn-add-sub:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
-    }
-    .btn-remove-sub {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 4px 10px;
-        font-size: 11px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn-remove-sub:hover {
-        transform: scale(1.05);
-    }
-    .btn-remove-account {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 4px 12px;
-        font-size: 11px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn-remove-account:hover {
-        transform: scale(1.05);
     }
     .btn-add-account {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 8px 18px;
-        font-size: 13px;
+        padding: 6px 14px;
+        font-size: 12px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -299,7 +235,19 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
     }
-
+    .btn-remove-account {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-remove-account:hover {
+        transform: scale(1.05);
+    }
     .form-control, .form-select {
         border-radius: 10px;
         border: 1px solid #e0e0e0;
@@ -476,7 +424,56 @@
                 </div>
             </div>
             
-            <!-- 2. LOCATION INFORMATION SECTION -->
+            <!-- 2. ACTION / RESOLUTION STATUS SECTION (NEW) -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="bi bi-clipboard-check"></i> Action / Resolution Status
+                </div>
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle"></i> Indicate the current state of this issue so the Team Leader knows what follow-up is needed.
+                </p>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="resolution-box resolution-resolved resolution-option" data-resolution="resolved" onclick="selectResolution('resolved')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionResolved" value="resolved">
+                                <label class="form-check-label fw-bold">✅ Resolved</label>
+                            </div>
+                            <small>Problem solved – no further action</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="resolution-box resolution-pending resolution-option" data-resolution="pending_action" onclick="selectResolution('pending_action')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionPending" value="pending_action" checked>
+                                <label class="form-check-label fw-bold">⏳ Pending Action</label>
+                            </div>
+                            <small>Need another visit / further action</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="resolution-box resolution-budget resolution-option" data-resolution="need_budget" onclick="selectResolution('need_budget')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionBudget" value="need_budget">
+                                <label class="form-check-label fw-bold">💰 Need Budget</label>
+                            </div>
+                            <small>Requires budget to solve</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="resolution-box resolution-attention resolution-option" data-resolution="need_attention" onclick="selectResolution('need_attention')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionAttention" value="need_attention">
+                                <label class="form-check-label fw-bold">🚨 Need Attention</label>
+                            </div>
+                            <small>Requires immediate attention</small>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="resolutionStatusHidden" value="pending_action">
+            </div>
+            
+            <!-- 3. LOCATION INFORMATION SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-geo-alt"></i> Location Information
@@ -502,7 +499,7 @@
                 </div>
             </div>
             
-            <!-- 3. REFERENCE INFORMATION SECTION -->
+            <!-- 4. REFERENCE INFORMATION SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-file-text"></i> Reference Information
@@ -530,113 +527,59 @@
                 </div>
             </div>
             
-            <!-- 4. ACCOUNT DETAILS SECTION -->
+            <!-- 5. ACCOUNT DETAILS SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-receipt"></i> Account Details
                 </div>
                 
-                <!-- WATER ACCOUNTS -->
                 <div id="waterFields" class="mb-3">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>💧 Water Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addWaterAccount()">
+                        <button type="button" class="btn-add-account" onclick="addWaterAccountField()">
                             <i class="bi bi-plus-circle"></i> Add Account
                         </button>
                     </div>
                     <div id="waterAccountsContainer">
-                        <!-- Default account -->
-                        <div class="account-block water-account">
-                            <div class="account-block-header">
-                                <div class="account-block-title">Account <span>#1</span></div>
-                                <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'water')" style="display: none;">
-                                    <i class="bi bi-trash"></i> Remove Account
-                                </button>
-                            </div>
-                            <input type="text" class="account-number-input" placeholder="Water Account Number" name="water_account_number[]">
-                            <div class="sub-fields-container" data-type="water">
-                                <div class="sub-field-row">
-                                    <input type="text" placeholder="Water Meter Number" name="water_meter_number[]">
-                                    <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Water Meter')">
-                                <i class="bi bi-plus-circle"></i> Add Meter
-                            </button>
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+                            <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- ELECTRICITY ACCOUNTS -->
                 <div id="electricityFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>⚡ Electricity Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addElectricityAccount()">
+                        <button type="button" class="btn-add-account" onclick="addElectricityAccountField()">
                             <i class="bi bi-plus-circle"></i> Add Account
                         </button>
                     </div>
                     <div id="electricityAccountsContainer">
-                        <!-- Default account -->
-                        <div class="account-block electricity-account">
-                            <div class="account-block-header">
-                                <div class="account-block-title">Account <span>#1</span></div>
-                                <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'electricity')" style="display: none;">
-                                    <i class="bi bi-trash"></i> Remove Account
-                                </button>
-                            </div>
-                            <input type="text" class="account-number-input" placeholder="Electricity Account Number" name="electricity_account_number[]">
-                            <div class="sub-fields-container" data-type="electricity">
-                                <div class="sub-field-row">
-                                    <input type="text" placeholder="Electricity Meter Number" name="electricity_meter_number[]">
-                                    <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Electricity Meter')">
-                                <i class="bi bi-plus-circle"></i> Add Meter
-                            </button>
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+                            <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- TELEPHONE ACCOUNTS -->
                 <div id="telephoneFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>📞 Telephone Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addTelephoneAccount()">
+                        <button type="button" class="btn-add-account" onclick="addTelephoneAccountField()">
                             <i class="bi bi-plus-circle"></i> Add Account
                         </button>
                     </div>
                     <div id="telephoneAccountsContainer">
-                        <!-- Default account -->
-                        <div class="account-block telephone-account">
-                            <div class="account-block-header">
-                                <div class="account-block-title">Account <span>#1</span></div>
-                                <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'telephone')" style="display: none;">
-                                    <i class="bi bi-trash"></i> Remove Account
-                                </button>
-                            </div>
-                            <input type="text" class="account-number-input" placeholder="Telephone Account Number" name="telephone_account_number[]">
-                            <div class="sub-fields-container" data-type="telephone">
-                                <div class="sub-field-row">
-                                    <input type="text" placeholder="Telephone Number" name="telephone_number[]">
-                                    <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Telephone Number')">
-                                <i class="bi bi-plus-circle"></i> Add Number
-                            </button>
+                        <div class="account-entry">
+                            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+                            <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 5. PROBLEM DETAILS SECTION -->
+            <!-- 6. PROBLEM DETAILS SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-chat-left-text"></i> Problem Details
@@ -691,7 +634,7 @@
                 </div>
             </div>
             
-            <!-- 6. UPLOAD IMAGES SECTION -->
+            <!-- 7. UPLOAD IMAGES SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-images"></i> Upload Images (Stored in Supabase)
@@ -711,7 +654,7 @@
                 </div>
             </div>
             
-            <!-- 7. ADDITIONAL REPORT NOTES SECTION -->
+            <!-- 8. ADDITIONAL REPORT NOTES SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-journal-text"></i> Additional Report Notes
@@ -748,7 +691,6 @@
     let isUploading = false;
     let schoolsList = [];
     let departmentsList = [];
-    let accountCounters = { water: 1, electricity: 1, telephone: 1 };
 
     const urlParams = new URLSearchParams(window.location.search);
     editReportId = urlParams.get('id');
@@ -768,185 +710,112 @@
         return window.location.origin + '/api/images/' + imagePath;
     }
 
-    // ============ ACCOUNT FUNCTIONS ============
-
-    function addWaterAccount() {
-        accountCounters.water++;
+    function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
-        const account = createAccountBlock('water', accountCounters.water, 'Water Account Number', 'Water Meter Number', 'Add Meter');
-        container.appendChild(account);
-        updateRemoveButtons('water');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
+            <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
     }
 
-    function addElectricityAccount() {
-        accountCounters.electricity++;
+    function addWaterMeterField(button) {
+        const accountEntry = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Water Meter Number';
+        meterInput.name = 'water_meter_number[]';
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addElectricityAccountField() {
         const container = document.getElementById('electricityAccountsContainer');
-        const account = createAccountBlock('electricity', accountCounters.electricity, 'Electricity Account Number', 'Electricity Meter Number', 'Add Meter');
-        container.appendChild(account);
-        updateRemoveButtons('electricity');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
+            <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
+        `;
+        container.appendChild(newEntry);
     }
 
-    function addTelephoneAccount() {
-        accountCounters.telephone++;
+    function addElectricityMeterField(button) {
+        const accountEntry = button.parentElement;
+        const meterInput = document.createElement('input');
+        meterInput.type = 'text';
+        meterInput.className = 'form-control';
+        meterInput.placeholder = 'Electricity Meter Number';
+        meterInput.name = 'electricity_meter_number[]';
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(meterInput, buttons[0]);
+        button.textContent = '+ Meter (Added)';
+        button.disabled = true;
+    }
+
+    function addTelephoneAccountField() {
         const container = document.getElementById('telephoneAccountsContainer');
-        const account = createAccountBlock('telephone', accountCounters.telephone, 'Telephone Account Number', 'Telephone Number', 'Add Number');
-        container.appendChild(account);
-        updateRemoveButtons('telephone');
-    }
-
-    function createAccountBlock(type, count, accountPlaceholder, subPlaceholder, subButtonText) {
-        const block = document.createElement('div');
-        block.className = `account-block ${type}-account`;
-        block.innerHTML = `
-            <div class="account-block-header">
-                <div class="account-block-title">Account <span>#${count}</span></div>
-                <button type="button" class="btn-remove-account" onclick="removeAccount(this, '${type}')">
-                    <i class="bi bi-trash"></i> Remove Account
-                </button>
-            </div>
-            <input type="text" class="account-number-input" placeholder="${accountPlaceholder}" name="${type}_account_number[]">
-            <div class="sub-fields-container" data-type="${type}">
-                <div class="sub-field-row">
-                    <input type="text" placeholder="${subPlaceholder}" name="${type}_meter_number[]">
-                    <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <button type="button" class="btn-add-sub" onclick="addSubField(this, '${subPlaceholder}')">
-                <i class="bi bi-plus-circle"></i> ${subButtonText}
-            </button>
+        const newEntry = document.createElement('div');
+        newEntry.className = 'account-entry';
+        newEntry.innerHTML = `
+            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
+            <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button>
+            <button type="button" class="btn-remove-account" onclick="this.parentElement.remove()"><i class="bi bi-trash"></i></button>
         `;
-        return block;
+        container.appendChild(newEntry);
     }
 
-    function removeAccount(button, type) {
-        const block = button.closest('.account-block');
-        const container = block.parentElement;
-        block.remove();
-        
-        // Renumber remaining accounts
-        const accounts = container.querySelectorAll('.account-block');
-        accounts.forEach((acc, index) => {
-            const span = acc.querySelector('.account-block-title span');
-            if (span) span.textContent = `#${index + 1}`;
-        });
-        
-        // Update counter
-        accountCounters[type] = accounts.length || 1;
-        updateRemoveButtons(type);
+    function addTelephoneNumberField(button) {
+        const accountEntry = button.parentElement;
+        const phoneInput = document.createElement('input');
+        phoneInput.type = 'text';
+        phoneInput.className = 'form-control';
+        phoneInput.placeholder = 'Telephone Number';
+        phoneInput.name = 'telephone_number[]';
+        const buttons = accountEntry.querySelectorAll('button');
+        accountEntry.insertBefore(phoneInput, buttons[0]);
+        button.textContent = '+ Number (Added)';
+        button.disabled = true;
     }
 
-    function addSubField(button, placeholder) {
-        const container = button.previousElementSibling; // sub-fields-container
-        const type = container.dataset.type;
-        
-        const row = document.createElement('div');
-        row.className = 'sub-field-row';
-        
-        let nameAttr = '';
-        if (type === 'water' || type === 'electricity') {
-            nameAttr = `${type}_meter_number[]`;
-        } else if (type === 'telephone') {
-            nameAttr = 'telephone_number[]';
-        }
-        
-        row.innerHTML = `
-            <input type="text" placeholder="${placeholder}" name="${nameAttr}">
-            <button type="button" class="btn-remove-sub" onclick="removeSubField(this)">
-                <i class="bi bi-trash"></i>
-            </button>
-        `;
-        container.appendChild(row);
-        
-        // Show remove buttons for sub-fields if there's more than one
-        const rows = container.querySelectorAll('.sub-field-row');
-        rows.forEach(r => {
-            const removeBtn = r.querySelector('.btn-remove-sub');
-            if (removeBtn) {
-                removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
-            }
-        });
-    }
-
-    function removeSubField(button) {
-        const row = button.closest('.sub-field-row');
-        const container = row.parentElement;
-        row.remove();
-        
-        // Update visibility of remove buttons
-        const rows = container.querySelectorAll('.sub-field-row');
-        rows.forEach(r => {
-            const removeBtn = r.querySelector('.btn-remove-sub');
-            if (removeBtn) {
-                removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
-            }
-        });
-    }
-
-    function updateRemoveButtons(type) {
-        const container = document.getElementById(`${type}AccountsContainer`);
-        const accounts = container.querySelectorAll('.account-block');
-        accounts.forEach((acc, index) => {
-            const removeBtn = acc.querySelector('.btn-remove-account');
-            if (removeBtn) {
-                removeBtn.style.display = accounts.length > 1 ? 'inline-block' : 'none';
-            }
-        });
-    }
-
-    // ============ GET ALL ACCOUNT DATA ============
     function getAllAccountData() {
         const accountData = {
-            water_accounts: [],
-            electricity_accounts: [],
-            telephone_accounts: []
+            water_accounts: [], electricity_accounts: [], telephone_accounts: []
         };
         
-        // Water accounts
-        document.querySelectorAll('#waterAccountsContainer .account-block').forEach(block => {
-            const accountInput = block.querySelector('input[name="water_account_number[]"]');
-            const meterInputs = block.querySelectorAll('input[name="water_meter_number[]"]');
-            if (accountInput && accountInput.value.trim()) {
-                const meters = [];
-                meterInputs.forEach(inp => {
-                    if (inp.value.trim()) meters.push(inp.value.trim());
-                });
+        document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
                 accountData.water_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    meter_numbers: meters
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
                 });
             }
         });
         
-        // Electricity accounts
-        document.querySelectorAll('#electricityAccountsContainer .account-block').forEach(block => {
-            const accountInput = block.querySelector('input[name="electricity_account_number[]"]');
-            const meterInputs = block.querySelectorAll('input[name="electricity_meter_number[]"]');
-            if (accountInput && accountInput.value.trim()) {
-                const meters = [];
-                meterInputs.forEach(inp => {
-                    if (inp.value.trim()) meters.push(inp.value.trim());
-                });
+        document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
                 accountData.electricity_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    meter_numbers: meters
+                    account_number: inputs[0].value,
+                    meter_number: inputs[1] ? inputs[1].value : ''
                 });
             }
         });
         
-        // Telephone accounts
-        document.querySelectorAll('#telephoneAccountsContainer .account-block').forEach(block => {
-            const accountInput = block.querySelector('input[name="telephone_account_number[]"]');
-            const phoneInputs = block.querySelectorAll('input[name="telephone_number[]"]');
-            if (accountInput && accountInput.value.trim()) {
-                const numbers = [];
-                phoneInputs.forEach(inp => {
-                    if (inp.value.trim()) numbers.push(inp.value.trim());
-                });
+        document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
+            const inputs = entry.querySelectorAll('input');
+            if (inputs[0] && inputs[0].value.trim()) {
                 accountData.telephone_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    phone_numbers: numbers
+                    account_number: inputs[0].value,
+                    phone_number: inputs[1] ? inputs[1].value : ''
                 });
             }
         });
@@ -954,7 +823,6 @@
         return accountData;
     }
 
-    // ============ SELECT PRIORITY ============
     function selectPriority(priority) {
         document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
         document.getElementById('priority').value = priority;
@@ -962,7 +830,21 @@
         document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
     }
 
-    // ============ GET CURRENT TECHNICIAN ============
+    // ============ NEW: Resolution status selector ============
+    function selectResolution(status) {
+        const radioId = {
+            'resolved': 'resolutionResolved',
+            'pending_action': 'resolutionPending',
+            'need_budget': 'resolutionBudget',
+            'need_attention': 'resolutionAttention'
+        }[status];
+        if (radioId) document.getElementById(radioId).checked = true;
+        document.getElementById('resolutionStatusHidden').value = status;
+        document.querySelectorAll('.resolution-option').forEach(opt => opt.classList.remove('selected'));
+        const target = document.querySelector(`.resolution-option[data-resolution="${status}"]`);
+        if (target) target.classList.add('selected');
+    }
+
     async function getCurrentTechnician() {
         try {
             const userId = localStorage.getItem('userId');
@@ -1035,7 +917,7 @@
         }
     }
 
-    // ============ POPULATE ENTITY DROPDOWN ============
+    // ============ Populate Entity Dropdown ============
     async function populateEntityDropdown(entityType, selectedId = null) {
         const entitySelect = document.getElementById('entityId');
         console.log('Populating dropdown for:', entityType, 'selected:', selectedId);
@@ -1051,6 +933,7 @@
             });
             entitySelect.innerHTML = options;
             entitySelect.disabled = false;
+            console.log('Schools dropdown populated with', schoolsList.length, 'schools');
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) {
                 await loadDepartments();
@@ -1063,6 +946,7 @@
             });
             entitySelect.innerHTML = options;
             entitySelect.disabled = false;
+            console.log('Departments dropdown populated with', departmentsList.length, 'departments');
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
             entitySelect.disabled = true;
@@ -1070,6 +954,7 @@
     }
 
     document.getElementById('entityType').addEventListener('change', async function() {
+        console.log('Entity type changed to:', this.value);
         if (this.value === 'school') {
             if (schoolsList.length === 0) await loadSchools();
             await populateEntityDropdown('school');
@@ -1086,7 +971,6 @@
         radio.addEventListener('change', function() { updateAccountFields(this.value); });
     });
 
-    // ============ IMAGE COMPRESSION & UPLOAD ============
     async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.7) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -1173,7 +1057,6 @@
         return div.innerHTML;
     }
 
-    // ============ RESET FORM ============
     async function resetForm() {
         if (confirm('Clear all form data? Images will need to be re-uploaded.')) {
             document.getElementById('reportForm').reset();
@@ -1182,92 +1065,18 @@
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
             document.getElementById('priority').disabled = false;
-            // Reset accounts to default
-            resetAccounts();
+            // NEW: Reset resolution to default
+            selectResolution('pending_action');
+            document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button></div>';
+            document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button></div>';
+            document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)">+ Number</button></div>';
             updateAccountFields('water');
             setReportDateTime();
             alert('Form cleared');
         }
     }
 
-    function resetAccounts() {
-        // Reset water
-        accountCounters.water = 1;
-        document.getElementById('waterAccountsContainer').innerHTML = `
-            <div class="account-block water-account">
-                <div class="account-block-header">
-                    <div class="account-block-title">Account <span>#1</span></div>
-                    <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'water')" style="display: none;">
-                        <i class="bi bi-trash"></i> Remove Account
-                    </button>
-                </div>
-                <input type="text" class="account-number-input" placeholder="Water Account Number" name="water_account_number[]">
-                <div class="sub-fields-container" data-type="water">
-                    <div class="sub-field-row">
-                        <input type="text" placeholder="Water Meter Number" name="water_meter_number[]">
-                        <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Water Meter')">
-                    <i class="bi bi-plus-circle"></i> Add Meter
-                </button>
-            </div>
-        `;
-        
-        // Reset electricity
-        accountCounters.electricity = 1;
-        document.getElementById('electricityAccountsContainer').innerHTML = `
-            <div class="account-block electricity-account">
-                <div class="account-block-header">
-                    <div class="account-block-title">Account <span>#1</span></div>
-                    <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'electricity')" style="display: none;">
-                        <i class="bi bi-trash"></i> Remove Account
-                    </button>
-                </div>
-                <input type="text" class="account-number-input" placeholder="Electricity Account Number" name="electricity_account_number[]">
-                <div class="sub-fields-container" data-type="electricity">
-                    <div class="sub-field-row">
-                        <input type="text" placeholder="Electricity Meter Number" name="electricity_meter_number[]">
-                        <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Electricity Meter')">
-                    <i class="bi bi-plus-circle"></i> Add Meter
-                </button>
-            </div>
-        `;
-        
-        // Reset telephone
-        accountCounters.telephone = 1;
-        document.getElementById('telephoneAccountsContainer').innerHTML = `
-            <div class="account-block telephone-account">
-                <div class="account-block-header">
-                    <div class="account-block-title">Account <span>#1</span></div>
-                    <button type="button" class="btn-remove-account" onclick="removeAccount(this, 'telephone')" style="display: none;">
-                        <i class="bi bi-trash"></i> Remove Account
-                    </button>
-                </div>
-                <input type="text" class="account-number-input" placeholder="Telephone Account Number" name="telephone_account_number[]">
-                <div class="sub-fields-container" data-type="telephone">
-                    <div class="sub-field-row">
-                        <input type="text" placeholder="Telephone Number" name="telephone_number[]">
-                        <button type="button" class="btn-remove-sub" onclick="removeSubField(this)" style="display: none;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="button" class="btn-add-sub" onclick="addSubField(this, 'Telephone Number')">
-                    <i class="bi bi-plus-circle"></i> Add Number
-                </button>
-            </div>
-        `;
-    }
-
-    // ============ LOAD REPORT FOR EDIT ============
+    // ============ Load Report for Edit ============
     async function loadReportForEdit(id) {
         try {
             console.log('Loading report for edit:', id);
@@ -1342,32 +1151,45 @@
                 document.getElementById('priority').disabled = true;
             }
             
+            // NEW: Set resolution status
+            if (report.resolution_status) {
+                selectResolution(report.resolution_status);
+            } else {
+                selectResolution('pending_action');
+            }
+            
             // Set account details based on report type
             if (report.report_type === 'water') {
                 if (report.account_number) {
-                    const firstInput = document.querySelector('#waterAccountsContainer input[name="water_account_number[]"]');
-                    if (firstInput) firstInput.value = report.account_number;
+                    const waterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_account_number[]"]');
+                    if (waterInput) waterInput.value = report.account_number;
                 }
                 if (report.meter_number) {
-                    const meterInput = document.querySelector('#waterAccountsContainer input[name="water_meter_number[]"]');
+                    const meterBtn = document.querySelector('#waterAccountsContainer .account-entry .btn-add-account');
+                    if (meterBtn) addWaterMeterField(meterBtn);
+                    const meterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_meter_number[]"]');
                     if (meterInput) meterInput.value = report.meter_number;
                 }
             } else if (report.report_type === 'electricity') {
                 if (report.account_number) {
-                    const firstInput = document.querySelector('#electricityAccountsContainer input[name="electricity_account_number[]"]');
-                    if (firstInput) firstInput.value = report.account_number;
+                    const elecInput = document.querySelector('#electricityAccountsContainer .account-entry input[name="electricity_account_number[]"]');
+                    if (elecInput) elecInput.value = report.account_number;
                 }
                 if (report.meter_number) {
-                    const meterInput = document.querySelector('#electricityAccountsContainer input[name="electricity_meter_number[]"]');
+                    const meterBtn = document.querySelector('#electricityAccountsContainer .account-entry .btn-add-account');
+                    if (meterBtn) addElectricityMeterField(meterBtn);
+                    const meterInput = document.querySelector('#electricityAccountsContainer .account-entry input[name="electricity_meter_number[]"]');
                     if (meterInput) meterInput.value = report.meter_number;
                 }
             } else if (report.report_type === 'telephone') {
                 if (report.account_number) {
-                    const firstInput = document.querySelector('#telephoneAccountsContainer input[name="telephone_account_number[]"]');
-                    if (firstInput) firstInput.value = report.account_number;
+                    const telInput = document.querySelector('#telephoneAccountsContainer .account-entry input[name="telephone_account_number[]"]');
+                    if (telInput) telInput.value = report.account_number;
                 }
                 if (report.phone_number) {
-                    const phoneInput = document.querySelector('#telephoneAccountsContainer input[name="telephone_number[]"]');
+                    const phoneBtn = document.querySelector('#telephoneAccountsContainer .account-entry .btn-add-account');
+                    if (phoneBtn) addTelephoneNumberField(phoneBtn);
+                    const phoneInput = document.querySelector('#telephoneAccountsContainer .account-entry input[name="telephone_number[]"]');
                     if (phoneInput) phoneInput.value = report.phone_number;
                 }
             }
@@ -1393,7 +1215,6 @@
         }
     }
 
-    // ============ FORM SUBMISSION ============
     document.getElementById('reportForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         if (isUploading) {
@@ -1420,31 +1241,22 @@
         
         if (reportType === 'water' && accountData.water_accounts.length > 0) {
             accountNumber = accountData.water_accounts[0].account_number;
-            if (accountData.water_accounts[0].meter_numbers && accountData.water_accounts[0].meter_numbers.length > 0) {
-                meterNumber = accountData.water_accounts[0].meter_numbers[0];
-            }
+            meterNumber = accountData.water_accounts[0].meter_number;
         } else if (reportType === 'electricity' && accountData.electricity_accounts.length > 0) {
             accountNumber = accountData.electricity_accounts[0].account_number;
-            if (accountData.electricity_accounts[0].meter_numbers && accountData.electricity_accounts[0].meter_numbers.length > 0) {
-                meterNumber = accountData.electricity_accounts[0].meter_numbers[0];
-            }
+            meterNumber = accountData.electricity_accounts[0].meter_number;
         } else if (reportType === 'telephone' && accountData.telephone_accounts.length > 0) {
             accountNumber = accountData.telephone_accounts[0].account_number;
-            if (accountData.telephone_accounts[0].phone_numbers && accountData.telephone_accounts[0].phone_numbers.length > 0) {
-                phoneNumber = accountData.telephone_accounts[0].phone_numbers[0];
-            }
-            // Count total phone numbers across all accounts
-            let totalLines = 0;
-            accountData.telephone_accounts.forEach(acc => {
-                if (acc.phone_numbers) totalLines += acc.phone_numbers.length;
-            });
-            numberOfLines = totalLines || null;
+            phoneNumber = accountData.telephone_accounts[0].phone_number;
+            numberOfLines = accountData.telephone_accounts.length;
         }
         
         const reportData = {
             report_type: reportType,
             entity_type: entityType,
             entity_id: parseInt(entityId),
+            // NEW: include resolution status
+            resolution_status: document.getElementById('resolutionStatusHidden').value,
             account_number: accountNumber,
             meter_number: meterNumber,
             phone_number: phoneNumber,
@@ -1501,18 +1313,23 @@
         radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
     });
 
-    // ============ INIT ============
+    // Also update the hidden value when resolution radio is changed directly
+    document.querySelectorAll('input[name="resolutionRadio"]').forEach(radio => {
+        radio.addEventListener('change', function() { 
+            document.getElementById('resolutionStatusHidden').value = this.value;
+            document.querySelectorAll('.resolution-option').forEach(opt => opt.classList.remove('selected'));
+            const target = document.querySelector(`.resolution-option[data-resolution="${this.value}"]`);
+            if (target) target.classList.add('selected');
+        });
+    });
+
     async function init() {
         setReportDateTime();
         await getCurrentTechnician();
         await Promise.all([loadSchools(), loadDepartments()]);
         updateAccountFields('water');
         document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
-        
-        // Hide remove buttons for single accounts
-        updateRemoveButtons('water');
-        updateRemoveButtons('electricity');
-        updateRemoveButtons('telephone');
+        document.querySelector('.resolution-option[data-resolution="pending_action"]').classList.add('selected');
         
         if (isEditMode && editReportId) {
             await loadReportForEdit(editReportId);
@@ -1520,14 +1337,14 @@
     }
     init();
 
-    // Make functions globally accessible
-    window.addWaterAccount = addWaterAccount;
-    window.addElectricityAccount = addElectricityAccount;
-    window.addTelephoneAccount = addTelephoneAccount;
-    window.removeAccount = removeAccount;
-    window.addSubField = addSubField;
-    window.removeSubField = removeSubField;
+    window.addWaterAccountField = addWaterAccountField;
+    window.addWaterMeterField = addWaterMeterField;
+    window.addElectricityAccountField = addElectricityAccountField;
+    window.addElectricityMeterField = addElectricityMeterField;
+    window.addTelephoneAccountField = addTelephoneAccountField;
+    window.addTelephoneNumberField = addTelephoneNumberField;
     window.selectPriority = selectPriority;
+    window.selectResolution = selectResolution;
     window.removeImage = removeImage;
     window.resetForm = resetForm;
 </script>
