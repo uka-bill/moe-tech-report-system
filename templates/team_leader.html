@@ -154,6 +154,7 @@
     .col-entity { width: 220px; min-width: 180px; max-width: 300px; }
     .col-problem { width: 150px; min-width: 120px; max-width: 220px; }
     .col-priority { width: 60px; min-width: 55px; max-width: 70px; }
+    .col-action { width: 100px; min-width: 90px; max-width: 130px; }
     .col-technician { width: 120px; min-width: 100px; max-width: 150px; }
     .col-assistant { width: 120px; min-width: 100px; max-width: 150px; }
     .col-date { width: 75px; min-width: 70px; max-width: 90px; }
@@ -276,6 +277,32 @@
     .priority-icon {
         font-size: 10px;
         margin-right: 3px;
+    }
+
+    /* Resolution status badges */
+    .resolution-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    .resolved-badge {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+    }
+    .pending-action-badge {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        color: #856404;
+    }
+    .need-budget-badge {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+    }
+    .need-attention-badge {
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
+        color: #721c24;
     }
 
     /* Action Buttons */
@@ -529,6 +556,7 @@
         .col-entity { width: 140px; min-width: 100px; }
         .col-problem { min-width: 80px; }
         .col-priority { width: 45px; min-width: 40px; }
+        .col-action { width: 80px; min-width: 70px; }
         .col-technician { width: 80px; min-width: 60px; }
         .col-assistant { width: 80px; min-width: 60px; }
         .col-date { width: 60px; min-width: 55px; }
@@ -561,7 +589,6 @@
     </div>
 </div>
 
-<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card stat-card-primary">
@@ -598,7 +625,6 @@
     </div>
 </div>
 
-<!-- High Priority Reports Section -->
 <div id="highPrioritySection" class="mb-4">
     <div class="section-header" onclick="toggleSection('highPriorityBody', this)">
         <div class="section-title">
@@ -615,7 +641,6 @@
     </div>
 </div>
 
-<!-- All Pending Reports Section -->
 <div id="pendingSection" class="mb-4">
     <div class="section-header" onclick="toggleSection('pendingBody', this)">
         <div class="section-title">
@@ -632,7 +657,6 @@
     </div>
 </div>
 
-<!-- Acknowledge Modal -->
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -654,7 +678,6 @@
     </div>
 </div>
 
-<!-- View Report Modal -->
 <div class="modal fade" id="viewReportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -675,7 +698,6 @@
     </div>
 </div>
 
-<!-- Hidden iframe for printing -->
 <iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
 <script>
@@ -686,9 +708,21 @@
     let allReports = [];
     let isModalExpanded = false;
     let techniciansMap = {};
-    let globalRankMap = {};  // NEW: map of report ID -> global rank (like reports tabs)
+    let globalRankMap = {};
 
-    // ============ TIME FUNCTIONS (fixed - no +8 offset) ============
+    // ============ NEW: Resolution status badge ============
+    function getResolutionBadge(report) {
+        const status = report.resolution_status || 'pending_action';
+        const map = {
+            'resolved': { class: 'resolved-badge', icon: '✅', text: 'Resolved' },
+            'pending_action': { class: 'pending-action-badge', icon: '⏳', text: 'Pending' },
+            'need_budget': { class: 'need-budget-badge', icon: '💰', text: 'Need Budget' },
+            'need_attention': { class: 'need-attention-badge', icon: '🚨', text: 'Attention' }
+        };
+        const s = map[status] || map['pending_action'];
+        return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
+
     function formatDate(dateString) {
         if (!dateString) return '-';
         try {
@@ -863,14 +897,12 @@
             allReports = await response.json();
             console.log('All reports loaded:', allReports.length);
 
-            // Compute global rank for each report (like reports tabs)
             const sortedReports = [...allReports].sort((a, b) => {
                 return new Date(a.created_at) - new Date(b.created_at);
             });
             globalRankMap = {};
             const total = sortedReports.length;
             sortedReports.forEach((report, index) => {
-                // Oldest = #1, newest = #total
                 globalRankMap[report.id] = index + 1;
             });
 
@@ -929,6 +961,7 @@
                         <th class="col-entity">Entity</th>
                         <th class="col-problem">Problem Type</th>
                         <th class="col-priority">Priority</th>
+                        <th class="col-action">Action</th>
                         <th class="col-technician">Technician</th>
                         <th class="col-assistant">Assistant Check</th>
                         <th class="col-date">Date</th>
@@ -948,6 +981,7 @@
                                 <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
                                 <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="col-priority priority-high-cell" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> HIGH</td>
+                                <td class="col-action">${getResolutionBadge(report)}</td>
                                 <td class="col-technician technician-name" onclick="viewReportDetail(${report.id})">${escapeHtml(techName)}</td>
                                 <td class="col-assistant">
                                     ${isChecked ?
@@ -1000,6 +1034,7 @@
                         <th class="col-entity">Entity</th>
                         <th class="col-problem">Problem Type</th>
                         <th class="col-priority">Priority</th>
+                        <th class="col-action">Action</th>
                         <th class="col-technician">Technician</th>
                         <th class="col-assistant">Assistant Check</th>
                         <th class="col-date">Date</th>
@@ -1021,6 +1056,7 @@
                                 <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
                                 <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="col-priority ${priorityClass}" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> ${priorityText}</td>
+                                <td class="col-action">${getResolutionBadge(report)}</td>
                                 <td class="col-technician technician-name" onclick="viewReportDetail(${report.id})">${escapeHtml(techName)}</td>
                                 <td class="col-assistant">
                                     ${isChecked ?
@@ -1126,13 +1162,10 @@
         }
     }
 
-    // ============ viewReportDetail - uses allReports (fast) and global rank ============
     function viewReportDetail(id) {
         currentReportId = id;
-        
-        // Find the report in the already-loaded allReports array
         currentReport = allReports.find(r => r.id === id);
-        
+
         if (currentReport) {
             displayReportInModal(currentReport);
             const ackBtn = document.getElementById('modalAcknowledgeBtn');
@@ -1162,7 +1195,6 @@
         }
     }
 
-    // ============ displayReportInModal - uses GLOBAL rank (like reports tabs) ============
     function displayReportInModal(report) {
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
@@ -1170,7 +1202,6 @@
         const isAcknowledged = report.team_leader_acknowledged;
         const isChecked = report.checked_by_assistant === true;
 
-        // Use global rank (same as reports tabs)
         const displayNumber = globalRankMap[report.id] || report.id;
 
         let imagesHtml = '';
@@ -1216,6 +1247,10 @@
                     <div class="col-8"><span class="status-badge priority-${report.priority}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
                 </div>
                 <div class="row mb-2">
+                    <div class="col-4 fw-bold">Action Status:</div>
+                    <div class="col-8">${getResolutionBadge(report)}</div>
+                </div>
+                <div class="row mb-2">
                     <div class="col-4 fw-bold">Complaint Details:</div>
                     <div class="col-8">${escapeHtml(report.complaint_details)}</div>
                 </div>
@@ -1240,7 +1275,6 @@
 
     async function printReport(id) {
         try {
-            // Use the already-loaded allReports array
             const report = allReports.find(r => r.id === id);
             if (report) {
                 fetch(`/api/technical-reports/${id}/track-print`, { method: 'POST' }).catch(e => console.log(e));
@@ -1256,7 +1290,6 @@
     }
 
     function generatePrintHTML(report) {
-        // Use global rank for print header
         const displayNumber = globalRankMap[report.id] || report.id;
         const reportTypeIcon = report.report_type === 'water' ? '💧' : report.report_type === 'electricity' ? '⚡' : '📞';
         const reportTypeName = report.report_type === 'water' ? 'Water' : report.report_type === 'electricity' ? 'Electricity' : 'Telephone';
