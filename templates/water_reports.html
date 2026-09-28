@@ -94,20 +94,6 @@
     .reports-table tr:hover td {
         background-color: #f8f5fc;
     }
-    .group-header-row {
-        background-color: #e8f0fe;
-        font-weight: bold;
-    }
-    .group-header-row td {
-        background-color: #e8f0fe;
-        border-bottom: 2px solid #17a2b8;
-        padding: 8px 8px;
-        font-weight: 600;
-        color: #0c5460;
-    }
-    .group-header-row:hover td {
-        background-color: #e8f0fe;
-    }
     .priority-high {
         color: #dc3545;
         font-weight: 600;
@@ -165,10 +151,38 @@
     .col-ref-date { width: 70px; min-width: 60px; max-width: 85px; }
     .col-problem { width: 150px; min-width: 120px; max-width: 220px; }
     .col-priority { width: 60px; min-width: 55px; max-width: 70px; }
+    .col-action { width: 100px; min-width: 90px; max-width: 130px; }  /* NEW */
     .col-submitted { width: 120px; min-width: 100px; max-width: 150px; }
     .col-status { width: 85px; min-width: 75px; max-width: 110px; }
     .col-date { width: 75px; min-width: 70px; max-width: 90px; }
     .col-actions { width: 80px; min-width: 70px; max-width: 100px; }
+
+    /* NEW: Resolution status badges */
+    .resolution-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    .resolved-badge {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+    }
+    .pending-action-badge {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        color: #856404;
+    }
+    .need-budget-badge {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+    }
+    .need-attention-badge {
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
+        color: #721c24;
+    }
+
     .entity-name, .reference-number-cell, .reference-date-cell {
         font-size: 11px;
         white-space: nowrap;
@@ -449,6 +463,7 @@
         .col-ref-date { width: 50px; min-width: 45px; }
         .col-problem { min-width: 80px; }
         .col-priority { width: 45px; min-width: 40px; }
+        .col-action { width: 80px; min-width: 70px; }
         .col-submitted { width: 80px; min-width: 60px; }
         .col-status { width: 65px; min-width: 55px; }
         .col-date { width: 60px; min-width: 55px; }
@@ -673,7 +688,19 @@
     let currentFilterYear = 'all';
     let techniciansMap = {};
 
-    // ============ TECHNICIAN HELPER ============
+    // ============ NEW: Resolution status badge ============
+    function getResolutionBadge(report) {
+        const status = report.resolution_status || 'pending_action';
+        const map = {
+            'resolved': { class: 'resolved-badge', icon: '✅', text: 'Resolved' },
+            'pending_action': { class: 'pending-action-badge', icon: '⏳', text: 'Pending' },
+            'need_budget': { class: 'need-budget-badge', icon: '💰', text: 'Need Budget' },
+            'need_attention': { class: 'need-attention-badge', icon: '🚨', text: 'Attention' }
+        };
+        const s = map[status] || map['pending_action'];
+        return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
+
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
@@ -691,7 +718,6 @@
         return techniciansMap[techId] || `Technician #${techId}`;
     }
 
-    // ============ DATE & UTILITY FUNCTIONS ============
     function formatDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -918,6 +944,7 @@
                         <th class="col-ref-date">Ref Date</th>
                         <th class="col-problem">Problem Type</th>
                         <th class="col-priority">Priority</th>
+                        <th class="col-action">Action</th>
                         <th class="col-submitted">Submitted By</th>
                         <th class="col-status">Status</th>
                         <th class="col-date">Date</th>
@@ -943,6 +970,7 @@
                     <td class="col-ref-date reference-date-cell" title="${escapeHtml(report.reference_date || '-')}">${escapeHtml(report.reference_date || '-')}</td>
                     <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                     <td class="col-priority ${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
+                    <td class="col-action">${getResolutionBadge(report)}</td>
                     <td class="col-submitted">${escapeHtml(techName)}</td>
                     <td class="col-status">${statusHtml}</td>
                     <td class="col-date date-cell">${formatDateOnly(report.created_at)}</td>
@@ -1054,6 +1082,10 @@
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Priority:</div>
                     <div class="col-8"><span class="status-badge ${priorityClass}">${report.priority.toUpperCase()}</span> ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4 fw-bold">Action Status:</div>
+                    <div class="col-8">${getResolutionBadge(report)}</div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Complaint Details:</div>
