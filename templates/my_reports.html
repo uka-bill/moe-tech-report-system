@@ -137,7 +137,7 @@
     .col-problem { width: 150px; min-width: 120px; max-width: 220px; }
     .col-priority { width: 60px; min-width: 55px; max-width: 70px; }
     .col-action { width: 100px; min-width: 90px; max-width: 130px; }
-    .col-status { width: 85px; min-width: 75px; max-width: 110px; }
+    .col-status { width: 130px; min-width: 110px; max-width: 160px; }
     .col-date { width: 75px; min-width: 70px; max-width: 90px; }
     .col-actions { width: 80px; min-width: 70px; max-width: 100px; }
 
@@ -212,7 +212,6 @@
         font-size: 13px;
     }
 
-    /* Resolution status badges */
     .resolution-badge {
         padding: 3px 10px;
         border-radius: 20px;
@@ -238,7 +237,29 @@
         color: #721c24;
     }
 
-    /* Action Buttons */
+    .ack-status-badge {
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+        margin-top: 2px;
+    }
+    .ack-done-badge {
+        background: linear-gradient(135deg, #4caf50 0%, #28a745 100%);
+        color: white;
+    }
+    .ack-action-badge {
+        background: linear-gradient(135deg, #f44336 0%, #dc3545 100%);
+        color: white;
+        animation: pulse-warning 1.5s infinite;
+    }
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
+        50% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+    }
+
     .action-buttons {
         display: flex;
         align-items: center;
@@ -285,7 +306,6 @@
         background: #bbdefb;
     }
 
-    /* Refresh Button */
     .btn-refresh {
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         border: none;
@@ -302,7 +322,6 @@
         color: white;
     }
 
-    /* Date Filter Bar */
     .date-filter-bar {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         padding: 15px 20px;
@@ -360,7 +379,6 @@
         transform: translateY(-1px);
     }
 
-    /* Statistics Cards */
     .stat-card {
         background: white;
         border-radius: 16px;
@@ -420,7 +438,6 @@
         border-radius: 10px;
     }
 
-    /* Modal Styles */
     .modal-fullscreen {
         max-width: 95%;
         width: 95%;
@@ -524,7 +541,6 @@
         transform: translateY(-1px);
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
         .col-id { width: 35px; min-width: 35px; }
         .col-entity { width: 140px; min-width: 100px; }
@@ -533,12 +549,13 @@
         .col-problem { min-width: 80px; }
         .col-priority { width: 45px; min-width: 40px; }
         .col-action { width: 80px; min-width: 70px; }
-        .col-status { width: 65px; min-width: 55px; }
+        .col-status { width: 90px; min-width: 80px; }
         .col-date { width: 60px; min-width: 55px; }
         .col-actions { width: 70px; min-width: 60px; }
         .btn-action { width: 22px; height: 22px; font-size: 9px; }
         .reports-table th, .reports-table td { padding: 6px 6px; font-size: 10px; }
         .status-pending, .status-acknowledged { font-size: 8px; padding: 2px 6px; }
+        .ack-status-badge { font-size: 8px; padding: 1px 6px; }
     }
 </style>
 
@@ -556,7 +573,6 @@
     </button>
 </div>
 
-<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="stat-card">
@@ -593,7 +609,6 @@
     </div>
 </div>
 
-<!-- Date Filter Section -->
 <div class="date-filter-bar">
     <div class="row align-items-end">
         <div class="col-md-3">
@@ -645,7 +660,6 @@
     </div>
 </div>
 
-<!-- Report Filter Section -->
 <div class="filter-card py-2">
     <div class="row align-items-end">
         <div class="col-md-3">
@@ -685,7 +699,6 @@
     </div>
 </div>
 
-<!-- Report Detail Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -735,7 +748,6 @@
     let currentFilterYear = 'all';
     let techniciansMap = {};
 
-    // ============ NEW: Resolution status badge ============
     function getResolutionBadge(report) {
         const status = report.resolution_status || 'pending_action';
         const map = {
@@ -746,6 +758,15 @@
         };
         const s = map[status] || map['pending_action'];
         return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
+
+    function getAcknowledgmentBadge(report) {
+        if (!report.team_leader_acknowledged) return '';
+        const status = report.acknowledgment_status || 'done_reviewed';
+        if (status === 'need_further_action') {
+            return `<span class="ack-status-badge ack-action-badge">⚠️ Need Action</span>`;
+        }
+        return `<span class="ack-status-badge ack-done-badge">✅ Reviewed</span>`;
     }
 
     async function loadTechnicians() {
@@ -768,14 +789,12 @@
     function formatDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        // Time is already stored in Brunei Time (UTC+8), so no offset needed
         return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     function formatDateOnly(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        // Time is already stored in Brunei Time (UTC+8), so no offset needed
         return date.toLocaleDateString('en-GB');
     }
 
@@ -1009,9 +1028,9 @@
                 const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
                 const isAcknowledged = report.team_leader_acknowledged;
                 const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+                const ackBadge = getAcknowledgmentBadge(report);
                 const isChecked = report.checked_by_assistant === true;
                 const canEdit = !isAcknowledged;
-                const techName = getTechnicianName(report.technician_id);
 
                 tableHtml += `
                     <tr onclick="openReportDetail(${report.id})" data-id="${report.id}">
@@ -1022,7 +1041,7 @@
                         <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}">${escapeHtml(report.problem_type || '-')}</td>
                         <td class="col-priority ${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
                         <td class="col-action">${getResolutionBadge(report)}</td>
-                        <td class="col-status">${statusHtml}</td>
+                        <td class="col-status">${statusHtml}${ackBadge}</td>
                         <td class="col-date date-cell">${formatDateOnly(report.created_at)}</td>
                         <td class="col-actions">
                             <div class="action-buttons">
@@ -1035,11 +1054,7 @@
                 `;
             });
 
-            tableHtml += `</tbody>
-                    </table>
-                </div>
-            </div>`;
-
+            tableHtml += `</tbody></table></div></div>`;
             return tableHtml;
         };
 
@@ -1122,7 +1137,8 @@
 
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            const ackBadge = getAcknowledgmentBadge(report);
+            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         } else {
             acknowledgmentHtml = `<div class="alert alert-warning mt-2" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%); border: none; border-left: 4px solid #ffc107;"><i class="bi bi-clock-history"></i> This report is pending review by the Team Leader.</div>`;
         }
