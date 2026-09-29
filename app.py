@@ -527,9 +527,11 @@ def get_technical_reports():
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
                 else:
-                    entity = supabase.table("departments").select("name").eq("id", report_data['entity_id']).execute()
+                    # FIX #1: Use unit_name for departments if available
+                    entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
-                        report_data['entity_name'] = entity.data[0]['name']
+                        dept = entity.data[0]
+                        report_data['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
                 if report_data.get('technician_id'):
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
@@ -629,7 +631,6 @@ def delete_technical_report(report_id):
         app.logger.error(f"Error deleting report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ ACKNOWLEDGE ENDPOINT - NOW WITH acknowledgment_status ============
 @app.route('/api/technical-reports/<int:report_id>/acknowledge', methods=['POST'])
 def acknowledge_report(report_id):
     try:
@@ -638,7 +639,6 @@ def acknowledge_report(report_id):
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
         team_leader_notes = data.get('team_leader_notes', '')
-        # NEW: acknowledgment_status - either 'done_reviewed' or 'need_further_action'
         acknowledgment_status = data.get('acknowledgment_status', 'done_reviewed')
         if not team_leader_id:
             return jsonify({'success': False, 'error': 'Team Leader ID required'}), 400
@@ -659,7 +659,7 @@ def acknowledge_report(report_id):
             "team_leader_id": team_leader_id,
             "team_leader_name": team_leader_name,
             "team_leader_notes": team_leader_notes,
-            "acknowledgment_status": acknowledgment_status,  # NEW
+            "acknowledgment_status": acknowledgment_status,
             "updated_at": get_brunei_time_iso()
         }
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
@@ -1027,9 +1027,11 @@ def export_reports():
                 if entity.data:
                     entity_name = entity.data[0]['name']
             else:
-                entity = supabase.table("departments").select("name").eq("id", report['entity_id']).execute()
+                # FIX #1: Use unit_name for departments in CSV export too
+                entity = supabase.table("departments").select("name, unit_name").eq("id", report['entity_id']).execute()
                 if entity.data:
-                    entity_name = entity.data[0]['name']
+                    dept = entity.data[0]
+                    entity_name = dept.get('unit_name') or dept.get('name') or ''
             tech_name = ''
             if report.get('technician_id'):
                 tech = supabase.table("technicians").select("name").eq("id", report['technician_id']).execute()
