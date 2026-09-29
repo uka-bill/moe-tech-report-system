@@ -94,7 +94,6 @@
         color: white;
     }
 
-    /* Table Styles */
     .table-container {
         background: white;
         border-radius: 16px;
@@ -137,7 +136,6 @@
         overflow-x: auto;
     }
 
-    /* Column Widths */
     .col-id { width: 45px; min-width: 45px; max-width: 45px; }
     .col-type { width: 80px; min-width: 70px; max-width: 100px; }
     .col-location { width: 220px; min-width: 180px; max-width: 300px; }
@@ -146,11 +144,10 @@
     .col-action { width: 100px; min-width: 90px; max-width: 130px; }
     .col-details { width: 200px; min-width: 140px; max-width: 280px; }
     .col-submitted { width: 120px; min-width: 100px; max-width: 150px; }
-    .col-status { width: 85px; min-width: 75px; max-width: 110px; }
+    .col-status { width: 130px; min-width: 110px; max-width: 160px; }
     .col-date { width: 130px; min-width: 110px; max-width: 160px; }
     .col-actions { width: 80px; min-width: 70px; max-width: 100px; }
 
-    /* Status Badges */
     .status-badge {
         padding: 3px 8px;
         border-radius: 20px;
@@ -166,7 +163,6 @@
     .status-resolved { background: #d4edda; color: #155724; }
     .status-acknowledged { background: #cce5ff; color: #004085; }
 
-    /* Priority indicator */
     .priority-high {
         color: #dc3545;
         font-weight: 600;
@@ -190,7 +186,6 @@
         margin-right: 3px;
     }
 
-    /* Resolution status badges */
     .resolution-badge {
         padding: 3px 10px;
         border-radius: 20px;
@@ -216,6 +211,30 @@
         color: #721c24;
     }
 
+    /* NEW: Acknowledgment status badge */
+    .ack-status-badge {
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+        margin-top: 2px;
+    }
+    .ack-done-badge {
+        background: linear-gradient(135deg, #4caf50 0%, #28a745 100%);
+        color: white;
+    }
+    .ack-action-badge {
+        background: linear-gradient(135deg, #f44336 0%, #dc3545 100%);
+        color: white;
+        animation: pulse-warning 1.5s infinite;
+    }
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
+        50% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+    }
+
     .type-icon {
         display: inline-flex;
         align-items: center;
@@ -226,7 +245,6 @@
     .type-icon.electricity { color: #f57c00; }
     .type-icon.telephone { color: #4caf50; }
 
-    /* Action Buttons */
     .action-buttons {
         display: flex;
         align-items: center;
@@ -273,7 +291,6 @@
         background: #f8bbd0;
     }
 
-    /* Badges for entity type */
     .entity-badge {
         padding: 2px 8px;
         border-radius: 12px;
@@ -285,7 +302,6 @@
     .entity-badge.school { background: #e3f2fd; color: #0d47a1; }
     .entity-badge.department { background: #f3e5f5; color: #6a1b9a; }
 
-    /* Text truncation */
     .text-truncate-custom {
         display: block;
         white-space: nowrap;
@@ -310,7 +326,6 @@
         border-radius: 3px;
     }
 
-    /* Modal */
     .modal-header-custom {
         background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         color: white;
@@ -363,7 +378,6 @@
         margin-bottom: 8px;
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
         .col-id { width: 35px; min-width: 35px; }
         .col-type { width: 60px; min-width: 50px; }
@@ -373,7 +387,7 @@
         .col-action { width: 80px; min-width: 70px; }
         .col-details { min-width: 100px; }
         .col-submitted { width: 80px; min-width: 60px; }
-        .col-status { width: 65px; min-width: 55px; }
+        .col-status { width: 90px; min-width: 80px; }
         .col-date { width: 90px; min-width: 75px; }
         .col-actions { width: 70px; min-width: 60px; }
         .btn-action { width: 22px; height: 22px; font-size: 9px; }
@@ -383,6 +397,7 @@
             font-size: 10px;
         }
         .status-badge { font-size: 8px; padding: 2px 5px; min-width: 45px; }
+        .ack-status-badge { font-size: 8px; padding: 1px 6px; }
         .priority-high, .priority-medium, .priority-low { font-size: 9px; }
         .entity-badge { font-size: 8px; padding: 1px 5px; }
         .text-wrap-cell { font-size: 10px; max-height: 40px; }
@@ -657,13 +672,10 @@
     let currentReportId = null;
     let techniciansMap = {};
 
-    // ============ UTILITY FUNCTIONS ============
-
     function formatDateTime(dateString) {
         if (!dateString) return '-';
         try {
             const date = new Date(dateString);
-            // Time is already stored in Brunei Time (UTC+8), so no offset needed
             return date.toLocaleString('en-GB', {
                 day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
@@ -686,7 +698,6 @@
         return escapeHtml(text.substring(0, maxLength)) + '...';
     }
 
-    // ============ Status badge based on team_leader_acknowledged ============
     function getStatusBadge(report) {
         if (report.team_leader_acknowledged) {
             return `<span class="status-badge status-acknowledged">✓ Acknowledged</span>`;
@@ -695,7 +706,16 @@
         }
     }
 
-    // ============ Priority indicator ============
+    // NEW: Acknowledgment status badge (Team Leader's indicator)
+    function getAcknowledgmentBadge(report) {
+        if (!report.team_leader_acknowledged) return '';
+        const status = report.acknowledgment_status || 'done_reviewed';
+        if (status === 'need_further_action') {
+            return `<span class="ack-status-badge ack-action-badge">⚠️ Need Action</span>`;
+        }
+        return `<span class="ack-status-badge ack-done-badge">✅ Reviewed</span>`;
+    }
+
     function getPriorityIndicator(priority) {
         const priorityMap = {
             'high': { class: 'priority-high', icon: '🔴', text: 'HIGH' },
@@ -706,7 +726,6 @@
         return `<span class="${p.class}"><span class="priority-icon">${p.icon}</span> ${p.text}</span>`;
     }
 
-    // ============ NEW: Resolution status badge ============
     function getResolutionBadge(report) {
         const status = report.resolution_status || 'pending_action';
         const map = {
@@ -734,8 +753,6 @@
         return type;
     }
 
-    // ============ LOAD TECHNICIANS ============
-
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians');
@@ -753,8 +770,6 @@
         return techniciansMap[techId] || `Technician #${techId}`;
     }
 
-    // ============ LOAD REPORTS ============
-
     async function loadReports() {
         const tbody = document.getElementById('reportsTableBody');
         tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4"><div class="loading-spinner"></div> Loading reports...</td></tr>';
@@ -767,9 +782,6 @@
             const search = document.getElementById('filterSearch').value.trim();
 
             if (type) params.append('type', type);
-            if (status) {
-                // Status filter is handled client-side
-            }
             if (entityType) params.append('entity_type', entityType);
 
             const url = `/api/technical-reports?${params.toString()}`;
@@ -810,8 +822,6 @@
         }
     }
 
-    // ============ DISPLAY REPORTS ============
-
     function displayReports(reports) {
         const tbody = document.getElementById('reportsTableBody');
 
@@ -833,6 +843,7 @@
         tbody.innerHTML = reports.map((report, index) => {
             const rowNumber = reports.length - index;
             const statusBadge = getStatusBadge(report);
+            const ackBadge = getAcknowledgmentBadge(report);
             const priorityIndicator = getPriorityIndicator(report.priority);
             const typeIcon = getTypeIcon(report.report_type);
             const entityBadge = getEntityBadge(report.entity_type);
@@ -869,6 +880,7 @@
                     </td>
                     <td class="col-status text-center">
                         ${statusBadge}
+                        ${ackBadge}
                     </td>
                     <td class="col-date">
                         <span class="text-truncate-custom">${formatDateTime(report.created_at)}</span>
@@ -891,8 +903,6 @@
         }).join('');
     }
 
-    // ============ FILTER FUNCTIONS ============
-
     function applyFilters() {
         loadReports();
     }
@@ -904,8 +914,6 @@
         document.getElementById('filterSearch').value = '';
         loadReports();
     }
-
-    // ============ VIEW REPORT ============
 
     async function viewReport(id) {
         const report = allReports.find(r => r.id === id);
@@ -919,7 +927,6 @@
         const locationName = report.entity_name || report.entity_type || 'Unknown';
         const isAcknowledged = report.team_leader_acknowledged;
 
-        // Acknowledgment section (shows team leader name, date, comments)
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
             acknowledgmentHtml = `
@@ -928,6 +935,7 @@
                     <i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>
                     <strong>By:</strong> ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>
                     <strong>Date:</strong> ${formatDateTime(report.team_leader_acknowledged_at)}<br>
+                    <strong>Status:</strong> ${getAcknowledgmentBadge(report)}<br>
                     <strong>Comments:</strong> ${escapeHtml(report.team_leader_notes || 'No notes')}
                 </div>
             `;
@@ -1042,8 +1050,6 @@
         new bootstrap.Modal(document.getElementById('viewReportModal')).show();
     }
 
-    // ============ EDIT REPORT ============
-
     function editReport(id) {
         const report = allReports.find(r => r.id === id);
         if (!report) {
@@ -1068,7 +1074,6 @@
         document.getElementById('editReportStatus').value = report.status || 'pending';
         document.getElementById('editEntityType').value = report.entity_type || 'school';
         document.getElementById('editPriority').value = report.priority || 'medium';
-        // NEW: set resolution status
         document.getElementById('editResolutionStatus').value = report.resolution_status || 'pending_action';
         document.getElementById('editProblemType').value = report.problem_type || '';
         document.getElementById('editComplaintDetails').value = report.complaint_details || '';
@@ -1086,8 +1091,6 @@
         currentReportId = report.id;
         new bootstrap.Modal(document.getElementById('editReportModal')).show();
     }
-
-    // ============ SAVE REPORT EDIT ============
 
     async function saveReportEdit() {
         const reportId = document.getElementById('editReportId').value;
@@ -1107,7 +1110,6 @@
             entity_type: document.getElementById('editEntityType').value,
             status: document.getElementById('editReportStatus').value,
             priority: document.getElementById('editPriority').value,
-            // NEW: include resolution status
             resolution_status: document.getElementById('editResolutionStatus').value,
             problem_type: document.getElementById('editProblemType').value.trim(),
             complaint_details: document.getElementById('editComplaintDetails').value.trim(),
@@ -1162,8 +1164,6 @@
         }
     }
 
-    // ============ DELETE REPORT ============
-
     function deleteReport(id) {
         document.getElementById('deleteReportId').value = id;
         new bootstrap.Modal(document.getElementById('deleteReportModal')).show();
@@ -1200,8 +1200,6 @@
         }
     }
 
-    // ============ EXPORT REPORTS ============
-
     async function exportReports() {
         const type = document.getElementById('filterType').value;
         const url = type ? `/api/export-reports?type=${type}` : '/api/export-reports';
@@ -1213,8 +1211,6 @@
             if (window.showToast) window.showToast('Error exporting reports', 'error');
         }
     }
-
-    // ============ KEYBOARD SHORTCUTS ============
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -1229,10 +1225,6 @@
             if (window.showToast) window.showToast('Reports refreshed', 'info');
         }
     });
-
-    // ============ INITIALIZE ============
-    // Wait for technicians to load FIRST, then load reports
-    // This ensures "Submitted By" shows the real name, not "Technician #5"
 
     document.addEventListener('DOMContentLoaded', async function() {
         await loadTechnicians();
