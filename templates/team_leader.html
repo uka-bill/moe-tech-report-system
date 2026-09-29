@@ -279,7 +279,6 @@
         margin-right: 3px;
     }
 
-    /* Resolution status badges */
     .resolution-badge {
         padding: 3px 10px;
         border-radius: 20px;
@@ -305,7 +304,7 @@
         color: #721c24;
     }
 
-    /* NEW: Acknowledgment status option boxes */
+    /* Acknowledgment status option boxes (inside view modal) */
     .ack-status-option {
         padding: 14px;
         border-radius: 12px;
@@ -336,7 +335,7 @@
         background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
     }
 
-    /* NEW: Acknowledgment status badge (for view modal) */
+    /* Acknowledgment status badge */
     .ack-status-badge {
         padding: 4px 12px;
         border-radius: 20px;
@@ -354,7 +353,64 @@
         color: white;
     }
 
-    /* Action Buttons */
+    /* Inline acknowledgment section inside view modal */
+    .inline-ack-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-radius: 14px;
+        border: 2px solid #4caf50;
+        border-left: 5px solid #4caf50;
+    }
+    .inline-ack-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #166534;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .inline-ack-section .form-label {
+        color: #166534;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .inline-ack-section textarea {
+        border-radius: 10px;
+        border: 1px solid #86efac;
+        font-size: 14px;
+    }
+    .inline-ack-section textarea:focus {
+        border-color: #4caf50;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+        outline: none;
+    }
+    .btn-submit-ack {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-submit-ack:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    .btn-submit-ack:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
     .action-buttons {
         display: flex;
         align-items: center;
@@ -394,7 +450,6 @@
         background: #c8e6c9;
     }
 
-    /* Refresh Button */
     .btn-refresh {
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         border: none;
@@ -424,7 +479,6 @@
         border-radius: 10px;
     }
 
-    /* Statistics Cards */
     .stat-card {
         background: white;
         border-radius: 16px;
@@ -478,7 +532,6 @@
         background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     }
 
-    /* Modal Styles */
     .modal-fullscreen {
         max-width: 95%;
         width: 95%;
@@ -574,18 +627,6 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
     }
-    .btn-secondary-custom {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 8px 18px;
-        font-weight: 500;
-        transition: all 0.2s;
-        color: white;
-    }
-    .btn-secondary-custom:hover {
-        transform: translateY(-1px);
-    }
     .btn-print {
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
         border: none;
@@ -599,7 +640,6 @@
         transform: translateY(-1px);
     }
 
-    /* Responsive */
     @media (max-width: 768px) {
         .col-id { width: 35px; min-width: 35px; }
         .col-entity { width: 140px; min-width: 100px; }
@@ -706,57 +746,8 @@
     </div>
 </div>
 
-<!-- Acknowledge Modal - WITH STATUS SELECTOR -->
-<div class="modal fade" id="acknowledgeModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header-custom">
-                <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-4">
-                    <label class="form-label fw-bold" style="font-size: 14px;">Acknowledgment Status</label>
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="ack-status-option done selected" data-ack="done_reviewed" onclick="selectAckStatus('done_reviewed')">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackDone" value="done_reviewed" checked>
-                                    <label class="form-check-label fw-bold" for="ackDone" style="cursor: pointer;">
-                                        ✅ Done / Reviewed
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block mt-1">No further action needed</small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="ack-status-option action" data-ack="need_further_action" onclick="selectAckStatus('need_further_action')">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackAction" value="need_further_action">
-                                    <label class="form-check-label fw-bold" for="ackAction" style="cursor: pointer;">
-                                        ⚠️ Need Further Action
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block mt-1">Technician needs to follow up</small>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" id="ackStatusHidden" value="done_reviewed">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Review Comments / Notes</label>
-                    <textarea class="form-control" id="acknowledgeNotes" rows="4" placeholder="Enter your review comments..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn-primary-custom" onclick="submitAcknowledge()">Acknowledge</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="viewReportModal" tabindex="-1">
+<!-- VIEW REPORT MODAL - now includes inline acknowledgment section -->
+<div class="modal fade" id="viewReportModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header-custom">
@@ -766,10 +757,9 @@
                 </button>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="viewReportContent" style="max-height: 70vh; overflow-y: auto;">Loading...</div>
+            <div class="modal-body" id="viewReportContent" style="max-height: 78vh; overflow-y: auto;">Loading...</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn-primary-custom" id="modalAcknowledgeBtn" onclick="acknowledgeFromModal()">Acknowledge</button>
                 <button type="button" class="btn-print" onclick="printCurrentReport()"><i class="bi bi-printer"></i> Print</button>
             </div>
         </div>
@@ -788,7 +778,6 @@
     let techniciansMap = {};
     let globalRankMap = {};
 
-    // ============ Resolution status badge (technician's indicator) ============
     function getResolutionBadge(report) {
         const status = report.resolution_status || 'pending_action';
         const map = {
@@ -801,7 +790,6 @@
         return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
     }
 
-    // ============ NEW: Acknowledgment status badge (team leader's indicator) ============
     function getAcknowledgmentBadge(report) {
         if (!report.team_leader_acknowledged) return '';
         const status = report.acknowledgment_status || 'done_reviewed';
@@ -815,7 +803,6 @@
         if (!dateString) return '-';
         try {
             const date = new Date(dateString);
-            // Time is already stored in Brunei Time (UTC+8), so no offset needed
             return date.toLocaleString('en-GB', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
@@ -828,7 +815,6 @@
         if (!dateString) return '-';
         try {
             const date = new Date(dateString);
-            // Time is already stored in Brunei Time (UTC+8), so no offset needed
             return date.toLocaleDateString('en-GB');
         } catch (e) {
             return dateString;
@@ -1083,7 +1069,7 @@
                                 <td class="col-date date-cell" onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
                                 <td class="col-actions">
                                     <div class="action-buttons">
-                                        ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})">Acknowledge</button>` : ''}
+                                        ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); viewReportDetail(${report.id}, true)">Acknowledge</button>` : ''}
                                         <button class="btn-action btn-view-action" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
                                         <button class="btn-action btn-print-action" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
                                     </div>
@@ -1158,7 +1144,7 @@
                                 <td class="col-date date-cell" onclick="viewReportDetail(${report.id})">${formatDateOnly(report.created_at)}</td>
                                 <td class="col-actions">
                                     <div class="action-buttons">
-                                        ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); openAcknowledgeModal(${report.id})">Acknowledge</button>` : ''}
+                                        ${isAuthorizedUser ? `<button class="btn-acknowledge" onclick="event.stopPropagation(); viewReportDetail(${report.id}, true)">Acknowledge</button>` : ''}
                                         <button class="btn-action btn-view-action" onclick="event.stopPropagation(); viewReportDetail(${report.id})" title="View"><i class="bi bi-eye"></i></button>
                                         <button class="btn-action btn-print-action" onclick="event.stopPropagation(); printReport(${report.id})" title="Print"><i class="bi bi-printer"></i></button>
                                     </div>
@@ -1202,78 +1188,25 @@
         }
     }
 
-    // ============ NEW: Select acknowledgment status ============
+    // Select acknowledgment status (inside view modal)
     function selectAckStatus(status) {
         const radioId = status === 'need_further_action' ? 'ackAction' : 'ackDone';
-        document.getElementById(radioId).checked = true;
-        document.getElementById('ackStatusHidden').value = status;
+        const radio = document.getElementById(radioId);
+        if (radio) radio.checked = true;
+        const hiddenInput = document.getElementById('ackStatusHidden');
+        if (hiddenInput) hiddenInput.value = status;
         document.querySelectorAll('.ack-status-option').forEach(opt => opt.classList.remove('selected'));
         const target = document.querySelector(`.ack-status-option[data-ack="${status}"]`);
         if (target) target.classList.add('selected');
     }
 
-    function openAcknowledgeModal(id) {
-        if (!isAuthorizedUser) {
-            window.showToast('You are not authorized to acknowledge reports', 'error');
-            return;
-        }
-        currentReportId = id;
-        document.getElementById('acknowledgeNotes').value = '';
-        // Reset to default "Done / Reviewed"
-        selectAckStatus('done_reviewed');
-        new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
-    }
-
-    async function submitAcknowledge() {
-        const notes = document.getElementById('acknowledgeNotes').value;
-        const ackStatus = document.getElementById('ackStatusHidden').value;
-        const user = window.getCurrentUser();
-
-        if (!user || !user.id) {
-            window.showToast('User not found', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    team_leader_id: parseInt(user.id),
-                    team_leader_notes: notes,
-                    acknowledgment_status: ackStatus
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                window.showToast('Report acknowledged successfully');
-                const modal = bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal'));
-                modal.hide();
-                document.getElementById('acknowledgeModal').addEventListener('hidden.bs.modal', function onHidden() {
-                    document.getElementById('acknowledgeModal').removeEventListener('hidden.bs.modal', onHidden);
-                    loadTeamLeaderData();
-                    const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewReportModal'));
-                    if (viewModal) viewModal.hide();
-                });
-            } else {
-                window.showToast(data.error || 'Failed to acknowledge', 'error');
-            }
-        } catch (error) {
-            console.error('Error acknowledging report:', error);
-            window.showToast('Error acknowledging report', 'error');
-        }
-    }
-
-    function viewReportDetail(id) {
+    // viewReportDetail now optionally auto-scrolls to ack section
+    function viewReportDetail(id, scrollToAck = false) {
         currentReportId = id;
         currentReport = allReports.find(r => r.id === id);
 
         if (currentReport) {
             displayReportInModal(currentReport);
-            const ackBtn = document.getElementById('modalAcknowledgeBtn');
-            if (ackBtn) {
-                ackBtn.style.display = (isAuthorizedUser && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
-            }
             if (isModalExpanded) {
                 const modalDialog = document.querySelector('#viewReportModal .modal-dialog');
                 const expandBtn = document.getElementById('expandModalBtn');
@@ -1285,15 +1218,19 @@
                 }
             }
             new bootstrap.Modal(document.getElementById('viewReportModal')).show();
+            // Auto-scroll to ack section if requested
+            if (scrollToAck && isAuthorizedUser && !currentReport.team_leader_acknowledged) {
+                setTimeout(() => {
+                    const ackSection = document.getElementById('inlineAckSection');
+                    if (ackSection) {
+                        ackSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        const textarea = document.getElementById('inlineAckNotes');
+                        if (textarea) textarea.focus();
+                    }
+                }, 400);
+            }
         } else {
             window.showToast('Report not found', 'error');
-        }
-    }
-
-    function acknowledgeFromModal() {
-        if (currentReportId) {
-            bootstrap.Modal.getInstance(document.getElementById('viewReportModal')).hide();
-            openAcknowledgeModal(currentReportId);
         }
     }
 
@@ -1325,6 +1262,56 @@
         if (isAcknowledged) {
             const ackBadge = getAcknowledgmentBadge(report);
             acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+        }
+
+        // Inline acknowledgment section (only for pending reports + authorized Team Leader)
+        let inlineAckSection = '';
+        if (!isAcknowledged && isAuthorizedUser) {
+            inlineAckSection = `
+                <div class="inline-ack-section" id="inlineAckSection">
+                    <div class="inline-ack-title">
+                        <i class="bi bi-check2-square"></i> Acknowledge This Report
+                    </div>
+                    <p class="text-muted small mb-3" style="color: #166534 !important;">
+                        <i class="bi bi-info-circle"></i> Review the report above, then select a status and write your comment before acknowledging.
+                    </p>
+                    <label class="form-label fw-bold">Acknowledgment Status</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <div class="ack-status-option done selected" data-ack="done_reviewed" onclick="selectAckStatus('done_reviewed')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackDone" value="done_reviewed" checked>
+                                    <label class="form-check-label fw-bold" for="ackDone" style="cursor: pointer;">
+                                        ✅ Done / Reviewed
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">No further action needed</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="ack-status-option action" data-ack="need_further_action" onclick="selectAckStatus('need_further_action')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackAction" value="need_further_action">
+                                    <label class="form-check-label fw-bold" for="ackAction" style="cursor: pointer;">
+                                        ⚠️ Need Further Action
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">Technician needs to follow up</small>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="ackStatusHidden" value="done_reviewed">
+                    <label class="form-label fw-bold">Review Comments / Notes</label>
+                    <textarea class="form-control" id="inlineAckNotes" rows="4" placeholder="Enter your review comments..."></textarea>
+                    <div class="mt-3">
+                        <button class="btn-submit-ack" id="inlineAckSubmitBtn" onclick="submitInlineAcknowledge()">
+                            <i class="bi bi-check-circle"></i> Acknowledge Report
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (!isAcknowledged && !isAuthorizedUser) {
+            inlineAckSection = `<div class="alert alert-warning mt-3"><i class="bi bi-lock"></i> You are not authorized to acknowledge this report.</div>`;
         }
 
         const html = `
@@ -1367,9 +1354,68 @@
                 ${acknowledgmentHtml}
                 ${imagesHtml}
                 ${commentsHtml}
+                ${inlineAckSection}
             </div>
         `;
         document.getElementById('viewReportContent').innerHTML = html;
+    }
+
+    // Submit acknowledgment from inline form
+    async function submitInlineAcknowledge() {
+        const notes = document.getElementById('inlineAckNotes').value;
+        const ackStatus = document.getElementById('ackStatusHidden').value;
+        const user = window.getCurrentUser();
+
+        if (!user || !user.id) {
+            window.showToast('User not found', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('inlineAckSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Acknowledging...';
+        }
+
+        try {
+            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    team_leader_id: parseInt(user.id),
+                    team_leader_notes: notes,
+                    acknowledgment_status: ackStatus
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.showToast('Report acknowledged successfully');
+                // Close the modal
+                const modalEl = document.getElementById('viewReportModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                // Refresh list immediately after modal is hidden
+                modalEl.addEventListener('hidden.bs.modal', function onHidden() {
+                    modalEl.removeEventListener('hidden.bs.modal', onHidden);
+                    loadTeamLeaderData();
+                }, { once: true });
+                // Safety fallback in case hidden event doesn't fire
+                setTimeout(() => { loadTeamLeaderData(); }, 800);
+            } else {
+                window.showToast(data.error || 'Failed to acknowledge', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Acknowledge Report';
+                }
+            }
+        } catch (error) {
+            console.error('Error acknowledging report:', error);
+            window.showToast('Error acknowledging report', 'error');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Acknowledge Report';
+            }
+        }
     }
 
     function printCurrentReport() {
