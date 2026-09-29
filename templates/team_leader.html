@@ -304,7 +304,6 @@
         color: #721c24;
     }
 
-    /* Acknowledgment status option boxes (inside view modal) */
     .ack-status-option {
         padding: 14px;
         border-radius: 12px;
@@ -335,7 +334,6 @@
         background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
     }
 
-    /* Acknowledgment status badge */
     .ack-status-badge {
         padding: 4px 12px;
         border-radius: 20px;
@@ -353,7 +351,6 @@
         color: white;
     }
 
-    /* Inline acknowledgment section inside view modal */
     .inline-ack-section {
         margin-top: 20px;
         padding: 20px;
@@ -746,7 +743,7 @@
     </div>
 </div>
 
-<!-- VIEW REPORT MODAL - now includes inline acknowledgment section -->
+<!-- VIEW REPORT MODAL - includes inline acknowledgment section -->
 <div class="modal fade" id="viewReportModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -823,11 +820,12 @@
 
     async function loadTechnicians() {
         try {
-            const response = await fetch('/api/technicians');
+            const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
             const techs = await response.json();
             techs.forEach(tech => {
                 techniciansMap[tech.id] = tech.name;
             });
+            console.log('Technicians loaded:', techs.length);
         } catch (error) {
             console.error('Error loading technicians:', error);
         }
@@ -964,12 +962,13 @@
         loadTeamLeaderData();
     }
 
+    // ============ FIX 1: Cache-busting on the fetch ============
     async function loadTeamLeaderData() {
         try {
-            const response = await fetch('/api/technical-reports');
+            const response = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             allReports = await response.json();
-            console.log('All reports loaded:', allReports.length);
+            console.log('All reports loaded (fresh):', allReports.length);
 
             const sortedReports = [...allReports].sort((a, b) => {
                 return new Date(a.created_at) - new Date(b.created_at);
@@ -1188,7 +1187,6 @@
         }
     }
 
-    // Select acknowledgment status (inside view modal)
     function selectAckStatus(status) {
         const radioId = status === 'need_further_action' ? 'ackAction' : 'ackDone';
         const radio = document.getElementById(radioId);
@@ -1200,7 +1198,6 @@
         if (target) target.classList.add('selected');
     }
 
-    // viewReportDetail now optionally auto-scrolls to ack section
     function viewReportDetail(id, scrollToAck = false) {
         currentReportId = id;
         currentReport = allReports.find(r => r.id === id);
@@ -1218,7 +1215,6 @@
                 }
             }
             new bootstrap.Modal(document.getElementById('viewReportModal')).show();
-            // Auto-scroll to ack section if requested
             if (scrollToAck && isAuthorizedUser && !currentReport.team_leader_acknowledged) {
                 setTimeout(() => {
                     const ackSection = document.getElementById('inlineAckSection');
@@ -1264,7 +1260,6 @@
             acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         }
 
-        // Inline acknowledgment section (only for pending reports + authorized Team Leader)
         let inlineAckSection = '';
         if (!isAcknowledged && isAuthorizedUser) {
             inlineAckSection = `
@@ -1360,7 +1355,7 @@
         document.getElementById('viewReportContent').innerHTML = html;
     }
 
-    // Submit acknowledgment from inline form
+    // ============ FIX 2: Immediate local update after acknowledgment ============
     async function submitInlineAcknowledge() {
         const notes = document.getElementById('inlineAckNotes').value;
         const ackStatus = document.getElementById('ackStatusHidden').value;
@@ -1390,16 +1385,52 @@
             const data = await response.json();
             if (data.success) {
                 window.showToast('Report acknowledged successfully');
+
+                // ============ IMMEDIATE LOCAL UPDATE ============
+                // Update the report locally so the pending list refreshes instantly
+                if (currentReport) {
+                    currentReport.team_leader_acknowledged = true;
+                    currentReport.acknowledgment_status = ackStatus;
+                    currentReport.team_leader_notes = notes;
+                    currentReport.team_leader_name = user.name || 'Team Leader';
+                    currentReport.team_leader_acknowledged_at = new Date().toISOString();
+                }
+
+                // Recompute the lists and re-render
+                const pendingNow = allReports.filter(r => !r.team_leader_acknowledged);
+                const highPriNow = pendingNow.filter(r => r.priority === 'high');
+                const ackNow = allReports.filter(r => r.team_leader_acknowledged);
+
+                document.getElementById('statPending').textContent = pendingNow.length;
+                document.getElementById('statAcknowledged').textContent = ackNow.length;
+                document.getElementById('pendingCount').textContent = pendingNow.length;
+                document.getElementById('highPriorityCount').textContent = highPriNow.length;
+
+                const notifBadge = document.getElementById('notificationCount');
+                const pendingSpan = document.getElementById('pendingReportsCount');
+                if (pendingNow.length > 0) {
+                    notifBadge.style.display = 'inline-block';
+                    pendingSpan.textContent = pendingNow.length;
+                } else {
+                    notifBadge.style.display = 'none';
+                }
+
+                displayHighPriorityTable(highPriNow);
+                displayPendingTable(pendingNow);
+                // ============ END IMMEDIATE LOCAL UPDATE ============
+
                 // Close the modal
                 const modalEl = document.getElementById('viewReportModal');
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);
                 if (modalInstance) modalInstance.hide();
-                // Refresh list immediately after modal is hidden
+
+                // Then run a full background refresh for consistency (with cache-busting)
                 modalEl.addEventListener('hidden.bs.modal', function onHidden() {
                     modalEl.removeEventListener('hidden.bs.modal', onHidden);
                     loadTeamLeaderData();
                 }, { once: true });
-                // Safety fallback in case hidden event doesn't fire
+
+                // Safety fallback: force full reload after 800ms even if event didn't fire
                 setTimeout(() => { loadTeamLeaderData(); }, 800);
             } else {
                 window.showToast(data.error || 'Failed to acknowledge', 'error');
@@ -1583,9 +1614,9 @@
         </html>`;
     }
 
-        document.addEventListener('DOMContentLoaded', async function() {
-        await loadTechnicians();   // Wait for names to load first
-        checkAuthorization();      // Then check auth + load reports
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadTechnicians();
+        checkAuthorization();
     });
 </script>
 {% endblock %}
