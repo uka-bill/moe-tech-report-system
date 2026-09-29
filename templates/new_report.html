@@ -7,7 +7,6 @@
         --primary-dark: #8e44ad;
         --primary-light: #d4b8e8;
         --secondary-color: #f3e5f5;
-        --accent-color: #e8d5f5;
         --danger-color: #dc3545;
         --success-color: #28a745;
         --warning-color: #ffc107;
@@ -21,10 +20,6 @@
         margin-bottom: 25px;
         box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         border: 1px solid #eef2f7;
-        transition: all 0.2s ease;
-    }
-    .form-section:hover {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
     .form-section-title {
         font-size: 1.1rem;
@@ -36,7 +31,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     .datetime-panel {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -57,10 +51,7 @@
         font-size: 0.9rem;
         color: white;
     }
-    .datetime-label {
-        font-weight: 600;
-        opacity: 0.9;
-    }
+    .datetime-label { font-weight: 600; opacity: 0.9; }
     .datetime-value {
         font-family: 'Courier New', monospace;
         background-color: rgba(255,255,255,0.2);
@@ -77,6 +68,15 @@
         border-left: 4px solid #4caf50;
         color: #2e7d32;
     }
+    .edit-banner {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #ffc107;
+        color: #856404;
+        font-weight: 600;
+    }
     .priority-box {
         padding: 15px;
         border-radius: 12px;
@@ -85,28 +85,11 @@
         cursor: pointer;
         border: 2px solid transparent;
     }
-    .priority-box:hover {
-        transform: translateY(-2px);
-    }
-    .priority-low {
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-        border-color: #4caf50;
-        color: #1b5e20;
-    }
-    .priority-medium {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        border-color: #ff9800;
-        color: #e65100;
-    }
-    .priority-high {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-        border-color: #f44336;
-        color: #c62828;
-    }
-    .priority-option.selected {
-        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
-        transform: scale(1.01);
-    }
+    .priority-box:hover { transform: translateY(-2px); }
+    .priority-low { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #4caf50; color: #1b5e20; }
+    .priority-medium { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-color: #ff9800; color: #e65100; }
+    .priority-high { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-color: #f44336; color: #c62828; }
+    .priority-option.selected { box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3); transform: scale(1.01); }
 
     .resolution-box {
         padding: 15px;
@@ -116,230 +99,117 @@
         cursor: pointer;
         border: 2px solid transparent;
     }
-    .resolution-box:hover {
-        transform: translateY(-2px);
-    }
-    .resolution-resolved {
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-        border-color: #4caf50;
-        color: #1b5e20;
-    }
-    .resolution-pending {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        border-color: #ff9800;
-        color: #e65100;
-    }
-    .resolution-budget {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border-color: #2196f3;
-        color: #0d47a1;
-    }
-    .resolution-attention {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-        border-color: #f44336;
-        color: #c62828;
-    }
-    .resolution-option.selected {
-        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
-        transform: scale(1.01);
-    }
+    .resolution-box:hover { transform: translateY(-2px); }
+    .resolution-resolved { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-color: #4caf50; color: #1b5e20; }
+    .resolution-pending { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-color: #ff9800; color: #e65100; }
+    .resolution-budget { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-color: #2196f3; color: #0d47a1; }
+    .resolution-attention { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border-color: #f44336; color: #c62828; }
+    .resolution-option.selected { box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3); transform: scale(1.01); }
 
-    .image-preview-container {
-        position: relative;
-        display: inline-block;
-        margin: 5px;
-    }
+    .image-preview-container { position: relative; display: inline-block; margin: 5px; }
     .image-preview {
-        width: 150px;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 10px;
-        border: 2px solid var(--primary-light);
-        transition: transform 0.2s;
-    }
-    .image-preview:hover {
-        transform: scale(1.02);
+        width: 150px; height: 120px; object-fit: cover;
+        border-radius: 10px; border: 2px solid var(--primary-light);
     }
     .remove-image-btn {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background-color: var(--danger-color);
-        color: white;
-        border: none;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.2s;
+        position: absolute; top: -8px; right: -8px;
+        width: 26px; height: 26px; border-radius: 50%;
+        background-color: var(--danger-color); color: white;
+        border: none; font-size: 14px; font-weight: bold; cursor: pointer;
     }
-    .remove-image-btn:hover {
-        background-color: #c82333;
-        transform: scale(1.1);
-    }
-    .upload-progress {
-        display: none;
-        margin-top: 15px;
-    }
-    .progress-bar-custom {
-        height: 8px;
-        background-color: #e9ecef;
-        border-radius: 10px;
-        overflow: hidden;
-    }
+    .upload-progress { display: none; margin-top: 15px; }
+    .progress-bar-custom { height: 8px; background-color: #e9ecef; border-radius: 10px; overflow: hidden; }
     .progress-fill {
-        width: 0%;
-        height: 100%;
+        width: 0%; height: 100%;
         background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         transition: width 0.3s ease;
     }
     .account-entry {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        padding: 10px;
-        border-radius: 10px;
-        background: #fafafa;
-        border: 1px solid #eef2f7;
+        display: flex; gap: 8px; margin-bottom: 10px;
+        align-items: center; flex-wrap: wrap; padding: 10px;
+        border-radius: 10px; background: #fafafa; border: 1px solid #eef2f7;
     }
     .account-entry input {
-        flex: 1;
-        min-width: 130px;
-        padding: 10px 12px;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: all 0.2s;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        flex: 1; min-width: 130px; padding: 10px 12px;
+        border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px;
     }
     .account-entry input:focus {
-        border-color: var(--primary-color);
-        outline: none;
+        border-color: var(--primary-color); outline: none;
         box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
     }
     .btn-add-account {
         background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 6px 14px;
-        font-size: 12px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 500;
-        transition: all 0.2s;
+        color: white; border: none; border-radius: 8px;
+        padding: 6px 14px; font-size: 12px; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px; font-weight: 500;
     }
-    .btn-add-account:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-    }
+    .btn-add-account:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); }
     .btn-remove-account {
         background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 4px 10px;
-        font-size: 11px;
-        cursor: pointer;
-        transition: all 0.2s;
+        color: white; border: none; border-radius: 6px;
+        padding: 4px 10px; font-size: 11px; cursor: pointer;
     }
-    .btn-remove-account:hover {
-        transform: scale(1.05);
-    }
+    .btn-remove-account:hover { transform: scale(1.05); }
     .form-control, .form-select {
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-        padding: 10px 12px;
-        font-size: 14px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        transition: all 0.2s;
+        border-radius: 10px; border: 1px solid #e0e0e0;
+        padding: 10px 12px; font-size: 14px;
     }
     .form-control:focus, .form-select:focus {
-        border-color: var(--primary-color);
-        outline: none;
+        border-color: var(--primary-color); outline: none;
         box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
     }
-    .form-label {
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 8px;
-        font-size: 13px;
-    }
+    .form-label { font-weight: 600; color: #2c3e50; margin-bottom: 8px; font-size: 13px; }
     .card-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        color: white;
-        border-radius: 16px 16px 0 0 !important;
-        padding: 15px 25px;
-        font-weight: 600;
-        font-size: 1.1rem;
+        color: white; border-radius: 16px 16px 0 0 !important;
+        padding: 15px 25px; font-weight: 600; font-size: 1.1rem;
     }
-    .card-header i {
-        color: white;
-    }
-    .card {
-        border: none;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
+    .card { border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
     .btn-primary {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 10px 24px;
-        font-weight: 600;
-        transition: all 0.2s;
+        border: none; border-radius: 10px; padding: 10px 24px; font-weight: 600;
     }
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
-    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4); }
     .btn-secondary {
         background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 10px 24px;
-        font-weight: 600;
-        transition: all 0.2s;
+        border: none; border-radius: 10px; padding: 10px 24px; font-weight: 600;
     }
-    .btn-secondary:hover {
-        transform: translateY(-2px);
+    .btn-outline-secondary { border-radius: 10px; padding: 10px 24px; font-weight: 600; }
+    textarea.form-control { border-radius: 12px; }
+    .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
+
+    .loading-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.85); z-index: 9999;
+        display: flex; justify-content: center; align-items: center;
+        flex-direction: column; gap: 15px; font-size: 15px; color: #9b59b6;
     }
-    .btn-outline-secondary {
-        border-radius: 10px;
-        padding: 10px 24px;
-        font-weight: 600;
-        transition: all 0.2s;
+    .spinner-large {
+        width: 50px; height: 50px;
+        border: 5px solid rgba(155, 89, 182, 0.2);
+        border-radius: 50%; border-top-color: #9b59b6;
+        animation: spin 1s linear infinite;
     }
-    .btn-outline-secondary:hover {
-        transform: translateY(-2px);
-    }
-    textarea.form-control {
-        border-radius: 12px;
-        resize: vertical;
-    }
-    .form-check-input:checked {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-    .badge {
-        font-weight: 500;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+
+<!-- Full screen loader shown while edit loads -->
+<div id="editLoadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-large"></div>
+    <div><strong>Loading report for editing...</strong></div>
+</div>
 
 <div class="card">
     <div class="card-header" id="formTitle">
         <i class="bi bi-plus-circle"></i> Submit New Technical Report
     </div>
     <div class="card-body">
+        <div class="edit-banner" id="editModeBanner" style="display: none;">
+            <i class="bi bi-pencil-square"></i> <strong>EDIT MODE</strong> - Report #<span id="editReportNumber">-</span> | Changes will overwrite the original report.
+        </div>
+
         <div class="info-box" id="instructionBox">
-            <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields. Your report will be sent to the Team Leader for review.
+            <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields.
         </div>
 
         <div class="datetime-panel">
@@ -357,33 +227,23 @@
 
         <form id="reportForm">
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-tag"></i> Report Type
-                </div>
+                <div class="form-section-title"><i class="bi bi-tag"></i> Report Type</div>
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <div class="btn-group w-100" role="group">
                             <input type="radio" class="btn-check" name="reportType" id="waterType" value="water" autocomplete="off" checked>
-                            <label class="btn btn-outline-info" for="waterType">
-                                <i class="bi bi-droplet"></i> Water Issue
-                            </label>
+                            <label class="btn btn-outline-info" for="waterType"><i class="bi bi-droplet"></i> Water Issue</label>
                             <input type="radio" class="btn-check" name="reportType" id="electricityType" value="electricity" autocomplete="off">
-                            <label class="btn btn-outline-warning" for="electricityType">
-                                <i class="bi bi-lightning-charge"></i> Electricity Issue
-                            </label>
+                            <label class="btn btn-outline-warning" for="electricityType"><i class="bi bi-lightning-charge"></i> Electricity Issue</label>
                             <input type="radio" class="btn-check" name="reportType" id="telephoneType" value="telephone" autocomplete="off">
-                            <label class="btn btn-outline-success" for="telephoneType">
-                                <i class="bi bi-telephone"></i> Telephone Issue
-                            </label>
+                            <label class="btn btn-outline-success" for="telephoneType"><i class="bi bi-telephone"></i> Telephone Issue</label>
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-exclamation-triangle"></i> Priority Level
-                </div>
+                <div class="form-section-title"><i class="bi bi-exclamation-triangle"></i> Priority Level</div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="priority-box priority-low priority-option" data-priority="low" onclick="selectPriority('low')">
@@ -416,23 +276,16 @@
                 <div class="mt-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="priorityWithTender" style="width: 50px; height: 25px;">
-                        <label class="form-check-label fw-bold" for="priorityWithTender">
-                            🔥 Priority with Tender (Requires immediate tender/emergency action)
-                        </label>
+                        <label class="form-check-label fw-bold" for="priorityWithTender">🔥 Priority with Tender</label>
                     </div>
-                    <div id="priorityInfo" class="alert alert-warning mt-2" style="display: none; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-color: #ff9800; color: #e65100;">
-                        <i class="bi bi-exclamation-triangle"></i> <strong>Priority with Tender Selected</strong> - This report will be flagged for immediate tender action.
+                    <div id="priorityInfo" class="alert alert-warning mt-2" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Priority with Tender Selected</strong>
                     </div>
                 </div>
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-clipboard-check"></i> Action / Resolution Status
-                </div>
-                <p class="text-muted small mb-3">
-                    <i class="bi bi-info-circle"></i> Indicate the current state of this issue so the Team Leader knows what follow-up is needed.
-                </p>
+                <div class="form-section-title"><i class="bi bi-clipboard-check"></i> Action / Resolution Status</div>
                 <div class="row">
                     <div class="col-md-3">
                         <div class="resolution-box resolution-resolved resolution-option" data-resolution="resolved" onclick="selectResolution('resolved')">
@@ -440,7 +293,6 @@
                                 <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionResolved" value="resolved">
                                 <label class="form-check-label fw-bold">✅ Resolved</label>
                             </div>
-                            <small>Problem solved – no further action</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -449,7 +301,6 @@
                                 <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionPending" value="pending_action" checked>
                                 <label class="form-check-label fw-bold">⏳ Pending Action</label>
                             </div>
-                            <small>Need another visit / further action</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -458,7 +309,6 @@
                                 <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionBudget" value="need_budget">
                                 <label class="form-check-label fw-bold">💰 Need Budget</label>
                             </div>
-                            <small>Requires budget to solve</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -467,7 +317,6 @@
                                 <input class="form-check-input" type="radio" name="resolutionRadio" id="resolutionAttention" value="need_attention">
                                 <label class="form-check-label fw-bold">🚨 Need Attention</label>
                             </div>
-                            <small>Requires immediate attention</small>
                         </div>
                     </div>
                 </div>
@@ -475,9 +324,7 @@
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-geo-alt"></i> Location Information
-                </div>
+                <div class="form-section-title"><i class="bi bi-geo-alt"></i> Location Information</div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Entity Type *</label>
@@ -494,15 +341,10 @@
                         </select>
                     </div>
                 </div>
-                <div id="editEntityWarning" class="alert alert-info mt-2" style="display: none; background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none;">
-                    <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You can change the entity (school/department/unit) for this report.
-                </div>
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-file-text"></i> Reference Information
-                </div>
+                <div class="form-section-title"><i class="bi bi-file-text"></i> Reference Information</div>
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">Reference Type</label>
@@ -517,7 +359,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Reference Number</label>
-                        <input type="text" class="form-control" id="referenceNumber" placeholder="e.g., MOE/UKA/001/2026">
+                        <input type="text" class="form-control" id="referenceNumber">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Reference Date</label>
@@ -527,66 +369,47 @@
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-receipt"></i> Account Details
-                </div>
-                
-                <!-- WATER -->
+                <div class="form-section-title"><i class="bi bi-receipt"></i> Account Details</div>
                 <div id="waterFields" class="mb-3">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>💧 Water Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addWaterAccountField()">
-                            <i class="bi bi-plus-circle"></i> Add Account
-                        </button>
+                        <button type="button" class="btn-add-account" onclick="addWaterAccountField()"><i class="bi bi-plus-circle"></i> Add Account</button>
                     </div>
                     <div id="waterAccountsContainer">
-                        <div class="account-entry" data-water-entry>
+                        <div class="account-entry">
                             <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
                             <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
-                            <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- ELECTRICITY -->
                 <div id="electricityFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>⚡ Electricity Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addElectricityAccountField()">
-                            <i class="bi bi-plus-circle"></i> Add Account
-                        </button>
+                        <button type="button" class="btn-add-account" onclick="addElectricityAccountField()"><i class="bi bi-plus-circle"></i> Add Account</button>
                     </div>
                     <div id="electricityAccountsContainer">
-                        <div class="account-entry" data-electricity-entry>
+                        <div class="account-entry">
                             <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
                             <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
-                            <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- TELEPHONE -->
                 <div id="telephoneFields" class="mb-3" style="display: none;">
                     <div class="form-section-title" style="font-size: 1rem; margin-bottom: 10px;">
                         <span>📞 Telephone Account Details</span>
-                        <button type="button" class="btn-add-account" onclick="addTelephoneAccountField()">
-                            <i class="bi bi-plus-circle"></i> Add Account
-                        </button>
+                        <button type="button" class="btn-add-account" onclick="addTelephoneAccountField()"><i class="bi bi-plus-circle"></i> Add Account</button>
                     </div>
                     <div id="telephoneAccountsContainer">
-                        <div class="account-entry" data-telephone-entry>
+                        <div class="account-entry">
                             <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
                             <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button>
-                            <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-chat-left-text"></i> Problem Details
-                </div>
+                <div class="form-section-title"><i class="bi bi-chat-left-text"></i> Problem Details</div>
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Problem Type *</label>
@@ -626,29 +449,25 @@
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Complaint / Issue Description *</label>
-                        <textarea class="form-control" id="complaintDetails" rows="4" required placeholder="Please provide detailed description of the problem..."></textarea>
+                        <textarea class="form-control" id="complaintDetails" rows="4" required></textarea>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label fw-bold">Action Taken / Work Done</label>
-                        <textarea class="form-control" id="actionTaken" rows="3" placeholder="Describe what action was taken, repairs done, or recommendations..."></textarea>
+                        <textarea class="form-control" id="actionTaken" rows="3"></textarea>
                     </div>
                 </div>
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-images"></i> Upload Images (Stored in Supabase)
-                </div>
+                <div class="form-section-title"><i class="bi bi-images"></i> Upload Images</div>
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <input type="file" class="form-control" id="imageUpload" accept="image/*" multiple>
-                        <small class="text-muted">Upload photos of the issue and the work done (JPG, PNG, up to 2MB each). Images are stored securely in Supabase.</small>
+                        <small class="text-muted">Upload photos (JPG, PNG, up to 2MB each).</small>
                         <div class="upload-progress" id="uploadProgress">
-                            <div class="progress-bar-custom">
-                                <div class="progress-fill" id="progressFill"></div>
-                            </div>
+                            <div class="progress-bar-custom"><div class="progress-fill" id="progressFill"></div></div>
                             <p class="small text-muted mt-1" id="progressText"></p>
                         </div>
                         <div id="imagePreviewContainer" class="mt-2 d-flex flex-wrap gap-2"></div>
@@ -657,12 +476,10 @@
             </div>
             
             <div class="form-section">
-                <div class="form-section-title">
-                    <i class="bi bi-journal-text"></i> Additional Report Notes
-                </div>
+                <div class="form-section-title"><i class="bi bi-journal-text"></i> Additional Notes</div>
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <textarea class="form-control" id="technicianNotes" rows="3" placeholder="Any additional observations, recommendations, or notes..."></textarea>
+                        <textarea class="form-control" id="technicianNotes" rows="3"></textarea>
                     </div>
                 </div>
             </div>
@@ -675,7 +492,7 @@
                     <button type="button" class="btn btn-secondary" onclick="resetForm()">
                         <i class="bi bi-eraser"></i> Clear Form
                     </button>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    <a href="{{ url_for('my_reports') }}" class="btn btn-outline-secondary">Cancel</a>
                 </div>
             </div>
         </form>
@@ -692,36 +509,46 @@
     let schoolsList = [];
     let departmentsList = [];
 
-    const urlParams = new URLSearchParams(window.location.search);
-    editReportId = urlParams.get('id');
-    isEditMode = editReportId !== null && editReportId !== 'null' && editReportId !== '';
-    
+    // ============ Parse edit mode from URL ============
+    (function parseUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const idParam = urlParams.get('id');
+        if (idParam && idParam !== 'null' && idParam !== '' && idParam !== 'undefined') {
+            editReportId = idParam;
+            isEditMode = true;
+            console.log('EDIT MODE - Report ID:', editReportId);
+        } else {
+            isEditMode = false;
+            console.log('NEW REPORT MODE');
+        }
+    })();
+
     if (isEditMode) {
         document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
-        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below.';
+        document.getElementById('editModeBanner').style.display = 'block';
+        document.getElementById('editReportNumber').textContent = '#' + editReportId;
+        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Edit Mode:</strong> Modify the fields below and click Save Changes.';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
-        document.getElementById('editEntityWarning').style.display = 'block';
+        document.getElementById('editLoadingOverlay').style.display = 'flex';
     }
 
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
-        if (imagePath.startsWith('/api/images/')) return window.location.origin + imagePath;
-        return window.location.origin + '/api/images/' + imagePath;
+        return window.location.origin + (imagePath.startsWith('/') ? imagePath : '/' + imagePath);
     }
 
-    // ========== Helper to remove an entire account entry ==========
+    // ============ Remove account entry ============
     function removeEntry(button) {
         const entry = button.closest('.account-entry');
         if (entry) entry.remove();
     }
 
-    // ========== WATER ==========
+    // ============ WATER ============
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
         const newEntry = document.createElement('div');
         newEntry.className = 'account-entry';
-        newEntry.setAttribute('data-water-entry', '');
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number">
             <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
@@ -730,7 +557,6 @@
         container.appendChild(newEntry);
     }
 
-    // Button stays enabled — can click repeatedly to add multiple meters to same account
     function addWaterMeterField(button) {
         const accountEntry = button.closest('.account-entry');
         const meterInput = document.createElement('input');
@@ -738,16 +564,14 @@
         meterInput.className = 'form-control';
         meterInput.placeholder = 'Water Meter Number';
         meterInput.name = 'water_meter_number[]';
-        // Insert before the buttons
         accountEntry.insertBefore(meterInput, button);
     }
 
-    // ========== ELECTRICITY ==========
+    // ============ ELECTRICITY ============
     function addElectricityAccountField() {
         const container = document.getElementById('electricityAccountsContainer');
         const newEntry = document.createElement('div');
         newEntry.className = 'account-entry';
-        newEntry.setAttribute('data-electricity-entry', '');
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number">
             <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
@@ -766,12 +590,11 @@
         accountEntry.insertBefore(meterInput, button);
     }
 
-    // ========== TELEPHONE ==========
+    // ============ TELEPHONE ============
     function addTelephoneAccountField() {
         const container = document.getElementById('telephoneAccountsContainer');
         const newEntry = document.createElement('div');
         newEntry.className = 'account-entry';
-        newEntry.setAttribute('data-telephone-entry', '');
         newEntry.innerHTML = `
             <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number">
             <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button>
@@ -780,7 +603,6 @@
         container.appendChild(newEntry);
     }
 
-    // Stays enabled — can click repeatedly to add multiple phone numbers to same account
     function addTelephoneNumberField(button) {
         const accountEntry = button.closest('.account-entry');
         const phoneInput = document.createElement('input');
@@ -791,53 +613,40 @@
         accountEntry.insertBefore(phoneInput, button);
     }
 
-    // ========== Collect all account data into arrays ==========
+    // ============ Collect account data ============
     function getAllAccountData() {
-        const accountData = {
-            water_accounts: [],
-            electricity_accounts: [],
-            telephone_accounts: []
-        };
+        const accountData = { water_accounts: [], electricity_accounts: [], telephone_accounts: [] };
         
-        // Water: first input is account number, remaining inputs are meter numbers
         document.querySelectorAll('#waterAccountsContainer .account-entry').forEach(entry => {
             const accountInput = entry.querySelector('input[name="water_account_number[]"]');
             if (accountInput && accountInput.value.trim()) {
-                const meterInputs = entry.querySelectorAll('input[name="water_meter_number[]"]');
                 const meterNumbers = [];
-                meterInputs.forEach(m => { if (m.value.trim()) meterNumbers.push(m.value.trim()); });
-                accountData.water_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    meter_numbers: meterNumbers
+                entry.querySelectorAll('input[name="water_meter_number[]"]').forEach(m => {
+                    if (m.value.trim()) meterNumbers.push(m.value.trim());
                 });
+                accountData.water_accounts.push({ account_number: accountInput.value.trim(), meter_numbers: meterNumbers });
             }
         });
         
-        // Electricity
         document.querySelectorAll('#electricityAccountsContainer .account-entry').forEach(entry => {
             const accountInput = entry.querySelector('input[name="electricity_account_number[]"]');
             if (accountInput && accountInput.value.trim()) {
-                const meterInputs = entry.querySelectorAll('input[name="electricity_meter_number[]"]');
                 const meterNumbers = [];
-                meterInputs.forEach(m => { if (m.value.trim()) meterNumbers.push(m.value.trim()); });
-                accountData.electricity_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    meter_numbers: meterNumbers
+                entry.querySelectorAll('input[name="electricity_meter_number[]"]').forEach(m => {
+                    if (m.value.trim()) meterNumbers.push(m.value.trim());
                 });
+                accountData.electricity_accounts.push({ account_number: accountInput.value.trim(), meter_numbers: meterNumbers });
             }
         });
         
-        // Telephone
         document.querySelectorAll('#telephoneAccountsContainer .account-entry').forEach(entry => {
             const accountInput = entry.querySelector('input[name="telephone_account_number[]"]');
             if (accountInput && accountInput.value.trim()) {
-                const phoneInputs = entry.querySelectorAll('input[name="telephone_number[]"]');
                 const phoneNumbers = [];
-                phoneInputs.forEach(p => { if (p.value.trim()) phoneNumbers.push(p.value.trim()); });
-                accountData.telephone_accounts.push({
-                    account_number: accountInput.value.trim(),
-                    phone_numbers: phoneNumbers
+                entry.querySelectorAll('input[name="telephone_number[]"]').forEach(p => {
+                    if (p.value.trim()) phoneNumbers.push(p.value.trim());
                 });
+                accountData.telephone_accounts.push({ account_number: accountInput.value.trim(), phone_numbers: phoneNumbers });
             }
         });
         
@@ -845,21 +654,23 @@
     }
 
     function selectPriority(priority) {
-        document.getElementById(`priority${priority.charAt(0).toUpperCase() + priority.slice(1)}`).checked = true;
-        document.getElementById('priority').value = priority;
+        const el = document.getElementById('priority' + priority.charAt(0).toUpperCase() + priority.slice(1));
+        if (el) el.checked = true;
+        const hidden = document.getElementById('priority');
+        if (hidden) hidden.value = priority;
         document.querySelectorAll('.priority-option').forEach(opt => opt.classList.remove('selected'));
-        document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
+        const target = document.querySelector(`.priority-option[data-priority="${priority}"]`);
+        if (target) target.classList.add('selected');
     }
 
     function selectResolution(status) {
-        const radioId = {
-            'resolved': 'resolutionResolved',
-            'pending_action': 'resolutionPending',
-            'need_budget': 'resolutionBudget',
-            'need_attention': 'resolutionAttention'
-        }[status];
-        if (radioId) document.getElementById(radioId).checked = true;
-        document.getElementById('resolutionStatusHidden').value = status;
+        const radioId = { 'resolved': 'resolutionResolved', 'pending_action': 'resolutionPending', 'need_budget': 'resolutionBudget', 'need_attention': 'resolutionAttention' }[status];
+        if (radioId) {
+            const el = document.getElementById(radioId);
+            if (el) el.checked = true;
+        }
+        const hidden = document.getElementById('resolutionStatusHidden');
+        if (hidden) hidden.value = status;
         document.querySelectorAll('.resolution-option').forEach(opt => opt.classList.remove('selected'));
         const target = document.querySelector(`.resolution-option[data-resolution="${status}"]`);
         if (target) target.classList.add('selected');
@@ -917,10 +728,7 @@
             const response = await fetch('/api/schools?t=' + Date.now(), { cache: 'no-store' });
             schoolsList = await response.json();
             return schoolsList;
-        } catch (error) {
-            console.error('Error loading schools:', error);
-            return [];
-        }
+        } catch (error) { console.error('Error loading schools:', error); return []; }
     }
 
     async function loadDepartments() {
@@ -928,10 +736,7 @@
             const response = await fetch('/api/departments?t=' + Date.now(), { cache: 'no-store' });
             departmentsList = await response.json();
             return departmentsList;
-        } catch (error) {
-            console.error('Error loading departments:', error);
-            return [];
-        }
+        } catch (error) { console.error('Error loading departments:', error); return []; }
     }
 
     async function populateEntityDropdown(entityType, selectedId = null) {
@@ -940,9 +745,9 @@
         if (entityType === 'school') {
             if (schoolsList.length === 0) await loadSchools();
             let options = '<option value="">-- Select School --</option>';
-            const selectedNum = selectedId !== null && selectedId !== undefined ? parseInt(selectedId) : NaN;
+            const selNum = parseInt(selectedId);
             schoolsList.forEach(s => {
-                const selected = (!isNaN(selectedNum) && Number(s.id) === selectedNum) ? 'selected' : '';
+                const selected = (!isNaN(selNum) && Number(s.id) === selNum) ? 'selected' : '';
                 options += `<option value="${s.id}" ${selected}>${escapeHtml(s.name)}</option>`;
             });
             entitySelect.innerHTML = options;
@@ -950,10 +755,10 @@
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) await loadDepartments();
             let options = '<option value="">-- Select Unit --</option>';
-            const selectedNum = selectedId !== null && selectedId !== undefined ? parseInt(selectedId) : NaN;
+            const selNum = parseInt(selectedId);
             departmentsList.forEach(d => {
                 const displayName = d.unit_name || d.name || 'Unnamed Unit';
-                const selected = (!isNaN(selectedNum) && Number(d.id) === selectedNum) ? 'selected' : '';
+                const selected = (!isNaN(selNum) && Number(d.id) === selNum) ? 'selected' : '';
                 options += `<option value="${d.id}" ${selected}>${escapeHtml(displayName)}</option>`;
             });
             entitySelect.innerHTML = options;
@@ -966,10 +771,8 @@
 
     document.getElementById('entityType').addEventListener('change', async function() {
         if (this.value === 'school') {
-            if (schoolsList.length === 0) await loadSchools();
             await populateEntityDropdown('school');
         } else if (this.value === 'department') {
-            if (departmentsList.length === 0) await loadDepartments();
             await populateEntityDropdown('department');
         } else {
             document.getElementById('entityId').innerHTML = '<option value="">Select Entity Type First</option>';
@@ -998,8 +801,7 @@
                     const canvas = document.createElement('canvas');
                     canvas.width = width;
                     canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                     canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
                 };
                 img.onerror = reject;
@@ -1022,7 +824,7 @@
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             progressFill.style.width = `${((i + 1) / files.length) * 100}%`;
-            progressText.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
+            progressText.textContent = `Uploading ${i + 1} of ${files.length}`;
             
             try {
                 const compressedBlob = await compressImage(file);
@@ -1035,13 +837,10 @@
                     const previewDiv = document.createElement('div');
                     previewDiv.className = 'image-preview-container';
                     previewDiv.setAttribute('data-image-url', data.image_url);
-                    const fullUrl = getFullImageUrl(data.image_url);
-                    previewDiv.innerHTML = `<img src="${fullUrl}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Error'"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
+                    previewDiv.innerHTML = `<img src="${getFullImageUrl(data.image_url)}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${data.image_url}')">×</button>`;
                     previewContainer.appendChild(previewDiv);
                 }
-            } catch (error) {
-                console.error('Upload error:', error);
-            }
+            } catch (error) { console.error('Upload error:', error); }
         }
         progressDiv.style.display = 'none';
         isUploading = false;
@@ -1062,7 +861,7 @@
     }
 
     async function resetForm() {
-        if (confirm('Clear all form data? Images will need to be re-uploaded.')) {
+        if (confirm('Clear all form data?')) {
             document.getElementById('reportForm').reset();
             uploadedImages = [];
             document.getElementById('imagePreviewContainer').innerHTML = '';
@@ -1070,24 +869,40 @@
             document.getElementById('priorityInfo').style.display = 'none';
             document.getElementById('priority').disabled = false;
             selectResolution('pending_action');
-            document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry" data-water-entry><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button><button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button></div>';
-            document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry" data-electricity-entry><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button><button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button></div>';
-            document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry" data-telephone-entry><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button><button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button></div>';
+            document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button></div>';
+            document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button></div>';
+            document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button></div>';
             updateAccountFields('water');
             setReportDateTime();
-            alert('Form cleared');
         }
     }
 
-    // Loads existing report for editing — now includes multiple meters/phones from account_details
+    // ============ BULLETPROOF EDIT LOADER ============
     async function loadReportForEdit(id) {
+        console.log('>>> Loading report for edit:', id);
+        const overlay = document.getElementById('editLoadingOverlay');
+        
         try {
-            const response = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
-            const reports = await response.json();
-            const report = reports.find(r => r.id == id);
+            // Fetch single report directly
+            const response = await fetch(`/api/technical-reports/${id}?t=` + Date.now(), { cache: 'no-store' });
             
-            if (!report) {
-                window.showToast('Report not found', 'error');
+            if (!response.ok) {
+                throw new Error('Failed to fetch report (HTTP ' + response.status + ')');
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success || !result.report) {
+                throw new Error(result.error || 'Report not found in response');
+            }
+            
+            const report = result.report;
+            console.log('>>> Report loaded:', report);
+            
+            // Ownership check
+            const currentUser = window.getCurrentUser();
+            if (currentUser && currentUser.id && report.technician_id != currentUser.id) {
+                window.showToast('You can only edit your own reports', 'error');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
                 return;
             }
@@ -1098,27 +913,19 @@
                 return;
             }
             
-            const currentUser = window.getCurrentUser();
-            if (currentUser && currentUser.id && report.technician_id != currentUser.id) {
-                window.showToast('You can only edit your own reports', 'error');
-                setTimeout(() => { window.location.href = '/my-reports'; }, 2000);
-                return;
-            }
-            
-            // Set report type
-            document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
+            // Populate Report Type
+            const typeRadio = document.querySelector(`input[name="reportType"][value="${report.report_type}"]`);
+            if (typeRadio) typeRadio.checked = true;
             updateAccountFields(report.report_type);
             
-            // Entity dropdown
+            // Populate Entity
             const entityTypeSelect = document.getElementById('entityType');
             entityTypeSelect.value = report.entity_type;
             entityTypeSelect.disabled = false;
             
-            if (report.entity_type === 'school' && schoolsList.length === 0) {
-                await loadSchools();
-            } else if (report.entity_type === 'department' && departmentsList.length === 0) {
-                await loadDepartments();
-            }
+            if (report.entity_type === 'school' && schoolsList.length === 0) await loadSchools();
+            if (report.entity_type === 'department' && departmentsList.length === 0) await loadDepartments();
+            
             await populateEntityDropdown(report.entity_type, report.entity_id);
             document.getElementById('entityId').disabled = false;
             
@@ -1132,9 +939,9 @@
             document.getElementById('referenceDate').value = report.reference_date || '';
             
             // Priority
-            if (report.priority === 'high') { document.getElementById('priorityHigh').checked = true; selectPriority('high'); }
-            else if (report.priority === 'medium') { document.getElementById('priorityMedium').checked = true; selectPriority('medium'); }
-            else { document.getElementById('priorityLow').checked = true; selectPriority('low'); }
+            if (report.priority === 'high') selectPriority('high');
+            else if (report.priority === 'low') selectPriority('low');
+            else selectPriority('medium');
             
             document.getElementById('priorityWithTender').checked = report.priority_with_tender || false;
             if (report.priority_with_tender) {
@@ -1143,155 +950,170 @@
             }
             
             // Resolution status
-            if (report.resolution_status) selectResolution(report.resolution_status);
-            else selectResolution('pending_action');
+            selectResolution(report.resolution_status || 'pending_action');
             
-            // ========== Load account details (supports multiple meters/numbers) ==========
+            // ========== Account details ==========
             let accountDetails = null;
             if (report.account_details) {
                 try {
                     accountDetails = typeof report.account_details === 'string' ? JSON.parse(report.account_details) : report.account_details;
-                } catch (e) { console.warn('Could not parse account_details:', e); }
+                } catch (e) { console.warn('account_details parse error:', e); }
             }
             
             // WATER
             if (report.report_type === 'water') {
-                const waterAccounts = (accountDetails && accountDetails.water_accounts) || [];
-                if (waterAccounts.length > 0) {
-                    const container = document.getElementById('waterAccountsContainer');
-                    container.innerHTML = '';
-                    waterAccounts.forEach(acc => {
+                const accounts = (accountDetails && accountDetails.water_accounts) || [];
+                const container = document.getElementById('waterAccountsContainer');
+                container.innerHTML = '';
+                
+                if (accounts.length > 0) {
+                    accounts.forEach(acc => {
                         const entry = document.createElement('div');
                         entry.className = 'account-entry';
-                        entry.setAttribute('data-water-entry', '');
                         entry.innerHTML = `
-                            <input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number" value="${escapeHtml(acc.account_number || '')}">
+                            <input type="text" class="form-control" name="water_account_number[]" value="${escapeHtml(acc.account_number || '')}">
                             <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
                             <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         `;
-                        // Add meter number inputs
-                        const meters = acc.meter_numbers || [];
-                        const addMeterBtn = entry.querySelector('.btn-add-account');
-                        meters.forEach(m => {
+                        const addBtn = entry.querySelector('.btn-add-account');
+                        (acc.meter_numbers || []).forEach(m => {
                             const mInput = document.createElement('input');
-                            mInput.type = 'text';
-                            mInput.className = 'form-control';
-                            mInput.placeholder = 'Water Meter Number';
+                            mInput.type = 'text'; mInput.className = 'form-control';
                             mInput.name = 'water_meter_number[]';
                             mInput.value = m;
-                            entry.insertBefore(mInput, addMeterBtn);
+                            entry.insertBefore(mInput, addBtn);
                         });
                         container.appendChild(entry);
                     });
                 } else if (report.account_number) {
-                    const accInput = document.querySelector('#waterAccountsContainer input[name="water_account_number[]"]');
-                    if (accInput) accInput.value = report.account_number;
+                    // Fallback: create one entry from old single fields
+                    const entry = document.createElement('div');
+                    entry.className = 'account-entry';
+                    entry.innerHTML = `
+                        <input type="text" class="form-control" name="water_account_number[]" value="${escapeHtml(report.account_number)}">
+                        <button type="button" class="btn-add-account" onclick="addWaterMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
+                    `;
                     if (report.meter_number) {
-                        const meterBtn = document.querySelector('#waterAccountsContainer .btn-add-account');
-                        if (meterBtn) addWaterMeterField(meterBtn);
-                        const meterInputs = document.querySelectorAll('#waterAccountsContainer input[name="water_meter_number[]"]');
-                        if (meterInputs.length > 0) meterInputs[meterInputs.length - 1].value = report.meter_number;
+                        const mInput = document.createElement('input');
+                        mInput.type = 'text'; mInput.className = 'form-control';
+                        mInput.name = 'water_meter_number[]';
+                        mInput.value = report.meter_number;
+                        entry.insertBefore(mInput, entry.querySelector('.btn-add-account'));
                     }
+                    container.appendChild(entry);
                 }
             }
             
             // ELECTRICITY
             if (report.report_type === 'electricity') {
-                const elecAccounts = (accountDetails && accountDetails.electricity_accounts) || [];
-                if (elecAccounts.length > 0) {
-                    const container = document.getElementById('electricityAccountsContainer');
-                    container.innerHTML = '';
-                    elecAccounts.forEach(acc => {
+                const accounts = (accountDetails && accountDetails.electricity_accounts) || [];
+                const container = document.getElementById('electricityAccountsContainer');
+                container.innerHTML = '';
+                
+                if (accounts.length > 0) {
+                    accounts.forEach(acc => {
                         const entry = document.createElement('div');
                         entry.className = 'account-entry';
-                        entry.setAttribute('data-electricity-entry', '');
                         entry.innerHTML = `
-                            <input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number" value="${escapeHtml(acc.account_number || '')}">
+                            <input type="text" class="form-control" name="electricity_account_number[]" value="${escapeHtml(acc.account_number || '')}">
                             <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
                             <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         `;
-                        const meters = acc.meter_numbers || [];
-                        const addMeterBtn = entry.querySelector('.btn-add-account');
-                        meters.forEach(m => {
+                        const addBtn = entry.querySelector('.btn-add-account');
+                        (acc.meter_numbers || []).forEach(m => {
                             const mInput = document.createElement('input');
-                            mInput.type = 'text';
-                            mInput.className = 'form-control';
-                            mInput.placeholder = 'Electricity Meter Number';
+                            mInput.type = 'text'; mInput.className = 'form-control';
                             mInput.name = 'electricity_meter_number[]';
                             mInput.value = m;
-                            entry.insertBefore(mInput, addMeterBtn);
+                            entry.insertBefore(mInput, addBtn);
                         });
                         container.appendChild(entry);
                     });
                 } else if (report.account_number) {
-                    const accInput = document.querySelector('#electricityAccountsContainer input[name="electricity_account_number[]"]');
-                    if (accInput) accInput.value = report.account_number;
+                    const entry = document.createElement('div');
+                    entry.className = 'account-entry';
+                    entry.innerHTML = `
+                        <input type="text" class="form-control" name="electricity_account_number[]" value="${escapeHtml(report.account_number)}">
+                        <button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)"><i class="bi bi-plus-circle"></i> Add Meter</button>
+                    `;
                     if (report.meter_number) {
-                        const meterBtn = document.querySelector('#electricityAccountsContainer .btn-add-account');
-                        if (meterBtn) addElectricityMeterField(meterBtn);
-                        const meterInputs = document.querySelectorAll('#electricityAccountsContainer input[name="electricity_meter_number[]"]');
-                        if (meterInputs.length > 0) meterInputs[meterInputs.length - 1].value = report.meter_number;
+                        const mInput = document.createElement('input');
+                        mInput.type = 'text'; mInput.className = 'form-control';
+                        mInput.name = 'electricity_meter_number[]';
+                        mInput.value = report.meter_number;
+                        entry.insertBefore(mInput, entry.querySelector('.btn-add-account'));
                     }
+                    container.appendChild(entry);
                 }
             }
             
             // TELEPHONE
             if (report.report_type === 'telephone') {
-                const telAccounts = (accountDetails && accountDetails.telephone_accounts) || [];
-                if (telAccounts.length > 0) {
-                    const container = document.getElementById('telephoneAccountsContainer');
-                    container.innerHTML = '';
-                    telAccounts.forEach(acc => {
+                const accounts = (accountDetails && accountDetails.telephone_accounts) || [];
+                const container = document.getElementById('telephoneAccountsContainer');
+                container.innerHTML = '';
+                
+                if (accounts.length > 0) {
+                    accounts.forEach(acc => {
                         const entry = document.createElement('div');
                         entry.className = 'account-entry';
-                        entry.setAttribute('data-telephone-entry', '');
                         entry.innerHTML = `
-                            <input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number" value="${escapeHtml(acc.account_number || '')}">
+                            <input type="text" class="form-control" name="telephone_account_number[]" value="${escapeHtml(acc.account_number || '')}">
                             <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button>
                             <button type="button" class="btn-remove-account" onclick="removeEntry(this)"><i class="bi bi-trash"></i></button>
                         `;
-                        const phones = acc.phone_numbers || [];
-                        const addPhoneBtn = entry.querySelector('.btn-add-account');
-                        phones.forEach(p => {
+                        const addBtn = entry.querySelector('.btn-add-account');
+                        (acc.phone_numbers || []).forEach(p => {
                             const pInput = document.createElement('input');
-                            pInput.type = 'text';
-                            pInput.className = 'form-control';
-                            pInput.placeholder = 'Telephone Number';
+                            pInput.type = 'text'; pInput.className = 'form-control';
                             pInput.name = 'telephone_number[]';
                             pInput.value = p;
-                            entry.insertBefore(pInput, addPhoneBtn);
+                            entry.insertBefore(pInput, addBtn);
                         });
                         container.appendChild(entry);
                     });
                 } else if (report.account_number) {
-                    const accInput = document.querySelector('#telephoneAccountsContainer input[name="telephone_account_number[]"]');
-                    if (accInput) accInput.value = report.account_number;
+                    const entry = document.createElement('div');
+                    entry.className = 'account-entry';
+                    entry.innerHTML = `
+                        <input type="text" class="form-control" name="telephone_account_number[]" value="${escapeHtml(report.account_number)}">
+                        <button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button>
+                    `;
                     if (report.phone_number) {
-                        const phoneBtn = document.querySelector('#telephoneAccountsContainer .btn-add-account');
-                        if (phoneBtn) addTelephoneNumberField(phoneBtn);
-                        const phoneInputs = document.querySelectorAll('#telephoneAccountsContainer input[name="telephone_number[]"]');
-                        if (phoneInputs.length > 0) phoneInputs[phoneInputs.length - 1].value = report.phone_number;
+                        const pInput = document.createElement('input');
+                        pInput.type = 'text'; pInput.className = 'form-control';
+                        pInput.name = 'telephone_number[]';
+                        pInput.value = report.phone_number;
+                        entry.insertBefore(pInput, entry.querySelector('.btn-add-account'));
                     }
+                    container.appendChild(entry);
                 }
             }
             
             // Images
-            uploadedImages = report.images || [];
+            uploadedImages = Array.isArray(report.images) ? report.images : [];
             const previewContainer = document.getElementById('imagePreviewContainer');
             previewContainer.innerHTML = '';
             uploadedImages.forEach(imgUrl => {
-                const fullImgUrl = getFullImageUrl(imgUrl);
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'image-preview-container';
                 previewDiv.setAttribute('data-image-url', imgUrl);
-                previewDiv.innerHTML = `<img src="${fullImgUrl}" class="image-preview" onerror="this.src='https://placehold.co/150x120?text=Image+Not+Found'"><button type="button" class="remove-image-btn" onclick="removeImage('${imgUrl}')">×</button>`;
+                previewDiv.innerHTML = `<img src="${getFullImageUrl(imgUrl)}" class="image-preview"><button type="button" class="remove-image-btn" onclick="removeImage('${imgUrl}')">×</button>`;
                 previewContainer.appendChild(previewDiv);
             });
             
+            // Hide loading overlay
+            if (overlay) overlay.style.display = 'none';
             window.showToast('Report loaded for editing.', 'success');
+            
         } catch (error) {
-            console.error('Error loading report for edit:', error);
+            console.error('>>> Error loading report for edit:', error);
+            if (overlay) overlay.style.display = 'none';
             window.showToast('Error loading report: ' + error.message, 'error');
+            // Show a clear message and let user decide
+            if (confirm('Could not load the report. Return to My Reports?')) {
+                window.location.href = '/my-reports';
+            }
         }
     }
 
@@ -1318,24 +1140,15 @@
         
         if (reportType === 'water' && accountData.water_accounts.length > 0) {
             accountNumber = accountData.water_accounts[0].account_number;
-            if (accountData.water_accounts[0].meter_numbers && accountData.water_accounts[0].meter_numbers.length > 0) {
-                meterNumber = accountData.water_accounts[0].meter_numbers[0];
-            }
+            if (accountData.water_accounts[0].meter_numbers.length > 0) meterNumber = accountData.water_accounts[0].meter_numbers[0];
         } else if (reportType === 'electricity' && accountData.electricity_accounts.length > 0) {
             accountNumber = accountData.electricity_accounts[0].account_number;
-            if (accountData.electricity_accounts[0].meter_numbers && accountData.electricity_accounts[0].meter_numbers.length > 0) {
-                meterNumber = accountData.electricity_accounts[0].meter_numbers[0];
-            }
+            if (accountData.electricity_accounts[0].meter_numbers.length > 0) meterNumber = accountData.electricity_accounts[0].meter_numbers[0];
         } else if (reportType === 'telephone' && accountData.telephone_accounts.length > 0) {
             accountNumber = accountData.telephone_accounts[0].account_number;
-            if (accountData.telephone_accounts[0].phone_numbers && accountData.telephone_accounts[0].phone_numbers.length > 0) {
-                phoneNumber = accountData.telephone_accounts[0].phone_numbers[0];
-            }
-            // Count TOTAL phone numbers across ALL accounts
+            if (accountData.telephone_accounts[0].phone_numbers.length > 0) phoneNumber = accountData.telephone_accounts[0].phone_numbers[0];
             let totalLines = 0;
-            accountData.telephone_accounts.forEach(acc => {
-                if (acc.phone_numbers) totalLines += acc.phone_numbers.length;
-            });
+            accountData.telephone_accounts.forEach(acc => { totalLines += acc.phone_numbers.length; });
             numberOfLines = totalLines || null;
         }
         
@@ -1382,7 +1195,7 @@
                 window.showToast(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
                 setTimeout(() => { window.location.href = '/my-reports'; }, 1500);
             } else {
-                window.showToast(data.error || (isEditMode ? 'Failed to update' : 'Failed to submit'), 'error');
+                window.showToast(data.error || 'Failed', 'error');
             }
         } catch (error) {
             console.error('Submit error:', error);
@@ -1390,48 +1203,60 @@
         }
     });
 
-    document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
-    const priorityHidden = document.createElement('input');
-    priorityHidden.type = 'hidden';
-    priorityHidden.id = 'priority';
-    priorityHidden.value = 'medium';
-    document.getElementById('reportForm').appendChild(priorityHidden);
-    document.querySelectorAll('input[name="priorityRadio"]').forEach(radio => {
-        radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
-    });
-
-    document.querySelectorAll('input[name="resolutionRadio"]').forEach(radio => {
-        radio.addEventListener('change', function() { 
-            document.getElementById('resolutionStatusHidden').value = this.value;
-            document.querySelectorAll('.resolution-option').forEach(opt => opt.classList.remove('selected'));
-            const target = document.querySelector(`.resolution-option[data-resolution="${this.value}"]`);
-            if (target) target.classList.add('selected');
-        });
-    });
-
+    // ============ INIT ============
     async function init() {
+        console.log('>>> init() called. isEditMode:', isEditMode, 'editReportId:', editReportId);
+        setReportDateTime();
+        
         try {
-            setReportDateTime();
             await getCurrentTechnician();
+        } catch (e) { console.error('getCurrentTechnician error:', e); }
+        
+        try {
             await Promise.all([loadSchools(), loadDepartments()]);
-            updateAccountFields('water');
-            const medPrio = document.querySelector('.priority-option[data-priority="medium"]');
-            if (medPrio) medPrio.classList.add('selected');
-            const pendRes = document.querySelector('.resolution-option[data-resolution="pending_action"]');
-            if (pendRes) pendRes.classList.add('selected');
-            
-            if (isEditMode && editReportId) {
-                await loadReportForEdit(editReportId);
-            }
-        } catch (err) {
-            console.error('init() error:', err);
-            if (isEditMode && editReportId) {
-                try { await loadReportForEdit(editReportId); } catch (e) { console.error(e); }
-            }
+        } catch (e) { console.error('Load lists error:', e); }
+        
+        updateAccountFields('water');
+        const medPrio = document.querySelector('.priority-option[data-priority="medium"]');
+        if (medPrio) medPrio.classList.add('selected');
+        selectResolution('pending_action');
+        
+        document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
+        
+        // Add priority hidden field if not exists
+        if (!document.getElementById('priority')) {
+            const priorityHidden = document.createElement('input');
+            priorityHidden.type = 'hidden';
+            priorityHidden.id = 'priority';
+            priorityHidden.value = 'medium';
+            document.getElementById('reportForm').appendChild(priorityHidden);
+        }
+        
+        document.querySelectorAll('input[name="priorityRadio"]').forEach(radio => {
+            radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
+        });
+        
+        document.querySelectorAll('input[name="resolutionRadio"]').forEach(radio => {
+            radio.addEventListener('change', function() { 
+                document.getElementById('resolutionStatusHidden').value = this.value;
+                document.querySelectorAll('.resolution-option').forEach(opt => opt.classList.remove('selected'));
+                const target = document.querySelector(`.resolution-option[data-resolution="${this.value}"]`);
+                if (target) target.classList.add('selected');
+            });
+        });
+        
+        // CRITICAL: Load report for edit
+        if (isEditMode && editReportId) {
+            console.log('>>> About to call loadReportForEdit');
+            await loadReportForEdit(editReportId);
+        } else {
+            console.log('>>> Not in edit mode, skipping loadReportForEdit');
         }
     }
+    
     init();
 
+    // Expose functions globally
     window.addWaterAccountField = addWaterAccountField;
     window.addWaterMeterField = addWaterMeterField;
     window.addElectricityAccountField = addElectricityAccountField;
