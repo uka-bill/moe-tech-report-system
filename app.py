@@ -527,7 +527,6 @@ def get_technical_reports():
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
                 else:
-                    # FIX #1: Use unit_name for departments if available
                     entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
@@ -541,6 +540,34 @@ def get_technical_reports():
     except Exception as e:
         app.logger.error(f"Error getting technical reports: {e}")
         return jsonify([]), 500
+
+# ============ GET SINGLE REPORT (for reliable edit loading) ============
+@app.route('/api/technical-reports/<int:report_id>', methods=['GET'])
+def get_single_technical_report(report_id):
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        response = supabase.table("technical_reports").select("*").eq("id", report_id).execute()
+        if not response.data:
+            return jsonify({'success': False, 'error': 'Report not found'}), 404
+        report_data = dict(response.data[0])
+        if report_data['entity_type'] == 'school':
+            entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
+            if entity.data:
+                report_data['entity_name'] = entity.data[0]['name']
+        else:
+            entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
+            if entity.data:
+                dept = entity.data[0]
+                report_data['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+        if report_data.get('technician_id'):
+            tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
+            if tech.data:
+                report_data['technician_name'] = tech.data[0]['name']
+        return jsonify({'success': True, 'report': report_data})
+    except Exception as e:
+        app.logger.error(f"Error getting single report: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/technical-reports', methods=['POST'])
 def create_technical_report():
@@ -573,6 +600,7 @@ def create_technical_report():
             "reference_type": data.get('reference_type', ''),
             "reference_number": data.get('reference_number', ''),
             "reference_date": data.get('reference_date'),
+            "account_details": data.get('account_details') if isinstance(data.get('account_details'), str) else (json.dumps(data.get('account_details')) if data.get('account_details') else None),
             "created_at": get_brunei_time_iso(),
             "updated_at": get_brunei_time_iso()
         }
@@ -593,7 +621,7 @@ def update_technical_report(report_id):
         allowed_fields = ['report_type', 'entity_type', 'entity_id', 'problem_type', 'complaint_details',
                          'priority', 'priority_with_tender', 'status', 'resolution_status', 'technician_notes', 'action_taken',
                          'images', 'account_number', 'meter_number', 'phone_number', 'number_of_lines',
-                         'reference_type', 'reference_number', 'reference_date']
+                         'reference_type', 'reference_number', 'reference_date', 'account_details']
         update_data = {}
         for field in allowed_fields:
             if field in data and data[field] is not None:
@@ -664,7 +692,7 @@ def acknowledge_report(report_id):
         }
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
         if response.data:
-            app.logger.info(f"Report {report_id} acknowledged by Team Leader {team_leader_name} - status: {acknowledgment_status}")
+            app.logger.info(f"Report {report_id} acknowledged by {team_leader_name} - status: {acknowledgment_status}")
             return jsonify({'success': True, 'message': 'Report acknowledged successfully'})
         return jsonify({'success': False, 'error': 'Failed to acknowledge report'}), 500
     except Exception as e:
@@ -1027,7 +1055,6 @@ def export_reports():
                 if entity.data:
                     entity_name = entity.data[0]['name']
             else:
-                # FIX #1: Use unit_name for departments in CSV export too
                 entity = supabase.table("departments").select("name, unit_name").eq("id", report['entity_id']).execute()
                 if entity.data:
                     dept = entity.data[0]
