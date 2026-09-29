@@ -108,7 +108,7 @@
         transform: scale(1.01);
     }
 
-    /* ===== NEW: Resolution Status boxes ===== */
+    /* Resolution Status boxes */
     .resolution-box {
         padding: 15px;
         border-radius: 12px;
@@ -424,7 +424,7 @@
                 </div>
             </div>
             
-            <!-- 2. ACTION / RESOLUTION STATUS SECTION (NEW) -->
+            <!-- 2. ACTION / RESOLUTION STATUS SECTION -->
             <div class="form-section">
                 <div class="form-section-title">
                     <i class="bi bi-clipboard-check"></i> Action / Resolution Status
@@ -488,14 +488,14 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-bold">Entity Name *</label>
+                        <label class="form-label fw-bold">Entity Name / Unit *</label>
                         <select class="form-select" id="entityId" required disabled>
                             <option value="">Select Entity Type First</option>
                         </select>
                     </div>
                 </div>
                 <div id="editEntityWarning" class="alert alert-info mt-2" style="display: none; background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none;">
-                    <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You can change the entity (school/department) for this report.
+                    <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You can change the entity (school/department/unit) for this report.
                 </div>
             </div>
             
@@ -698,7 +698,7 @@
     
     if (isEditMode) {
         document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square"></i> Edit Technical Report';
-        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. You can change the location (school/department), problem details, and other information. Your changes will be saved.';
+        document.getElementById('instructionBox').innerHTML = '<i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Edit the report details below. You can change the location (school/department/unit), problem details, and other information. Your changes will be saved.';
         document.getElementById('submitBtn').innerHTML = '<i class="bi bi-save"></i> Save Changes';
         document.getElementById('editEntityWarning').style.display = 'block';
     }
@@ -830,7 +830,6 @@
         document.querySelector(`.priority-option[data-priority="${priority}"]`).classList.add('selected');
     }
 
-    // ============ NEW: Resolution status selector ============
     function selectResolution(status) {
         const radioId = {
             'resolved': 'resolutionResolved',
@@ -849,7 +848,7 @@
         try {
             const userId = localStorage.getItem('userId');
             if (userId && userId !== 'null') {
-                const response = await fetch('/api/technicians');
+                const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
                 const technicians = await response.json();
                 const technician = technicians.find(t => t.id == userId);
                 if (technician) {
@@ -892,10 +891,9 @@
         document.getElementById('telephoneFields').style.display = reportType === 'telephone' ? 'block' : 'none';
     }
 
-    // ============ SCHOOL & DEPARTMENT LOADING ============
     async function loadSchools() {
         try {
-            const response = await fetch('/api/schools');
+            const response = await fetch('/api/schools?t=' + Date.now(), { cache: 'no-store' });
             schoolsList = await response.json();
             console.log('Schools loaded:', schoolsList.length);
             return schoolsList;
@@ -907,7 +905,7 @@
 
     async function loadDepartments() {
         try {
-            const response = await fetch('/api/departments');
+            const response = await fetch('/api/departments?t=' + Date.now(), { cache: 'no-store' });
             departmentsList = await response.json();
             console.log('Departments loaded:', departmentsList.length);
             return departmentsList;
@@ -917,7 +915,7 @@
         }
     }
 
-    // ============ Populate Entity Dropdown ============
+    // FIX #2: Robust dropdown with unit_name and proper selected matching
     async function populateEntityDropdown(entityType, selectedId = null) {
         const entitySelect = document.getElementById('entityId');
         console.log('Populating dropdown for:', entityType, 'selected:', selectedId);
@@ -927,8 +925,9 @@
                 await loadSchools();
             }
             let options = '<option value="">-- Select School --</option>';
+            const selectedNum = selectedId !== null && selectedId !== undefined ? parseInt(selectedId) : NaN;
             schoolsList.forEach(s => {
-                const selected = (parseInt(selectedId) === s.id) ? 'selected' : '';
+                const selected = (!isNaN(selectedNum) && Number(s.id) === selectedNum) ? 'selected' : '';
                 options += `<option value="${s.id}" ${selected}>${escapeHtml(s.name)}</option>`;
             });
             entitySelect.innerHTML = options;
@@ -938,10 +937,11 @@
             if (departmentsList.length === 0) {
                 await loadDepartments();
             }
-            let options = '<option value="">-- Select Department --</option>';
+            let options = '<option value="">-- Select Unit --</option>';
+            const selectedNum = selectedId !== null && selectedId !== undefined ? parseInt(selectedId) : NaN;
             departmentsList.forEach(d => {
-                const displayName = d.unit_name || d.name;
-                const selected = (parseInt(selectedId) === d.id) ? 'selected' : '';
+                const displayName = d.unit_name || d.name || 'Unnamed Unit';
+                const selected = (!isNaN(selectedNum) && Number(d.id) === selectedNum) ? 'selected' : '';
                 options += `<option value="${d.id}" ${selected}>${escapeHtml(displayName)}</option>`;
             });
             entitySelect.innerHTML = options;
@@ -1065,7 +1065,6 @@
             document.getElementById('priorityWithTender').checked = false;
             document.getElementById('priorityInfo').style.display = 'none';
             document.getElementById('priority').disabled = false;
-            // NEW: Reset resolution to default
             selectResolution('pending_action');
             document.getElementById('waterAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="water_account_number[]" placeholder="Water Account Number"><button type="button" class="btn-add-account" onclick="addWaterMeterField(this)">+ Meter</button></div>';
             document.getElementById('electricityAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="electricity_account_number[]" placeholder="Electricity Account Number"><button type="button" class="btn-add-account" onclick="addElectricityMeterField(this)">+ Meter</button></div>';
@@ -1076,11 +1075,11 @@
         }
     }
 
-    // ============ Load Report for Edit ============
+    // FIX #3: Cache-busting fetch + robust load for edit
     async function loadReportForEdit(id) {
         try {
             console.log('Loading report for edit:', id);
-            const response = await fetch(`/api/technical-reports`);
+            const response = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
             const reports = await response.json();
             const report = reports.find(r => r.id == id);
             
@@ -1105,11 +1104,9 @@
             
             console.log('Report loaded:', report);
             
-            // Set report type
             document.querySelector(`input[name="reportType"][value="${report.report_type}"]`).checked = true;
             updateAccountFields(report.report_type);
             
-            // Set entity type and populate dropdown
             const entityTypeSelect = document.getElementById('entityType');
             entityTypeSelect.value = report.entity_type;
             entityTypeSelect.disabled = false;
@@ -1124,7 +1121,6 @@
             const entityIdSelect = document.getElementById('entityId');
             entityIdSelect.disabled = false;
             
-            // Set other form fields
             document.getElementById('problemType').value = report.problem_type || '';
             document.getElementById('complaintDetails').value = report.complaint_details || '';
             document.getElementById('actionTaken').value = report.action_taken || '';
@@ -1133,7 +1129,6 @@
             document.getElementById('referenceNumber').value = report.reference_number || '';
             document.getElementById('referenceDate').value = report.reference_date || '';
             
-            // Set priority
             if (report.priority === 'high') {
                 document.getElementById('priorityHigh').checked = true;
                 selectPriority('high');
@@ -1151,14 +1146,12 @@
                 document.getElementById('priority').disabled = true;
             }
             
-            // NEW: Set resolution status
             if (report.resolution_status) {
                 selectResolution(report.resolution_status);
             } else {
                 selectResolution('pending_action');
             }
             
-            // Set account details based on report type
             if (report.report_type === 'water') {
                 if (report.account_number) {
                     const waterInput = document.querySelector('#waterAccountsContainer .account-entry input[name="water_account_number[]"]');
@@ -1194,7 +1187,6 @@
                 }
             }
             
-            // Set existing images
             uploadedImages = report.images || [];
             const previewContainer = document.getElementById('imagePreviewContainer');
             previewContainer.innerHTML = '';
@@ -1228,7 +1220,7 @@
         const problemType = document.getElementById('problemType').value;
         const complaintDetails = document.getElementById('complaintDetails').value;
         
-        if (!entityType || !entityId) { alert('Please select entity type and name'); return; }
+        if (!entityType || !entityId) { alert('Please select entity type and name/unit'); return; }
         if (!problemType) { alert('Please select a problem type'); return; }
         if (!complaintDetails) { alert('Please provide complaint details'); return; }
         
@@ -1255,7 +1247,6 @@
             report_type: reportType,
             entity_type: entityType,
             entity_id: parseInt(entityId),
-            // NEW: include resolution status
             resolution_status: document.getElementById('resolutionStatusHidden').value,
             account_number: accountNumber,
             meter_number: meterNumber,
@@ -1313,7 +1304,6 @@
         radio.addEventListener('change', function() { document.getElementById('priority').value = this.value; });
     });
 
-    // Also update the hidden value when resolution radio is changed directly
     document.querySelectorAll('input[name="resolutionRadio"]').forEach(radio => {
         radio.addEventListener('change', function() { 
             document.getElementById('resolutionStatusHidden').value = this.value;
@@ -1323,16 +1313,27 @@
         });
     });
 
+    // FIX #3: Defensive init so no error blocks edit loading
     async function init() {
-        setReportDateTime();
-        await getCurrentTechnician();
-        await Promise.all([loadSchools(), loadDepartments()]);
-        updateAccountFields('water');
-        document.querySelector('.priority-option[data-priority="medium"]').classList.add('selected');
-        document.querySelector('.resolution-option[data-resolution="pending_action"]').classList.add('selected');
-        
-        if (isEditMode && editReportId) {
-            await loadReportForEdit(editReportId);
+        try {
+            setReportDateTime();
+            await getCurrentTechnician();
+            await Promise.all([loadSchools(), loadDepartments()]);
+            updateAccountFields('water');
+            const medPrio = document.querySelector('.priority-option[data-priority="medium"]');
+            if (medPrio) medPrio.classList.add('selected');
+            const pendRes = document.querySelector('.resolution-option[data-resolution="pending_action"]');
+            if (pendRes) pendRes.classList.add('selected');
+            
+            if (isEditMode && editReportId) {
+                await loadReportForEdit(editReportId);
+            }
+        } catch (err) {
+            console.error('init() error:', err);
+            // Still try to load the report if edit mode
+            if (isEditMode && editReportId) {
+                try { await loadReportForEdit(editReportId); } catch (e) { console.error(e); }
+            }
         }
     }
     init();
