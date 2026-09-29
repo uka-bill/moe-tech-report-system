@@ -771,7 +771,7 @@
 
     async function loadTechnicians() {
         try {
-            const response = await fetch('/api/technicians');
+            const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
             const techs = await response.json();
             techs.forEach(tech => {
                 techniciansMap[tech.id] = tech.name;
@@ -853,7 +853,7 @@
         if (userId && userId !== 'temp') {
             currentTechnicianId = parseInt(userId);
         } else {
-            const response = await fetch('/api/technicians');
+            const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
             const techs = await response.json();
             const userName = localStorage.getItem('userName');
             const tech = techs.find(t => t.name === userName);
@@ -947,12 +947,13 @@
         displayReports(filtered);
     }
 
+    // FIX #3: Cache-busting fetch
     async function loadReports() {
         const container = document.getElementById('reportsContainer');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="mt-2 small">Loading reports...</p></div>';
 
         try {
-            const response = await fetch(`/api/technical-reports?technician_id=${currentTechnicianId}`);
+            const response = await fetch(`/api/technical-reports?technician_id=${currentTechnicianId}&t=` + Date.now(), { cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             allReports = await response.json();
             if (!allReports) allReports = [];
@@ -1009,7 +1010,7 @@
                         <thead>
                             <tr>
                                 <th class="col-id">#</th>
-                                <th class="col-entity">Entity Name</th>
+                                <th class="col-entity">Entity / Unit Name</th>
                                 <th class="col-ref-number">Reference #</th>
                                 <th class="col-ref-date">Ref Date</th>
                                 <th class="col-problem">Problem Type</th>
@@ -1078,10 +1079,11 @@
         }
     }
 
+    // FIX #3: Cache-busting fetch
     async function openReportDetail(id) {
         currentReportId = id;
         try {
-            const response = await fetch('/api/technical-reports');
+            const response = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
             const reports = await response.json();
             currentReport = reports.find(r => r.id === id);
             if (currentReport) {
@@ -1150,7 +1152,7 @@
                     Submitted: ${formatDate(report.created_at)} | Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}
                 </div>
                 <div class="row mb-2">
-                    <div class="col-4 fw-bold">Entity:</div>
+                    <div class="col-4 fw-bold">Entity / Unit:</div>
                     <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
                 </div>
                 ${report.reference_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Reference Number:</div><div class="col-8">${escapeHtml(report.reference_number)}</div></div>` : ''}
@@ -1224,7 +1226,8 @@
                 window.showToast('This report has already been acknowledged and cannot be edited', 'error');
                 return;
             }
-            window.location.href = `/new-report?id=${currentReportId}`;
+            // FIX #3: navigate to edit page with cache-busting parameter
+            window.location.href = `/new-report?id=${currentReportId}&t=${Date.now()}`;
         } else {
             window.showToast('No report selected', 'error');
         }
@@ -1365,7 +1368,7 @@
 
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'}  </td></tr>
-                    <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    <tr><th>Entity / Unit Name</th><td>${escapeHtml(entityName)}</td></tr>
                     ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td></tr>` : ''}
                     ${referenceDate ? `<tr><th>Reference Date</th><td>${escapeHtml(referenceDate)}</td></tr>` : ''}
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
