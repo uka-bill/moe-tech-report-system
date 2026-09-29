@@ -153,11 +153,10 @@
     .col-priority { width: 60px; min-width: 55px; max-width: 70px; }
     .col-action { width: 100px; min-width: 90px; max-width: 130px; }
     .col-submitted { width: 120px; min-width: 100px; max-width: 150px; }
-    .col-status { width: 85px; min-width: 75px; max-width: 110px; }
+    .col-status { width: 130px; min-width: 110px; max-width: 160px; }
     .col-date { width: 75px; min-width: 70px; max-width: 90px; }
     .col-actions { width: 80px; min-width: 70px; max-width: 100px; }
 
-    /* Resolution status badges */
     .resolution-badge {
         padding: 3px 10px;
         border-radius: 20px;
@@ -181,6 +180,29 @@
     .need-attention-badge {
         background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
         color: #721c24;
+    }
+
+    .ack-status-badge {
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+        margin-top: 2px;
+    }
+    .ack-done-badge {
+        background: linear-gradient(135deg, #4caf50 0%, #28a745 100%);
+        color: white;
+    }
+    .ack-action-badge {
+        background: linear-gradient(135deg, #f44336 0%, #dc3545 100%);
+        color: white;
+        animation: pulse-warning 1.5s infinite;
+    }
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
+        50% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
     }
 
     .entity-name, .reference-number-cell, .reference-date-cell {
@@ -460,12 +482,13 @@
         .col-priority { width: 45px; min-width: 40px; }
         .col-action { width: 80px; min-width: 70px; }
         .col-submitted { width: 80px; min-width: 60px; }
-        .col-status { width: 65px; min-width: 55px; }
+        .col-status { width: 90px; min-width: 80px; }
         .col-date { width: 60px; min-width: 55px; }
         .col-actions { width: 70px; min-width: 60px; }
         .btn-action { width: 22px; height: 22px; font-size: 9px; }
         .reports-table th, .reports-table td { padding: 6px 5px; font-size: 10px; }
         .status-pending, .status-acknowledged { font-size: 8px; padding: 2px 5px; }
+        .ack-status-badge { font-size: 8px; padding: 1px 6px; }
     }
 </style>
 
@@ -676,7 +699,6 @@
     let currentFilterYear = 'all';
     let techniciansMap = {};
 
-    // ============ NEW: Resolution status badge ============
     function getResolutionBadge(report) {
         const status = report.resolution_status || 'pending_action';
         const map = {
@@ -687,6 +709,15 @@
         };
         const s = map[status] || map['pending_action'];
         return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
+
+    function getAcknowledgmentBadge(report) {
+        if (!report.team_leader_acknowledged) return '';
+        const status = report.acknowledgment_status || 'done_reviewed';
+        if (status === 'need_further_action') {
+            return `<span class="ack-status-badge ack-action-badge">⚠️ Need Action</span>`;
+        }
+        return `<span class="ack-status-badge ack-done-badge">✅ Reviewed</span>`;
     }
 
     async function loadTechnicians() {
@@ -709,14 +740,12 @@
     function formatDate(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        // Time is already stored in Brunei Time (UTC+8), so no offset needed
         return date.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
     function formatDateOnly(dateString) {
         if (!dateString) return '-';
         const date = new Date(dateString);
-        // Time is already stored in Brunei Time (UTC+8), so no offset needed
         return date.toLocaleDateString('en-GB');
     }
 
@@ -941,6 +970,7 @@
             const priorityIcon = report.priority === 'high' ? '🔴' : (report.priority === 'medium' ? '🟡' : '🟢');
             const isAcknowledged = report.team_leader_acknowledged;
             const statusHtml = isAcknowledged ? '<span class="status-acknowledged">✓ Acknowledged</span>' : '<span class="status-pending">⏳ Pending</span>';
+            const ackBadge = getAcknowledgmentBadge(report);
             const isChecked = report.checked_by_assistant === true;
             const techName = getTechnicianName(report.technician_id);
 
@@ -954,7 +984,7 @@
                     <td class="col-priority ${priorityClass}"><span class="priority-icon">${priorityIcon}</span> ${report.priority.toUpperCase()}</td>
                     <td class="col-action">${getResolutionBadge(report)}</td>
                     <td class="col-submitted">${escapeHtml(techName)}</td>
-                    <td class="col-status">${statusHtml}</td>
+                    <td class="col-status">${statusHtml}${ackBadge}</td>
                     <td class="col-date date-cell">${formatDateOnly(report.created_at)}</td>
                     <td class="col-actions">
                         <div class="action-buttons">
@@ -978,20 +1008,16 @@
             currentReport = reports.find(r => r.id === id);
             if (currentReport) {
                 displayReportModal();
-
                 const editBtn = document.getElementById('editBtn');
                 const deleteBtn = document.getElementById('deleteBtn');
                 const acknowledgeBtn = document.getElementById('acknowledgeBtn');
-
                 const isCreator = currentReport.technician_id == currentTechnicianId;
                 const canEditDelete = isCreator && !currentReport.team_leader_acknowledged;
-
                 if (editBtn) editBtn.style.display = canEditDelete ? 'inline-block' : 'none';
                 if (deleteBtn) deleteBtn.style.display = canEditDelete ? 'inline-block' : 'none';
                 if (acknowledgeBtn) {
                     acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
                 }
-
                 if (isModalExpanded) {
                     const modalDialog = document.querySelector('#reportModal .modal-dialog');
                     const expandBtn = document.getElementById('expandModalBtn');
@@ -1002,7 +1028,6 @@
                         isModalExpanded = false;
                     }
                 }
-
                 new bootstrap.Modal(document.getElementById('reportModal')).show();
             }
         } catch (error) {
@@ -1031,7 +1056,8 @@
 
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success mt-3"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            const ackBadge = getAcknowledgmentBadge(report);
+            acknowledgmentHtml = `<div class="alert alert-success mt-3"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         } else if (isTeamLeader) {
             acknowledgmentHtml = `<div class="alert alert-warning mt-3"><button class="btn btn-success w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
         }
