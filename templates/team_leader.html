@@ -305,6 +305,55 @@
         color: #721c24;
     }
 
+    /* NEW: Acknowledgment status option boxes */
+    .ack-status-option {
+        padding: 14px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    .ack-status-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .ack-status-option.done {
+        border-color: #4caf50;
+    }
+    .ack-status-option.action {
+        border-color: #f44336;
+    }
+    .ack-status-option.selected {
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
+        transform: scale(1.01);
+    }
+    .ack-status-option.done.selected {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    }
+    .ack-status-option.action.selected {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    }
+
+    /* NEW: Acknowledgment status badge (for view modal) */
+    .ack-status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    .ack-done-badge {
+        background: linear-gradient(135deg, #4caf50 0%, #28a745 100%);
+        color: white;
+    }
+    .ack-action-badge {
+        background: linear-gradient(135deg, #f44336 0%, #dc3545 100%);
+        color: white;
+    }
+
     /* Action Buttons */
     .action-buttons {
         display: flex;
@@ -657,14 +706,43 @@
     </div>
 </div>
 
+<!-- Acknowledge Modal - WITH STATUS SELECTOR -->
 <div class="modal fade" id="acknowledgeModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header-custom">
                 <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-bold" style="font-size: 14px;">Acknowledgment Status</label>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="ack-status-option done selected" data-ack="done_reviewed" onclick="selectAckStatus('done_reviewed')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackDone" value="done_reviewed" checked>
+                                    <label class="form-check-label fw-bold" for="ackDone" style="cursor: pointer;">
+                                        ✅ Done / Reviewed
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">No further action needed</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="ack-status-option action" data-ack="need_further_action" onclick="selectAckStatus('need_further_action')">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="ackStatusRadio" id="ackAction" value="need_further_action">
+                                    <label class="form-check-label fw-bold" for="ackAction" style="cursor: pointer;">
+                                        ⚠️ Need Further Action
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">Technician needs to follow up</small>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="ackStatusHidden" value="done_reviewed">
+                </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Review Comments / Notes</label>
                     <textarea class="form-control" id="acknowledgeNotes" rows="4" placeholder="Enter your review comments..."></textarea>
@@ -710,7 +788,7 @@
     let techniciansMap = {};
     let globalRankMap = {};
 
-    // ============ NEW: Resolution status badge ============
+    // ============ Resolution status badge (technician's indicator) ============
     function getResolutionBadge(report) {
         const status = report.resolution_status || 'pending_action';
         const map = {
@@ -721,6 +799,16 @@
         };
         const s = map[status] || map['pending_action'];
         return `<span class="resolution-badge ${s.class}">${s.icon} ${s.text}</span>`;
+    }
+
+    // ============ NEW: Acknowledgment status badge (team leader's indicator) ============
+    function getAcknowledgmentBadge(report) {
+        if (!report.team_leader_acknowledged) return '';
+        const status = report.acknowledgment_status || 'done_reviewed';
+        if (status === 'need_further_action') {
+            return `<span class="ack-status-badge ack-action-badge">⚠️ Need Action</span>`;
+        }
+        return `<span class="ack-status-badge ack-done-badge">✅ Reviewed - Done</span>`;
     }
 
     function formatDate(dateString) {
@@ -1114,6 +1202,16 @@
         }
     }
 
+    // ============ NEW: Select acknowledgment status ============
+    function selectAckStatus(status) {
+        const radioId = status === 'need_further_action' ? 'ackAction' : 'ackDone';
+        document.getElementById(radioId).checked = true;
+        document.getElementById('ackStatusHidden').value = status;
+        document.querySelectorAll('.ack-status-option').forEach(opt => opt.classList.remove('selected'));
+        const target = document.querySelector(`.ack-status-option[data-ack="${status}"]`);
+        if (target) target.classList.add('selected');
+    }
+
     function openAcknowledgeModal(id) {
         if (!isAuthorizedUser) {
             window.showToast('You are not authorized to acknowledge reports', 'error');
@@ -1121,11 +1219,14 @@
         }
         currentReportId = id;
         document.getElementById('acknowledgeNotes').value = '';
+        // Reset to default "Done / Reviewed"
+        selectAckStatus('done_reviewed');
         new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
     }
 
     async function submitAcknowledge() {
         const notes = document.getElementById('acknowledgeNotes').value;
+        const ackStatus = document.getElementById('ackStatusHidden').value;
         const user = window.getCurrentUser();
 
         if (!user || !user.id) {
@@ -1139,7 +1240,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     team_leader_id: parseInt(user.id),
-                    team_leader_notes: notes
+                    team_leader_notes: notes,
+                    acknowledgment_status: ackStatus
                 })
             });
             const data = await response.json();
@@ -1221,7 +1323,8 @@
 
         let acknowledgmentHtml = '';
         if (isAcknowledged) {
-            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
+            const ackBadge = getAcknowledgmentBadge(report);
+            acknowledgmentHtml = `<div class="alert alert-success mt-2" style="background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%); border: none; border-left: 4px solid #28a745;"><i class="bi bi-check-circle"></i> <strong>Acknowledged by Team Leader</strong><br>By: ${escapeHtml(report.team_leader_name)}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
         }
 
         const html = `
