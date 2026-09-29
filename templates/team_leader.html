@@ -1583,9 +1583,9 @@
         </html>`;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        loadTechnicians();
-        checkAuthorization();
+        document.addEventListener('DOMContentLoaded', async function() {
+        await loadTechnicians();   // Wait for names to load first
+        checkAuthorization();      // Then check auth + load reports
     });
 </script>
 {% endblock %}
