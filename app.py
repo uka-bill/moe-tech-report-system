@@ -104,7 +104,6 @@ def compress_image(file_content, filename):
     try:
         original_size_kb = len(file_content) / 1024
         img = Image.open(io_lib.BytesIO(file_content))
-        
         if img.mode in ('RGBA', 'LA', 'P'):
             rgb_img = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
@@ -114,29 +113,21 @@ def compress_image(file_content, filename):
             img = rgb_img
         elif img.mode != 'RGB':
             img = img.convert('RGB')
-        
         max_dimension = app.config['MAX_IMAGE_DIMENSION']
         if img.width > max_dimension or img.height > max_dimension:
             ratio = min(max_dimension / img.width, max_dimension / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
-        
         if img.width > 1024 or img.height > 1024:
             ratio = min(1024 / img.width, 1024 / img.height)
             new_size = (int(img.width * ratio), int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
-        
         output = io_lib.BytesIO()
-        img.save(output, format='JPEG', 
-                 quality=app.config['IMAGE_QUALITY'],
-                 optimize=True,
-                 progressive=True)
+        img.save(output, format='JPEG', quality=app.config['IMAGE_QUALITY'], optimize=True, progressive=True)
         compressed_content = output.getvalue()
-        
         compressed_size_kb = len(compressed_content) / 1024
         compression_ratio = (1 - compressed_size_kb / original_size_kb) * 100
         app.logger.info(f"Image compressed: {original_size_kb:.1f}KB -> {compressed_size_kb:.1f}KB ({compression_ratio:.1f}% saved)")
-        
         return compressed_content, 'jpg'
     except Exception as e:
         app.logger.error(f"Image compression error: {e}")
@@ -572,7 +563,7 @@ def create_technical_report():
             "priority": data.get('priority', 'medium'),
             "priority_with_tender": data.get('priority_with_tender', False),
             "status": data.get('status', 'pending'),
-            "resolution_status": data.get('resolution_status', 'pending_action'),  # NEW
+            "resolution_status": data.get('resolution_status', 'pending_action'),
             "technician_id": data.get('technician_id'),
             "technician_notes": data.get('technician_notes', ''),
             "action_taken": data.get('action_taken', ''),
@@ -597,7 +588,6 @@ def update_technical_report(report_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        # NEW: 'resolution_status' added to allowed fields
         allowed_fields = ['report_type', 'entity_type', 'entity_id', 'problem_type', 'complaint_details',
                          'priority', 'priority_with_tender', 'status', 'resolution_status', 'technician_notes', 'action_taken',
                          'images', 'account_number', 'meter_number', 'phone_number', 'number_of_lines',
@@ -639,6 +629,7 @@ def delete_technical_report(report_id):
         app.logger.error(f"Error deleting report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============ ACKNOWLEDGE ENDPOINT - NOW WITH acknowledgment_status ============
 @app.route('/api/technical-reports/<int:report_id>/acknowledge', methods=['POST'])
 def acknowledge_report(report_id):
     try:
@@ -647,6 +638,8 @@ def acknowledge_report(report_id):
         data = request.get_json()
         team_leader_id = data.get('team_leader_id')
         team_leader_notes = data.get('team_leader_notes', '')
+        # NEW: acknowledgment_status - either 'done_reviewed' or 'need_further_action'
+        acknowledgment_status = data.get('acknowledgment_status', 'done_reviewed')
         if not team_leader_id:
             return jsonify({'success': False, 'error': 'Team Leader ID required'}), 400
         auth_response = supabase.table("technicians").select("is_authorized, name").eq("id", team_leader_id).execute()
@@ -666,11 +659,12 @@ def acknowledge_report(report_id):
             "team_leader_id": team_leader_id,
             "team_leader_name": team_leader_name,
             "team_leader_notes": team_leader_notes,
+            "acknowledgment_status": acknowledgment_status,  # NEW
             "updated_at": get_brunei_time_iso()
         }
         response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
         if response.data:
-            app.logger.info(f"Report {report_id} acknowledged by Team Leader {team_leader_name}")
+            app.logger.info(f"Report {report_id} acknowledged by Team Leader {team_leader_name} - status: {acknowledgment_status}")
             return jsonify({'success': True, 'message': 'Report acknowledged successfully'})
         return jsonify({'success': False, 'error': 'Failed to acknowledge report'}), 500
     except Exception as e:
@@ -811,7 +805,6 @@ def get_mapping_images():
         if entity_id:
             query = query.eq("entity_id", int(entity_id))
         response = query.order("uploaded_at", desc=True).execute()
-        
         images = []
         for img in response.data if response.data else []:
             img_dict = dict(img)
@@ -830,7 +823,6 @@ def get_mapping_images():
             if 'pabx_extension_no' not in img_dict or img_dict['pabx_extension_no'] is None:
                 img_dict['pabx_extension_no'] = []
             images.append(img_dict)
-        
         return jsonify(images)
     except Exception as e:
         app.logger.error(f"Error getting mapping images: {e}")
@@ -842,17 +834,13 @@ def create_mapping_image():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        
         app.logger.info(f"Creating mapping image with data keys: {list(data.keys()) if data else 'None'}")
-        
         pabx_trailing_no = data.get('pabx_trailing_no', [])
         pabx_extension_no = data.get('pabx_extension_no', [])
-        
         if isinstance(pabx_trailing_no, str):
             pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
         if isinstance(pabx_extension_no, str):
             pabx_extension_no = [pabx_extension_no] if pabx_extension_no else []
-        
         image_data = {
             "entity_type": data.get('entity_type'),
             "entity_id": int(data.get('entity_id')),
@@ -883,9 +871,7 @@ def create_mapping_image():
             "last_edited_at": data.get('last_edited_at'),
             "uploaded_at": get_brunei_time_iso()
         }
-        
         response = supabase.table("mapping_images").insert(image_data).execute()
-        
         if response.data:
             app.logger.info(f"Mapping image created: ID {response.data[0]['id']}")
             return jsonify({'success': True, 'data': response.data[0]})
@@ -901,15 +887,12 @@ def update_mapping_image(image_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        
         pabx_trailing_no = data.get('pabx_trailing_no', [])
         pabx_extension_no = data.get('pabx_extension_no', [])
-        
         if isinstance(pabx_trailing_no, str):
             pabx_trailing_no = [pabx_trailing_no] if pabx_trailing_no else []
         if isinstance(pabx_extension_no, str):
             pabx_extension_no = [pabx_extension_no] if pabx_extension_no else []
-        
         allowed_fields = [
             'description', 'notes', 
             'water_account_number', 'water_meter_number',
@@ -926,17 +909,13 @@ def update_mapping_image(image_id):
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
-        
         if 'pabx_trailing_no' in data:
             update_data['pabx_trailing_no'] = pabx_trailing_no
         if 'pabx_extension_no' in data:
             update_data['pabx_extension_no'] = pabx_extension_no
-        
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
-        
         response = supabase.table("mapping_images").update(update_data).eq("id", image_id).execute()
-        
         if response.data:
             app.logger.info(f"Mapping image updated: ID {image_id}")
             return jsonify({'success': True, 'data': response.data[0]})
@@ -965,41 +944,31 @@ def upload_image():
     try:
         if 'image' not in request.files:
             return jsonify({'success': False, 'error': 'No image file provided'}), 400
-        
         file = request.files['image']
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No image selected'}), 400
-        
         if not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File type not allowed'}), 400
-        
         original_content = file.read()
         compressed_content, ext = compress_image(original_content, file.filename)
-        
         timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
         unique_id = uuid.uuid4().hex[:8]
         filename = f"{timestamp}_{unique_id}.{ext}"
-        
         init_supabase_storage()
-        
         if not supabase:
             return jsonify({'success': False, 'error': 'Supabase client not initialized'}), 500
-        
         supabase.storage.from_(SUPABASE_STORAGE_BUCKET).upload(
             filename, 
             compressed_content,
             file_options={"content-type": "image/jpeg"}
         )
-        
         image_url = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).get_public_url(filename)
         app.logger.info(f"Image uploaded: {image_url}")
-        
         return jsonify({
             'success': True, 
             'image_url': image_url, 
             'filename': filename
         })
-        
     except Exception as e:
         app.logger.error(f"Error uploading image: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
