@@ -452,6 +452,7 @@
 
 <iframe id="printIframe" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
+<!-- View Report Modal — NO Acknowledge button -->
 <div class="modal fade" id="reportModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
@@ -468,25 +469,6 @@
                 <button type="button" class="btn btn-primary btn-sm" onclick="printReport()">Print</button>
                 <button type="button" class="btn btn-warning btn-sm" onclick="editReport()" id="editBtn">Edit</button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteReport()" id="deleteBtn">Delete</button>
-                <button type="button" class="btn btn-success btn-sm" id="acknowledgeBtn" onclick="showAcknowledgeModal()" style="display: none;">Acknowledge</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="acknowledgeModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header-custom">
-                <h5 class="modal-title"><i class="bi bi-check2-square"></i> Acknowledge Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <textarea class="form-control" id="acknowledgeComment" rows="4" placeholder="Enter your review comments..."></textarea>
-            </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success btn-sm" onclick="submitAcknowledge()">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -822,14 +804,10 @@
                 displayReportModal();
                 const editBtn = document.getElementById('editBtn');
                 const deleteBtn = document.getElementById('deleteBtn');
-                const acknowledgeBtn = document.getElementById('acknowledgeBtn');
                 const isCreator = currentReport.technician_id == currentTechnicianId;
                 const canEditDelete = isCreator && !currentReport.team_leader_acknowledged;
                 if (editBtn) editBtn.style.display = canEditDelete ? 'inline-block' : 'none';
                 if (deleteBtn) deleteBtn.style.display = canEditDelete ? 'inline-block' : 'none';
-                if (acknowledgeBtn) {
-                    acknowledgeBtn.style.display = (isTeamLeader && !currentReport.team_leader_acknowledged) ? 'inline-block' : 'none';
-                }
                 if (isModalExpanded) {
                     const modalDialog = document.querySelector('#reportModal .modal-dialog');
                     const expandBtn = document.getElementById('expandModalBtn');
@@ -868,8 +846,8 @@
         if (isAcknowledged) {
             const ackBadge = getAcknowledgmentBadge(report);
             acknowledgmentHtml = `<div class="alert alert-success mt-3"><i class="bi bi-check-circle"></i> <strong>Acknowledged</strong><br>By: ${escapeHtml(report.team_leader_name || 'Team Leader')}<br>Date: ${formatDate(report.team_leader_acknowledged_at)}<br>Status: ${ackBadge}<br>Comments: ${escapeHtml(report.team_leader_notes || 'No notes')}</div>`;
-        } else if (isTeamLeader) {
-            acknowledgmentHtml = `<div class="alert alert-warning mt-3"><button class="btn btn-success w-100" onclick="showAcknowledgeModal()"><i class="bi bi-check2-square"></i> Acknowledge Report</button></div>`;
+        } else {
+            acknowledgmentHtml = `<div class="alert alert-warning mt-3"><i class="bi bi-clock-history"></i> <strong>Pending Review</strong> — This report awaits acknowledgment by the Team Leader.</div>`;
         }
 
         let assistantCheckHtml = '';
@@ -946,36 +924,6 @@
                 window.showToast('Comment added');
                 bootstrap.Modal.getInstance(document.getElementById('commentModal')).hide();
                 openReportDetail(currentReportId);
-            }
-        } catch (error) { window.showToast('Error', 'error'); }
-    }
-
-    function showAcknowledgeModal() {
-        if (!isTeamLeader) {
-            window.showToast('Only Team Leaders can acknowledge reports', 'error');
-            return;
-        }
-        document.getElementById('acknowledgeComment').value = '';
-        new bootstrap.Modal(document.getElementById('acknowledgeModal')).show();
-    }
-
-    async function submitAcknowledge() {
-        const comment = document.getElementById('acknowledgeComment').value;
-        const userId = localStorage.getItem('userId');
-        try {
-            const response = await fetch(`/api/technical-reports/${currentReportId}/acknowledge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ team_leader_id: parseInt(userId), team_leader_notes: comment })
-            });
-            const data = await response.json();
-            if (data.success) {
-                window.showToast('Report acknowledged');
-                bootstrap.Modal.getInstance(document.getElementById('acknowledgeModal')).hide();
-                loadReports();
-                openReportDetail(currentReportId);
-            } else {
-                window.showToast(data.error || 'Failed to acknowledge', 'error');
             }
         } catch (error) { window.showToast('Error', 'error'); }
     }
