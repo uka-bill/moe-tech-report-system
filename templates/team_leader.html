@@ -8,7 +8,7 @@
         --primary-light: #d4b8e8;
         --secondary-color: #f3e5f5;
     }
-    
+
     .page-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
         border-radius: 16px;
@@ -23,14 +23,8 @@
         margin: 0;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .page-header h2 i {
-        margin-right: 12px;
-    }
-    .page-header p {
-        margin: 8px 0 0;
-        opacity: 0.9;
-        font-size: 0.85rem;
-    }
+    .page-header h2 i { margin-right: 12px; }
+    .page-header p { margin: 8px 0 0; opacity: 0.9; font-size: 0.85rem; }
     .stats-badge {
         background-color: #4caf50;
         color: white;
@@ -962,7 +956,6 @@
         loadTeamLeaderData();
     }
 
-    // ============ FIX 1: Cache-busting on the fetch ============
     async function loadTeamLeaderData() {
         try {
             const response = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
@@ -1355,7 +1348,6 @@
         document.getElementById('viewReportContent').innerHTML = html;
     }
 
-    // ============ FIX 2: Immediate local update after acknowledgment ============
     async function submitInlineAcknowledge() {
         const notes = document.getElementById('inlineAckNotes').value;
         const ackStatus = document.getElementById('ackStatusHidden').value;
@@ -1386,8 +1378,6 @@
             if (data.success) {
                 window.showToast('Report acknowledged successfully');
 
-                // ============ IMMEDIATE LOCAL UPDATE ============
-                // Update the report locally so the pending list refreshes instantly
                 if (currentReport) {
                     currentReport.team_leader_acknowledged = true;
                     currentReport.acknowledgment_status = ackStatus;
@@ -1396,7 +1386,6 @@
                     currentReport.team_leader_acknowledged_at = new Date().toISOString();
                 }
 
-                // Recompute the lists and re-render
                 const pendingNow = allReports.filter(r => !r.team_leader_acknowledged);
                 const highPriNow = pendingNow.filter(r => r.priority === 'high');
                 const ackNow = allReports.filter(r => r.team_leader_acknowledged);
@@ -1417,20 +1406,16 @@
 
                 displayHighPriorityTable(highPriNow);
                 displayPendingTable(pendingNow);
-                // ============ END IMMEDIATE LOCAL UPDATE ============
 
-                // Close the modal
                 const modalEl = document.getElementById('viewReportModal');
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);
                 if (modalInstance) modalInstance.hide();
 
-                // Then run a full background refresh for consistency (with cache-busting)
                 modalEl.addEventListener('hidden.bs.modal', function onHidden() {
                     modalEl.removeEventListener('hidden.bs.modal', onHidden);
                     loadTeamLeaderData();
                 }, { once: true });
 
-                // Safety fallback: force full reload after 800ms even if event didn't fire
                 setTimeout(() => { loadTeamLeaderData(); }, 800);
             } else {
                 window.showToast(data.error || 'Failed to acknowledge', 'error');
@@ -1526,27 +1511,42 @@
         <head><meta charset="UTF-8"><title>${reportTypeName} Technical Report #${displayNumber}</title>
         <style>
             *{margin:0;padding:0;box-sizing:border-box}
-            body{font-family:'Times New Roman',Arial,serif;background:white;padding:0;margin:0;font-size:11pt;line-height:1.5}
-            @page{size:A4;margin:2.2cm 2.2cm}
+            body{font-family:'Times New Roman',Arial,serif;background:white;padding:0;margin:0;font-size:11pt;line-height:1.4}
+            @page{size:A4;margin:1.4cm 1.8cm}
             .report-container{max-width:100%;margin:0 auto}
-            .header{text-align:center;margin-bottom:25px}
-            .header h2{font-size:12pt;font-weight:normal;margin:0}
-            .header h1{font-size:16pt;font-weight:bold;margin:8px 0;text-transform:uppercase}
-            .divider{border-top:2px solid #000;margin:15px 0 5px}
-            .sub-divider{border-top:1px solid #000;margin:5px 0}
-            .report-id{background:#f5f5f5;padding:10px 15px;margin-bottom:25px;display:flex;justify-content:space-between;flex-wrap:wrap;border:1px solid #ddd;border-radius:5px}
-            table{width:100%;border-collapse:collapse;margin:15px 0}
-            th,td{padding:10px 12px;border:1px solid #aaa;text-align:left;vertical-align:top}
+
+            /* Header block — keep together, don't break after */
+            .header{text-align:center;margin-bottom:12px;page-break-inside:avoid;break-inside:avoid;page-break-after:avoid;break-after:avoid}
+            .header h2{font-size:11pt;font-weight:normal;margin:0;line-height:1.3}
+            .header h1{font-size:15pt;font-weight:bold;margin:6px 0;text-transform:uppercase;line-height:1.2}
+            .header h3{font-size:12pt;margin-top:8px}
+            .divider{border-top:2px solid #000;margin:8px 0 4px}
+            .sub-divider{border-top:1px solid #000;margin:4px 0}
+
+            /* Report ID bar — keep together with header */
+            .report-id{background:#f5f5f5;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;border:1px solid #ddd;border-radius:5px;font-size:10pt;page-break-inside:avoid;break-inside:avoid;page-break-after:avoid;break-after:avoid}
+
+            /* Table — allow breaks between rows but keep rows whole */
+            table{width:100%;border-collapse:collapse;margin:8px 0;page-break-inside:auto;break-inside:auto}
+            tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto}
+            th,td{padding:7px 9px;border:1px solid #aaa;text-align:left;vertical-align:top;font-size:10.5pt}
             th{background:#f0f0f0;width:30%;font-weight:bold}
+
             .priority-high{color:#dc3545;font-weight:bold}
             .priority-medium{color:#d4a000;font-weight:bold}
             .priority-low{color:#28a745;font-weight:bold}
             .bg-danger{background:#dc3545;color:white;padding:2px 8px;border-radius:4px;display:inline-block}
-            .signatures{display:flex;justify-content:space-between;margin-top:50px;margin-bottom:30px}
+
+            .signatures{display:flex;justify-content:space-between;margin-top:30px;margin-bottom:20px;page-break-inside:avoid;break-inside:avoid}
             .signature-box{text-align:center;width:45%}
-            .signature-line{border-top:1px solid #000;margin-top:40px;padding-top:8px;width:100%}
-            .footer{text-align:center;margin-top:40px;font-size:9pt;color:#666;border-top:1px solid #ddd;padding-top:12px}
-            @media print{body{padding:0;margin:0}table{page-break-inside:avoid}}
+            .signature-line{border-top:1px solid #000;margin-top:35px;padding-top:8px;width:100%}
+            .footer{text-align:center;margin-top:20px;font-size:9pt;color:#666;border-top:1px solid #ddd;padding-top:10px;page-break-inside:avoid;break-inside:avoid}
+
+            @media print{
+                body{padding:0;margin:0}
+                thead{display:table-header-group}
+                tfoot{display:table-footer-group}
+            }
         </style>
         </head>
         <body>
