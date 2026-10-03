@@ -429,6 +429,7 @@
     .backup-buttons {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
     }
     .btn-backup {
         background-color: #28a745;
@@ -728,7 +729,8 @@
         <span class="backup-info-text" id="lastBackupInfo">No backup record</span>
     </div>
     <div class="backup-buttons">
-        <button class="btn-backup" onclick="backupData()"><i class="bi bi-download"></i> Backup</button>
+        <button class="btn-backup" onclick="backupData()"><i class="bi bi-download"></i> Backup Data</button>
+        <button class="btn-backup" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);" onclick="backupImages()"><i class="bi bi-images"></i> Backup Images</button>
         <button class="btn-restore" onclick="restoreData()"><i class="bi bi-upload"></i> Restore</button>
     </div>
 </div>
@@ -1177,6 +1179,38 @@
             console.error('Backup error:', error);
             if (window.showToast) window.showToast('Error creating backup', 'error');
             else alert('Error creating backup');
+        }
+    }
+    
+    async function backupImages() {
+        const user = window.getCurrentUser();
+        const canBackup = user && (user.isAuthorized === true || user.role === 'senior_technician' || user.canEditTechnicians === true);
+        
+        if (!canBackup) {
+            if (window.showToast) window.showToast('Only Team Leaders and Senior Technicians can perform backup', 'error');
+            else alert('Only Team Leaders and Senior Technicians can perform backup');
+            return;
+        }
+        
+        if (window.showToast) window.showToast('Preparing image backup... This may take a while.', 'info');
+        
+        try {
+            const url = `/api/backup-images?user_id=${user.id}`;
+            // Use a hidden link to trigger browser download
+            const link = document.createElement('a');
+            link.href = url;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                if (window.showToast) window.showToast('Image backup download started', 'success');
+            }, 1000);
+        } catch (error) {
+            console.error('Image backup error:', error);
+            if (window.showToast) window.showToast('Error downloading image backup', 'error');
+            else alert('Error downloading image backup');
         }
     }
     
