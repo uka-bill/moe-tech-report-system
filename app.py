@@ -1170,6 +1170,171 @@ def restore_data():
         app.logger.error(f"Restore error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============ TASK SLIPS API ============
+
+@app.route('/task-slips')
+def task_slips_page():
+    return render_template('task_slips.html')
+
+@app.route('/api/task-slips', methods=['GET'])
+def get_task_slips():
+    try:
+        if not supabase:
+            return jsonify([]), 500
+        query = supabase.table("task_slips").select("*")
+        if request.args.get('assigned_to'):
+            query = query.eq("assigned_to", int(request.args.get('assigned_to')))
+        if request.args.get('status'):
+            query = query.eq("status", request.args.get('status'))
+        if request.args.get('entity_type'):
+            query = query.eq("entity_type", request.args.get('entity_type'))
+        if request.args.get('entity_id'):
+            query = query.eq("entity_id", int(request.args.get('entity_id')))
+        response = query.order("created_at", desc=True).execute()
+        slips = []
+        if response.data:
+            for slip in response.data:
+                s = dict(slip)
+                if s['entity_type'] == 'school':
+                    entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
+                    if entity.data:
+                        s['entity_name'] = entity.data[0]['name']
+                else:
+                    entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
+                    if entity.data:
+                        dept = entity.data[0]
+                        s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                if s.get('assigned_to'):
+                    tech = supabase.table("technicians").select("name").eq("id", s['assigned_to']).execute()
+                    if tech.data:
+                        s['assigned_to_name'] = tech.data[0]['name']
+                if s.get('issued_by'):
+                    issuer = supabase.table("technicians").select("name").eq("id", s['issued_by']).execute()
+                    if issuer.data:
+                        s['issued_by_name'] = issuer.data[0]['name']
+                slips.append(s)
+        return jsonify(slips)
+    except Exception as e:
+        app.logger.error(f"Error getting task slips: {e}")
+        return jsonify([]), 500
+
+
+@app.route('/api/task-slips', methods=['POST'])
+def create_task_slip():
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        data = request.get_json()
+        required = ['slip_number', 'entity_type', 'entity_id', 'assigned_to', 'issued_by']
+        for field in required:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'{field} is required'}), 400
+
+        slip_data = {
+            "slip_number": data.get('slip_number'),
+            "complaint_number": data.get('complaint_number', ''),
+            "kpi_number": data.get('kpi_number', ''),
+            "entity_type": data.get('entity_type'),
+            "entity_id": int(data.get('entity_id')),
+            "problem_type": data.get('problem_type', ''),
+            "assigned_to": int(data.get('assigned_to')),
+            "issued_by": int(data.get('issued_by')),
+            "issue_date": get_brunei_time_iso(),
+            "due_date": data.get('due_date'),
+            "notes": data.get('notes', ''),
+            "status": data.get('status', 'issued'),
+            "created_at": get_brunei_time_iso(),
+            "updated_at": get_brunei_time_iso()
+        }
+        response = supabase.table("task_slips").insert(slip_data).execute()
+        if response.data:
+            return jsonify({'success': True, 'data': response.data[0]})
+        return jsonify({'success': False, 'error': 'Failed to create slip'}), 500
+    except Exception as e:
+        app.logger.error(f"Error creating task slip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/task-slips/<int:slip_id>', methods=['GET'])
+def get_single_task_slip(slip_id):
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        response = supabase.table("task_slips").select("*").eq("id", slip_id).execute()
+        if not response.data:
+            return jsonify({'success': False, 'error': 'Slip not found'}), 404
+        s = dict(response.data[0])
+        if s['entity_type'] == 'school':
+            entity = supabase.table("schools").select("name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
+            if entity.data:
+                s['entity_name'] = entity.data[0]['name']
+                s['entity_address'] = entity.data[0].get('address', '')
+                s['entity_contact'] = entity.data[0].get('contact_person', '')
+                s['entity_phone'] = entity.data[0].get('contact_phone', '')
+        else:
+            entity = supabase.table("departments").select("name, unit_name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
+            if entity.data:
+                dept = entity.data[0]
+                s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                s['entity_address'] = dept.get('address', '')
+                s['entity_contact'] = dept.get('contact_person', '')
+                s['entity_phone'] = dept.get('contact_phone', '')
+        if s.get('assigned_to'):
+            tech = supabase.table("technicians").select("name, employee_id").eq("id", s['assigned_to']).execute()
+            if tech.data:
+                s['assigned_to_name'] = tech.data[0]['name']
+                s['assigned_to_employee_id'] = tech.data[0].get('employee_id', '')
+        if s.get('issued_by'):
+            issuer = supabase.table("technicians").select("name, employee_id").eq("id", s['issued_by']).execute()
+            if issuer.data:
+                s['issued_by_name'] = issuer.data[0]['name']
+                s['issued_by_employee_id'] = issuer.data[0].get('employee_id', '')
+        return jsonify({'success': True, 'data': s})
+    except Exception as e:
+        app.logger.error(f"Error getting task slip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/task-slips/<int:slip_id>', methods=['PUT'])
+def update_task_slip(slip_id):
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        data = request.get_json()
+        allowed = ['slip_number', 'complaint_number', 'kpi_number', 'entity_type', 'entity_id',
+                   'problem_type', 'assigned_to', 'due_date', 'notes', 'status', 'report_id']
+        update_data = {}
+        for f in allowed:
+            if f in data:
+                if f in ['entity_id', 'assigned_to', 'report_id'] and data[f] is not None:
+                    update_data[f] = int(data[f])
+                else:
+                    update_data[f] = data[f]
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+        update_data['updated_at'] = get_brunei_time_iso()
+        response = supabase.table("task_slips").update(update_data).eq("id", slip_id).execute()
+        if response.data:
+            return jsonify({'success': True, 'data': response.data[0]})
+        return jsonify({'success': False, 'error': 'Slip not found'}), 404
+    except Exception as e:
+        app.logger.error(f"Error updating task slip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/task-slips/<int:slip_id>', methods=['DELETE'])
+def delete_task_slip(slip_id):
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        response = supabase.table("task_slips").delete().eq("id", slip_id).execute()
+        if response.data:
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Slip not found'}), 404
+    except Exception as e:
+        app.logger.error(f"Error deleting task slip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ============ HEALTH CHECK ============
 
 @app.route('/health')
