@@ -11,6 +11,7 @@ from logging.handlers import RotatingFileHandler
 from PIL import Image
 import io as io_lib
 import traceback
+import zipfile
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
 
@@ -1096,16 +1097,22 @@ def backup_data():
         can_edit = user.get('can_edit_technicians', False)
         if not (is_authorized or is_senior or can_edit):
             return jsonify({'success': False, 'error': 'You are not authorized to perform backup'}), 403
-        tables = ['technicians', 'schools', 'departments', 'technical_reports', 'mapping_images', 'mapping_locations']
+        tables = ['technicians', 'schools', 'departments', 'technical_reports',
+                  'mapping_images', 'mapping_locations', 'task_slips']
         backup_data = {}
         for table in tables:
-            response = supabase.table(table).select("*").execute()
-            backup_data[table] = response.data if response.data else []
+            try:
+                response = supabase.table(table).select("*").execute()
+                backup_data[table] = response.data if response.data else []
+            except Exception as tex:
+                app.logger.warning(f"Could not back up table {table}: {tex}")
+                backup_data[table] = []
         backup_data['_backup_info'] = {
-            'version': '1.0',
+            'version': '2.0',
             'timestamp': get_brunei_time_iso(),
             'user_id': int(user_id),
-            'total_records': sum(len(backup_data[t]) for t in tables)
+            'total_records': sum(len(backup_data[t]) for t in tables),
+            'tables_included': tables
         }
         app.logger.info(f"Backup created by user {user_id} with {backup_data['_backup_info']['total_records']} records")
         return jsonify({'success': True, 'data': backup_data})
@@ -1137,8 +1144,13 @@ def restore_data():
             return jsonify({'success': False, 'error': 'You are not authorized to perform restore'}), 403
         if '_backup_info' not in backup_data:
             return jsonify({'success': False, 'error': 'Invalid backup file: missing metadata'}), 400
-        delete_order = ['mapping_locations', 'mapping_images', 'technical_reports', 'technicians', 'schools', 'departments']
-        insert_order = ['technicians', 'schools', 'departments', 'technical_reports', 'mapping_images', 'mapping_locations']
+
+        # Delete in reverse dependency order (children first)
+        delete_order = ['task_slips', 'mapping_locations', 'mapping_images',
+                        'technical_reports', 'technicians', 'schools', 'departments']
+        insert_order = ['technicians', 'schools', 'departments', 'technical_reports',
+                        'mapping_images', 'mapping_locations', 'task_slips']
+
         restored_count = 0
         for table in delete_order:
             if table not in backup_data:
@@ -1149,6 +1161,7 @@ def restore_data():
             except Exception as e:
                 app.logger.error(f"Error clearing table {table}: {e}")
                 return jsonify({'success': False, 'error': f'Failed to clear table {table}: {str(e)}'}), 500
+
         for table in insert_order:
             if table not in backup_data:
                 continue
@@ -1168,6 +1181,77 @@ def restore_data():
         return jsonify({'success': True, 'message': f'Restore successful, {restored_count} records restored'})
     except Exception as e:
         app.logger.error(f"Restore error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/backup-images', methods=['GET'])
+def backup_images():
+    """Downloads all uploaded images from Supabase Storage as a ZIP file."""
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'User ID required'}), 400
+
+        # Check authorization
+        auth_response = supabase.table("technicians").select("is_authorized, role, can_edit_technicians").eq("id", int(user_id)).execute()
+        if not auth_response.data:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        user = auth_response.data[0]
+        is_authorized = user.get('is_authorized', False)
+        is_senior = user.get('role') == 'senior_technician'
+        can_edit = user.get('can_edit_technicians', False)
+        if not (is_authorized or is_senior or can_edit):
+            return jsonify({'success': False, 'error': 'You are not authorized to perform backup'}), 403
+
+        # List all files in the storage bucket
+        try:
+            files = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).list()
+        except Exception as e:
+            app.logger.error(f"Error listing storage files: {e}")
+            return jsonify({'success': False, 'error': f'Could not list storage files: {str(e)}'}), 500
+
+        if not files:
+            return jsonify({'success': False, 'error': 'No images found in storage'}), 404
+
+        # Build the ZIP in memory
+        zip_buffer = io_lib.BytesIO()
+        downloaded = 0
+        skipped = 0
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for file_meta in files:
+                name = file_meta.get('name')
+                if not name:
+                    continue
+                # Skip sub-folders (folder entries have no id and no extension)
+                if file_meta.get('id') is None and not name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    continue
+                try:
+                    file_bytes = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).download(name)
+                    zf.writestr(name, file_bytes)
+                    downloaded += 1
+                except Exception as fe:
+                    app.logger.warning(f"Could not download {name}: {fe}")
+                    skipped += 1
+
+        zip_buffer.seek(0)
+        timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
+        filename = f"moe_images_backup_{timestamp}.zip"
+
+        app.logger.info(f"Image backup created: {downloaded} files downloaded, {skipped} skipped")
+
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        app.logger.error(f"Image backup error: {e}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ TASK SLIPS API ============
