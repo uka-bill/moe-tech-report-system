@@ -12,6 +12,8 @@ from PIL import Image
 import io as io_lib
 import traceback
 import zipfile
+import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
 
@@ -1186,7 +1188,9 @@ def restore_data():
 
 @app.route('/api/backup-images', methods=['GET'])
 def backup_images():
-    """Downloads all uploaded images from Supabase Storage as a ZIP file."""
+    """Downloads all uploaded images from Supabase Storage as a ZIP file.
+    Uses disk-backed ZIP + parallel downloads to avoid memory/timeout issues."""
+    tmp_path = None
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
@@ -1216,42 +1220,90 @@ def backup_images():
         if not files:
             return jsonify({'success': False, 'error': 'No images found in storage'}), 404
 
-        # Build the ZIP in memory
-        zip_buffer = io_lib.BytesIO()
+        # Filter to valid image files only
+        valid_files = []
+        for f in files:
+            name = f.get('name')
+            if not name:
+                continue
+            if f.get('id') is None and not name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                continue
+            valid_files.append(name)
+
+        if not valid_files:
+            return jsonify({'success': False, 'error': 'No image files found in storage'}), 404
+
+        app.logger.info(f"Image backup starting: {len(valid_files)} files to process")
+
+        # Create disk-backed temp file (avoids RAM overflow)
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix='.zip')
+        os.close(tmp_fd)
+
+        def download_one(filename):
+            try:
+                file_bytes = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).download(filename)
+                return (filename, file_bytes, None)
+            except Exception as e:
+                return (filename, None, str(e))
+
         downloaded = 0
         skipped = 0
 
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for file_meta in files:
-                name = file_meta.get('name')
-                if not name:
-                    continue
-                # Skip sub-folders (folder entries have no id and no extension)
-                if file_meta.get('id') is None and not name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
-                    continue
-                try:
-                    file_bytes = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).download(name)
-                    zf.writestr(name, file_bytes)
-                    downloaded += 1
-                except Exception as fe:
-                    app.logger.warning(f"Could not download {name}: {fe}")
-                    skipped += 1
+        # Parallel downloads (5 at a time), sequential ZIP writing
+        with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = {executor.submit(download_one, name): name for name in valid_files}
+                for future in as_completed(futures):
+                    name, data, err = future.result()
+                    if err or not data:
+                        app.logger.warning(f"Skip {name}: {err}")
+                        skipped += 1
+                        continue
+                    try:
+                        zf.writestr(name, data)
+                        downloaded += 1
+                    except Exception as we:
+                        app.logger.warning(f"Write fail {name}: {we}")
+                        skipped += 1
 
-        zip_buffer.seek(0)
+        app.logger.info(f"Image backup done: {downloaded} downloaded, {skipped} skipped")
+
+        if downloaded == 0:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+            return jsonify({'success': False, 'error': 'Could not download any images'}), 500
+
         timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
         filename = f"moe_images_backup_{timestamp}.zip"
 
-        app.logger.info(f"Image backup created: {downloaded} files downloaded, {skipped} skipped")
-
-        return send_file(
-            zip_buffer,
+        response = send_file(
+            tmp_path,
             mimetype='application/zip',
             as_attachment=True,
             download_name=filename
         )
+
+        # Clean up temp file after response is sent
+        @response.call_on_close
+        def cleanup():
+            try:
+                if tmp_path and os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except Exception:
+                pass
+
+        return response
+
     except Exception as e:
         app.logger.error(f"Image backup error: {e}")
         app.logger.error(traceback.format_exc())
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ TASK SLIPS API ============
