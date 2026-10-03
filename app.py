@@ -1147,7 +1147,6 @@ def restore_data():
         if '_backup_info' not in backup_data:
             return jsonify({'success': False, 'error': 'Invalid backup file: missing metadata'}), 400
 
-        # Delete in reverse dependency order (children first)
         delete_order = ['task_slips', 'mapping_locations', 'mapping_images',
                         'technical_reports', 'technicians', 'schools', 'departments']
         insert_order = ['technicians', 'schools', 'departments', 'technical_reports',
@@ -1188,8 +1187,9 @@ def restore_data():
 
 @app.route('/api/backup-images', methods=['GET'])
 def backup_images():
-    """Downloads all uploaded images from Supabase Storage as a ZIP file.
-    Uses disk-backed ZIP + parallel downloads to avoid memory/timeout issues."""
+    """Downloads images from Supabase Storage as a ZIP file.
+    Supports filtering by year and month to avoid timeout issues.
+    If no year/month given, returns ALL images (may time out if many)."""
     tmp_path = None
     try:
         if not supabase:
@@ -1198,6 +1198,9 @@ def backup_images():
         user_id = request.args.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID required'}), 400
+
+        year = request.args.get('year')
+        month = request.args.get('month')  # '1'..'12' or 'all' or None
 
         # Check authorization
         auth_response = supabase.table("technicians").select("is_authorized, role, can_edit_technicians").eq("id", int(user_id)).execute()
@@ -1210,32 +1213,70 @@ def backup_images():
         if not (is_authorized or is_senior or can_edit):
             return jsonify({'success': False, 'error': 'You are not authorized to perform backup'}), 403
 
-        # List all files in the storage bucket
-        try:
-            files = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).list()
-        except Exception as e:
-            app.logger.error(f"Error listing storage files: {e}")
-            return jsonify({'success': False, 'error': f'Could not list storage files: {str(e)}'}), 500
-
-        if not files:
-            return jsonify({'success': False, 'error': 'No images found in storage'}), 404
-
-        # Filter to valid image files only
         valid_files = []
-        for f in files:
-            name = f.get('name')
-            if not name:
-                continue
-            if f.get('id') is None and not name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
-                continue
-            valid_files.append(name)
+
+        if year:
+            # Filter by date range from the mapping_images table
+            try:
+                y = int(year)
+                if month and month != 'all':
+                    m = int(month)
+                    if m < 1 or m > 12:
+                        return jsonify({'success': False, 'error': 'Invalid month'}), 400
+                    start_date = f"{y:04d}-{m:02d}-01T00:00:00"
+                    if m == 12:
+                        end_date = f"{y+1:04d}-01-01T00:00:00"
+                    else:
+                        end_date = f"{y:04d}-{m+1:02d}-01T00:00:00"
+                    label = f"{y}-{m:02d}"
+                else:
+                    start_date = f"{y:04d}-01-01T00:00:00"
+                    end_date = f"{y+1:04d}-01-01T00:00:00"
+                    label = f"{y}"
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Invalid year/month'}), 400
+
+            app.logger.info(f"Filtering images uploaded between {start_date} and {end_date}")
+            try:
+                response = supabase.table("mapping_images").select("image_url, uploaded_at").gte("uploaded_at", start_date).lt("uploaded_at", end_date).execute()
+            except Exception as qe:
+                app.logger.error(f"Query failed: {qe}")
+                return jsonify({'success': False, 'error': f'Query failed: {str(qe)}'}), 500
+
+            records = response.data or []
+            app.logger.info(f"Found {len(records)} image records in date range")
+
+            for rec in records:
+                url = rec.get('image_url', '')
+                if not url:
+                    continue
+                # Extract filename from URL (last path segment, strip query params)
+                fname = url.split('?')[0].rstrip('/').split('/')[-1]
+                if fname and fname.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    valid_files.append(fname)
+        else:
+            # No filter — list all files
+            try:
+                files = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).list()
+            except Exception as e:
+                app.logger.error(f"Error listing storage files: {e}")
+                return jsonify({'success': False, 'error': f'Could not list storage files: {str(e)}'}), 500
+
+            for f in files:
+                name = f.get('name')
+                if not name:
+                    continue
+                if f.get('id') is None and not name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                    continue
+                valid_files.append(name)
+            label = "all"
 
         if not valid_files:
-            return jsonify({'success': False, 'error': 'No image files found in storage'}), 404
+            return jsonify({'success': False, 'error': f'No images found for period: {label}'}), 404
 
-        app.logger.info(f"Image backup starting: {len(valid_files)} files to process")
+        app.logger.info(f"Image backup starting: {len(valid_files)} files (period: {label})")
 
-        # Create disk-backed temp file (avoids RAM overflow)
+        # Create disk-backed temp file
         tmp_fd, tmp_path = tempfile.mkstemp(suffix='.zip')
         os.close(tmp_fd)
 
@@ -1249,9 +1290,9 @@ def backup_images():
         downloaded = 0
         skipped = 0
 
-        # Parallel downloads (5 at a time), sequential ZIP writing
+        # Reduced parallelism (2 at a time) for lower memory usage on Render
         with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            with ThreadPoolExecutor(max_workers=5) as executor:
+            with ThreadPoolExecutor(max_workers=2) as executor:
                 futures = {executor.submit(download_one, name): name for name in valid_files}
                 for future in as_completed(futures):
                     name, data, err = future.result()
@@ -1266,7 +1307,7 @@ def backup_images():
                         app.logger.warning(f"Write fail {name}: {we}")
                         skipped += 1
 
-        app.logger.info(f"Image backup done: {downloaded} downloaded, {skipped} skipped")
+        app.logger.info(f"Image backup done: {downloaded} downloaded, {skipped} skipped (period: {label})")
 
         if downloaded == 0:
             try:
@@ -1276,7 +1317,7 @@ def backup_images():
             return jsonify({'success': False, 'error': 'Could not download any images'}), 500
 
         timestamp = get_brunei_time().strftime('%Y%m%d_%H%M%S')
-        filename = f"moe_images_backup_{timestamp}.zip"
+        filename = f"moe_images_backup_{label}_{timestamp}.zip"
 
         response = send_file(
             tmp_path,
@@ -1285,7 +1326,6 @@ def backup_images():
             download_name=filename
         )
 
-        # Clean up temp file after response is sent
         @response.call_on_close
         def cleanup():
             try:
