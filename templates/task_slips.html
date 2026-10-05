@@ -72,14 +72,15 @@
     }
     .slips-table tr:hover td { background: #f8f5fc; }
     .col-id { width: 45px; }
-    .col-slip { width: 150px; }
-    .col-complaint { width: 120px; }
-    .col-kpi { width: 110px; }
-    .col-entity { width: 200px; }
-    .col-service { width: 110px; }
-    .col-technician { width: 140px; }
-    .col-status { width: 110px; }
-    .col-date { width: 100px; }
+    .col-slip { width: 140px; }
+    .col-complaint { width: 110px; }
+    .col-kpi { width: 100px; }
+    .col-entity { width: 180px; }
+    .col-service { width: 100px; }
+    .col-technician { width: 120px; }
+    .col-status { width: 100px; }
+    .col-report { width: 130px; }
+    .col-date { width: 90px; }
     .col-actions { width: 130px; text-align: center; }
 
     .slip-number-badge {
@@ -110,6 +111,48 @@
     .status-badge-in_progress { background: #d1ecf1; color: #0c5460; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
     .status-badge-completed { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
     .status-badge-cancelled { background: #f8d7da; color: #721c24; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+
+    /* ============ NEW: Report indicator badges ============ */
+    .report-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: help;
+        transition: transform 0.15s;
+    }
+    .report-indicator:hover {
+        transform: scale(1.05);
+    }
+    .report-indicator.no-report {
+        background: linear-gradient(135deg, #e9ecef 0%, #ced4da 100%);
+        color: #495057;
+        border: 1px solid #adb5bd;
+    }
+    .report-indicator.pending {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);
+        color: #856404;
+        border: 1px solid #ffc107;
+    }
+    .report-indicator.need-action {
+        background: linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%);
+        color: #721c24;
+        border: 1px solid #dc3545;
+        animation: pulse-need-action 2s infinite;
+    }
+    .report-indicator.acknowledged {
+        background: linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%);
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+    @keyframes pulse-need-action {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        50% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
+    }
 
     .action-buttons { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap; }
     .btn-icon {
@@ -259,12 +302,13 @@
                 <th class="col-service">Service</th>
                 <th class="col-technician">Assigned To</th>
                 <th class="col-status">Status</th>
+                <th class="col-report">Report Status</th>
                 <th class="col-date">Issued</th>
                 <th class="col-actions">Actions</th>
             </tr>
         </thead>
         <tbody id="slipsTableBody">
-            <tr><td colspan="10" class="text-center py-4">
+            <tr><td colspan="11" class="text-center py-4">
                 <div class="spinner-border spinner-border-sm text-primary"></div> Loading slips...
             </td></tr>
         </tbody>
@@ -438,6 +482,46 @@
         return '-';
     }
 
+    // ============ NEW: Report indicator badge ============
+    function reportIndicatorBadge(slip) {
+        // Case 1: no report
+        if (!slip.has_report) {
+            return `<span class="report-indicator no-report" title="No report submitted yet by the technician">
+                <i class="bi bi-hourglass"></i> No Report
+            </span>`;
+        }
+
+        // Case 2: report exists and acknowledged with need_further_action
+        if (slip.report_acknowledged && slip.report_acknowledgment_status === 'need_further_action') {
+            const tip = buildTooltip(slip, 'Report acknowledged as NEED FURTHER ACTION');
+            return `<span class="report-indicator need-action" title="${escapeHtml(tip)}">
+                <i class="bi bi-exclamation-triangle-fill"></i> Need Action
+            </span>`;
+        }
+
+        // Case 3: report exists and acknowledged with done_reviewed
+        if (slip.report_acknowledged) {
+            const tip = buildTooltip(slip, 'Report acknowledged as DONE / REVIEWED');
+            return `<span class="report-indicator acknowledged" title="${escapeHtml(tip)}">
+                <i class="bi bi-check-circle-fill"></i> Acknowledged
+            </span>`;
+        }
+
+        // Case 4: report exists but not yet acknowledged
+        return `<span class="report-indicator pending" title="Report submitted - waiting for team leader acknowledgment">
+            <i class="bi bi-file-text"></i> Report Pending
+        </span>`;
+    }
+
+    function buildTooltip(slip, statusText) {
+        const parts = [];
+        parts.push('Report: ' + statusText);
+        if (slip.report_team_leader_name) parts.push('By: ' + slip.report_team_leader_name);
+        if (slip.report_acknowledged_at) parts.push('Date: ' + formatDate(slip.report_acknowledged_at));
+        if (slip.report_team_leader_notes) parts.push('Notes: ' + slip.report_team_leader_notes);
+        return parts.join(' | ');
+    }
+
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
@@ -500,7 +584,7 @@
         } catch (e) {
             console.error('Error loading slips:', e);
             document.getElementById('slipsTableBody').innerHTML =
-                '<tr><td colspan="10" class="text-center py-4 text-danger">Error loading slips. Please refresh.</td></tr>';
+                '<tr><td colspan="11" class="text-center py-4 text-danger">Error loading slips. Please refresh.</td></tr>';
         }
     }
 
@@ -557,7 +641,7 @@
     function displaySlips(slips) {
         const tbody = document.getElementById('slipsTableBody');
         if (!slips.length) {
-            tbody.innerHTML = `<tr><td colspan="10">
+            tbody.innerHTML = `<tr><td colspan="11">
                 <div class="empty-state">
                     <i class="bi bi-inbox"></i>
                     <h5>No slips found</h5>
@@ -580,6 +664,7 @@
                 <td>${serviceLabel(s.problem_type)}</td>
                 <td>${escapeHtml(s.assigned_to_name || 'Unassigned')}</td>
                 <td>${statusBadge(s.status)}</td>
+                <td>${reportIndicatorBadge(s)}</td>
                 <td><small>${formatDateOnly(s.issue_date || s.created_at)}</small></td>
                 <td class="col-actions">
                     <div class="action-buttons">
@@ -714,6 +799,16 @@
                 return;
             }
             currentSlip = result.data;
+            // Find matching slip in list to get report indicator info
+            const listSlip = allSlips.find(s => s.id === id);
+            if (listSlip) {
+                currentSlip.has_report = listSlip.has_report;
+                currentSlip.report_acknowledged = listSlip.report_acknowledged;
+                currentSlip.report_acknowledgment_status = listSlip.report_acknowledgment_status;
+                currentSlip.report_team_leader_name = listSlip.report_team_leader_name;
+                currentSlip.report_team_leader_notes = listSlip.report_team_leader_notes;
+                currentSlip.report_acknowledged_at = listSlip.report_acknowledged_at;
+            }
             document.getElementById('viewSlipBody').innerHTML = renderSlipHTML(currentSlip);
             new bootstrap.Modal(document.getElementById('viewSlipModal')).show();
         } catch (e) {
@@ -723,6 +818,42 @@
     }
 
     function renderSlipHTML(s) {
+        // Build report status info block (only shown if report has been submitted)
+        let reportStatusHtml = '';
+        if (s.has_report) {
+            if (s.report_acknowledged && s.report_acknowledgment_status === 'need_further_action') {
+                reportStatusHtml = `
+                    <div style="margin-top: 12px; padding: 12px; background: #ffebee; border-left: 4px solid #f44336; border-radius: 8px;">
+                        <strong style="color: #c62828;"><i class="bi bi-exclamation-triangle-fill"></i> Report: Need Further Action</strong><br>
+                        <small>By: ${escapeHtml(s.report_team_leader_name || 'Team Leader')} on ${formatDate(s.report_acknowledged_at)}</small>
+                        ${s.report_team_leader_notes ? `<p style="margin-top: 6px; font-style: italic;">"${escapeHtml(s.report_team_leader_notes)}"</p>` : ''}
+                    </div>
+                `;
+            } else if (s.report_acknowledged) {
+                reportStatusHtml = `
+                    <div style="margin-top: 12px; padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 8px;">
+                        <strong style="color: #2e7d32;"><i class="bi bi-check-circle-fill"></i> Report: Acknowledged</strong><br>
+                        <small>By: ${escapeHtml(s.report_team_leader_name || 'Team Leader')} on ${formatDate(s.report_acknowledged_at)}</small>
+                        ${s.report_team_leader_notes ? `<p style="margin-top: 6px; font-style: italic;">"${escapeHtml(s.report_team_leader_notes)}"</p>` : ''}
+                    </div>
+                `;
+            } else {
+                reportStatusHtml = `
+                    <div style="margin-top: 12px; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                        <strong style="color: #856404;"><i class="bi bi-file-text"></i> Report: Pending Acknowledgment</strong><br>
+                        <small>Technician has submitted the report. Waiting for team leader review.</small>
+                    </div>
+                `;
+            }
+        } else {
+            reportStatusHtml = `
+                <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-left: 4px solid #adb5bd; border-radius: 8px;">
+                    <strong style="color: #495057;"><i class="bi bi-hourglass"></i> No Report Submitted Yet</strong><br>
+                    <small>The technician has not yet submitted a report for this slip.</small>
+                </div>
+            `;
+        }
+
         return `
             <div class="slip-preview">
                 <div class="slip-preview-header">
@@ -778,6 +909,8 @@
                             <p style="margin: 6px 0; white-space: pre-wrap;">${escapeHtml(s.notes)}</p>
                         </div>
                     ` : ''}
+
+                    ${reportStatusHtml}
 
                     <div style="display:flex; justify-content:space-between; margin-top: 30px; gap: 20px;">
                         <div style="text-align:center; flex:1;">
