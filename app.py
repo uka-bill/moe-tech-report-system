@@ -521,6 +521,17 @@ def get_technical_reports():
         if request.args.get('technician_id'):
             query = query.eq("technician_id", int(request.args.get('technician_id')))
         response = query.order("created_at", desc=True).execute()
+
+        # Build map report_id -> slip for fast lookup
+        slips_by_report = {}
+        try:
+            slips_resp = supabase.table("task_slips").select("*").not_.is_("report_id", "null").execute()
+            if slips_resp.data:
+                for slip in slips_resp.data:
+                    slips_by_report[slip['report_id']] = slip
+        except Exception as se:
+            app.logger.warning(f"Could not fetch task slips map: {se}")
+
         reports = []
         if response.data:
             for report in response.data:
@@ -538,6 +549,23 @@ def get_technical_reports():
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
                         report_data['technician_name'] = tech.data[0]['name']
+
+                # Attach slip info if present
+                if report_data['id'] in slips_by_report:
+                    slip = slips_by_report[report_data['id']]
+                    report_data['slip_id'] = slip['id']
+                    report_data['slip_number'] = slip.get('slip_number', '')
+                    report_data['slip_complaint_number'] = slip.get('complaint_number', '')
+                    report_data['slip_kpi_number'] = slip.get('kpi_number', '')
+                    report_data['slip_notes'] = slip.get('notes', '')
+                    report_data['slip_status'] = slip.get('status', '')
+                    report_data['slip_issue_date'] = slip.get('issue_date')
+                    report_data['slip_due_date'] = slip.get('due_date')
+                    if slip.get('issued_by'):
+                        issuer = supabase.table("technicians").select("name").eq("id", slip['issued_by']).execute()
+                        if issuer.data:
+                            report_data['slip_issued_by_name'] = issuer.data[0]['name']
+
                 reports.append(report_data)
         return jsonify(reports)
     except Exception as e:
@@ -567,6 +595,27 @@ def get_single_technical_report(report_id):
             tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
             if tech.data:
                 report_data['technician_name'] = tech.data[0]['name']
+
+        # Fetch linked slip
+        try:
+            slip_resp = supabase.table("task_slips").select("*").eq("report_id", report_id).limit(1).execute()
+            if slip_resp.data:
+                slip = slip_resp.data[0]
+                report_data['slip_id'] = slip['id']
+                report_data['slip_number'] = slip.get('slip_number', '')
+                report_data['slip_complaint_number'] = slip.get('complaint_number', '')
+                report_data['slip_kpi_number'] = slip.get('kpi_number', '')
+                report_data['slip_notes'] = slip.get('notes', '')
+                report_data['slip_status'] = slip.get('status', '')
+                report_data['slip_issue_date'] = slip.get('issue_date')
+                report_data['slip_due_date'] = slip.get('due_date')
+                if slip.get('issued_by'):
+                    issuer = supabase.table("technicians").select("name").eq("id", slip['issued_by']).execute()
+                    if issuer.data:
+                        report_data['slip_issued_by_name'] = issuer.data[0]['name']
+        except Exception as se:
+            app.logger.warning(f"Could not fetch slip for report {report_id}: {se}")
+
         return jsonify({'success': True, 'report': report_data})
     except Exception as e:
         app.logger.error(f"Error getting single report: {e}")
@@ -609,7 +658,18 @@ def create_technical_report():
         }
         response = supabase.table("technical_reports").insert(report_data).execute()
         if response.data:
-            return jsonify({'success': True, 'message': 'Report created successfully', 'report': response.data[0]})
+            new_report = response.data[0]
+            slip_id = data.get('slip_id')
+            if slip_id:
+                try:
+                    supabase.table("task_slips").update({
+                        "report_id": new_report['id'],
+                        "updated_at": get_brunei_time_iso()
+                    }).eq("id", int(slip_id)).execute()
+                    app.logger.info(f"Slip {slip_id} linked to report {new_report['id']}")
+                except Exception as le:
+                    app.logger.warning(f"Could not link slip to report: {le}")
+            return jsonify({'success': True, 'message': 'Report created successfully', 'report': new_report})
         return jsonify({'success': False, 'error': 'Failed to create report'}), 500
     except Exception as e:
         app.logger.error(f"Error creating technical report: {e}")
@@ -1200,9 +1260,8 @@ def backup_images():
             return jsonify({'success': False, 'error': 'User ID required'}), 400
 
         year = request.args.get('year')
-        month = request.args.get('month')  # '1'..'12' or 'all' or None
+        month = request.args.get('month')
 
-        # Check authorization
         auth_response = supabase.table("technicians").select("is_authorized, role, can_edit_technicians").eq("id", int(user_id)).execute()
         if not auth_response.data:
             return jsonify({'success': False, 'error': 'User not found'}), 404
@@ -1216,7 +1275,6 @@ def backup_images():
         valid_files = []
 
         if year:
-            # Filter by date range from the mapping_images table
             try:
                 y = int(year)
                 if month and month != 'all':
@@ -1250,12 +1308,10 @@ def backup_images():
                 url = rec.get('image_url', '')
                 if not url:
                     continue
-                # Extract filename from URL (last path segment, strip query params)
                 fname = url.split('?')[0].rstrip('/').split('/')[-1]
                 if fname and fname.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
                     valid_files.append(fname)
         else:
-            # No filter — list all files
             try:
                 files = supabase.storage.from_(SUPABASE_STORAGE_BUCKET).list()
             except Exception as e:
@@ -1276,7 +1332,6 @@ def backup_images():
 
         app.logger.info(f"Image backup starting: {len(valid_files)} files (period: {label})")
 
-        # Create disk-backed temp file
         tmp_fd, tmp_path = tempfile.mkstemp(suffix='.zip')
         os.close(tmp_fd)
 
@@ -1290,7 +1345,6 @@ def backup_images():
         downloaded = 0
         skipped = 0
 
-        # Reduced parallelism (2 at a time) for lower memory usage on Render
         with zipfile.ZipFile(tmp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
             with ThreadPoolExecutor(max_workers=2) as executor:
                 futures = {executor.submit(download_one, name): name for name in valid_files}
@@ -1367,6 +1421,22 @@ def get_task_slips():
         if request.args.get('entity_id'):
             query = query.eq("entity_id", int(request.args.get('entity_id')))
         response = query.order("created_at", desc=True).execute()
+
+        # Fetch linked report statuses for indicators
+        reports_map = {}
+        try:
+            if response.data:
+                report_ids = [s['report_id'] for s in response.data if s.get('report_id')]
+                if report_ids:
+                    reports_resp = supabase.table("technical_reports").select(
+                        "id, team_leader_acknowledged, acknowledgment_status, team_leader_notes, team_leader_acknowledged_at, team_leader_name, report_type"
+                    ).in_("id", report_ids).execute()
+                    if reports_resp.data:
+                        for r in reports_resp.data:
+                            reports_map[r['id']] = r
+        except Exception as re:
+            app.logger.warning(f"Could not fetch linked reports: {re}")
+
         slips = []
         if response.data:
             for slip in response.data:
@@ -1388,10 +1458,56 @@ def get_task_slips():
                     issuer = supabase.table("technicians").select("name").eq("id", s['issued_by']).execute()
                     if issuer.data:
                         s['issued_by_name'] = issuer.data[0]['name']
+
+                # Add report indicator fields
+                if s.get('report_id') and s['report_id'] in reports_map:
+                    rpt = reports_map[s['report_id']]
+                    s['has_report'] = True
+                    s['report_acknowledged'] = rpt.get('team_leader_acknowledged', False)
+                    s['report_acknowledgment_status'] = rpt.get('acknowledgment_status', '')
+                    s['report_team_leader_name'] = rpt.get('team_leader_name', '')
+                    s['report_team_leader_notes'] = rpt.get('team_leader_notes', '')
+                    s['report_acknowledged_at'] = rpt.get('team_leader_acknowledged_at', '')
+                else:
+                    s['has_report'] = bool(s.get('report_id'))
+                    s['report_acknowledged'] = False
+                    s['report_acknowledgment_status'] = ''
+
                 slips.append(s)
         return jsonify(slips)
     except Exception as e:
         app.logger.error(f"Error getting task slips: {e}")
+        return jsonify([]), 500
+
+
+@app.route('/api/task-slips/available/<int:technician_id>', methods=['GET'])
+def get_available_task_slips(technician_id):
+    """Returns slips assigned to this technician that have no report yet.
+    Only returns slips with active statuses (issued / accepted / in_progress)."""
+    try:
+        if not supabase:
+            return jsonify([]), 500
+        response = supabase.table("task_slips").select("*").eq("assigned_to", technician_id).is_("report_id", "null").execute()
+        slips = []
+        if response.data:
+            for slip in response.data:
+                s = dict(slip)
+                if s.get('status') not in ('issued', 'accepted', 'in_progress'):
+                    continue
+                if s['entity_type'] == 'school':
+                    entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
+                    if entity.data:
+                        s['entity_name'] = entity.data[0]['name']
+                else:
+                    entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
+                    if entity.data:
+                        dept = entity.data[0]
+                        s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                slips.append(s)
+        slips.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        return jsonify(slips)
+    except Exception as e:
+        app.logger.error(f"Error getting available task slips: {e}")
         return jsonify([]), 500
 
 
