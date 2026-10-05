@@ -77,6 +77,71 @@
         color: #856404;
         font-weight: 600;
     }
+    /* ============ TASK SLIP SELECTOR ============ */
+    .slip-selector-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px solid #2196f3;
+        border-left: 5px solid #1976d2;
+        border-radius: 14px;
+        padding: 18px 22px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.15);
+    }
+    .slip-selector-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #0d47a1;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .slip-selector-title i {
+        font-size: 1.3rem;
+    }
+    .slip-selector-help {
+        color: #1565c0;
+        font-size: 12px;
+        margin-bottom: 12px;
+        display: block;
+    }
+    .slip-selector-box select {
+        border: 1px solid #64b5f6;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        width: 100%;
+    }
+    .slip-selector-box select:focus {
+        border-color: #1976d2;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+    }
+    .slip-loaded-panel {
+        background: #e8f5e9;
+        border: 1px solid #66bb6a;
+        border-left: 4px solid #4caf50;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        color: #1b5e20;
+        display: none;
+    }
+    .slip-loaded-panel.active {
+        display: block;
+    }
+    .slip-loaded-panel .slip-field {
+        display: flex;
+        gap: 8px;
+        font-size: 12.5px;
+        margin-bottom: 4px;
+    }
+    .slip-loaded-panel .slip-field .lbl {
+        font-weight: 600;
+        min-width: 110px;
+        color: #2e7d32;
+    }
+
     .priority-box {
         padding: 15px;
         border-radius: 12px;
@@ -191,6 +256,16 @@
         animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .slip-badge-new {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
 </style>
 
 <!-- Full screen loader shown while edit loads -->
@@ -210,6 +285,28 @@
 
         <div class="info-box" id="instructionBox">
             <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields.
+        </div>
+
+        <!-- ============ TASK SLIP SELECTOR (only shown in new report mode) ============ -->
+        <div class="slip-selector-box" id="slipSelectorBox" style="display: none;">
+            <div class="slip-selector-title">
+                <i class="bi bi-clipboard-check"></i> Start from a Task Slip
+            </div>
+            <span class="slip-selector-help">
+                <i class="bi bi-lightbulb"></i>
+                Select a task slip assigned to you to auto-fill the form. If your task has no slip, leave as "Manual entry".
+            </span>
+            <select id="slipSelector" onchange="onSlipSelected()">
+                <option value="">-- Manual entry (no slip) --</option>
+            </select>
+            <div class="slip-loaded-panel" id="slipLoadedPanel">
+                <div><strong><i class="bi bi-check-circle"></i> Task slip loaded</strong></div>
+                <div class="slip-field"><span class="lbl">Slip Number:</span><span id="loadedSlipNumber">-</span></div>
+                <div class="slip-field"><span class="lbl">Complaint No:</span><span id="loadedSlipComplaint">-</span></div>
+                <div class="slip-field"><span class="lbl">KPI Number:</span><span id="loadedSlipKpi">-</span></div>
+                <div class="slip-field"><span class="lbl">Location:</span><span id="loadedSlipEntity">-</span></div>
+                <div class="slip-field"><span class="lbl">Service Type:</span><span id="loadedSlipService">-</span></div>
+            </div>
         </div>
 
         <div class="datetime-panel">
@@ -508,6 +605,8 @@
     let isUploading = false;
     let schoolsList = [];
     let departmentsList = [];
+    let availableSlips = [];
+    let selectedSlipId = null;
 
     // ============ Parse edit mode from URL ============
     (function parseUrl() {
@@ -536,6 +635,127 @@
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
         return window.location.origin + (imagePath.startsWith('/') ? imagePath : '/' + imagePath);
+    }
+
+    // ============ Task slip functions ============
+    async function loadAvailableSlips() {
+        if (isEditMode) return;  // Don't show in edit mode
+        if (!currentTechnicianId) {
+            console.log('No technician id yet, skipping slip load');
+            return;
+        }
+        try {
+            const response = await fetch(`/api/task-slips/available/${currentTechnicianId}?t=` + Date.now(), { cache: 'no-store' });
+            availableSlips = await response.json();
+            if (!availableSlips) availableSlips = [];
+
+            const selectorBox = document.getElementById('slipSelectorBox');
+            const selector = document.getElementById('slipSelector');
+
+            if (availableSlips.length === 0) {
+                selectorBox.style.display = 'none';
+                return;
+            }
+
+            // Build options
+            let opts = '<option value="">-- Manual entry (no slip) --</option>';
+            availableSlips.forEach(slip => {
+                const svcIcon = slip.problem_type === 'water' ? '💧' : (slip.problem_type === 'electricity' ? '⚡' : (slip.problem_type === 'telephone' ? '📞' : '📋'));
+                const entity = slip.entity_name || slip.entity_type;
+                const parts = [];
+                parts.push(slip.slip_number || '');
+                if (slip.complaint_number) parts.push('C:' + slip.complaint_number);
+                if (slip.kpi_number) parts.push('KPI:' + slip.kpi_number);
+                opts += `<option value="${slip.id}">${svcIcon} ${parts.join(' | ')} — ${entity}</option>`;
+            });
+            selector.innerHTML = opts;
+            selectorBox.style.display = 'block';
+            console.log('Loaded', availableSlips.length, 'available task slips');
+        } catch (error) {
+            console.error('Error loading slips:', error);
+            document.getElementById('slipSelectorBox').style.display = 'none';
+        }
+    }
+
+    function onSlipSelected() {
+        const sel = document.getElementById('slipSelector');
+        const val = sel.value;
+        const panel = document.getElementById('slipLoadedPanel');
+
+        if (!val) {
+            selectedSlipId = null;
+            panel.classList.remove('active');
+            return;
+        }
+
+        const slip = availableSlips.find(s => String(s.id) === String(val));
+        if (!slip) {
+            selectedSlipId = null;
+            panel.classList.remove('active');
+            return;
+        }
+
+        selectedSlipId = slip.id;
+
+        // Fill in the auto-fillable fields
+        // 1. Service type / report type
+        if (slip.problem_type === 'water' || slip.problem_type === 'electricity' || slip.problem_type === 'telephone') {
+            const radio = document.querySelector(`input[name="reportType"][value="${slip.problem_type}"]`);
+            if (radio) {
+                radio.checked = true;
+                updateAccountFields(slip.problem_type);
+            }
+        }
+
+        // 2. Entity type + entity
+        if (slip.entity_type && slip.entity_id) {
+            document.getElementById('entityType').value = slip.entity_type;
+            populateEntityDropdown(slip.entity_type, slip.entity_id).then(() => {
+                document.getElementById('entityId').value = slip.entity_id;
+                document.getElementById('entityId').disabled = false;
+            });
+        }
+
+        // 3. Reference number ← complaint number
+        if (slip.complaint_number) {
+            document.getElementById('referenceNumber').value = slip.complaint_number;
+        }
+
+        // 4. Reference type auto = "other"
+        if (slip.complaint_number || slip.kpi_number) {
+            document.getElementById('referenceType').value = 'other';
+        }
+
+        // 5. Complaint details ← notes from slip
+        const complaintBox = document.getElementById('complaintDetails');
+        if (slip.notes) {
+            complaintBox.value = slip.notes;
+        } else {
+            complaintBox.value = `As per task slip ${slip.slip_number || ''}.`;
+        }
+
+        // 6. Technician notes ← KPI number for traceability
+        const notesBox = document.getElementById('technicianNotes');
+        const pieces = [];
+        if (slip.kpi_number) pieces.push(`KPI No: ${slip.kpi_number}`);
+        if (slip.slip_number) pieces.push(`Ref Slip: ${slip.slip_number}`);
+        if (pieces.length) {
+            notesBox.value = pieces.join(' | ');
+        }
+
+        // Update the loaded panel display
+        document.getElementById('loadedSlipNumber').textContent = slip.slip_number || '-';
+        document.getElementById('loadedSlipComplaint').textContent = slip.complaint_number || '-';
+        document.getElementById('loadedSlipKpi').textContent = slip.kpi_number || '-';
+        document.getElementById('loadedSlipEntity').textContent = slip.entity_name || slip.entity_type || '-';
+        const svcMap = { water: '💧 Water', electricity: '⚡ Electricity', telephone: '📞 Telephone' };
+        document.getElementById('loadedSlipService').textContent = svcMap[slip.problem_type] || slip.problem_type || '-';
+        panel.classList.add('active');
+
+        // Scroll to top of form so they can see the filled location
+        setTimeout(() => {
+            document.getElementById('slipSelectorBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 
     // ============ Remove account entry ============
@@ -874,6 +1094,9 @@
             document.getElementById('telephoneAccountsContainer').innerHTML = '<div class="account-entry"><input type="text" class="form-control" name="telephone_account_number[]" placeholder="Telephone Account Number"><button type="button" class="btn-add-account" onclick="addTelephoneNumberField(this)"><i class="bi bi-plus-circle"></i> Add Phone Number</button></div>';
             updateAccountFields('water');
             setReportDateTime();
+            selectedSlipId = null;
+            document.getElementById('slipLoadedPanel').classList.remove('active');
+            document.getElementById('slipSelector').value = '';
         }
     }
 
@@ -883,7 +1106,6 @@
         const overlay = document.getElementById('editLoadingOverlay');
         
         try {
-            // Fetch single report directly
             const response = await fetch(`/api/technical-reports/${id}?t=` + Date.now(), { cache: 'no-store' });
             
             if (!response.ok) {
@@ -899,7 +1121,6 @@
             const report = result.report;
             console.log('>>> Report loaded:', report);
             
-            // Ownership check
             const currentUser = window.getCurrentUser();
             if (currentUser && currentUser.id && report.technician_id != currentUser.id) {
                 window.showToast('You can only edit your own reports', 'error');
@@ -913,12 +1134,10 @@
                 return;
             }
             
-            // Populate Report Type
             const typeRadio = document.querySelector(`input[name="reportType"][value="${report.report_type}"]`);
             if (typeRadio) typeRadio.checked = true;
             updateAccountFields(report.report_type);
             
-            // Populate Entity
             const entityTypeSelect = document.getElementById('entityType');
             entityTypeSelect.value = report.entity_type;
             entityTypeSelect.disabled = false;
@@ -929,7 +1148,6 @@
             await populateEntityDropdown(report.entity_type, report.entity_id);
             document.getElementById('entityId').disabled = false;
             
-            // Text fields
             document.getElementById('problemType').value = report.problem_type || '';
             document.getElementById('complaintDetails').value = report.complaint_details || '';
             document.getElementById('actionTaken').value = report.action_taken || '';
@@ -938,7 +1156,6 @@
             document.getElementById('referenceNumber').value = report.reference_number || '';
             document.getElementById('referenceDate').value = report.reference_date || '';
             
-            // Priority
             if (report.priority === 'high') selectPriority('high');
             else if (report.priority === 'low') selectPriority('low');
             else selectPriority('medium');
@@ -949,10 +1166,8 @@
                 document.getElementById('priority').disabled = true;
             }
             
-            // Resolution status
             selectResolution(report.resolution_status || 'pending_action');
             
-            // ========== Account details ==========
             let accountDetails = null;
             if (report.account_details) {
                 try {
@@ -960,7 +1175,6 @@
                 } catch (e) { console.warn('account_details parse error:', e); }
             }
             
-            // WATER
             if (report.report_type === 'water') {
                 const accounts = (accountDetails && accountDetails.water_accounts) || [];
                 const container = document.getElementById('waterAccountsContainer');
@@ -986,7 +1200,6 @@
                         container.appendChild(entry);
                     });
                 } else if (report.account_number) {
-                    // Fallback: create one entry from old single fields
                     const entry = document.createElement('div');
                     entry.className = 'account-entry';
                     entry.innerHTML = `
@@ -1004,7 +1217,6 @@
                 }
             }
             
-            // ELECTRICITY
             if (report.report_type === 'electricity') {
                 const accounts = (accountDetails && accountDetails.electricity_accounts) || [];
                 const container = document.getElementById('electricityAccountsContainer');
@@ -1047,7 +1259,6 @@
                 }
             }
             
-            // TELEPHONE
             if (report.report_type === 'telephone') {
                 const accounts = (accountDetails && accountDetails.telephone_accounts) || [];
                 const container = document.getElementById('telephoneAccountsContainer');
@@ -1090,7 +1301,6 @@
                 }
             }
             
-            // Images
             uploadedImages = Array.isArray(report.images) ? report.images : [];
             const previewContainer = document.getElementById('imagePreviewContainer');
             previewContainer.innerHTML = '';
@@ -1102,7 +1312,6 @@
                 previewContainer.appendChild(previewDiv);
             });
             
-            // Hide loading overlay
             if (overlay) overlay.style.display = 'none';
             window.showToast('Report loaded for editing.', 'success');
             
@@ -1110,7 +1319,6 @@
             console.error('>>> Error loading report for edit:', error);
             if (overlay) overlay.style.display = 'none';
             window.showToast('Error loading report: ' + error.message, 'error');
-            // Show a clear message and let user decide
             if (confirm('Could not load the report. Return to My Reports?')) {
                 window.location.href = '/my-reports';
             }
@@ -1175,6 +1383,11 @@
             account_details: JSON.stringify(accountData)
         };
         
+        // Include slip_id if a slip was selected (new mode only)
+        if (!isEditMode && selectedSlipId) {
+            reportData.slip_id = selectedSlipId;
+        }
+        
         try {
             let response;
             if (isEditMode) {
@@ -1223,7 +1436,6 @@
         
         document.getElementById('referenceDate').value = new Date().toISOString().split('T')[0];
         
-        // Add priority hidden field if not exists
         if (!document.getElementById('priority')) {
             const priorityHidden = document.createElement('input');
             priorityHidden.type = 'hidden';
@@ -1245,7 +1457,11 @@
             });
         });
         
-        // CRITICAL: Load report for edit
+        // ============ Load available task slips (only in new mode) ============
+        if (!isEditMode) {
+            await loadAvailableSlips();
+        }
+        
         if (isEditMode && editReportId) {
             console.log('>>> About to call loadReportForEdit');
             await loadReportForEdit(editReportId);
@@ -1268,5 +1484,6 @@
     window.selectResolution = selectResolution;
     window.removeImage = removeImage;
     window.resetForm = resetForm;
+    window.onSlipSelected = onSlipSelected;
 </script>
 {% endblock %}
