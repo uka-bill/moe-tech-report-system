@@ -190,6 +190,10 @@ def team_leader():
 def mapping_page():
     return render_template('mapping.html')
 
+@app.route('/budget-tracking')
+def budget_tracking_page():
+    return render_template('budget_tracking.html')
+
 # ============ TECHNICIAN API ============
 
 @app.route('/api/technicians', methods=['GET'])
@@ -522,7 +526,6 @@ def get_technical_reports():
             query = query.eq("technician_id", int(request.args.get('technician_id')))
         response = query.order("created_at", desc=True).execute()
 
-        # Build map report_id -> slip for fast lookup
         slips_by_report = {}
         try:
             slips_resp = supabase.table("task_slips").select("*").not_.is_("report_id", "null").execute()
@@ -550,7 +553,6 @@ def get_technical_reports():
                     if tech.data:
                         report_data['technician_name'] = tech.data[0]['name']
 
-                # Attach slip info if present
                 if report_data['id'] in slips_by_report:
                     slip = slips_by_report[report_data['id']]
                     report_data['slip_id'] = slip['id']
@@ -572,7 +574,6 @@ def get_technical_reports():
         app.logger.error(f"Error getting technical reports: {e}")
         return jsonify([]), 500
 
-# ============ GET SINGLE REPORT (for reliable edit loading) ============
 @app.route('/api/technical-reports/<int:report_id>', methods=['GET'])
 def get_single_technical_report(report_id):
     try:
@@ -596,7 +597,6 @@ def get_single_technical_report(report_id):
             if tech.data:
                 report_data['technician_name'] = tech.data[0]['name']
 
-        # Fetch linked slip
         try:
             slip_resp = supabase.table("task_slips").select("*").eq("report_id", report_id).limit(1).execute()
             if slip_resp.data:
@@ -656,6 +656,12 @@ def create_technical_report():
             "created_at": get_brunei_time_iso(),
             "updated_at": get_brunei_time_iso()
         }
+
+        # Auto-initialize budget tracking if this is a Need Budget report
+        if report_data['resolution_status'] == 'need_budget':
+            report_data['budget_status'] = 'waiting_quote'
+            report_data['budget_updated_at'] = get_brunei_time_iso()
+
         response = supabase.table("technical_reports").insert(report_data).execute()
         if response.data:
             new_report = response.data[0]
@@ -692,6 +698,34 @@ def update_technical_report(report_id):
                     update_data[field] = int(data[field])
                 else:
                     update_data[field] = data[field]
+
+        # Handle resolution_status <-> budget_status transition
+        if 'resolution_status' in data:
+            new_rs = data.get('resolution_status')
+            current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
+            if current.data:
+                curr_bs = current.data[0].get('budget_status')
+                if new_rs == 'need_budget':
+                    # If first time entering budget, initialize
+                    if not curr_bs:
+                        update_data['budget_status'] = 'waiting_quote'
+                        update_data['budget_updated_at'] = get_brunoi_time_iso() if False else get_brunei_time_iso()
+                else:
+                    # Resolution is changing away from need_budget - auto-complete budget if active
+                    if curr_bs and curr_bs != 'completed':
+                        update_data['budget_status'] = 'completed'
+                        update_data['budget_updated_at'] = get_brunei_time_iso()
+                        if 'budget_notes' not in data:
+                            existing_notes = ""
+                            try:
+                                row = supabase.table("technical_reports").select("budget_notes").eq("id", report_id).execute()
+                                if row.data:
+                                    existing_notes = row.data[0].get('budget_notes') or ""
+                            except Exception:
+                                pass
+                            auto_note = f"[Auto-completed: resolution changed to {new_rs}]"
+                            update_data['budget_notes'] = (existing_notes + "\n" + auto_note).strip() if existing_notes else auto_note
+
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
         update_data['updated_at'] = get_brunei_time_iso()
@@ -796,6 +830,137 @@ def check_report_by_assistant(report_id):
     except Exception as e:
         app.logger.error(f"Error checking report: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============ BUDGET TRACKING API ============
+
+@app.route('/api/budget-reports', methods=['GET'])
+def get_budget_reports():
+    """Returns all reports that are or have been budget items."""
+    try:
+        if not supabase:
+            return jsonify([]), 500
+        include_completed = request.args.get('include_completed', 'false').lower() == 'true'
+
+        response = supabase.table("technical_reports").select("*").order("created_at", desc=True).execute()
+        reports = []
+        if response.data:
+            for report in response.data:
+                r = dict(report)
+                is_currently_need_budget = r.get('resolution_status') == 'need_budget'
+                has_budget_status = bool(r.get('budget_status'))
+
+                # Not a budget item at all - skip
+                if not (is_currently_need_budget or has_budget_status):
+                    continue
+
+                is_completed = (r.get('budget_status') == 'completed')
+                if is_completed and not include_completed:
+                    continue
+
+                # Enrich with names
+                if r['entity_type'] == 'school':
+                    entity = supabase.table("schools").select("name").eq("id", r['entity_id']).execute()
+                    if entity.data:
+                        r['entity_name'] = entity.data[0]['name']
+                else:
+                    entity = supabase.table("departments").select("name, unit_name").eq("id", r['entity_id']).execute()
+                    if entity.data:
+                        dept = entity.data[0]
+                        r['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                if r.get('technician_id'):
+                    tech = supabase.table("technicians").select("name").eq("id", r['technician_id']).execute()
+                    if tech.data:
+                        r['technician_name'] = tech.data[0]['name']
+                if r.get('budget_updated_by'):
+                    updater = supabase.table("technicians").select("name").eq("id", r['budget_updated_by']).execute()
+                    if updater.data:
+                        r['budget_updated_by_name'] = updater.data[0]['name']
+
+                reports.append(r)
+        return jsonify(reports)
+    except Exception as e:
+        app.logger.error(f"Error getting budget reports: {e}")
+        return jsonify([]), 500
+
+
+@app.route('/api/budget-reports/<int:report_id>', methods=['PUT'])
+def update_budget_report(report_id):
+    """Update the budget tracking fields for a report. Anyone logged in can use this."""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Database not connected'}), 500
+        data = request.get_json()
+
+        update_data = {}
+        if 'budget_status' in data and data['budget_status'] is not None:
+            update_data['budget_status'] = data['budget_status']
+        if 'budget_amount' in data:
+            # Allow clearing the amount (None / empty)
+            amt = data['budget_amount']
+            if amt is None or amt == '':
+                update_data['budget_amount'] = None
+            else:
+                try:
+                    update_data['budget_amount'] = float(amt)
+                except (ValueError, TypeError):
+                    return jsonify({'success': False, 'error': 'Invalid amount'}), 400
+        if 'budget_notes' in data:
+            update_data['budget_notes'] = data['budget_notes'] or ''
+        if 'updated_by' in data and data['updated_by']:
+            try:
+                update_data['budget_updated_by'] = int(data['updated_by'])
+            except (ValueError, TypeError):
+                pass
+
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+
+        update_data['budget_updated_at'] = get_brunei_time_iso()
+        update_data['updated_at'] = get_brunei_time_iso()
+
+        response = supabase.table("technical_reports").update(update_data).eq("id", report_id).execute()
+        if response.data:
+            app.logger.info(f"Budget info updated for report {report_id}")
+            return jsonify({'success': True, 'data': response.data[0]})
+        return jsonify({'success': False, 'error': 'Report not found'}), 404
+    except Exception as e:
+        app.logger.error(f"Error updating budget report: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/budget-stats', methods=['GET'])
+def get_budget_stats():
+    """Returns counts by budget status for the dashboard tile and page header."""
+    try:
+        if not supabase:
+            return jsonify({}), 500
+        response = supabase.table("technical_reports").select("budget_status, resolution_status").execute()
+        stats = {
+            'waiting_quote': 0,
+            'quote_received': 0,
+            'submitted_approval': 0,
+            'approved': 0,
+            'rejected': 0,
+            'work_in_progress': 0,
+            'completed': 0,
+            'total_active': 0
+        }
+        if response.data:
+            for r in response.data:
+                bs = r.get('budget_status')
+                rs = r.get('resolution_status')
+                is_need = (rs == 'need_budget')
+                has_bs = bool(bs)
+                if not (is_need or has_bs):
+                    continue
+                if bs and bs in stats:
+                    stats[bs] += 1
+                if bs != 'completed':
+                    stats['total_active'] += 1
+        return jsonify(stats)
+    except Exception as e:
+        app.logger.error(f"Error getting budget stats: {e}")
+        return jsonify({}), 500
 
 # ============ MAPPING API ============
 
@@ -1247,9 +1412,6 @@ def restore_data():
 
 @app.route('/api/backup-images', methods=['GET'])
 def backup_images():
-    """Downloads images from Supabase Storage as a ZIP file.
-    Supports filtering by year and month to avoid timeout issues.
-    If no year/month given, returns ALL images (may time out if many)."""
     tmp_path = None
     try:
         if not supabase:
@@ -1294,7 +1456,6 @@ def backup_images():
             except ValueError:
                 return jsonify({'success': False, 'error': 'Invalid year/month'}), 400
 
-            app.logger.info(f"Filtering images uploaded between {start_date} and {end_date}")
             try:
                 response = supabase.table("mapping_images").select("image_url, uploaded_at").gte("uploaded_at", start_date).lt("uploaded_at", end_date).execute()
             except Exception as qe:
@@ -1302,8 +1463,6 @@ def backup_images():
                 return jsonify({'success': False, 'error': f'Query failed: {str(qe)}'}), 500
 
             records = response.data or []
-            app.logger.info(f"Found {len(records)} image records in date range")
-
             for rec in records:
                 url = rec.get('image_url', '')
                 if not url:
@@ -1330,8 +1489,6 @@ def backup_images():
         if not valid_files:
             return jsonify({'success': False, 'error': f'No images found for period: {label}'}), 404
 
-        app.logger.info(f"Image backup starting: {len(valid_files)} files (period: {label})")
-
         tmp_fd, tmp_path = tempfile.mkstemp(suffix='.zip')
         os.close(tmp_fd)
 
@@ -1351,17 +1508,13 @@ def backup_images():
                 for future in as_completed(futures):
                     name, data, err = future.result()
                     if err or not data:
-                        app.logger.warning(f"Skip {name}: {err}")
                         skipped += 1
                         continue
                     try:
                         zf.writestr(name, data)
                         downloaded += 1
-                    except Exception as we:
-                        app.logger.warning(f"Write fail {name}: {we}")
+                    except Exception:
                         skipped += 1
-
-        app.logger.info(f"Image backup done: {downloaded} downloaded, {skipped} skipped (period: {label})")
 
         if downloaded == 0:
             try:
@@ -1422,7 +1575,6 @@ def get_task_slips():
             query = query.eq("entity_id", int(request.args.get('entity_id')))
         response = query.order("created_at", desc=True).execute()
 
-        # Fetch linked report statuses for indicators
         reports_map = {}
         try:
             if response.data:
@@ -1459,7 +1611,6 @@ def get_task_slips():
                     if issuer.data:
                         s['issued_by_name'] = issuer.data[0]['name']
 
-                # Add report indicator fields
                 if s.get('report_id') and s['report_id'] in reports_map:
                     rpt = reports_map[s['report_id']]
                     s['has_report'] = True
@@ -1482,8 +1633,6 @@ def get_task_slips():
 
 @app.route('/api/task-slips/available/<int:technician_id>', methods=['GET'])
 def get_available_task_slips(technician_id):
-    """Returns slips assigned to this technician that have no report yet.
-    Only returns slips with active statuses (issued / accepted / in_progress)."""
     try:
         if not supabase:
             return jsonify([]), 500
