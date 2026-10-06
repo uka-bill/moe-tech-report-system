@@ -657,10 +657,12 @@ def create_technical_report():
             "updated_at": get_brunei_time_iso()
         }
 
-        # Auto-initialize budget tracking if this is a Need Budget report
+        # NEW: Auto-initialize budget tracking + stage timer if this is a Need Budget report
         if report_data['resolution_status'] == 'need_budget':
+            now_iso = get_brunei_time_iso()
             report_data['budget_status'] = 'waiting_quote'
-            report_data['budget_updated_at'] = get_brunei_time_iso()
+            report_data['budget_updated_at'] = now_iso
+            report_data['budget_status_changed_at'] = now_iso
 
         response = supabase.table("technical_reports").insert(report_data).execute()
         if response.data:
@@ -699,22 +701,26 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
 
-        # Handle resolution_status <-> budget_status transition
+        # NEW: Handle resolution_status <-> budget_status transition + stage timer reset
         if 'resolution_status' in data:
             new_rs = data.get('resolution_status')
             current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
             if current.data:
                 curr_bs = current.data[0].get('budget_status')
                 if new_rs == 'need_budget':
-                    # If first time entering budget, initialize
+                    # First time entering budget: initialize status + start the stage timer
                     if not curr_bs:
+                        now_iso = get_brunei_time_iso()
                         update_data['budget_status'] = 'waiting_quote'
-                        update_data['budget_updated_at'] = get_brunoi_time_iso() if False else get_brunei_time_iso()
+                        update_data['budget_updated_at'] = now_iso
+                        update_data['budget_status_changed_at'] = now_iso
                 else:
-                    # Resolution is changing away from need_budget - auto-complete budget if active
+                    # Resolution is changing away from need_budget - auto-complete the budget item
                     if curr_bs and curr_bs != 'completed':
+                        now_iso = get_brunei_time_iso()
                         update_data['budget_status'] = 'completed'
-                        update_data['budget_updated_at'] = get_brunei_time_iso()
+                        update_data['budget_updated_at'] = now_iso
+                        update_data['budget_status_changed_at'] = now_iso
                         if 'budget_notes' not in data:
                             existing_notes = ""
                             try:
@@ -914,6 +920,18 @@ def update_budget_report(report_id):
 
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
+
+        # NEW: If the budget_status is actually CHANGING, reset the stage timer
+        if 'budget_status' in update_data:
+            try:
+                current_row = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
+                if current_row.data:
+                    current_status = current_row.data[0].get('budget_status')
+                    if current_status != update_data['budget_status']:
+                        update_data['budget_status_changed_at'] = get_brunei_time_iso()
+                        app.logger.info(f"Budget status for report {report_id} changed: {current_status} -> {update_data['budget_status']}")
+            except Exception as ex:
+                app.logger.warning(f"Could not check previous status for timer reset: {ex}")
 
         update_data['budget_updated_at'] = get_brunei_time_iso()
         update_data['updated_at'] = get_brunei_time_iso()
