@@ -1,0 +1,872 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);
+    }
+    .page-header h2 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .page-header h2 i { margin-right: 12px; }
+    .page-header p { margin: 8px 0 0; opacity: 0.92; font-size: 0.85rem; }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none; border-radius: 10px; padding: 10px 20px;
+        font-weight: 600; color: white; transition: all 0.2s;
+    }
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        color: white;
+    }
+
+    .stat-card {
+        background: white; border-radius: 16px; padding: 15px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        display: flex; align-items: center; gap: 15px;
+        border: 1px solid #eef2f7; height: 100%;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .stat-icon {
+        width: 50px; height: 50px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; flex-shrink: 0;
+    }
+    .stat-icon.waiting { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; }
+    .stat-icon.quote { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); color: white; }
+    .stat-icon.submitted { background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%); color: white; }
+    .stat-icon.approved { background: linear-gradient(135deg, #34d399 0%, #10b981 100%); color: white; }
+    .stat-icon.progress { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%); color: white; }
+    .stat-icon.rejected { background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); color: white; }
+    .stat-number { font-size: 26px; font-weight: 700; color: #2c3e50; line-height: 1.2; }
+    .stat-label { color: #6c757d; font-size: 11px; font-weight: 500; }
+
+    .filter-card {
+        background: white; border-radius: 16px; padding: 18px 20px;
+        margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+    }
+    .filter-card .form-label { font-size: 12px; font-weight: 600; color: #495057; margin-bottom: 5px; }
+
+    .budget-table-wrapper {
+        background: white; border-radius: 16px; overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+        max-height: 620px; overflow-y: auto;
+    }
+    .budget-table {
+        width: 100%; border-collapse: collapse; font-size: 12px;
+        table-layout: fixed;
+    }
+    .budget-table th {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 10px; text-align: left; font-weight: 600;
+        font-size: 10px; color: #495057; border-bottom: 2px solid #dee2e6;
+        position: sticky; top: 0; z-index: 10; white-space: nowrap;
+    }
+    .budget-table td {
+        padding: 10px; border-bottom: 1px solid #eef2f7;
+        vertical-align: middle; font-size: 12px;
+    }
+    .budget-table tr:hover td { background: #fffbeb; }
+    .col-id { width: 45px; }
+    .col-report { width: 65px; }
+    .col-type { width: 90px; }
+    .col-entity { width: 200px; }
+    .col-problem { width: 150px; }
+    .col-tech { width: 120px; }
+    .col-bstatus { width: 145px; }
+    .col-amount { width: 110px; }
+    .col-days { width: 70px; }
+    .col-updated { width: 130px; }
+    .col-actions { width: 100px; text-align: center; }
+
+    .service-badge {
+        padding: 3px 10px; border-radius: 20px;
+        font-size: 10px; font-weight: 600;
+        display: inline-block; white-space: nowrap;
+    }
+    .service-water       { background: #e3f2fd; color: #1976d2; }
+    .service-electricity { background: #fff3e0; color: #f57c00; }
+    .service-telephone   { background: #e8f5e9; color: #388e3c; }
+
+    .budget-status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .bs-waiting_quote      { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+    .bs-quote_received     { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
+    .bs-submitted_approval { background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); color: #5b21b6; }
+    .bs-approved           { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #065f46; }
+    .bs-rejected           { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b; }
+    .bs-work_in_progress   { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #075985; }
+    .bs-completed          { background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); color: #374151; }
+    .bs-null               { background: #f3f4f6; color: #6b7280; border: 1px dashed #9ca3af; }
+
+    .amount-cell {
+        font-weight: 700;
+        color: #065f46;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+    .amount-cell.empty { color: #9ca3af; font-weight: 500; }
+
+    .days-cell {
+        font-weight: 700;
+        text-align: center;
+        font-size: 13px;
+    }
+    .days-fresh   { color: #16a34a; }
+    .days-mid     { color: #f59e0b; }
+    .days-warn    { color: #ea580c; }
+    .days-urgent  { color: #dc2626; }
+    .days-ok      { color: #6b7280; font-weight: 500; }
+
+    .entity-name-cell { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; font-weight: 500; }
+    .entity-type-small { font-size: 9px; color: #6c757d; }
+
+    .problem-cell {
+        font-size: 11px;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tech-name { font-size: 11px; font-weight: 500; }
+    .updated-date { font-size: 10px; color: #6c757d; }
+
+    .action-buttons { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: nowrap; }
+    .btn-icon {
+        width: 28px; height: 28px; padding: 0;
+        border-radius: 6px; border: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 11px; transition: all 0.2s;
+    }
+    .btn-icon:hover { transform: translateY(-1px); }
+    .btn-update { background: #fef3c7; color: #92400e; }
+    .btn-update:hover { background: #fde68a; }
+    .btn-view   { background: #e3f2fd; color: #0d47a1; }
+    .btn-view:hover { background: #bbdefb; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
+    .empty-state i { font-size: 56px; color: #ccc; margin-bottom: 15px; display: block; }
+
+    .modal-header-custom {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white; border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
+    }
+    .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
+
+    .budget-status-option {
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+    }
+    .budget-status-option:hover {
+        border-color: #f59e0b;
+        transform: translateX(3px);
+    }
+    .budget-status-option.selected {
+        border-color: #d97706;
+        background: #fffbeb;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    }
+    .budget-status-option .status-label {
+        flex: 1;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .budget-status-option .check {
+        opacity: 0;
+        color: #d97706;
+        font-size: 18px;
+    }
+    .budget-status-option.selected .check { opacity: 1; }
+
+    .current-info-box {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #fcd34d;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 15px;
+        font-size: 12px;
+        color: #78350f;
+    }
+    .current-info-box strong { color: #78350f; }
+
+    .history-panel {
+        background: #f9fafb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        font-size: 12px;
+    }
+    .history-panel .row-line {
+        margin-bottom: 6px;
+        color: #374151;
+    }
+    .history-panel .row-line strong { color: #111827; }
+
+    .toolbar-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        font-size: 12px;
+        font-weight: 500;
+        color: #4b5563;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+    }
+    .toolbar-toggle:hover {
+        border-color: #f59e0b;
+        color: #d97706;
+    }
+    .toolbar-toggle input {
+        margin: 0;
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .col-report, .col-amount, .col-updated, .col-days { display: none; }
+        .col-entity { width: 140px; }
+        .budget-table th, .budget-table td { padding: 8px 6px; font-size: 11px; }
+    }
+</style>
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2><i class="bi bi-cash-coin"></i> Budget Tracking</h2>
+            <p>Track all reports that need a budget for further action (repairs, replacements, quotations)</p>
+        </div>
+        <a href="/reports" class="btn btn-light">
+            <i class="bi bi-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon waiting"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+                <div class="stat-number" id="statWaiting">0</div>
+                <div class="stat-label">Waiting for Quote</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon quote"><i class="bi bi-file-earmark-text"></i></div>
+            <div>
+                <div class="stat-number" id="statQuote">0</div>
+                <div class="stat-label">Quote Received</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon submitted"><i class="bi bi-send-check"></i></div>
+            <div>
+                <div class="stat-number" id="statSubmitted">0</div>
+                <div class="stat-label">Submitted for Approval</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon approved"><i class="bi bi-check-circle"></i></div>
+            <div>
+                <div class="stat-number" id="statApproved">0</div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon progress"><i class="bi bi-tools"></i></div>
+            <div>
+                <div class="stat-number" id="statProgress">0</div>
+                <div class="stat-label">Work In Progress</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon rejected"><i class="bi bi-x-circle"></i></div>
+            <div>
+                <div class="stat-number" id="statRejected">0</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); color: #374151;">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div>
+                <div class="stat-number" id="statCompleted">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div>
+                <div class="stat-number" id="statTotalActive">0</div>
+                <div class="stat-label">Active Items</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-card">
+    <div class="row align-items-end g-2">
+        <div class="col-md-3">
+            <label class="form-label">Budget Status</label>
+            <select class="form-select form-select-sm" id="filterStatus" onchange="applyFilters()">
+                <option value="all">All Statuses</option>
+                <option value="waiting_quote">Waiting for Quote</option>
+                <option value="quote_received">Quote Received</option>
+                <option value="submitted_approval">Submitted for Approval</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="work_in_progress">Work In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="__unassigned__">Not Yet Reviewed</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Service Type</label>
+            <select class="form-select form-select-sm" id="filterService" onchange="applyFilters()">
+                <option value="all">All Services</option>
+                <option value="water">💧 Water</option>
+                <option value="electricity">⚡ Electricity</option>
+                <option value="telephone">📞 Telephone</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Entity Type</label>
+            <select class="form-select form-select-sm" id="filterEntityType" onchange="applyFilters()">
+                <option value="all">All Entities</option>
+                <option value="school">🏫 School</option>
+                <option value="department">🏢 Department</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Search</label>
+            <input type="text" class="form-control form-control-sm" id="searchInput"
+                   placeholder="Report #, entity, technician, notes..." onkeyup="applyFilters()">
+        </div>
+        <div class="col-md-2 d-flex gap-2 align-items-end">
+            <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearFilters()">
+                <i class="bi bi-eraser"></i> Clear
+            </button>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <label class="toolbar-toggle">
+            <input type="checkbox" id="showCompletedToggle" onchange="applyFilters()">
+            <i class="bi bi-eye"></i> Show completed items
+        </label>
+        <div class="text-muted small">
+            <i class="bi bi-info-circle"></i> Showing <span id="visibleCount">0</span> of <span id="totalCount">0</span> item(s)
+        </div>
+    </div>
+</div>
+
+<!-- Budget Table -->
+<div class="budget-table-wrapper">
+    <table class="budget-table">
+        <thead>
+            <tr>
+                <th class="col-id">#</th>
+                <th class="col-report">Report</th>
+                <th class="col-type">Service</th>
+                <th class="col-entity">Location</th>
+                <th class="col-problem">Problem</th>
+                <th class="col-tech">Reported By</th>
+                <th class="col-bstatus">Budget Status</th>
+                <th class="col-amount">Amount (BND)</th>
+                <th class="col-days">Days</th>
+                <th class="col-updated">Last Updated</th>
+                <th class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="budgetTableBody">
+            <tr><td colspan="11" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm" style="color: #f59e0b;"></div> Loading budget items...
+            </td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============ UPDATE BUDGET MODAL ============ -->
+<div class="modal fade" id="updateBudgetModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header-custom">
+                <h5 class="modal-title"><i class="bi bi-cash-coin"></i> Update Budget Tracking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <input type="hidden" id="updateReportId">
+
+                <div class="current-info-box" id="currentInfoBox">
+                    Loading item details...
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Budget Status</label>
+                    <div id="statusOptionsContainer">
+                        <div class="budget-status-option" data-status="waiting_quote" onclick="selectBudgetStatus('waiting_quote')">
+                            <span class="status-label">⏳ Waiting for Quote</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="quote_received" onclick="selectBudgetStatus('quote_received')">
+                            <span class="status-label">📄 Quote Received</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="submitted_approval" onclick="selectBudgetStatus('submitted_approval')">
+                            <span class="status-label">📤 Submitted for Approval</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="approved" onclick="selectBudgetStatus('approved')">
+                            <span class="status-label">✅ Approved</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="rejected" onclick="selectBudgetStatus('rejected')">
+                            <span class="status-label">❌ Rejected</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="work_in_progress" onclick="selectBudgetStatus('work_in_progress')">
+                            <span class="status-label">🔧 Work In Progress</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                        <div class="budget-status-option" data-status="completed" onclick="selectBudgetStatus('completed')">
+                            <span class="status-label">✔️ Completed (Remove from list)</span>
+                            <i class="bi bi-check-circle-fill check"></i>
+                        </div>
+                    </div>
+                    <input type="hidden" id="budgetStatusHidden">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Amount (BND)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">BND</span>
+                        <input type="number" step="0.01" min="0" class="form-control" id="budgetAmount"
+                               placeholder="e.g., 1250.00">
+                    </div>
+                    <small class="text-muted">Enter the total amount requested or approved. Leave blank if not applicable.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Notes</label>
+                    <textarea class="form-control" id="budgetNotes" rows="4"
+                              placeholder="E.g., Quotation from ABC Sdn Bhd, waiting for finance approval..."></textarea>
+                    <small class="text-muted">Any notes to help you remember this budget item later.</small>
+                </div>
+
+                <div id="historyPanel"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-primary-custom" id="saveBudgetBtn" onclick="saveBudgetUpdate()">
+                    <i class="bi bi-save"></i> Save Update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allBudgetItems = [];
+    let currentBudgetItem = null;
+    let techniciansMap = {};
+    let currentUser = null;
+
+    // ============ Helpers ============
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const d = new Date(dateString);
+            return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return dateString; }
+    }
+
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        try {
+            const d = new Date(dateString);
+            return d.toLocaleDateString('en-GB');
+        } catch (e) { return dateString; }
+    }
+
+    function daysSince(dateString) {
+        if (!dateString) return 0;
+        try {
+            const then = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - then;
+            return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+        } catch (e) { return 0; }
+    }
+
+    function serviceBadge(svc) {
+        if (svc === 'water') return '<span class="service-badge service-water">💧 Water</span>';
+        if (svc === 'electricity') return '<span class="service-badge service-electricity">⚡ Electricity</span>';
+        if (svc === 'telephone') return '<span class="service-badge service-telephone">📞 Telephone</span>';
+        return '-';
+    }
+
+    function budgetStatusLabel(s) {
+        const map = {
+            waiting_quote:      { icon: '⏳', text: 'Waiting for Quote' },
+            quote_received:     { icon: '📄', text: 'Quote Received' },
+            submitted_approval: { icon: '📤', text: 'Submitted for Approval' },
+            approved:           { icon: '✅', text: 'Approved' },
+            rejected:           { icon: '❌', text: 'Rejected' },
+            work_in_progress:   { icon: '🔧', text: 'Work In Progress' },
+            completed:          { icon: '✔️', text: 'Completed' }
+        };
+        return map[s] || { icon: '❓', text: s || 'Not Reviewed' };
+    }
+
+    function budgetStatusBadge(s) {
+        const info = budgetStatusLabel(s);
+        const cls = s ? `bs-${s}` : 'bs-null';
+        return `<span class="budget-status-badge ${cls}">${info.icon} ${info.text}</span>`;
+    }
+
+    function daysClass(d) {
+        if (d <= 3) return 'days-fresh';
+        if (d <= 7) return 'days-mid';
+        if (d <= 14) return 'days-warn';
+        return 'days-urgent';
+    }
+
+    function formatAmount(val) {
+        if (val === null || val === undefined || val === '') return '';
+        const num = parseFloat(val);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ============ Loading ============
+    async function loadTechnicians() {
+        try {
+            const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
+            const techs = await response.json();
+            techs.forEach(t => { techniciansMap[t.id] = t.name; });
+        } catch (e) { console.error('Error loading technicians:', e); }
+    }
+
+    function getTechnicianName(id) {
+        if (!id) return 'Unassigned';
+        return techniciansMap[id] || `Technician #${id}`;
+    }
+
+    async function loadBudgetItems() {
+        try {
+            const includeCompleted = document.getElementById('showCompletedToggle').checked;
+            const url = `/api/budget-reports?include_completed=${includeCompleted}&t=` + Date.now();
+            const response = await fetch(url, { cache: 'no-store' });
+            allBudgetItems = await response.json();
+            if (!allBudgetItems) allBudgetItems = [];
+
+            // Sort: active items by days waiting descending (older = higher priority)
+            allBudgetItems.sort((a, b) => {
+                const aDone = a.budget_status === 'completed' ? 1 : 0;
+                const bDone = b.budget_status === 'completed' ? 1 : 0;
+                if (aDone !== bDone) return aDone - bDone;
+                return new Date(a.created_at) - new Date(b.created_at);
+            });
+
+            updateStats();
+            applyFilters();
+        } catch (e) {
+            console.error('Error loading budget items:', e);
+            document.getElementById('budgetTableBody').innerHTML =
+                '<tr><td colspan="11" class="text-center py-4 text-danger">Error loading budget items. Please refresh.</td></tr>';
+        }
+    }
+
+    function updateStats() {
+        const counts = {
+            waiting_quote: 0, quote_received: 0, submitted_approval: 0,
+            approved: 0, rejected: 0, work_in_progress: 0, completed: 0, active: 0
+        };
+        allBudgetItems.forEach(item => {
+            const bs = item.budget_status;
+            if (bs && counts.hasOwnProperty(bs)) counts[bs]++;
+            if (bs !== 'completed') counts.active++;
+        });
+        document.getElementById('statWaiting').textContent = counts.waiting_quote;
+        document.getElementById('statQuote').textContent = counts.quote_received;
+        document.getElementById('statSubmitted').textContent = counts.submitted_approval;
+        document.getElementById('statApproved').textContent = counts.approved;
+        document.getElementById('statProgress').textContent = counts.work_in_progress;
+        document.getElementById('statRejected').textContent = counts.rejected;
+        document.getElementById('statCompleted').textContent = counts.completed;
+        document.getElementById('statTotalActive').textContent = counts.active;
+    }
+
+    function applyFilters() {
+        const status = document.getElementById('filterStatus').value;
+        const service = document.getElementById('filterService').value;
+        const entityType = document.getElementById('filterEntityType').value;
+        const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+        let filtered = [...allBudgetItems];
+
+        if (status !== 'all') {
+            if (status === '__unassigned__') {
+                filtered = filtered.filter(i => !i.budget_status);
+            } else {
+                filtered = filtered.filter(i => i.budget_status === status);
+            }
+        }
+
+        if (service !== 'all') filtered = filtered.filter(i => i.report_type === service);
+        if (entityType !== 'all') filtered = filtered.filter(i => i.entity_type === entityType);
+
+        if (search) {
+            filtered = filtered.filter(i =>
+                String(i.id).includes(search) ||
+                (i.entity_name || '').toLowerCase().includes(search) ||
+                (i.problem_type || '').toLowerCase().includes(search) ||
+                (i.technician_name || '').toLowerCase().includes(search) ||
+                (i.budget_notes || '').toLowerCase().includes(search)
+            );
+        }
+
+        document.getElementById('visibleCount').textContent = filtered.length;
+        document.getElementById('totalCount').textContent = allBudgetItems.length;
+
+        displayBudgetItems(filtered);
+    }
+
+    function clearFilters() {
+        document.getElementById('filterStatus').value = 'all';
+        document.getElementById('filterService').value = 'all';
+        document.getElementById('filterEntityType').value = 'all';
+        document.getElementById('searchInput').value = '';
+        applyFilters();
+    }
+
+    function displayBudgetItems(items) {
+        const tbody = document.getElementById('budgetTableBody');
+        if (!items.length) {
+            tbody.innerHTML = `<tr><td colspan="11">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h5>No budget items found</h5>
+                    <p class="text-muted small">Either there are no budget items, or your filters exclude them.</p>
+                </div>
+            </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map((item, i) => {
+            const days = daysSince(item.created_at);
+            const daysCls = item.budget_status === 'completed' ? 'days-ok' : daysClass(days);
+            const amt = formatAmount(item.budget_amount);
+            const amtCls = amt ? 'amount-cell' : 'amount-cell empty';
+            const amtDisplay = amt ? `BND ${amt}` : '—';
+            const techName = item.technician_name || getTechnicianName(item.technician_id);
+            const updated = item.budget_updated_at ? formatDate(item.budget_updated_at) : '—';
+
+            return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong style="color:#d97706;">#${item.id}</strong></td>
+                    <td>${serviceBadge(item.report_type)}</td>
+                    <td>
+                        <span class="entity-name-cell" title="${escapeHtml(item.entity_name || '-')}">${escapeHtml(item.entity_name || '-')}</span>
+                        <span class="entity-type-small">${item.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</span>
+                    </td>
+                    <td><span class="problem-cell" title="${escapeHtml(item.problem_type || '-')}">${escapeHtml(item.problem_type || '-')}</span></td>
+                    <td><span class="tech-name">${escapeHtml(techName)}</span></td>
+                    <td>${budgetStatusBadge(item.budget_status)}</td>
+                    <td><span class="${amtCls}">${amtDisplay}</span></td>
+                    <td><span class="days-cell ${daysCls}">${days}d</span></td>
+                    <td><span class="updated-date">${updated}</span></td>
+                    <td class="col-actions">
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-update" title="Update Budget Info" onclick="openUpdateBudgetModal(${item.id})">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <a class="btn-icon btn-view" title="View Full Report" href="/reports?id=${item.id}" target="_blank">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // ============ Update Modal ============
+    function openUpdateBudgetModal(reportId) {
+        const item = allBudgetItems.find(x => x.id === reportId);
+        if (!item) {
+            if (window.showToast) window.showToast('Report not found', 'error');
+            return;
+        }
+        currentBudgetItem = item;
+
+        document.getElementById('updateReportId').value = item.id;
+
+        // Fill current info
+        const techName = item.technician_name || getTechnicianName(item.technician_id);
+        document.getElementById('currentInfoBox').innerHTML = `
+            <div class="row-line"><strong>Report #${item.id}</strong> — ${escapeHtml(item.problem_type || '')}</div>
+            <div class="row-line"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(item.entity_name || '-')} (${item.entity_type === 'school' ? 'School' : 'Department'})</div>
+            <div class="row-line"><i class="bi bi-person-fill"></i> Reported by: ${escapeHtml(techName)}</div>
+            <div class="row-line"><i class="bi bi-calendar-event"></i> Reported on: ${formatDateOnly(item.created_at)} · <strong>${daysSince(item.created_at)} day(s) ago</strong></div>
+        `;
+
+        // Fill form
+        document.getElementById('budgetAmount').value = item.budget_amount != null ? item.budget_amount : '';
+        document.getElementById('budgetNotes').value = item.budget_notes || '';
+        document.getElementById('budgetStatusHidden').value = item.budget_status || '';
+
+        // Highlight the current status
+        document.querySelectorAll('.budget-status-option').forEach(el => {
+            el.classList.toggle('selected', el.getAttribute('data-status') === item.budget_status);
+        });
+
+        // History panel
+        const historyPanel = document.getElementById('historyPanel');
+        if (item.budget_updated_at) {
+            historyPanel.innerHTML = `
+                <div class="history-panel">
+                    <div class="row-line"><strong>Last updated:</strong> ${formatDate(item.budget_updated_at)}</div>
+                    ${item.budget_updated_by_name ? `<div class="row-line"><strong>Updated by:</strong> ${escapeHtml(item.budget_updated_by_name)}</div>` : ''}
+                </div>
+            `;
+        } else {
+            historyPanel.innerHTML = '';
+        }
+
+        new bootstrap.Modal(document.getElementById('updateBudgetModal')).show();
+    }
+
+    function selectBudgetStatus(status) {
+        document.getElementById('budgetStatusHidden').value = status;
+        document.querySelectorAll('.budget-status-option').forEach(el => {
+            el.classList.toggle('selected', el.getAttribute('data-status') === status);
+        });
+    }
+
+    async function saveBudgetUpdate() {
+        const reportId = document.getElementById('updateReportId').value;
+        if (!reportId) return;
+
+        const status = document.getElementById('budgetStatusHidden').value;
+        const amountRaw = document.getElementById('budgetAmount').value.trim();
+        const notes = document.getElementById('budgetNotes').value;
+
+        if (!status) {
+            if (window.showToast) window.showToast('Please select a budget status', 'error');
+            return;
+        }
+
+        const payload = {
+            budget_status: status,
+            budget_notes: notes
+        };
+
+        if (amountRaw === '') {
+            payload.budget_amount = null;
+        } else {
+            const num = parseFloat(amountRaw);
+            if (isNaN(num) || num < 0) {
+                if (window.showToast) window.showToast('Please enter a valid amount', 'error');
+                return;
+            }
+            payload.budget_amount = num;
+        }
+
+        if (currentUser && currentUser.id) {
+            payload.updated_by = parseInt(currentUser.id);
+        }
+
+        const btn = document.getElementById('saveBudgetBtn');
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+        try {
+            const response = await fetch(`/api/budget-reports/${reportId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                if (window.showToast) window.showToast('Budget update saved');
+                bootstrap.Modal.getInstance(document.getElementById('updateBudgetModal')).hide();
+                await loadBudgetItems();
+            } else {
+                if (window.showToast) window.showToast(result.error || 'Failed to save', 'error');
+            }
+        } catch (e) {
+            console.error('Error saving budget update:', e);
+            if (window.showToast) window.showToast('Error saving budget update', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
+    }
+
+    // ============ Init ============
+    document.addEventListener('DOMContentLoaded', async function () {
+        currentUser = window.getCurrentUser();
+        await loadTechnicians();
+        await loadBudgetItems();
+    });
+</script>
+{% endblock %}
