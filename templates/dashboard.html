@@ -404,6 +404,93 @@
         color: #6a1b9a;
     }
     
+    /* ============ NEW: Budget Tile ============ */
+    .budget-tile {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 16px;
+        padding: 22px 26px;
+        margin-top: 30px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        cursor: pointer;
+        transition: all 0.25s ease;
+        text-decoration: none;
+    }
+    .budget-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+        color: white;
+    }
+    .budget-tile-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .budget-tile-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255,255,255,0.22);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        flex-shrink: 0;
+    }
+    .budget-tile-info h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .budget-tile-info p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        opacity: 0.9;
+    }
+    .budget-tile-stats {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .budget-stat-chip {
+        background: rgba(255,255,255,0.18);
+        border-radius: 12px;
+        padding: 8px 16px;
+        text-align: center;
+        min-width: 90px;
+    }
+    .budget-stat-chip .num {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+    .budget-stat-chip .lbl {
+        font-size: 10px;
+        opacity: 0.9;
+        margin-top: 3px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .budget-tile-cta {
+        background: white;
+        color: #d97706;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 700;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    
     /* Backup Section */
     .backup-section {
         background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
@@ -509,6 +596,16 @@
         .mapping-table th, .mapping-table td {
             padding: 8px 10px;
             font-size: 11px;
+        }
+        .budget-tile {
+            flex-direction: column;
+            text-align: center;
+        }
+        .budget-tile-left {
+            justify-content: center;
+        }
+        .budget-tile-stats {
+            justify-content: center;
         }
     }
 </style>
@@ -626,6 +723,42 @@
         </div>
     </div>
 </div>
+
+<!-- ============ NEW: Budget Tracking Tile ============ -->
+<div class="section-header">
+    <h4><i class="bi bi-cash-coin"></i> Budget Tracking</h4>
+    <a href="/budget-tracking">Open Budget Page →</a>
+</div>
+<a href="/budget-tracking" class="budget-tile" style="text-decoration:none;">
+    <div class="budget-tile-left">
+        <div class="budget-tile-icon"><i class="bi bi-cash-stack"></i></div>
+        <div class="budget-tile-info">
+            <h4>Reports Requiring Budget Approval</h4>
+            <p>Items needing quotations, repairs, or replacements</p>
+        </div>
+    </div>
+    <div class="budget-tile-stats">
+        <div class="budget-stat-chip">
+            <div class="num" id="budgetActiveTotal">0</div>
+            <div class="lbl">Active</div>
+        </div>
+        <div class="budget-stat-chip">
+            <div class="num" id="budgetWaitingQuote">0</div>
+            <div class="lbl">Waiting Quote</div>
+        </div>
+        <div class="budget-stat-chip">
+            <div class="num" id="budgetApproved">0</div>
+            <div class="lbl">Approved</div>
+        </div>
+        <div class="budget-stat-chip">
+            <div class="num" id="budgetInProgress">0</div>
+            <div class="lbl">In Progress</div>
+        </div>
+    </div>
+    <div class="budget-tile-cta">
+        <i class="bi bi-arrow-right-circle"></i> Manage
+    </div>
+</a>
 
 <!-- Pending Acknowledgment Table -->
 <div class="section-header">
@@ -858,6 +991,21 @@
         return techniciansMap[techId] || `Technician #${techId}`;
     }
     
+    // ============ NEW: Load Budget Stats ============
+    async function loadBudgetStats() {
+        try {
+            const response = await fetch('/api/budget-stats?t=' + Date.now(), { cache: 'no-store' });
+            const stats = await response.json();
+            if (!stats || typeof stats !== 'object') return;
+            document.getElementById('budgetActiveTotal').textContent = stats.total_active || 0;
+            document.getElementById('budgetWaitingQuote').textContent = stats.waiting_quote || 0;
+            document.getElementById('budgetApproved').textContent = (stats.approved || 0);
+            document.getElementById('budgetInProgress').textContent = (stats.work_in_progress || 0);
+        } catch (error) {
+            console.error('Error loading budget stats:', error);
+        }
+    }
+    
     async function loadMappingImagesSummary() {
         try {
             const imagesResponse = await fetch('/api/mapping/images');
@@ -998,6 +1146,7 @@
             
             await loadImageStats();
             await loadMappingImagesSummary();
+            await loadBudgetStats();
             
         } catch (error) {
             console.error('Error loading dashboard data:', error);
@@ -1246,7 +1395,6 @@
             return;
         }
         
-        // Pre-select current month
         const now = new Date();
         document.getElementById('imgBackupYear').value = String(now.getFullYear());
         document.getElementById('imgBackupMonth').value = String(now.getMonth() + 1);
@@ -1266,12 +1414,10 @@
         
         const url = `/api/backup-images?user_id=${user.id}&year=${year}&month=${month}`;
         
-        // Close modal
         bootstrap.Modal.getInstance(document.getElementById('imageBackupModal')).hide();
         
         if (window.showToast) window.showToast('Preparing download... Please wait.', 'info');
         
-        // Trigger download via hidden link
         const link = document.createElement('a');
         link.href = url;
         link.style.display = 'none';
