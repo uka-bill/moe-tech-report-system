@@ -83,7 +83,7 @@
     .col-tech { width: 120px; }
     .col-bstatus { width: 145px; }
     .col-amount { width: 110px; }
-    .col-days { width: 70px; }
+    .col-days { width: 110px; text-align: center; }
     .col-updated { width: 130px; }
     .col-actions { width: 100px; text-align: center; }
 
@@ -121,7 +121,6 @@
         font-size: 11px;
     }
 
-    /* Muted row style for completed items */
     .budget-table tr.completed-row td {
         opacity: 0.75;
         background: #fafafa;
@@ -167,16 +166,45 @@
     }
     .amount-cell.empty { color: #9ca3af; font-weight: 500; }
 
-    .days-cell {
+    /* ============ NEW: Day counter chip per stage ============ */
+    .stage-days-chip {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 10px;
+        border-radius: 10px;
+        border: 1px solid;
         font-weight: 700;
-        text-align: center;
-        font-size: 13px;
+        line-height: 1;
+        cursor: help;
+        min-width: 60px;
     }
-    .days-fresh   { color: #16a34a; }
-    .days-mid     { color: #f59e0b; }
-    .days-warn    { color: #ea580c; }
-    .days-urgent  { color: #dc2626; }
-    .days-ok      { color: #6b7280; font-weight: 500; }
+    .stage-days-chip .stage-days-num {
+        font-size: 14px;
+        line-height: 1.1;
+    }
+    .stage-days-chip .stage-days-lbl {
+        font-size: 8px;
+        font-weight: 600;
+        opacity: 0.75;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    /* Color by elapsed days */
+    .stage-fresh   { color: #16a34a; background: #dcfce7; border-color: #86efac; }
+    .stage-mid     { color: #f59e0b; background: #fef3c7; border-color: #fde68a; }
+    .stage-warn    { color: #ea580c; background: #ffedd5; border-color: #fdba74; }
+    .stage-urgent  { color: #dc2626; background: #fee2e2; border-color: #fecaca; }
+    .stage-done    { color: #6b7280; background: #f3f4f6; border-color: #d1d5db; }
+
+    .total-days-text {
+        font-size: 9px;
+        color: #9ca3af;
+        margin-top: 3px;
+        display: block;
+        text-align: center;
+    }
 
     .entity-name-cell { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; font-weight: 500; }
     .entity-type-small { font-size: 9px; color: #6c757d; }
@@ -274,7 +302,6 @@
     }
     .history-panel .row-line strong { color: #111827; }
 
-    /* ============ Report view modal styles ============ */
     .report-detail-container { font-size: 14px; line-height: 1.6; }
     .report-detail-container .row { margin-bottom: 10px; }
     .report-detail-container .row .col-4 { font-weight: 600; color: #495057; }
@@ -305,7 +332,6 @@
     .comment-author { font-weight: bold; color: #8e44ad; font-size: 12px; }
     .comment-date { font-size: 10px; color: #6c757d; margin-left: 12px; }
 
-    /* ============ Report modal header — close button on the right ============ */
     .modal-header-report {
         background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         color: white;
@@ -321,7 +347,7 @@
     }
 
     @media (max-width: 768px) {
-        .col-report, .col-amount, .col-updated, .col-days { display: none; }
+        .col-report, .col-amount, .col-updated { display: none; }
         .col-entity { width: 140px; }
         .budget-table th, .budget-table td { padding: 8px 6px; font-size: 11px; }
     }
@@ -484,7 +510,7 @@
                 <th class="col-tech">Reported By</th>
                 <th class="col-bstatus">Budget Status</th>
                 <th class="col-amount">Amount (BND)</th>
-                <th class="col-days">Days</th>
+                <th class="col-days">Days in Stage</th>
                 <th class="col-updated">Last Updated</th>
                 <th class="col-actions">Actions</th>
             </tr>
@@ -545,6 +571,9 @@
                         </div>
                     </div>
                     <input type="hidden" id="budgetStatusHidden">
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> Changing the status will restart the "Days in Stage" counter.
+                    </small>
                 </div>
 
                 <div class="mb-3">
@@ -576,7 +605,7 @@
     </div>
 </div>
 
-<!-- ============ VIEW REPORT MODAL (inline, read-only) ============ -->
+<!-- ============ VIEW REPORT MODAL ============ -->
 <div class="modal fade" id="viewReportModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -630,14 +659,31 @@
         } catch (e) { return dateString; }
     }
 
+    // ============ NEW: Days since a given timestamp (Day 1 = same day) ============
     function daysSince(dateString) {
-        if (!dateString) return 0;
+        if (!dateString) return 1;
         try {
             const then = new Date(dateString);
             const now = new Date();
+            // Zero out time portion so it's calendar-day based
+            then.setHours(0, 0, 0, 0);
+            now.setHours(0, 0, 0, 0);
             const diffMs = now - then;
-            return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-        } catch (e) { return 0; }
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            return diffDays + 1; // Same day = Day 1
+        } catch (e) { return 1; }
+    }
+
+    // ============ NEW: Days in current stage ============
+    // Uses budget_status_changed_at if available, falls back to created_at
+    function daysInCurrentStage(item) {
+        const start = item.budget_status_changed_at || item.created_at;
+        return daysSince(start);
+    }
+
+    // ============ NEW: Total days since report created ============
+    function totalDays(item) {
+        return daysSince(item.created_at);
     }
 
     function serviceBadge(svc) {
@@ -666,11 +712,13 @@
         return `<span class="budget-status-badge ${cls}">${info.icon} ${info.text}</span>`;
     }
 
-    function daysClass(d) {
-        if (d <= 3) return 'days-fresh';
-        if (d <= 7) return 'days-mid';
-        if (d <= 14) return 'days-warn';
-        return 'days-urgent';
+    // ============ NEW: Color class for stage days ============
+    function stageDaysClass(days, isCompleted) {
+        if (isCompleted) return 'stage-done';
+        if (days <= 3) return 'stage-fresh';
+        if (days <= 7) return 'stage-mid';
+        if (days <= 14) return 'stage-warn';
+        return 'stage-urgent';
     }
 
     function formatAmount(val) {
@@ -804,8 +852,14 @@
 
     // ============ Build a single row ============
     function buildRow(item, rowNumber, isCompleted) {
-        const days = daysSince(item.created_at);
-        const daysCls = isCompleted ? 'days-ok' : daysClass(days);
+        const stageDays = daysInCurrentStage(item);
+        const totalDaysCount = totalDays(item);
+        const stageCls = stageDaysClass(stageDays, isCompleted);
+        const stageLabel = isCompleted ? 'completed' : 'in stage';
+        const stageTitle = isCompleted
+            ? `Completed after ${totalDaysCount} day(s) total`
+            : `Day ${stageDays} in current stage — total ${totalDaysCount} day(s) since report created`;
+
         const amt = formatAmount(item.budget_amount);
         const amtCls = amt ? 'amount-cell' : 'amount-cell empty';
         const amtDisplay = amt ? `BND ${amt}` : '—';
@@ -826,7 +880,13 @@
                 <td><span class="tech-name">${escapeHtml(techName)}</span></td>
                 <td>${budgetStatusBadge(item.budget_status)}</td>
                 <td><span class="${amtCls}">${amtDisplay}</span></td>
-                <td><span class="days-cell ${daysCls}">${days}d</span></td>
+                <td>
+                    <div class="stage-days-chip ${stageCls}" title="${escapeHtml(stageTitle)}">
+                        <span class="stage-days-num">Day ${stageDays}</span>
+                        <span class="stage-days-lbl">${stageLabel}</span>
+                    </div>
+                    <span class="total-days-text" title="Total days since report was created">Total: ${totalDaysCount}d</span>
+                </td>
                 <td><span class="updated-date">${updated}</span></td>
                 <td class="col-actions">
                     <div class="action-buttons">
@@ -899,11 +959,15 @@
         document.getElementById('updateReportId').value = item.id;
 
         const techName = item.technician_name || getTechnicianName(item.technician_id);
+        const stageDays = daysInCurrentStage(item);
+        const stageStart = item.budget_status_changed_at || item.created_at;
+
         document.getElementById('currentInfoBox').innerHTML = `
             <div class="row-line"><strong>Report #${item.id}</strong> — ${escapeHtml(item.problem_type || '')}</div>
             <div class="row-line"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(item.entity_name || '-')} (${item.entity_type === 'school' ? 'School' : 'Department'})</div>
             <div class="row-line"><i class="bi bi-person-fill"></i> Reported by: ${escapeHtml(techName)}</div>
-            <div class="row-line"><i class="bi bi-calendar-event"></i> Reported on: ${formatDateOnly(item.created_at)} · <strong>${daysSince(item.created_at)} day(s) ago</strong></div>
+            <div class="row-line"><i class="bi bi-calendar-event"></i> Reported on: ${formatDateOnly(item.created_at)}</div>
+            <div class="row-line"><i class="bi bi-hourglass-split"></i> Current stage: <strong>Day ${stageDays}</strong> (since ${formatDateOnly(stageStart)})</div>
         `;
 
         document.getElementById('budgetAmount').value = item.budget_amount != null ? item.budget_amount : '';
@@ -998,7 +1062,7 @@
         }
     }
 
-    // ============ VIEW REPORT MODAL (inline) ============
+    // ============ VIEW REPORT MODAL ============
     async function viewReportDetail(reportId) {
         currentViewReportId = reportId;
         const body = document.getElementById('viewReportBody');
@@ -1110,7 +1174,7 @@
                         <strong><i class="bi bi-cash-coin"></i> Budget Tracking</strong><br>
                         <small>Status: ${budgetStatusLabel(report.budget_status).icon} ${budgetStatusLabel(report.budget_status).text}
                         ${report.budget_amount ? ' · Amount: BND ' + formatAmount(report.budget_amount) : ''}
-                        ${report.budget_updated_at ? ' · Last updated: ' + formatDate(report.budget_updated_at) : ''}</small>
+                        ${report.budget_status_changed_at ? ' · In stage since: ' + formatDate(report.budget_status_changed_at) : ''}</small>
                         ${report.budget_notes ? `<div style="margin-top:6px; font-style:italic;">"${escapeHtml(report.budget_notes)}"</div>` : ''}
                     </div>
                 ` : ''}
