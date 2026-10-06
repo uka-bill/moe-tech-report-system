@@ -87,7 +87,7 @@
     .col-updated { width: 130px; }
     .col-actions { width: 100px; text-align: center; }
 
-    /* ============ NEW: Completed separator row ============ */
+    /* ============ Completed separator row ============ */
     .completed-separator td {
         padding: 0 !important;
         border: none !important;
@@ -305,13 +305,20 @@
     .comment-author { font-weight: bold; color: #8e44ad; font-size: 12px; }
     .comment-date { font-size: 10px; color: #6c757d; margin-left: 12px; }
 
+    /* ============ Report modal header — close button on the right ============ */
     .modal-header-report {
         background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         color: white;
         border-radius: 16px 16px 0 0;
         padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .modal-header-report .btn-close { filter: brightness(0) invert(1); }
+    .modal-header-report .btn-close {
+        filter: brightness(0) invert(1);
+        margin: 0;
+    }
 
     @media (max-width: 768px) {
         .col-report, .col-amount, .col-updated, .col-days { display: none; }
@@ -711,13 +718,11 @@
 
     async function loadBudgetItems() {
         try {
-            // Always include completed (they go at the bottom with a separator)
             const url = `/api/budget-reports?include_completed=true&t=` + Date.now();
             const response = await fetch(url, { cache: 'no-store' });
             allBudgetItems = await response.json();
             if (!allBudgetItems) allBudgetItems = [];
 
-            // Sort: active first (older first), then completed (older first)
             allBudgetItems.sort((a, b) => {
                 const aDone = a.budget_status === 'completed' ? 1 : 0;
                 const bDone = b.budget_status === 'completed' ? 1 : 0;
@@ -851,7 +856,6 @@
             return;
         }
 
-        // Split into active vs completed
         const active = items.filter(i => i.budget_status !== 'completed');
         const completed = items.filter(i => i.budget_status === 'completed');
 
@@ -862,7 +866,6 @@
         }
 
         if (completed.length) {
-            // Separator line
             const sepText = active.length
                 ? `${completed.length} Completed Item${completed.length > 1 ? 's' : ''}`
                 : `Completed Items (${completed.length})`;
@@ -878,7 +881,6 @@
                     </td>
                 </tr>
             `;
-            // Completed rows numbered from 1 again for the group
             html += completed.map((item, idx) => buildRow(item, active.length + idx + 1, true)).join('');
         }
 
