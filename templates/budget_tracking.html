@@ -87,6 +87,50 @@
     .col-updated { width: 130px; }
     .col-actions { width: 100px; text-align: center; }
 
+    /* ============ NEW: Completed separator row ============ */
+    .completed-separator td {
+        padding: 0 !important;
+        border: none !important;
+        background: transparent;
+    }
+    .completed-separator .sep-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-top: 2px solid #10b981;
+        border-bottom: 2px solid #10b981;
+        margin: 0;
+        font-size: 12px;
+        color: #065f46;
+        font-weight: 600;
+    }
+    .completed-separator .sep-content i {
+        font-size: 18px;
+        color: #10b981;
+    }
+    .completed-separator .sep-content .sep-line {
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, #10b981 0%, transparent 100%);
+    }
+    .completed-separator .sep-content .sep-sub {
+        font-weight: 400;
+        color: #047857;
+        font-size: 11px;
+    }
+
+    /* Muted row style for completed items */
+    .budget-table tr.completed-row td {
+        opacity: 0.75;
+        background: #fafafa;
+    }
+    .budget-table tr.completed-row:hover td {
+        background: #f0fdf4;
+        opacity: 0.95;
+    }
+
     .service-badge {
         padding: 3px 10px; border-radius: 20px;
         font-size: 10px; font-weight: 600;
@@ -154,12 +198,13 @@
         border-radius: 6px; border: none;
         display: inline-flex; align-items: center; justify-content: center;
         cursor: pointer; font-size: 11px; transition: all 0.2s;
+        text-decoration: none;
     }
-    .btn-icon:hover { transform: translateY(-1px); }
+    .btn-icon:hover { transform: translateY(-1px); color: inherit; }
     .btn-update { background: #fef3c7; color: #92400e; }
-    .btn-update:hover { background: #fde68a; }
+    .btn-update:hover { background: #fde68a; color: #78350f; }
     .btn-view   { background: #e3f2fd; color: #0d47a1; }
-    .btn-view:hover { background: #bbdefb; }
+    .btn-view:hover { background: #bbdefb; color: #0d47a1; }
 
     .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
     .empty-state i { font-size: 56px; color: #ccc; margin-bottom: 15px; display: block; }
@@ -229,29 +274,44 @@
     }
     .history-panel .row-line strong { color: #111827; }
 
-    .toolbar-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 20px;
+    /* ============ Report view modal styles ============ */
+    .report-detail-container { font-size: 14px; line-height: 1.6; }
+    .report-detail-container .row { margin-bottom: 10px; }
+    .report-detail-container .row .col-4 { font-weight: 600; color: #495057; }
+    .image-preview-large {
+        max-width: 100%;
+        max-height: 260px;
+        object-fit: contain;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        border: 1px solid #eef2f7;
+    }
+    .image-preview-large:hover { transform: scale(1.02); }
+    .comment-section {
+        background: linear-gradient(135deg, #f8f5fc 0%, #f3e5f5 100%);
+        padding: 16px;
+        border-radius: 12px;
+        margin-top: 16px;
+        border-left: 3px solid #9b59b6;
+    }
+    .comment-item {
         background: white;
-        border: 1px solid #e5e7eb;
-        font-size: 12px;
-        font-weight: 500;
-        color: #4b5563;
-        cursor: pointer;
-        transition: all 0.2s;
-        user-select: none;
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #eef2f7;
     }
-    .toolbar-toggle:hover {
-        border-color: #f59e0b;
-        color: #d97706;
+    .comment-author { font-weight: bold; color: #8e44ad; font-size: 12px; }
+    .comment-date { font-size: 10px; color: #6c757d; margin-left: 12px; }
+
+    .modal-header-report {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 20px;
     }
-    .toolbar-toggle input {
-        margin: 0;
-        cursor: pointer;
-    }
+    .modal-header-report .btn-close { filter: brightness(0) invert(1); }
 
     @media (max-width: 768px) {
         .col-report, .col-amount, .col-updated, .col-days { display: none; }
@@ -397,11 +457,7 @@
             </button>
         </div>
     </div>
-    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <label class="toolbar-toggle">
-            <input type="checkbox" id="showCompletedToggle" onchange="applyFilters()">
-            <i class="bi bi-eye"></i> Show completed items
-        </label>
+    <div class="d-flex justify-content-end align-items-center mt-3">
         <div class="text-muted small">
             <i class="bi bi-info-circle"></i> Showing <span id="visibleCount">0</span> of <span id="totalCount">0</span> item(s)
         </div>
@@ -477,7 +533,7 @@
                             <i class="bi bi-check-circle-fill check"></i>
                         </div>
                         <div class="budget-status-option" data-status="completed" onclick="selectBudgetStatus('completed')">
-                            <span class="status-label">✔️ Completed (Remove from list)</span>
+                            <span class="status-label">✔️ Completed (move to bottom of list)</span>
                             <i class="bi bi-check-circle-fill check"></i>
                         </div>
                     </div>
@@ -513,9 +569,33 @@
     </div>
 </div>
 
+<!-- ============ VIEW REPORT MODAL (inline, read-only) ============ -->
+<div class="modal fade" id="viewReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header-report">
+                <h5 class="modal-title"><i class="bi bi-file-text"></i> Report Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewReportBody" style="max-height: 78vh; overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border" style="color: #9b59b6;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn-primary-custom" id="viewReportBudgetBtn" onclick="openBudgetFromViewModal()">
+                    <i class="bi bi-cash-coin"></i> Update Budget
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let allBudgetItems = [];
     let currentBudgetItem = null;
+    let currentViewReportId = null;
     let techniciansMap = {};
     let currentUser = null;
 
@@ -593,6 +673,28 @@
         return num.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function getResolutionBadge(report) {
+        const status = report.resolution_status || 'pending_action';
+        const map = {
+            'resolved':       { color: '#155724', bg: 'linear-gradient(135deg, #d4edda 0%, #c8e6c9 100%)', icon: '✅', text: 'Resolved' },
+            'pending_action': { color: '#856404', bg: 'linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%)', icon: '⏳', text: 'Pending Action' },
+            'need_budget':    { color: '#0d47a1', bg: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)', icon: '💰', text: 'Need Budget' },
+            'need_attention': { color: '#721c24', bg: 'linear-gradient(135deg, #f8d7da 0%, #ffcdd2 100%)', icon: '🚨', text: 'Need Attention' }
+        };
+        const s = map[status] || map['pending_action'];
+        return `<span style="padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; background: ${s.bg}; color: ${s.color}; display: inline-block;">${s.icon} ${s.text}</span>`;
+    }
+
+    function priorityBadge(p) {
+        const map = {
+            high:   { bg: '#f8d7da', color: '#721c24', icon: '🔴', text: 'HIGH' },
+            medium: { bg: '#fff3cd', color: '#856404', icon: '🟡', text: 'MEDIUM' },
+            low:    { bg: '#d4edda', color: '#155724', icon: '🟢', text: 'LOW' }
+        };
+        const s = map[p] || map['medium'];
+        return `<span style="background:${s.bg}; color:${s.color}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block;">${s.icon} ${s.text}</span>`;
+    }
+
     // ============ Loading ============
     async function loadTechnicians() {
         try {
@@ -609,13 +711,13 @@
 
     async function loadBudgetItems() {
         try {
-            const includeCompleted = document.getElementById('showCompletedToggle').checked;
-            const url = `/api/budget-reports?include_completed=${includeCompleted}&t=` + Date.now();
+            // Always include completed (they go at the bottom with a separator)
+            const url = `/api/budget-reports?include_completed=true&t=` + Date.now();
             const response = await fetch(url, { cache: 'no-store' });
             allBudgetItems = await response.json();
             if (!allBudgetItems) allBudgetItems = [];
 
-            // Sort: active items by days waiting descending (older = higher priority)
+            // Sort: active first (older first), then completed (older first)
             allBudgetItems.sort((a, b) => {
                 const aDone = a.budget_status === 'completed' ? 1 : 0;
                 const bDone = b.budget_status === 'completed' ? 1 : 0;
@@ -695,6 +797,47 @@
         applyFilters();
     }
 
+    // ============ Build a single row ============
+    function buildRow(item, rowNumber, isCompleted) {
+        const days = daysSince(item.created_at);
+        const daysCls = isCompleted ? 'days-ok' : daysClass(days);
+        const amt = formatAmount(item.budget_amount);
+        const amtCls = amt ? 'amount-cell' : 'amount-cell empty';
+        const amtDisplay = amt ? `BND ${amt}` : '—';
+        const techName = item.technician_name || getTechnicianName(item.technician_id);
+        const updated = item.budget_updated_at ? formatDate(item.budget_updated_at) : '—';
+        const rowCls = isCompleted ? 'completed-row' : '';
+
+        return `
+            <tr class="${rowCls}">
+                <td>${rowNumber}</td>
+                <td><strong style="color:#d97706;">#${item.id}</strong></td>
+                <td>${serviceBadge(item.report_type)}</td>
+                <td>
+                    <span class="entity-name-cell" title="${escapeHtml(item.entity_name || '-')}">${escapeHtml(item.entity_name || '-')}</span>
+                    <span class="entity-type-small">${item.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</span>
+                </td>
+                <td><span class="problem-cell" title="${escapeHtml(item.problem_type || '-')}">${escapeHtml(item.problem_type || '-')}</span></td>
+                <td><span class="tech-name">${escapeHtml(techName)}</span></td>
+                <td>${budgetStatusBadge(item.budget_status)}</td>
+                <td><span class="${amtCls}">${amtDisplay}</span></td>
+                <td><span class="days-cell ${daysCls}">${days}d</span></td>
+                <td><span class="updated-date">${updated}</span></td>
+                <td class="col-actions">
+                    <div class="action-buttons">
+                        <button class="btn-icon btn-update" title="Update Budget Info" onclick="openUpdateBudgetModal(${item.id})">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn-icon btn-view" title="View Full Report" onclick="viewReportDetail(${item.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // ============ Display (with completed separator) ============
     function displayBudgetItems(items) {
         const tbody = document.getElementById('budgetTableBody');
         if (!items.length) {
@@ -708,46 +851,41 @@
             return;
         }
 
-        tbody.innerHTML = items.map((item, i) => {
-            const days = daysSince(item.created_at);
-            const daysCls = item.budget_status === 'completed' ? 'days-ok' : daysClass(days);
-            const amt = formatAmount(item.budget_amount);
-            const amtCls = amt ? 'amount-cell' : 'amount-cell empty';
-            const amtDisplay = amt ? `BND ${amt}` : '—';
-            const techName = item.technician_name || getTechnicianName(item.technician_id);
-            const updated = item.budget_updated_at ? formatDate(item.budget_updated_at) : '—';
+        // Split into active vs completed
+        const active = items.filter(i => i.budget_status !== 'completed');
+        const completed = items.filter(i => i.budget_status === 'completed');
 
-            return `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td><strong style="color:#d97706;">#${item.id}</strong></td>
-                    <td>${serviceBadge(item.report_type)}</td>
-                    <td>
-                        <span class="entity-name-cell" title="${escapeHtml(item.entity_name || '-')}">${escapeHtml(item.entity_name || '-')}</span>
-                        <span class="entity-type-small">${item.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</span>
-                    </td>
-                    <td><span class="problem-cell" title="${escapeHtml(item.problem_type || '-')}">${escapeHtml(item.problem_type || '-')}</span></td>
-                    <td><span class="tech-name">${escapeHtml(techName)}</span></td>
-                    <td>${budgetStatusBadge(item.budget_status)}</td>
-                    <td><span class="${amtCls}">${amtDisplay}</span></td>
-                    <td><span class="days-cell ${daysCls}">${days}d</span></td>
-                    <td><span class="updated-date">${updated}</span></td>
-                    <td class="col-actions">
-                        <div class="action-buttons">
-                            <button class="btn-icon btn-update" title="Update Budget Info" onclick="openUpdateBudgetModal(${item.id})">
-                                <i class="bi bi-pencil-square"></i>
-                            </button>
-                            <a class="btn-icon btn-view" title="View Full Report" href="/reports?id=${item.id}" target="_blank">
-                                <i class="bi bi-eye"></i>
-                            </a>
+        let html = '';
+
+        if (active.length) {
+            html += active.map((item, idx) => buildRow(item, idx + 1, false)).join('');
+        }
+
+        if (completed.length) {
+            // Separator line
+            const sepText = active.length
+                ? `${completed.length} Completed Item${completed.length > 1 ? 's' : ''}`
+                : `Completed Items (${completed.length})`;
+            html += `
+                <tr class="completed-separator">
+                    <td colspan="11">
+                        <div class="sep-content">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <strong>${sepText}</strong>
+                            <span class="sep-sub">— moved below the active list for reference</span>
+                            <span class="sep-line"></span>
                         </div>
                     </td>
                 </tr>
             `;
-        }).join('');
+            // Completed rows numbered from 1 again for the group
+            html += completed.map((item, idx) => buildRow(item, active.length + idx + 1, true)).join('');
+        }
+
+        tbody.innerHTML = html;
     }
 
-    // ============ Update Modal ============
+    // ============ UPDATE BUDGET MODAL ============
     function openUpdateBudgetModal(reportId) {
         const item = allBudgetItems.find(x => x.id === reportId);
         if (!item) {
@@ -758,7 +896,6 @@
 
         document.getElementById('updateReportId').value = item.id;
 
-        // Fill current info
         const techName = item.technician_name || getTechnicianName(item.technician_id);
         document.getElementById('currentInfoBox').innerHTML = `
             <div class="row-line"><strong>Report #${item.id}</strong> — ${escapeHtml(item.problem_type || '')}</div>
@@ -767,17 +904,14 @@
             <div class="row-line"><i class="bi bi-calendar-event"></i> Reported on: ${formatDateOnly(item.created_at)} · <strong>${daysSince(item.created_at)} day(s) ago</strong></div>
         `;
 
-        // Fill form
         document.getElementById('budgetAmount').value = item.budget_amount != null ? item.budget_amount : '';
         document.getElementById('budgetNotes').value = item.budget_notes || '';
         document.getElementById('budgetStatusHidden').value = item.budget_status || '';
 
-        // Highlight the current status
         document.querySelectorAll('.budget-status-option').forEach(el => {
             el.classList.toggle('selected', el.getAttribute('data-status') === item.budget_status);
         });
 
-        // History panel
         const historyPanel = document.getElementById('historyPanel');
         if (item.budget_updated_at) {
             historyPanel.innerHTML = `
@@ -859,6 +993,134 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = original;
+        }
+    }
+
+    // ============ VIEW REPORT MODAL (inline) ============
+    async function viewReportDetail(reportId) {
+        currentViewReportId = reportId;
+        const body = document.getElementById('viewReportBody');
+        body.innerHTML = '<div class="text-center py-4"><div class="spinner-border" style="color: #9b59b6;"></div></div>';
+
+        const modalEl = document.getElementById('viewReportModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/technical-reports/${reportId}?t=` + Date.now(), { cache: 'no-store' });
+            const result = await response.json();
+
+            if (!result.success || !result.report) {
+                body.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> ${escapeHtml(result.error || 'Failed to load report')}</div>`;
+                return;
+            }
+
+            body.innerHTML = renderReportDetail(result.report);
+        } catch (e) {
+            console.error('Error loading report:', e);
+            body.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error loading report. Please try again.</div>';
+        }
+    }
+
+    function renderReportDetail(report) {
+        const reportTypeIcon = report.report_type === 'water' ? '💧' : (report.report_type === 'electricity' ? '⚡' : '📞');
+        const reportTypeName = report.report_type === 'water' ? 'Water' : (report.report_type === 'electricity' ? 'Electricity' : 'Telephone');
+        const techName = report.technician_name || getTechnicianName(report.technician_id);
+        const isAcknowledged = report.team_leader_acknowledged;
+
+        let imagesHtml = '';
+        if (report.images && report.images.length > 0) {
+            imagesHtml = `<div class="mt-3"><strong>Attached Images:</strong><div class="d-flex flex-wrap gap-2 mt-2">${report.images.map(img => {
+                const url = img.startsWith('http') ? img : (window.location.origin + (img.startsWith('/') ? img : '/' + img));
+                return `<img src="${url}" class="image-preview-large" onclick="window.open('${url}', '_blank')" onerror="this.style.display='none'">`;
+            }).join('')}</div></div>`;
+        }
+
+        let commentsHtml = '';
+        if (report.comments && report.comments.length > 0) {
+            commentsHtml = `<div class="comment-section mt-3"><h6><i class="bi bi-chat-dots"></i> Comments</h6>${report.comments.map(c => `<div class="comment-item mb-2"><strong class="comment-author">${escapeHtml(c.author)}</strong> <span class="comment-date">${formatDate(c.created_at)}</span><div class="mt-1">${escapeHtml(c.text)}</div></div>`).join('')}</div>`;
+        }
+
+        let ackHtml = '';
+        if (isAcknowledged) {
+            const ackStatus = report.acknowledgment_status || 'done_reviewed';
+            const ackIcon = ackStatus === 'need_further_action' ? '⚠️' : '✅';
+            const ackText = ackStatus === 'need_further_action' ? 'Need Further Action' : 'Done / Reviewed';
+            ackHtml = `
+                <div class="alert alert-success mt-3" style="border-left: 4px solid #28a745; background: #f0fdf4;">
+                    <strong><i class="bi bi-check-circle"></i> Acknowledged by Team Leader</strong><br>
+                    <small>By: ${escapeHtml(report.team_leader_name || 'Team Leader')} · ${formatDate(report.team_leader_acknowledged_at)}</small><br>
+                    <span class="badge mt-1" style="background:${ackStatus === 'need_further_action' ? '#dc3545' : '#28a745'};">${ackIcon} ${ackText}</span>
+                    ${report.team_leader_notes ? `<div style="margin-top:8px; font-style:italic;">"${escapeHtml(report.team_leader_notes)}"</div>` : ''}
+                </div>
+            `;
+        } else {
+            ackHtml = `<div class="alert alert-warning mt-3"><i class="bi bi-clock-history"></i> <strong>Pending Review</strong> — awaiting team leader acknowledgment.</div>`;
+        }
+
+        return `
+            <div class="report-detail-container">
+                <div class="alert alert-info" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none; border-left: 4px solid #17a2b8;">
+                    <strong>Report #${report.id}</strong> · ${reportTypeName} ${reportTypeIcon}<br>
+                    <small>Submitted: ${formatDate(report.created_at)} · Status: ${isAcknowledged ? 'Acknowledged' : 'Pending Review'}</small>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-4">Entity:</div>
+                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4">Problem Type:</div>
+                    <div class="col-8">${escapeHtml(report.problem_type || '-')}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4">Priority:</div>
+                    <div class="col-8">${priorityBadge(report.priority)} ${report.priority_with_tender ? '<span class="badge bg-danger ms-2">TENDER</span>' : ''}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4">Action Status:</div>
+                    <div class="col-8">${getResolutionBadge(report)}</div>
+                </div>
+                ${report.account_number ? `<div class="row mb-2"><div class="col-4">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
+                ${report.meter_number ? `<div class="row mb-2"><div class="col-4">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
+                ${report.phone_number ? `<div class="row mb-2"><div class="col-4">Phone Number:</div><div class="col-8">${escapeHtml(report.phone_number)}</div></div>` : ''}
+                ${report.reference_number ? `<div class="row mb-2"><div class="col-4">Reference:</div><div class="col-8">${escapeHtml(report.reference_type ? report.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(report.reference_number)}${report.reference_date ? ' (' + report.reference_date + ')' : ''}</div></div>` : ''}
+
+                <div class="row mb-2">
+                    <div class="col-4">Complaint Details:</div>
+                    <div class="col-8" style="white-space: pre-wrap;">${escapeHtml(report.complaint_details || '-')}</div>
+                </div>
+
+                ${report.action_taken ? `<div class="row mb-2"><div class="col-4">Action Taken:</div><div class="col-8" style="white-space: pre-wrap;">${escapeHtml(report.action_taken)}</div></div>` : ''}
+                ${report.technician_notes ? `<div class="row mb-2"><div class="col-4">Technician Notes:</div><div class="col-8" style="white-space: pre-wrap;">${escapeHtml(report.technician_notes)}</div></div>` : ''}
+
+                <div class="row mb-2">
+                    <div class="col-4">Reported By:</div>
+                    <div class="col-8">${escapeHtml(techName)}</div>
+                </div>
+
+                ${ackHtml}
+                ${imagesHtml}
+                ${commentsHtml}
+
+                ${report.budget_status ? `
+                    <div class="alert mt-3" style="background: #fffbeb; border-left: 4px solid #f59e0b;">
+                        <strong><i class="bi bi-cash-coin"></i> Budget Tracking</strong><br>
+                        <small>Status: ${budgetStatusLabel(report.budget_status).icon} ${budgetStatusLabel(report.budget_status).text}
+                        ${report.budget_amount ? ' · Amount: BND ' + formatAmount(report.budget_amount) : ''}
+                        ${report.budget_updated_at ? ' · Last updated: ' + formatDate(report.budget_updated_at) : ''}</small>
+                        ${report.budget_notes ? `<div style="margin-top:6px; font-style:italic;">"${escapeHtml(report.budget_notes)}"</div>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function openBudgetFromViewModal() {
+        if (currentViewReportId) {
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('viewReportModal'));
+            if (modalInstance) modalInstance.hide();
+            setTimeout(() => openUpdateBudgetModal(currentViewReportId), 350);
         }
     }
 
