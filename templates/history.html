@@ -1,0 +1,953 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .page-header h2 i { margin-right: 12px; }
+    .page-header p { margin: 8px 0 0; opacity: 0.9; font-size: 0.85rem; }
+
+    /* ============ LANDING VIEW ============ */
+    .entity-search-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+    }
+    .entity-search-bar input {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    .entity-search-bar input:focus {
+        border-color: #9b59b6;
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.15);
+        outline: none;
+    }
+
+    .entity-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 16px;
+    }
+    .entity-card {
+        background: white;
+        border-radius: 14px;
+        padding: 18px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        border: 1px solid #eef2f7;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        border-left: 4px solid #9b59b6;
+    }
+    .entity-card.school { border-left-color: #17a2b8; }
+    .entity-card.department { border-left-color: #9b59b6; }
+    .entity-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .entity-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .entity-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #2c3e50;
+        line-height: 1.3;
+        margin: 0;
+    }
+    .entity-card-type {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .entity-card-type.school { background: #e3f2fd; color: #0d47a1; }
+    .entity-card-type.department { background: #f3e5f5; color: #6a1b9a; }
+    .entity-card-meta {
+        font-size: 11px;
+        color: #6c757d;
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+    .entity-card-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding-top: 12px;
+        border-top: 1px solid #f0f0f0;
+    }
+    .entity-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f8f9fa;
+        color: #495057;
+    }
+    .entity-stat-chip.reports { background: #e3f2fd; color: #0d47a1; }
+    .entity-stat-chip.images { background: #fff3e0; color: #e65100; }
+    .entity-stat-chip.slips { background: #f3e5f5; color: #6a1b9a; }
+    .entity-stat-chip.empty { background: #f3f4f6; color: #6b7280; }
+    .entity-last-activity {
+        margin-top: 8px;
+        font-size: 10px;
+        color: #95a5a6;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
+    .empty-state i { font-size: 56px; color: #ccc; margin-bottom: 15px; display: block; }
+
+    /* ============ STORY VIEW ============ */
+    .story-header {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        border-radius: 16px;
+        padding: 22px 26px;
+        margin-bottom: 22px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .story-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .story-entity-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0 0 6px;
+    }
+    .story-entity-meta {
+        font-size: 12px;
+        opacity: 0.92;
+        line-height: 1.6;
+    }
+    .story-entity-type-badge {
+        display: inline-block;
+        padding: 3px 12px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.22);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .btn-back-story {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+    .btn-back-story:hover {
+        background: rgba(255,255,255,0.32);
+        color: white;
+    }
+    .story-summary-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    .story-summary-chip {
+        background: rgba(255,255,255,0.15);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .story-summary-chip .num {
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    /* Timeline container */
+    .story-timeline {
+        position: relative;
+        padding-left: 32px;
+    }
+    .story-timeline::before {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 12px;
+        bottom: 12px;
+        width: 2px;
+        background: linear-gradient(180deg, #d4b8e8 0%, #f3e5f5 100%);
+    }
+
+    /* Timeline event — shared */
+    .story-event {
+        position: relative;
+        margin-bottom: 18px;
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border: 1px solid #eef2f7;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+    }
+    .story-event:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .story-event::before {
+        content: '';
+        position: absolute;
+        left: -27px;
+        top: 22px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #9b59b6;
+        box-shadow: 0 0 0 2px white;
+    }
+    .story-event.report-water::before { border-color: #17a2b8; }
+    .story-event.report-electricity::before { border-color: #f57c00; }
+    .story-event.report-telephone::before { border-color: #4caf50; }
+    .story-event.image::before { border-color: #f59e0b; }
+    .story-event.slip::before { border-color: #6c757d; }
+
+    .story-event-header {
+        padding: 14px 18px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .story-event-title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        flex: 1;
+    }
+    .story-event-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+    .story-event-icon.water { background: #e3f2fd; color: #1976d2; }
+    .story-event-icon.electricity { background: #fff3e0; color: #e65100; }
+    .story-event-icon.telephone { background: #e8f5e9; color: #2e7d32; }
+    .story-event-icon.image { background: #fef3c7; color: #b45309; }
+    .story-event-icon.slip { background: #e5e7eb; color: #374151; }
+
+    .story-event-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+        line-height: 1.3;
+    }
+    .story-event-subtitle {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+    .story-event-date {
+        font-size: 11px;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 5px 12px;
+        border-radius: 14px;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .story-event-body {
+        padding: 0 18px 16px;
+        font-size: 13px;
+        color: #2c3e50;
+        line-height: 1.6;
+    }
+    .story-field {
+        margin-bottom: 8px;
+    }
+    .story-field strong {
+        color: #495057;
+        font-weight: 600;
+        margin-right: 4px;
+    }
+    .story-field .value {
+        color: #2c3e50;
+    }
+    .story-text-block {
+        background: #fafafa;
+        border-left: 3px solid #d4b8e8;
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin: 8px 0;
+        white-space: pre-wrap;
+        font-size: 13px;
+        color: #2c3e50;
+    }
+    .story-badge-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .story-badge {
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .badge-priority-high { background: #fee2e2; color: #991b1b; }
+    .badge-priority-medium { background: #fef3c7; color: #92400e; }
+    .badge-priority-low { background: #dcfce7; color: #166534; }
+    .badge-tender { background: #dc2626; color: white; }
+    .badge-resolved { background: #d1fae5; color: #065f46; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-need-budget { background: #dbeafe; color: #1e40af; }
+    .badge-need-attention { background: #fee2e2; color: #991b1b; }
+    .badge-ack-done { background: #d1fae5; color: #065f46; }
+    .badge-ack-action { background: #fee2e2; color: #991b1b; }
+    .badge-slip-issued { background: #e5e7eb; color: #374151; }
+    .badge-slip-completed { background: #d1fae5; color: #065f46; }
+
+    .story-image-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .story-image-thumb {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid #eef2f7;
+        transition: transform 0.2s;
+        background: #f3f4f6;
+    }
+    .story-image-thumb:hover {
+        transform: scale(1.05);
+        border-color: #9b59b6;
+    }
+    .story-image-only {
+        width: 100%;
+        max-height: 280px;
+        object-fit: cover;
+        border-radius: 10px;
+        cursor: pointer;
+        background: #f3f4f6;
+    }
+
+    .story-ack-box {
+        background: #f0fdf4;
+        border-left: 3px solid #16a34a;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-top: 10px;
+        font-size: 12px;
+    }
+    .story-ack-box.pending {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+    }
+    .story-ack-box strong { color: #166534; }
+    .story-ack-box.pending strong { color: #92400e; }
+
+    /* Load older entries button */
+    .load-older-btn {
+        display: block;
+        margin: 30px auto 20px;
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3);
+    }
+    .load-older-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(155, 89, 182, 0.45);
+        color: white;
+    }
+
+    .loading-inline {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    .loading-inline .spinner-border { color: #9b59b6; }
+
+    /* Full image modal */
+    #fullImageModal .modal-body {
+        text-align: center;
+        padding: 10px;
+    }
+    #fullImageModal img {
+        max-width: 100%;
+        max-height: 80vh;
+        border-radius: 8px;
+    }
+    .modal-header-history {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header-history .btn-close {
+        filter: brightness(0) invert(1);
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .entity-grid { grid-template-columns: 1fr; }
+        .story-timeline { padding-left: 24px; }
+        .story-event::before { left: -19px; width: 10px; height: 10px; }
+        .story-timeline::before { left: 8px; }
+        .story-event-date { width: 100%; text-align: center; }
+    }
+</style>
+
+<!-- ============ LANDING VIEW ============ -->
+<div id="landingView">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2><i class="bi bi-book"></i> Site History</h2>
+                <p>Read the full story of every school and department — reports, images, and task slips in one timeline</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="entity-search-bar">
+        <input type="text" id="entitySearch" class="form-control" placeholder="🔍 Search school or department..." onkeyup="filterEntities()">
+    </div>
+
+    <div id="entityGridContainer">
+        <div class="loading-inline">
+            <div class="spinner-border"></div>
+            <p class="mt-2 small">Loading sites...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============ STORY VIEW ============ -->
+<div id="storyView" style="display: none;">
+    <div class="story-header" id="storyHeader">
+        <div class="loading-inline" style="padding: 20px;">
+            <div class="spinner-border spinner-border-sm"></div> Loading...
+        </div>
+    </div>
+
+    <div id="storyTimelineContainer"></div>
+</div>
+
+<!-- ============ FULL IMAGE MODAL ============ -->
+<div class="modal fade" id="fullImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-history">
+                <h5 class="modal-title"><i class="bi bi-image"></i> Image Viewer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <img id="fullImageSrc" src="" alt="Full image">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allEntities = [];
+    let currentEntity = null;
+    let currentTimeline = [];
+    let renderedCount = 0;
+    const PAGE_SIZE = 30;
+
+    // ============ Helpers ============
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const d = new Date(dateString);
+            return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch (e) { return dateString; }
+    }
+
+    function formatDateShort(dateString) {
+        if (!dateString) return '-';
+        try {
+            const d = new Date(dateString);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) { return dateString; }
+    }
+
+    function getFullImageUrl(path) {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        return window.location.origin + (path.startsWith('/') ? path : '/' + path);
+    }
+
+    function truncate(text, n) {
+        if (!text) return '';
+        if (text.length <= n) return text;
+        return text.substring(0, n) + '...';
+    }
+
+    // ============ Landing View ============
+    async function loadEntities() {
+        try {
+            const response = await fetch('/api/history-entities?t=' + Date.now(), { cache: 'no-store' });
+            allEntities = await response.json();
+            if (!allEntities) allEntities = [];
+            renderEntityGrid(allEntities);
+        } catch (e) {
+            console.error('Error loading entities:', e);
+            document.getElementById('entityGridContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-exclamation-triangle" style="color: #dc3545;"></i>
+                    <h5>Error loading sites</h5>
+                    <p class="small text-muted">Please refresh the page and try again.</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderEntityGrid(entities) {
+        const container = document.getElementById('entityGridContainer');
+
+        if (!entities.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h5>No sites found</h5>
+                    <p class="small text-muted">There are no schools or departments yet. Add them from the Management tab.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `<div class="entity-grid">${entities.map(renderEntityCard).join('')}</div>`;
+    }
+
+    function renderEntityCard(entity) {
+        const type = entity.type;
+        const name = entity.name || '-';
+        const subName = type === 'department' ? (entity.unit_name || '') : '';
+        const address = entity.address || '';
+        const contact = entity.contact_person || '';
+        const lastActivity = entity.last_activity ? `Last activity: ${formatDateShort(entity.last_activity)}` : 'No activity yet';
+
+        // Stats chips
+        const chips = [];
+        if (entity.report_count > 0) chips.push(`<span class="entity-stat-chip reports"><i class="bi bi-file-text"></i> ${entity.report_count} report${entity.report_count > 1 ? 's' : ''}</span>`);
+        if (entity.image_count > 0) chips.push(`<span class="entity-stat-chip images"><i class="bi bi-images"></i> ${entity.image_count} image${entity.image_count > 1 ? 's' : ''}</span>`);
+        if (entity.slip_count > 0) chips.push(`<span class="entity-stat-chip slips"><i class="bi bi-clipboard-check"></i> ${entity.slip_count} slip${entity.slip_count > 1 ? 's' : ''}</span>`);
+        if (chips.length === 0) chips.push(`<span class="entity-stat-chip empty"><i class="bi bi-dash-circle"></i> No activity yet</span>`);
+
+        return `
+            <div class="entity-card ${type}" onclick="openStory('${type}', ${entity.id})">
+                <div class="entity-card-header">
+                    <div style="flex: 1;">
+                        <h3 class="entity-card-title">${escapeHtml(name)}</h3>
+                        ${subName ? `<div style="font-size: 11px; color: #6c757d; margin-top: 2px;">${escapeHtml(subName)}</div>` : ''}
+                    </div>
+                    <span class="entity-card-type ${type}">${type === 'school' ? '🏫 School' : '🏢 Department'}</span>
+                </div>
+                ${address || contact ? `
+                    <div class="entity-card-meta">
+                        ${address ? `<div><i class="bi bi-geo-alt"></i> ${escapeHtml(truncate(address, 60))}</div>` : ''}
+                        ${contact ? `<div><i class="bi bi-person"></i> ${escapeHtml(contact)}</div>` : ''}
+                    </div>
+                ` : ''}
+                <div class="entity-card-stats">${chips.join('')}</div>
+                <div class="entity-last-activity">
+                    <i class="bi bi-clock-history"></i> ${escapeHtml(lastActivity)}
+                </div>
+            </div>
+        `;
+    }
+
+    function filterEntities() {
+        const q = document.getElementById('entitySearch').value.toLowerCase().trim();
+        if (!q) {
+            renderEntityGrid(allEntities);
+            return;
+        }
+        const filtered = allEntities.filter(e => {
+            const haystack = [
+                e.name || '',
+                e.unit_name || '',
+                e.address || '',
+                e.contact_person || '',
+                e.cluster_number || '',
+                e.school_number || ''
+            ].join(' ').toLowerCase();
+            return haystack.includes(q);
+        });
+        renderEntityGrid(filtered);
+    }
+
+    // ============ Story View ============
+    async function openStory(entityType, entityId) {
+        // Show story view, hide landing
+        document.getElementById('landingView').style.display = 'none';
+        document.getElementById('storyView').style.display = 'block';
+
+        // Reset header to loading state
+        document.getElementById('storyHeader').innerHTML = `
+            <div class="loading-inline" style="padding: 20px;">
+                <div class="spinner-border spinner-border-sm"></div> Loading story...
+            </div>
+        `;
+        document.getElementById('storyTimelineContainer').innerHTML = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        try {
+            const response = await fetch(`/api/history/${entityType}/${entityId}?t=` + Date.now(), { cache: 'no-store' });
+            const result = await response.json();
+
+            if (!result.success) {
+                document.getElementById('storyHeader').innerHTML = `
+                    <div class="alert alert-danger m-0" style="border-radius: 12px;">
+                        <i class="bi bi-exclamation-triangle"></i> ${escapeHtml(result.error || 'Failed to load story')}
+                    </div>
+                    <button class="btn-back-story mt-3" onclick="backToLanding()">
+                        <i class="bi bi-arrow-left"></i> Back to list
+                    </button>
+                `;
+                return;
+            }
+
+            currentEntity = result.entity;
+            currentTimeline = result.timeline || [];
+
+            renderStoryHeader(result.entity, result.summary);
+            renderTimelinePage(0);
+
+        } catch (e) {
+            console.error('Error loading story:', e);
+            document.getElementById('storyHeader').innerHTML = `
+                <div class="alert alert-danger m-0" style="border-radius: 12px;">
+                    <i class="bi bi-exclamation-triangle"></i> Error loading story. Please try again.
+                </div>
+                <button class="btn-back-story mt-3" onclick="backToLanding()">
+                    <i class="bi bi-arrow-left"></i> Back to list
+                </button>
+            `;
+        }
+    }
+
+    function renderStoryHeader(entity, summary) {
+        const type = entity.type;
+        const isDept = type === 'department';
+        const displayName = isDept && entity.unit_name ? entity.unit_name : entity.name;
+
+        const metaParts = [];
+        if (entity.cluster_number) metaParts.push(`Cluster: ${escapeHtml(entity.cluster_number)}`);
+        if (entity.school_number) metaParts.push(`School #: ${escapeHtml(entity.school_number)}`);
+        if (entity.address) metaParts.push(escapeHtml(entity.address));
+        if (entity.contact_person) {
+            const c = escapeHtml(entity.contact_person) + (entity.contact_phone ? ' · ' + escapeHtml(entity.contact_phone) : '');
+            metaParts.push(c);
+        }
+
+        const summaryChips = [];
+        if (summary.total_reports > 0) summaryChips.push(`<span class="story-summary-chip"><i class="bi bi-file-text"></i> <span class="num">${summary.total_reports}</span> Report${summary.total_reports > 1 ? 's' : ''}</span>`);
+        if (summary.total_images > 0) summaryChips.push(`<span class="story-summary-chip"><i class="bi bi-images"></i> <span class="num">${summary.total_images}</span> Image${summary.total_images > 1 ? 's' : ''}</span>`);
+        if (summary.total_slips > 0) summaryChips.push(`<span class="story-summary-chip"><i class="bi bi-clipboard-check"></i> <span class="num">${summary.total_slips}</span> Slip${summary.total_slips > 1 ? 's' : ''}</span>`);
+        if (summary.total_budget > 0) summaryChips.push(`<span class="story-summary-chip"><i class="bi bi-cash-coin"></i> BND <span class="num">${summary.total_budget.toFixed(2)}</span></span>`);
+
+        document.getElementById('storyHeader').innerHTML = `
+            <div class="story-header-top">
+                <div style="flex: 1; min-width: 200px;">
+                    <span class="story-entity-type-badge">${isDept ? '🏢 Department' : '🏫 School'}</span>
+                    <h2 class="story-entity-name">${escapeHtml(displayName)}</h2>
+                    ${isDept && entity.name && entity.name !== displayName ? `<div style="opacity:0.85; font-size:12px; margin-bottom:6px;">${escapeHtml(entity.name)}</div>` : ''}
+                    ${metaParts.length ? `<div class="story-entity-meta">${metaParts.join(' · ')}</div>` : ''}
+                </div>
+                <button class="btn-back-story" onclick="backToLanding()">
+                    <i class="bi bi-arrow-left"></i> Back to list
+                </button>
+            </div>
+            ${summaryChips.length ? `<div class="story-summary-row">${summaryChips.join('')}</div>` : ''}
+        `;
+    }
+
+    function renderTimelinePage(startIndex) {
+        const container = document.getElementById('storyTimelineContainer');
+
+        if (currentTimeline.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-journal-x"></i>
+                    <h5>No activity recorded yet</h5>
+                    <p class="small text-muted">This site has no reports, images, or task slips. Everything will appear here once activity begins.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Remove any existing "load older" button
+        const existingBtn = document.getElementById('loadOlderBtn');
+        if (existingBtn) existingBtn.remove();
+
+        // Determine slice
+        const endIndex = Math.min(startIndex + PAGE_SIZE, currentTimeline.length);
+        const slice = currentTimeline.slice(startIndex, endIndex);
+
+        const hasTimeline = document.getElementById('storyTimelineWrapper');
+        if (!hasTimeline) {
+            const wrapper = document.createElement('div');
+            wrapper.id = 'storyTimelineWrapper';
+            wrapper.className = 'story-timeline';
+            container.appendChild(wrapper);
+        }
+
+        const wrapper = document.getElementById('storyTimelineWrapper');
+
+        const html = slice.map((event, idx) => renderStoryEvent(event, startIndex + idx)).join('');
+        wrapper.insertAdjacentHTML('beforeend', html);
+
+        renderedCount = endIndex;
+
+        if (renderedCount < currentTimeline.length) {
+            const remaining = currentTimeline.length - renderedCount;
+            const btn = document.createElement('button');
+            btn.id = 'loadOlderBtn';
+            btn.className = 'load-older-btn';
+            btn.innerHTML = `<i class="bi bi-clock-history"></i> Load older entries (${remaining} more)`;
+            btn.onclick = () => renderTimelinePage(renderedCount);
+            container.appendChild(btn);
+        }
+    }
+
+    function renderStoryEvent(event, idx) {
+        if (event.type === 'report') return renderReportEvent(event);
+        if (event.type === 'image') return renderImageEvent(event);
+        if (event.type === 'slip') return renderSlipEvent(event);
+        return '';
+    }
+
+    function renderReportEvent(r) {
+        const typeIcon = r.report_type === 'water' ? '💧' : (r.report_type === 'electricity' ? '⚡' : '📞');
+        const typeLabel = r.report_type === 'water' ? 'Water Report' : (r.report_type === 'electricity' ? 'Electricity Report' : 'Telephone Report');
+        const cssClass = `report-${r.report_type}`;
+
+        // Badges
+        const badges = [];
+        badges.push(`<span class="story-badge badge-priority-${r.priority}">${r.priority === 'high' ? '🔴' : (r.priority === 'medium' ? '🟡' : '🟢')} ${r.priority.toUpperCase()}</span>`);
+        if (r.priority_with_tender) badges.push(`<span class="story-badge badge-tender">🔥 TENDER</span>`);
+        const rs = r.resolution_status || 'pending_action';
+        if (rs === 'resolved') badges.push(`<span class="story-badge badge-resolved">✅ Resolved</span>`);
+        else if (rs === 'pending_action') badges.push(`<span class="story-badge badge-pending">⏳ Pending Action</span>`);
+        else if (rs === 'need_budget') badges.push(`<span class="story-badge badge-need-budget">💰 Need Budget</span>`);
+        else if (rs === 'need_attention') badges.push(`<span class="story-badge badge-need-attention">🚨 Need Attention</span>`);
+
+        // Images (thumbnails)
+        let imagesHtml = '';
+        if (r.images && r.images.length > 0) {
+            imagesHtml = `<div class="story-image-row">${r.images.map(img => {
+                const url = getFullImageUrl(img);
+                return `<img src="${url}" class="story-image-thumb" loading="lazy" onclick="openFullImage('${url.replace(/'/g, "\\'")}')" onerror="this.style.display='none'">`;
+            }).join('')}</div>`;
+        }
+
+        // Acknowledgment box
+        let ackHtml = '';
+        if (r.team_leader_acknowledged) {
+            const isAction = r.acknowledgment_status === 'need_further_action';
+            ackHtml = `
+                <div class="story-ack-box" style="${isAction ? 'background:#ffebee; border-left-color:#dc3545;' : ''}">
+                    <strong>${isAction ? '⚠️ Need Further Action' : '✅ Reviewed by Team Leader'}</strong><br>
+                    <span style="color: #374151;">${escapeHtml(r.team_leader_name || 'Team Leader')} · ${formatDate(r.team_leader_acknowledged_at)}</span>
+                    ${r.team_leader_notes ? `<div style="margin-top: 6px; font-style: italic; color: #374151;">"${escapeHtml(r.team_leader_notes)}"</div>` : ''}
+                </div>
+            `;
+        } else {
+            ackHtml = `
+                <div class="story-ack-box pending">
+                    <strong>⏳ Awaiting Team Leader review</strong>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="story-event ${cssClass}">
+                <div class="story-event-header">
+                    <div class="story-event-title-row">
+                        <div class="story-event-icon ${r.report_type}">${typeIcon}</div>
+                        <div style="flex: 1;">
+                            <h4 class="story-event-title">${escapeHtml(r.problem_type || typeLabel)}</h4>
+                            <div class="story-event-subtitle">${typeLabel} · Report #${r.id}</div>
+                        </div>
+                    </div>
+                    <span class="story-event-date"><i class="bi bi-calendar-event"></i> ${formatDate(r.date)}</span>
+                </div>
+                <div class="story-event-body">
+                    <div class="story-badge-row">${badges.join('')}</div>
+
+                    ${r.complaint_details ? `<div class="story-field"><strong>Complaint:</strong><div class="story-text-block">${escapeHtml(r.complaint_details)}</div></div>` : ''}
+
+                    ${r.action_taken ? `<div class="story-field"><strong>Action Taken:</strong><div class="story-text-block">${escapeHtml(r.action_taken)}</div></div>` : ''}
+
+                    ${r.technician_notes ? `<div class="story-field"><strong>Technician Notes:</strong><div class="story-text-block">${escapeHtml(r.technician_notes)}</div></div>` : ''}
+
+                    ${r.reference_number ? `<div class="story-field"><strong>Reference:</strong> <span class="value">${escapeHtml(r.reference_type ? r.reference_type.toUpperCase() + ': ' : '')}${escapeHtml(r.reference_number)}${r.reference_date ? ' (' + escapeHtml(r.reference_date) + ')' : ''}</span></div>` : ''}
+                    ${r.account_number ? `<div class="story-field"><strong>Account #:</strong> <span class="value">${escapeHtml(r.account_number)}</span></div>` : ''}
+                    ${r.meter_number ? `<div class="story-field"><strong>Meter #:</strong> <span class="value">${escapeHtml(r.meter_number)}</span></div>` : ''}
+                    ${r.phone_number ? `<div class="story-field"><strong>Phone #:</strong> <span class="value">${escapeHtml(r.phone_number)}</span></div>` : ''}
+
+                    <div class="story-field"><strong>Reported by:</strong> <span class="value">${escapeHtml(r.technician_name || 'Unknown')}</span></div>
+
+                    ${imagesHtml}
+                    ${ackHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderImageEvent(im) {
+        const url = getFullImageUrl(im.image_url);
+        const uploadedBy = im.uploaded_by_name ? ` · ${escapeHtml(im.uploaded_by_name)}` : '';
+
+        return `
+            <div class="story-event image">
+                <div class="story-event-header">
+                    <div class="story-event-title-row">
+                        <div class="story-event-icon image">🖼️</div>
+                        <div style="flex: 1;">
+                            <h4 class="story-event-title">${escapeHtml(im.description || 'Mapping Image Added')}</h4>
+                            <div class="story-event-subtitle">Mapping Image${uploadedBy}</div>
+                        </div>
+                    </div>
+                    <span class="story-event-date"><i class="bi bi-calendar-event"></i> ${formatDate(im.date)}</span>
+                </div>
+                <div class="story-event-body">
+                    ${im.notes ? `<div class="story-field"><strong>Notes:</strong><div class="story-text-block">${escapeHtml(im.notes)}</div></div>` : ''}
+                    <img src="${url}" class="story-image-only" loading="lazy" onclick="openFullImage('${url.replace(/'/g, "\\'")}')" onerror="this.style.display='none'">
+                    ${im.last_edited_at && im.last_edited_by_name && im.last_edited_by_name !== im.uploaded_by_name ? `
+                        <div style="font-size: 11px; color: #6c757d; margin-top: 6px;">
+                            <i class="bi bi-pencil"></i> Last edited by ${escapeHtml(im.last_edited_by_name)} on ${formatDate(im.last_edited_at)}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSlipEvent(s) {
+        const serviceLabel = s.problem_type === 'water' ? '💧 Water' : (s.problem_type === 'electricity' ? '⚡ Electricity' : (s.problem_type === 'telephone' ? '📞 Telephone' : ''));
+        const statusLabel = {
+            issued: '📤 Issued',
+            accepted: '✅ Accepted',
+            in_progress: '🔄 In Progress',
+            completed: '✔️ Completed',
+            cancelled: '❌ Cancelled'
+        }[s.status] || s.status;
+
+        return `
+            <div class="story-event slip">
+                <div class="story-event-header">
+                    <div class="story-event-title-row">
+                        <div class="story-event-icon slip">📋</div>
+                        <div style="flex: 1;">
+                            <h4 class="story-event-title">Task Slip ${escapeHtml(s.slip_number || '')}</h4>
+                            <div class="story-event-subtitle">Assigned to ${escapeHtml(s.assigned_to_name || 'Unknown')}${serviceLabel ? ' · ' + serviceLabel : ''}</div>
+                        </div>
+                    </div>
+                    <span class="story-event-date"><i class="bi bi-calendar-event"></i> ${formatDate(s.date)}</span>
+                </div>
+                <div class="story-event-body">
+                    <div class="story-badge-row">
+                        <span class="story-badge badge-slip-issued">${statusLabel}</span>
+                        ${s.report_id ? `<span class="story-badge badge-slip-completed">✅ Report linked</span>` : ''}
+                    </div>
+
+                    ${s.complaint_number ? `<div class="story-field"><strong>Complaint #:</strong> <span class="value">${escapeHtml(s.complaint_number)}</span></div>` : ''}
+                    ${s.kpi_number ? `<div class="story-field"><strong>KPI #:</strong> <span class="value">${escapeHtml(s.kpi_number)}</span></div>` : ''}
+                    <div class="story-field"><strong>Issued by:</strong> <span class="value">${escapeHtml(s.issued_by_name || '-')}</span></div>
+                    ${s.due_date ? `<div class="story-field"><strong>Due:</strong> <span class="value">${formatDateShort(s.due_date)}</span></div>` : ''}
+                    ${s.notes ? `<div class="story-field"><strong>Notes:</strong><div class="story-text-block">${escapeHtml(s.notes)}</div></div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function openFullImage(url) {
+        document.getElementById('fullImageSrc').src = url;
+        new bootstrap.Modal(document.getElementById('fullImageModal')).show();
+    }
+
+    function backToLanding() {
+        document.getElementById('storyView').style.display = 'none';
+        document.getElementById('landingView').style.display = 'block';
+        // Reset scroll
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Clear timeline so reopening starts fresh
+        document.getElementById('storyTimelineContainer').innerHTML = '';
+        currentEntity = null;
+        currentTimeline = [];
+        renderedCount = 0;
+    }
+
+    // ============ Init ============
+    document.addEventListener('DOMContentLoaded', function () {
+        loadEntities();
+    });
+</script>
+{% endblock %}
