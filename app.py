@@ -657,7 +657,7 @@ def create_technical_report():
             "updated_at": get_brunei_time_iso()
         }
 
-        # NEW: Auto-initialize budget tracking + stage timer if this is a Need Budget report
+        # Auto-initialize budget tracking + stage timer if this is a Need Budget report
         if report_data['resolution_status'] == 'need_budget':
             now_iso = get_brunei_time_iso()
             report_data['budget_status'] = 'waiting_quote'
@@ -701,7 +701,7 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
 
-        # NEW: Handle resolution_status <-> budget_status transition + stage timer reset
+        # Handle resolution_status <-> budget_status transition + stage timer reset
         if 'resolution_status' in data:
             new_rs = data.get('resolution_status')
             current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -855,7 +855,6 @@ def get_budget_reports():
                 is_currently_need_budget = r.get('resolution_status') == 'need_budget'
                 has_budget_status = bool(r.get('budget_status'))
 
-                # Not a budget item at all - skip
                 if not (is_currently_need_budget or has_budget_status):
                     continue
 
@@ -863,7 +862,6 @@ def get_budget_reports():
                 if is_completed and not include_completed:
                     continue
 
-                # Enrich with names
                 if r['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", r['entity_id']).execute()
                     if entity.data:
@@ -901,7 +899,6 @@ def update_budget_report(report_id):
         if 'budget_status' in data and data['budget_status'] is not None:
             update_data['budget_status'] = data['budget_status']
         if 'budget_amount' in data:
-            # Allow clearing the amount (None / empty)
             amt = data['budget_amount']
             if amt is None or amt == '':
                 update_data['budget_amount'] = None
@@ -921,7 +918,7 @@ def update_budget_report(report_id):
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
 
-        # NEW: If the budget_status is actually CHANGING, reset the stage timer
+        # If the budget_status is actually CHANGING, reset the stage timer
         if 'budget_status' in update_data:
             try:
                 current_row = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -1792,6 +1789,244 @@ def delete_task_slip(slip_id):
         return jsonify({'success': False, 'error': 'Slip not found'}), 404
     except Exception as e:
         app.logger.error(f"Error deleting task slip: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============ HISTORY API (read-only storybook view) ============
+
+@app.route('/history')
+def history_page():
+    return render_template('history.html')
+
+
+@app.route('/api/history-entities', methods=['GET'])
+def get_history_entities():
+    """Returns list of all schools + departments with activity counts."""
+    try:
+        if not supabase:
+            return jsonify([]), 500
+
+        schools_resp = supabase.table("schools").select("*").order("name", desc=False).execute()
+        depts_resp = supabase.table("departments").select("*").order("name", desc=False).execute()
+        reports_resp = supabase.table("technical_reports").select("id, entity_type, entity_id, created_at").execute()
+        images_resp = supabase.table("mapping_images").select("id, entity_type, entity_id, uploaded_at").execute()
+        slips_resp = supabase.table("task_slips").select("id, entity_type, entity_id, created_at").execute()
+
+        schools = schools_resp.data or []
+        departments = depts_resp.data or []
+        reports = reports_resp.data or []
+        images = images_resp.data or []
+        slips = slips_resp.data or []
+
+        def build_maps(rows, date_field):
+            counts = {}
+            latest = {}
+            for r in rows:
+                k = (r.get('entity_type'), r.get('entity_id'))
+                counts[k] = counts.get(k, 0) + 1
+                d = r.get(date_field)
+                if d and (k not in latest or d > latest[k]):
+                    latest[k] = d
+            return counts, latest
+
+        r_counts, r_latest = build_maps(reports, 'created_at')
+        i_counts, i_latest = build_maps(images, 'uploaded_at')
+        s_counts, s_latest = build_maps(slips, 'created_at')
+
+        entities = []
+
+        for s in schools:
+            k = ('school', s['id'])
+            last_dates = [d for d in [r_latest.get(k), i_latest.get(k), s_latest.get(k)] if d]
+            entities.append({
+                'id': s['id'],
+                'type': 'school',
+                'name': s.get('name', ''),
+                'cluster_number': s.get('cluster_number', ''),
+                'school_number': s.get('school_number', ''),
+                'address': s.get('address', ''),
+                'contact_person': s.get('contact_person', ''),
+                'contact_phone': s.get('contact_phone', ''),
+                'report_count': r_counts.get(k, 0),
+                'image_count': i_counts.get(k, 0),
+                'slip_count': s_counts.get(k, 0),
+                'total_count': r_counts.get(k, 0) + i_counts.get(k, 0) + s_counts.get(k, 0),
+                'last_activity': max(last_dates) if last_dates else None
+            })
+
+        for d in departments:
+            k = ('department', d['id'])
+            last_dates = [dt for dt in [r_latest.get(k), i_latest.get(k), s_latest.get(k)] if dt]
+            entities.append({
+                'id': d['id'],
+                'type': 'department',
+                'name': d.get('name', ''),
+                'unit_name': d.get('unit_name', ''),
+                'address': d.get('address', ''),
+                'contact_person': d.get('contact_person', ''),
+                'contact_phone': d.get('contact_phone', ''),
+                'report_count': r_counts.get(k, 0),
+                'image_count': i_counts.get(k, 0),
+                'slip_count': s_counts.get(k, 0),
+                'total_count': r_counts.get(k, 0) + i_counts.get(k, 0) + s_counts.get(k, 0),
+                'last_activity': max(last_dates) if last_dates else None
+            })
+
+        entities.sort(key=lambda x: (-x['total_count'], x['name']))
+
+        return jsonify(entities)
+    except Exception as e:
+        app.logger.error(f"Error getting history entities: {e}")
+        return jsonify([]), 500
+
+
+@app.route('/api/history/<entity_type>/<int:entity_id>', methods=['GET'])
+def get_entity_history(entity_type, entity_id):
+    """Returns the full story timeline for a single entity (school or department)."""
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+
+        if entity_type not in ('school', 'department'):
+            return jsonify({'success': False, 'error': 'Invalid entity type'}), 400
+
+        if entity_type == 'school':
+            ent_resp = supabase.table("schools").select("*").eq("id", entity_id).execute()
+        else:
+            ent_resp = supabase.table("departments").select("*").eq("id", entity_id).execute()
+
+        if not ent_resp.data:
+            return jsonify({'success': False, 'error': 'Entity not found'}), 404
+
+        ent = dict(ent_resp.data[0])
+        entity = {
+            'id': ent.get('id'),
+            'type': entity_type,
+            'name': ent.get('name', ''),
+            'address': ent.get('address', ''),
+            'contact_person': ent.get('contact_person', ''),
+            'contact_phone': ent.get('contact_phone', ''),
+            'cluster_number': ent.get('cluster_number', ''),
+            'school_number': ent.get('school_number', ''),
+            'unit_name': ent.get('unit_name', '')
+        }
+
+        reports_resp = supabase.table("technical_reports").select("*").eq("entity_type", entity_type).eq("entity_id", entity_id).order("created_at", desc=True).execute()
+        reports = reports_resp.data or []
+
+        images_resp = supabase.table("mapping_images").select("*").eq("entity_type", entity_type).eq("entity_id", entity_id).order("uploaded_at", desc=True).execute()
+        images = images_resp.data or []
+
+        slips_resp = supabase.table("task_slips").select("*").eq("entity_type", entity_type).eq("entity_id", entity_id).order("created_at", desc=True).execute()
+        slips = slips_resp.data or []
+
+        tech_ids = set()
+        for r in reports:
+            if r.get('technician_id'): tech_ids.add(r['technician_id'])
+        for im in images:
+            if im.get('uploaded_by'): tech_ids.add(im['uploaded_by'])
+            if im.get('last_edited_by'): tech_ids.add(im['last_edited_by'])
+        for sl in slips:
+            if sl.get('assigned_to'): tech_ids.add(sl['assigned_to'])
+            if sl.get('issued_by'): tech_ids.add(sl['issued_by'])
+
+        tech_name_map = {}
+        if tech_ids:
+            try:
+                tr = supabase.table("technicians").select("id, name").in_("id", list(tech_ids)).execute()
+                if tr.data:
+                    for t in tr.data:
+                        tech_name_map[t['id']] = t['name']
+            except Exception as te:
+                app.logger.warning(f"Could not fetch technician names: {te}")
+
+        timeline = []
+
+        for r in reports:
+            timeline.append({
+                'type': 'report',
+                'date': r.get('created_at'),
+                'id': r.get('id'),
+                'report_type': r.get('report_type'),
+                'problem_type': r.get('problem_type'),
+                'priority': r.get('priority', 'medium'),
+                'priority_with_tender': r.get('priority_with_tender', False),
+                'resolution_status': r.get('resolution_status', 'pending_action'),
+                'status': r.get('status', ''),
+                'complaint_details': r.get('complaint_details', ''),
+                'action_taken': r.get('action_taken', ''),
+                'technician_notes': r.get('technician_notes', ''),
+                'reference_number': r.get('reference_number', ''),
+                'reference_type': r.get('reference_type', ''),
+                'reference_date': r.get('reference_date'),
+                'account_number': r.get('account_number', ''),
+                'meter_number': r.get('meter_number', ''),
+                'phone_number': r.get('phone_number', ''),
+                'technician_name': tech_name_map.get(r.get('technician_id'), 'Unknown'),
+                'team_leader_acknowledged': r.get('team_leader_acknowledged', False),
+                'team_leader_name': r.get('team_leader_name', ''),
+                'team_leader_notes': r.get('team_leader_notes', ''),
+                'team_leader_acknowledged_at': r.get('team_leader_acknowledged_at'),
+                'acknowledgment_status': r.get('acknowledgment_status', ''),
+                'images': r.get('images', []) or []
+            })
+
+        for im in images:
+            timeline.append({
+                'type': 'image',
+                'date': im.get('uploaded_at'),
+                'id': im.get('id'),
+                'image_url': im.get('image_url', ''),
+                'description': im.get('description', ''),
+                'notes': im.get('notes', ''),
+                'uploaded_by_name': tech_name_map.get(im.get('uploaded_by'), ''),
+                'last_edited_at': im.get('last_edited_at'),
+                'last_edited_by_name': tech_name_map.get(im.get('last_edited_by'), '')
+            })
+
+        for sl in slips:
+            timeline.append({
+                'type': 'slip',
+                'date': sl.get('created_at'),
+                'id': sl.get('id'),
+                'slip_number': sl.get('slip_number', ''),
+                'complaint_number': sl.get('complaint_number', ''),
+                'kpi_number': sl.get('kpi_number', ''),
+                'problem_type': sl.get('problem_type', ''),
+                'assigned_to_name': tech_name_map.get(sl.get('assigned_to'), ''),
+                'issued_by_name': tech_name_map.get(sl.get('issued_by'), ''),
+                'status': sl.get('status', 'issued'),
+                'notes': sl.get('notes', ''),
+                'due_date': sl.get('due_date'),
+                'report_id': sl.get('report_id')
+            })
+
+        timeline.sort(key=lambda x: x.get('date') or '', reverse=True)
+
+        water_count = sum(1 for r in reports if r.get('report_type') == 'water')
+        elec_count = sum(1 for r in reports if r.get('report_type') == 'electricity')
+        tel_count = sum(1 for r in reports if r.get('report_type') == 'telephone')
+        total_budget = sum(float(r.get('budget_amount') or 0) for r in reports)
+
+        summary = {
+            'total_reports': len(reports),
+            'total_images': len(images),
+            'total_slips': len(slips),
+            'water_reports': water_count,
+            'electricity_reports': elec_count,
+            'telephone_reports': tel_count,
+            'last_activity': timeline[0]['date'] if timeline else None,
+            'total_budget': total_budget
+        }
+
+        return jsonify({
+            'success': True,
+            'entity': entity,
+            'summary': summary,
+            'timeline': timeline
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting entity history: {e}")
+        app.logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============ HEALTH CHECK ============
