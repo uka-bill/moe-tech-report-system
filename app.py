@@ -708,14 +708,12 @@ def update_technical_report(report_id):
             if current.data:
                 curr_bs = current.data[0].get('budget_status')
                 if new_rs == 'need_budget':
-                    # First time entering budget: initialize status + start the stage timer
                     if not curr_bs:
                         now_iso = get_brunei_time_iso()
                         update_data['budget_status'] = 'waiting_quote'
                         update_data['budget_updated_at'] = now_iso
                         update_data['budget_status_changed_at'] = now_iso
                 else:
-                    # Resolution is changing away from need_budget - auto-complete the budget item
                     if curr_bs and curr_bs != 'completed':
                         now_iso = get_brunei_time_iso()
                         update_data['budget_status'] = 'completed'
@@ -1871,7 +1869,9 @@ def get_history_entities():
                 'last_activity': max(last_dates) if last_dates else None
             })
 
-        entities.sort(key=lambda x: (-x['total_count'], x['name']))
+        # Sort: schools first (by id ascending), then departments (by id ascending)
+        # This matches the ordering in the Management tabs
+        entities.sort(key=lambda x: (0 if x['type'] == 'school' else 1, x['id']))
 
         return jsonify(entities)
     except Exception as e:
