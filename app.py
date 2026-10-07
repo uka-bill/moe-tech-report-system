@@ -45,7 +45,7 @@ def format_brunei_time(date_string):
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'moe-tech-report-secret-key-change-in-production')
 
-app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB per request
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -2056,6 +2056,14 @@ def debug_supabase():
     })
 
 # ============ ERROR HANDLERS ============
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    app.logger.warning(f"413 Payload Too Large — request exceeded size limit")
+    return jsonify({
+        'success': False,
+        'error': 'Image too large. Please use an image under 20 MB, or resize it first.'
+    }), 413
 
 @app.errorhandler(404)
 def not_found_error(error):
