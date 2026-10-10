@@ -969,6 +969,18 @@
         if (type === 'telephone') return '<i class="bi bi-telephone" style="color: #4caf50;"></i>';
         return '<i class="bi bi-file-text"></i>';
     }
+
+    // NEW: two-line entity display for departments
+    function getEntityDisplayHtml(report) {
+        const isDept = report.entity_type === 'department';
+        const unitName = report.entity_unit_name || '';
+        const deptName = report.entity_name || '';
+
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:10px;">${escapeHtml(deptName)}</small>`;
+        }
+        return escapeHtml(deptName || report.entity_type || '');
+    }
     
     function goToMappingImages(entityType, entityId) {
         window.location.href = `/mapping?entity_type=${entityType}&entity_id=${entityId}`;
@@ -1170,7 +1182,7 @@
                 <div class="report-item" onclick="viewReport(${report.id})">
                     <div class="report-info">
                         <div class="report-id">#${rank} ${icon}</div>
-                        <div class="report-location">${truncateText(escapeHtml(report.entity_name || report.entity_type), 40)}</div>
+                        <div class="report-location">${getEntityDisplayHtml(report)}</div>
                         <div class="report-date">${formatDate(report.created_at)}</div>
                     </div>
                     <div class="text-end">
@@ -1211,7 +1223,7 @@
                 <tr onclick="viewReport(${report.id})">
                     <td style="font-weight: 600; color: #9b59b6;">#${rank}</td>
                     <td><span class="type-icon">${typeIcon} ${report.report_type}</span></td>
-                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 35)}</td>
+                    <td>${getEntityDisplayHtml(report)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
                     <td><span class="${priorityClass}">${priorityText}</span></td>
@@ -1239,7 +1251,7 @@
                 <tr onclick="viewReport(${report.id})">
                     <td style="font-weight: 600; color: #9b59b6;">#${rank}</td>
                     <td><span class="type-icon">${typeIcon} ${report.report_type}</span></td>
-                    <td>${truncateText(escapeHtml(report.entity_name || report.entity_type), 35)}</td>
+                    <td>${getEntityDisplayHtml(report)}</td>
                     <td>${escapeHtml(techMap[report.technician_id] || 'Unknown')}</td>
                     <td>${formatDate(report.created_at)}</td>
                     <td>${escapeHtml(report.team_leader_name || 'Team Leader')}</td>
