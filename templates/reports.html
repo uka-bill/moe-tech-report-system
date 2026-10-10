@@ -784,8 +784,8 @@
             if (type) params.append('type', type);
             if (entityType) params.append('entity_type', entityType);
 
-            const url = `/api/technical-reports?${params.toString()}`;
-            const response = await fetch(url);
+            const url = `/api/technical-reports?${params.toString()}&t=${Date.now()}`;
+            const response = await fetch(url, { cache: 'no-store' });
             allReports = await response.json();
 
             let filteredReports = allReports;
