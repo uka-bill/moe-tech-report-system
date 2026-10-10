@@ -535,7 +535,42 @@ def get_technical_reports():
             query = query.eq("technician_id", int(request.args.get('technician_id')))
         response = query.order("created_at", desc=True).execute()
 
+        # ============ BATCH PREFETCH (fixes N+1 slowness) ============
+        schools_map = {}
+        departments_map = {}
+        technicians_map = {}
         slips_by_report = {}
+
+        try:
+            schools_resp = supabase.table("schools").select("id, name").execute()
+            if schools_resp.data:
+                for s in schools_resp.data:
+                    schools_map[s['id']] = s.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch schools: {e}")
+
+        try:
+            depts_resp = supabase.table("departments").select("id, name, unit_name").execute()
+            if depts_resp.data:
+                for d in depts_resp.data:
+                    departments_map[d['id']] = {
+                        'name': d.get('name') or '',
+                        'unit_name': d.get('unit_name') or ''
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch departments: {e}")
+
+        try:
+            techs_resp = supabase.table("technicians").select("id, name, role").execute()
+            if techs_resp.data:
+                for t in techs_resp.data:
+                    technicians_map[t['id']] = {
+                        'name': t.get('name') or '',
+                        'role': t.get('role') or ''
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch technicians: {e}")
+
         try:
             slips_resp = supabase.table("task_slips").select("*").not_.is_("report_id", "null").execute()
             if slips_resp.data:
@@ -543,32 +578,26 @@ def get_technical_reports():
                     slips_by_report[slip['report_id']] = slip
         except Exception as se:
             app.logger.warning(f"Could not fetch task slips map: {se}")
+        # ============ END BATCH PREFETCH ============
 
         reports = []
         if response.data:
             for report in response.data:
                 report_data = dict(report)
-                # ---- ENTITY LOOKUP (adds entity_name + entity_unit_name) ----
+                entity_id = report_data['entity_id']
+
                 if report_data['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
-                    if entity.data:
-                        report_data['entity_name'] = entity.data[0]['name']
-                        report_data['entity_unit_name'] = ''
-                    else:
-                        report_data['entity_unit_name'] = ''
+                    report_data['entity_name'] = schools_map.get(entity_id, '')
+                    report_data['entity_unit_name'] = ''
                 else:
-                    entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
-                    if entity.data:
-                        dept = entity.data[0]
-                        report_data['entity_name'] = dept.get('name') or ''
-                        report_data['entity_unit_name'] = dept.get('unit_name') or ''
-                    else:
-                        report_data['entity_unit_name'] = ''
-                # ---- END ENTITY LOOKUP ----
+                    dept = departments_map.get(entity_id) or {}
+                    report_data['entity_name'] = dept.get('name') or ''
+                    report_data['entity_unit_name'] = dept.get('unit_name') or ''
+
                 if report_data.get('technician_id'):
-                    tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
-                    if tech.data:
-                        report_data['technician_name'] = tech.data[0]['name']
+                    tech = technicians_map.get(report_data['technician_id']) or {}
+                    if tech.get('name'):
+                        report_data['technician_name'] = tech['name']
 
                 if report_data['id'] in slips_by_report:
                     slip = slips_by_report[report_data['id']]
@@ -581,9 +610,9 @@ def get_technical_reports():
                     report_data['slip_issue_date'] = slip.get('issue_date')
                     report_data['slip_due_date'] = slip.get('due_date')
                     if slip.get('issued_by'):
-                        issuer = supabase.table("technicians").select("name").eq("id", slip['issued_by']).execute()
-                        if issuer.data:
-                            report_data['slip_issued_by_name'] = issuer.data[0]['name']
+                        issuer = technicians_map.get(slip['issued_by']) or {}
+                        if issuer.get('name'):
+                            report_data['slip_issued_by_name'] = issuer['name']
 
                 reports.append(report_data)
         return jsonify(reports)
@@ -682,6 +711,7 @@ def create_technical_report():
             "updated_at": get_brunei_time_iso()
         }
 
+        # Auto-initialize budget tracking + stage timer if this is a Need Budget report
         if report_data['resolution_status'] == 'need_budget':
             now_iso = get_brunei_time_iso()
             report_data['budget_status'] = 'waiting_quote'
@@ -725,6 +755,7 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
 
+        # Handle resolution_status <-> budget_status transition + stage timer reset
         if 'resolution_status' in data:
             new_rs = data.get('resolution_status')
             current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -862,12 +893,47 @@ def check_report_by_assistant(report_id):
 
 @app.route('/api/budget-reports', methods=['GET'])
 def get_budget_reports():
+    """Returns all reports that are or have been budget items."""
     try:
         if not supabase:
             return jsonify([]), 500
         include_completed = request.args.get('include_completed', 'false').lower() == 'true'
 
         response = supabase.table("technical_reports").select("*").order("created_at", desc=True).execute()
+
+        # ============ BATCH PREFETCH ============
+        schools_map = {}
+        departments_map = {}
+        technicians_map = {}
+
+        try:
+            schools_resp = supabase.table("schools").select("id, name").execute()
+            if schools_resp.data:
+                for s in schools_resp.data:
+                    schools_map[s['id']] = s.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch schools: {e}")
+
+        try:
+            depts_resp = supabase.table("departments").select("id, name, unit_name").execute()
+            if depts_resp.data:
+                for d in depts_resp.data:
+                    departments_map[d['id']] = {
+                        'name': d.get('name') or '',
+                        'unit_name': d.get('unit_name') or ''
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch departments: {e}")
+
+        try:
+            techs_resp = supabase.table("technicians").select("id, name").execute()
+            if techs_resp.data:
+                for t in techs_resp.data:
+                    technicians_map[t['id']] = t.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch technicians: {e}")
+        # ============ END BATCH PREFETCH ============
+
         reports = []
         if response.data:
             for report in response.data:
@@ -882,31 +948,24 @@ def get_budget_reports():
                 if is_completed and not include_completed:
                     continue
 
-                # ---- ENTITY LOOKUP ----
+                entity_id = r['entity_id']
                 if r['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", r['entity_id']).execute()
-                    if entity.data:
-                        r['entity_name'] = entity.data[0]['name']
-                        r['entity_unit_name'] = ''
-                    else:
-                        r['entity_unit_name'] = ''
+                    r['entity_name'] = schools_map.get(entity_id, '')
+                    r['entity_unit_name'] = ''
                 else:
-                    entity = supabase.table("departments").select("name, unit_name").eq("id", r['entity_id']).execute()
-                    if entity.data:
-                        dept = entity.data[0]
-                        r['entity_name'] = dept.get('name') or ''
-                        r['entity_unit_name'] = dept.get('unit_name') or ''
-                    else:
-                        r['entity_unit_name'] = ''
-                # ---- END ----
+                    dept = departments_map.get(entity_id) or {}
+                    r['entity_name'] = dept.get('name') or ''
+                    r['entity_unit_name'] = dept.get('unit_name') or ''
+
                 if r.get('technician_id'):
-                    tech = supabase.table("technicians").select("name").eq("id", r['technician_id']).execute()
-                    if tech.data:
-                        r['technician_name'] = tech.data[0]['name']
+                    name = technicians_map.get(r['technician_id'])
+                    if name:
+                        r['technician_name'] = name
+
                 if r.get('budget_updated_by'):
-                    updater = supabase.table("technicians").select("name").eq("id", r['budget_updated_by']).execute()
-                    if updater.data:
-                        r['budget_updated_by_name'] = updater.data[0]['name']
+                    name = technicians_map.get(r['budget_updated_by'])
+                    if name:
+                        r['budget_updated_by_name'] = name
 
                 reports.append(r)
         return jsonify(reports)
@@ -917,6 +976,7 @@ def get_budget_reports():
 
 @app.route('/api/budget-reports/<int:report_id>', methods=['PUT'])
 def update_budget_report(report_id):
+    """Update the budget tracking fields for a report. Anyone logged in can use this."""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -945,6 +1005,7 @@ def update_budget_report(report_id):
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
 
+        # If the budget_status is actually CHANGING, reset the stage timer
         if 'budget_status' in update_data:
             try:
                 current_row = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -971,6 +1032,7 @@ def update_budget_report(report_id):
 
 @app.route('/api/budget-stats', methods=['GET'])
 def get_budget_stats():
+    """Returns counts by budget status for the dashboard tile and page header."""
     try:
         if not supabase:
             return jsonify({}), 500
@@ -1617,7 +1679,39 @@ def get_task_slips():
             query = query.eq("entity_id", int(request.args.get('entity_id')))
         response = query.order("created_at", desc=True).execute()
 
+        # ============ BATCH PREFETCH ============
+        schools_map = {}
+        departments_map = {}
+        technicians_map = {}
         reports_map = {}
+
+        try:
+            schools_resp = supabase.table("schools").select("id, name").execute()
+            if schools_resp.data:
+                for s in schools_resp.data:
+                    schools_map[s['id']] = s.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch schools: {e}")
+
+        try:
+            depts_resp = supabase.table("departments").select("id, name, unit_name").execute()
+            if depts_resp.data:
+                for d in depts_resp.data:
+                    departments_map[d['id']] = {
+                        'name': d.get('name') or '',
+                        'unit_name': d.get('unit_name') or ''
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch departments: {e}")
+
+        try:
+            techs_resp = supabase.table("technicians").select("id, name").execute()
+            if techs_resp.data:
+                for t in techs_resp.data:
+                    technicians_map[t['id']] = t.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch technicians: {e}")
+
         try:
             if response.data:
                 report_ids = [s['report_id'] for s in response.data if s.get('report_id')]
@@ -1630,36 +1724,29 @@ def get_task_slips():
                             reports_map[r['id']] = r
         except Exception as re:
             app.logger.warning(f"Could not fetch linked reports: {re}")
+        # ============ END BATCH PREFETCH ============
 
         slips = []
         if response.data:
             for slip in response.data:
                 s = dict(slip)
-                # ---- ENTITY LOOKUP ----
+                entity_id = s['entity_id']
                 if s['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
-                    if entity.data:
-                        s['entity_name'] = entity.data[0]['name']
-                        s['entity_unit_name'] = ''
-                    else:
-                        s['entity_unit_name'] = ''
+                    s['entity_name'] = schools_map.get(entity_id, '')
+                    s['entity_unit_name'] = ''
                 else:
-                    entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
-                    if entity.data:
-                        dept = entity.data[0]
-                        s['entity_name'] = dept.get('name') or ''
-                        s['entity_unit_name'] = dept.get('unit_name') or ''
-                    else:
-                        s['entity_unit_name'] = ''
-                # ---- END ----
+                    dept = departments_map.get(entity_id) or {}
+                    s['entity_name'] = dept.get('name') or ''
+                    s['entity_unit_name'] = dept.get('unit_name') or ''
+
                 if s.get('assigned_to'):
-                    tech = supabase.table("technicians").select("name").eq("id", s['assigned_to']).execute()
-                    if tech.data:
-                        s['assigned_to_name'] = tech.data[0]['name']
+                    name = technicians_map.get(s['assigned_to'])
+                    if name:
+                        s['assigned_to_name'] = name
                 if s.get('issued_by'):
-                    issuer = supabase.table("technicians").select("name").eq("id", s['issued_by']).execute()
-                    if issuer.data:
-                        s['issued_by_name'] = issuer.data[0]['name']
+                    name = technicians_map.get(s['issued_by'])
+                    if name:
+                        s['issued_by_name'] = name
 
                 if s.get('report_id') and s['report_id'] in reports_map:
                     rpt = reports_map[s['report_id']]
@@ -1687,29 +1774,45 @@ def get_available_task_slips(technician_id):
         if not supabase:
             return jsonify([]), 500
         response = supabase.table("task_slips").select("*").eq("assigned_to", technician_id).is_("report_id", "null").execute()
+
+        # ============ BATCH PREFETCH ============
+        schools_map = {}
+        departments_map = {}
+
+        try:
+            schools_resp = supabase.table("schools").select("id, name").execute()
+            if schools_resp.data:
+                for s in schools_resp.data:
+                    schools_map[s['id']] = s.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch schools: {e}")
+
+        try:
+            depts_resp = supabase.table("departments").select("id, name, unit_name").execute()
+            if depts_resp.data:
+                for d in depts_resp.data:
+                    departments_map[d['id']] = {
+                        'name': d.get('name') or '',
+                        'unit_name': d.get('unit_name') or ''
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch departments: {e}")
+        # ============ END BATCH PREFETCH ============
+
         slips = []
         if response.data:
             for slip in response.data:
                 s = dict(slip)
                 if s.get('status') not in ('issued', 'accepted', 'in_progress'):
                     continue
-                # ---- ENTITY LOOKUP ----
+                entity_id = s['entity_id']
                 if s['entity_type'] == 'school':
-                    entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
-                    if entity.data:
-                        s['entity_name'] = entity.data[0]['name']
-                        s['entity_unit_name'] = ''
-                    else:
-                        s['entity_unit_name'] = ''
+                    s['entity_name'] = schools_map.get(entity_id, '')
+                    s['entity_unit_name'] = ''
                 else:
-                    entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
-                    if entity.data:
-                        dept = entity.data[0]
-                        s['entity_name'] = dept.get('name') or ''
-                        s['entity_unit_name'] = dept.get('unit_name') or ''
-                    else:
-                        s['entity_unit_name'] = ''
-                # ---- END ----
+                    dept = departments_map.get(entity_id) or {}
+                    s['entity_name'] = dept.get('name') or ''
+                    s['entity_unit_name'] = dept.get('unit_name') or ''
                 slips.append(s)
         slips.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         return jsonify(slips)
@@ -1842,7 +1945,7 @@ def delete_task_slip(slip_id):
         app.logger.error(f"Error deleting task slip: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ HISTORY API ============
+# ============ HISTORY API (read-only storybook view) ============
 
 @app.route('/history')
 def history_page():
@@ -1851,6 +1954,7 @@ def history_page():
 
 @app.route('/api/history-entities', methods=['GET'])
 def get_history_entities():
+    """Returns list of all schools + departments with activity counts."""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -1921,6 +2025,8 @@ def get_history_entities():
                 'last_activity': max(last_dates) if last_dates else None
             })
 
+        # Sort: schools first (by id ascending), then departments (by id ascending)
+        # This matches the ordering in the Management tabs
         entities.sort(key=lambda x: (0 if x['type'] == 'school' else 1, x['id']))
 
         return jsonify(entities)
@@ -1931,6 +2037,7 @@ def get_history_entities():
 
 @app.route('/api/history/<entity_type>/<int:entity_id>', methods=['GET'])
 def get_entity_history(entity_type, entity_id):
+    """Returns the full story timeline for a single entity (school or department)."""
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
