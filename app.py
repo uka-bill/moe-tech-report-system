@@ -55,8 +55,6 @@ app.config['IMAGE_QUALITY'] = 60
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
 # ============ NO-CACHE HEADERS FOR API RESPONSES ============
-# Prevent browsers from caching API responses so renamed
-# schools/departments always show the latest name in report views
 @app.after_request
 def add_no_cache_headers(response):
     if request.path.startswith('/api/'):
@@ -550,15 +548,23 @@ def get_technical_reports():
         if response.data:
             for report in response.data:
                 report_data = dict(report)
+                # ---- ENTITY LOOKUP (adds entity_name + entity_unit_name) ----
                 if report_data['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         report_data['entity_name'] = entity.data[0]['name']
+                        report_data['entity_unit_name'] = ''
+                    else:
+                        report_data['entity_unit_name'] = ''
                 else:
                     entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        report_data['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                        report_data['entity_name'] = dept.get('name') or ''
+                        report_data['entity_unit_name'] = dept.get('unit_name') or ''
+                    else:
+                        report_data['entity_unit_name'] = ''
+                # ---- END ENTITY LOOKUP ----
                 if report_data.get('technician_id'):
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
@@ -594,15 +600,23 @@ def get_single_technical_report(report_id):
         if not response.data:
             return jsonify({'success': False, 'error': 'Report not found'}), 404
         report_data = dict(response.data[0])
+        # ---- ENTITY LOOKUP ----
         if report_data['entity_type'] == 'school':
             entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
             if entity.data:
                 report_data['entity_name'] = entity.data[0]['name']
+                report_data['entity_unit_name'] = ''
+            else:
+                report_data['entity_unit_name'] = ''
         else:
             entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
             if entity.data:
                 dept = entity.data[0]
-                report_data['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                report_data['entity_name'] = dept.get('name') or ''
+                report_data['entity_unit_name'] = dept.get('unit_name') or ''
+            else:
+                report_data['entity_unit_name'] = ''
+        # ---- END ----
         if report_data.get('technician_id'):
             tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
             if tech.data:
@@ -668,7 +682,6 @@ def create_technical_report():
             "updated_at": get_brunei_time_iso()
         }
 
-        # Auto-initialize budget tracking + stage timer if this is a Need Budget report
         if report_data['resolution_status'] == 'need_budget':
             now_iso = get_brunei_time_iso()
             report_data['budget_status'] = 'waiting_quote'
@@ -712,7 +725,6 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
 
-        # Handle resolution_status <-> budget_status transition + stage timer reset
         if 'resolution_status' in data:
             new_rs = data.get('resolution_status')
             current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -850,7 +862,6 @@ def check_report_by_assistant(report_id):
 
 @app.route('/api/budget-reports', methods=['GET'])
 def get_budget_reports():
-    """Returns all reports that are or have been budget items."""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -871,15 +882,23 @@ def get_budget_reports():
                 if is_completed and not include_completed:
                     continue
 
+                # ---- ENTITY LOOKUP ----
                 if r['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", r['entity_id']).execute()
                     if entity.data:
                         r['entity_name'] = entity.data[0]['name']
+                        r['entity_unit_name'] = ''
+                    else:
+                        r['entity_unit_name'] = ''
                 else:
                     entity = supabase.table("departments").select("name, unit_name").eq("id", r['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        r['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                        r['entity_name'] = dept.get('name') or ''
+                        r['entity_unit_name'] = dept.get('unit_name') or ''
+                    else:
+                        r['entity_unit_name'] = ''
+                # ---- END ----
                 if r.get('technician_id'):
                     tech = supabase.table("technicians").select("name").eq("id", r['technician_id']).execute()
                     if tech.data:
@@ -898,7 +917,6 @@ def get_budget_reports():
 
 @app.route('/api/budget-reports/<int:report_id>', methods=['PUT'])
 def update_budget_report(report_id):
-    """Update the budget tracking fields for a report. Anyone logged in can use this."""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -927,7 +945,6 @@ def update_budget_report(report_id):
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
 
-        # If the budget_status is actually CHANGING, reset the stage timer
         if 'budget_status' in update_data:
             try:
                 current_row = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -954,7 +971,6 @@ def update_budget_report(report_id):
 
 @app.route('/api/budget-stats', methods=['GET'])
 def get_budget_stats():
-    """Returns counts by budget status for the dashboard tile and page header."""
     try:
         if not supabase:
             return jsonify({}), 500
@@ -1298,10 +1314,11 @@ def export_reports():
             return jsonify({'success': False, 'error': 'No data to export'}), 404
         output = io.StringIO()
         writer = csv.writer(output)
-        headers = ['Report ID', 'Type', 'Entity Type', 'Entity Name', 'Problem Type', 'Complaint Details', 'Priority', 'Status', 'Technician Name', 'Created At']
+        headers = ['Report ID', 'Type', 'Entity Type', 'Entity Name', 'Unit Name', 'Problem Type', 'Complaint Details', 'Priority', 'Status', 'Technician Name', 'Created At']
         writer.writerow(headers)
         for report in response.data:
             entity_name = ''
+            entity_unit_name = ''
             if report['entity_type'] == 'school':
                 entity = supabase.table("schools").select("name").eq("id", report['entity_id']).execute()
                 if entity.data:
@@ -1310,7 +1327,8 @@ def export_reports():
                 entity = supabase.table("departments").select("name, unit_name").eq("id", report['entity_id']).execute()
                 if entity.data:
                     dept = entity.data[0]
-                    entity_name = dept.get('name') or dept.get('unit_name') or ''
+                    entity_name = dept.get('name') or ''
+                    entity_unit_name = dept.get('unit_name') or ''
             tech_name = ''
             if report.get('technician_id'):
                 tech = supabase.table("technicians").select("name").eq("id", report['technician_id']).execute()
@@ -1318,7 +1336,7 @@ def export_reports():
                     tech_name = tech.data[0]['name']
             writer.writerow([
                 report.get('id', ''), report.get('report_type', ''), report.get('entity_type', ''),
-                entity_name, report.get('problem_type', ''), report.get('complaint_details', ''),
+                entity_name, entity_unit_name, report.get('problem_type', ''), report.get('complaint_details', ''),
                 report.get('priority', ''), report.get('status', ''), tech_name, report.get('created_at', '')
             ])
         output.seek(0)
@@ -1617,15 +1635,23 @@ def get_task_slips():
         if response.data:
             for slip in response.data:
                 s = dict(slip)
+                # ---- ENTITY LOOKUP ----
                 if s['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         s['entity_name'] = entity.data[0]['name']
+                        s['entity_unit_name'] = ''
+                    else:
+                        s['entity_unit_name'] = ''
                 else:
                     entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                        s['entity_name'] = dept.get('name') or ''
+                        s['entity_unit_name'] = dept.get('unit_name') or ''
+                    else:
+                        s['entity_unit_name'] = ''
+                # ---- END ----
                 if s.get('assigned_to'):
                     tech = supabase.table("technicians").select("name").eq("id", s['assigned_to']).execute()
                     if tech.data:
@@ -1667,15 +1693,23 @@ def get_available_task_slips(technician_id):
                 s = dict(slip)
                 if s.get('status') not in ('issued', 'accepted', 'in_progress'):
                     continue
+                # ---- ENTITY LOOKUP ----
                 if s['entity_type'] == 'school':
                     entity = supabase.table("schools").select("name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         s['entity_name'] = entity.data[0]['name']
+                        s['entity_unit_name'] = ''
+                    else:
+                        s['entity_unit_name'] = ''
                 else:
                     entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                        s['entity_name'] = dept.get('name') or ''
+                        s['entity_unit_name'] = dept.get('unit_name') or ''
+                    else:
+                        s['entity_unit_name'] = ''
+                # ---- END ----
                 slips.append(s)
         slips.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         return jsonify(slips)
@@ -1729,21 +1763,29 @@ def get_single_task_slip(slip_id):
         if not response.data:
             return jsonify({'success': False, 'error': 'Slip not found'}), 404
         s = dict(response.data[0])
+        # ---- ENTITY LOOKUP ----
         if s['entity_type'] == 'school':
             entity = supabase.table("schools").select("name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
             if entity.data:
                 s['entity_name'] = entity.data[0]['name']
+                s['entity_unit_name'] = ''
                 s['entity_address'] = entity.data[0].get('address', '')
                 s['entity_contact'] = entity.data[0].get('contact_person', '')
                 s['entity_phone'] = entity.data[0].get('contact_phone', '')
+            else:
+                s['entity_unit_name'] = ''
         else:
             entity = supabase.table("departments").select("name, unit_name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
             if entity.data:
                 dept = entity.data[0]
-                s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
+                s['entity_name'] = dept.get('name') or ''
+                s['entity_unit_name'] = dept.get('unit_name') or ''
                 s['entity_address'] = dept.get('address', '')
                 s['entity_contact'] = dept.get('contact_person', '')
                 s['entity_phone'] = dept.get('contact_phone', '')
+            else:
+                s['entity_unit_name'] = ''
+        # ---- END ----
         if s.get('assigned_to'):
             tech = supabase.table("technicians").select("name, employee_id").eq("id", s['assigned_to']).execute()
             if tech.data:
@@ -1800,7 +1842,7 @@ def delete_task_slip(slip_id):
         app.logger.error(f"Error deleting task slip: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ HISTORY API (read-only storybook view) ============
+# ============ HISTORY API ============
 
 @app.route('/history')
 def history_page():
@@ -1809,7 +1851,6 @@ def history_page():
 
 @app.route('/api/history-entities', methods=['GET'])
 def get_history_entities():
-    """Returns list of all schools + departments with activity counts."""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -1880,8 +1921,6 @@ def get_history_entities():
                 'last_activity': max(last_dates) if last_dates else None
             })
 
-        # Sort: schools first (by id ascending), then departments (by id ascending)
-        # This matches the ordering in the Management tabs
         entities.sort(key=lambda x: (0 if x['type'] == 'school' else 1, x['id']))
 
         return jsonify(entities)
@@ -1892,7 +1931,6 @@ def get_history_entities():
 
 @app.route('/api/history/<entity_type>/<int:entity_id>', methods=['GET'])
 def get_entity_history(entity_type, entity_id):
-    """Returns the full story timeline for a single entity (school or department)."""
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
