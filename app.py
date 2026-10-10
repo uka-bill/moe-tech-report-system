@@ -54,6 +54,17 @@ app.config['IMAGE_QUALITY'] = 60
 
 app.jinja_env.globals.update(format_brunei_time=format_brunei_time)
 
+# ============ NO-CACHE HEADERS FOR API RESPONSES ============
+# Prevent browsers from caching API responses so renamed
+# schools/departments always show the latest name in report views
+@app.after_request
+def add_no_cache_headers(response):
+    if request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 # ============ LOGGING SETUP ============
 
 if not os.path.exists('logs'):
@@ -547,7 +558,7 @@ def get_technical_reports():
                     entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        report_data['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                        report_data['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
                 if report_data.get('technician_id'):
                     tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
                     if tech.data:
@@ -591,7 +602,7 @@ def get_single_technical_report(report_id):
             entity = supabase.table("departments").select("name, unit_name").eq("id", report_data['entity_id']).execute()
             if entity.data:
                 dept = entity.data[0]
-                report_data['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                report_data['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
         if report_data.get('technician_id'):
             tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
             if tech.data:
@@ -868,7 +879,7 @@ def get_budget_reports():
                     entity = supabase.table("departments").select("name, unit_name").eq("id", r['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        r['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                        r['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
                 if r.get('technician_id'):
                     tech = supabase.table("technicians").select("name").eq("id", r['technician_id']).execute()
                     if tech.data:
@@ -1299,7 +1310,7 @@ def export_reports():
                 entity = supabase.table("departments").select("name, unit_name").eq("id", report['entity_id']).execute()
                 if entity.data:
                     dept = entity.data[0]
-                    entity_name = dept.get('unit_name') or dept.get('name') or ''
+                    entity_name = dept.get('name') or dept.get('unit_name') or ''
             tech_name = ''
             if report.get('technician_id'):
                 tech = supabase.table("technicians").select("name").eq("id", report['technician_id']).execute()
@@ -1614,7 +1625,7 @@ def get_task_slips():
                     entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                        s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
                 if s.get('assigned_to'):
                     tech = supabase.table("technicians").select("name").eq("id", s['assigned_to']).execute()
                     if tech.data:
@@ -1664,7 +1675,7 @@ def get_available_task_slips(technician_id):
                     entity = supabase.table("departments").select("name, unit_name").eq("id", s['entity_id']).execute()
                     if entity.data:
                         dept = entity.data[0]
-                        s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                        s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
                 slips.append(s)
         slips.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         return jsonify(slips)
@@ -1729,7 +1740,7 @@ def get_single_task_slip(slip_id):
             entity = supabase.table("departments").select("name, unit_name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
             if entity.data:
                 dept = entity.data[0]
-                s['entity_name'] = dept.get('unit_name') or dept.get('name') or ''
+                s['entity_name'] = dept.get('name') or dept.get('unit_name') or ''
                 s['entity_address'] = dept.get('address', '')
                 s['entity_contact'] = dept.get('contact_person', '')
                 s['entity_phone'] = dept.get('contact_phone', '')
