@@ -211,7 +211,6 @@
         color: #721c24;
     }
 
-    /* NEW: Acknowledgment status badge */
     .ack-status-badge {
         padding: 2px 8px;
         border-radius: 20px;
@@ -698,6 +697,18 @@
         return escapeHtml(text.substring(0, maxLength)) + '...';
     }
 
+    // NEW: two-line entity display for departments
+    function getEntityDisplayHtml(report) {
+        const isDept = report.entity_type === 'department';
+        const unitName = report.entity_unit_name || '';
+        const deptName = report.entity_name || '';
+
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:10px;">${escapeHtml(deptName)}</small>`;
+        }
+        return escapeHtml(deptName || report.entity_type || '');
+    }
+
     function getStatusBadge(report) {
         if (report.team_leader_acknowledged) {
             return `<span class="status-badge status-acknowledged">✓ Acknowledged</span>`;
@@ -706,7 +717,6 @@
         }
     }
 
-    // NEW: Acknowledgment status badge (Team Leader's indicator)
     function getAcknowledgmentBadge(report) {
         if (!report.team_leader_acknowledged) return '';
         const status = report.acknowledgment_status || 'done_reviewed';
@@ -799,10 +809,12 @@
                 const searchLower = search.toLowerCase();
                 filteredReports = filteredReports.filter(r => {
                     const entityName = (r.entity_name || '').toLowerCase();
+                    const unitName = (r.entity_unit_name || '').toLowerCase();
                     const problem = (r.problem_type || '').toLowerCase();
                     const details = (r.complaint_details || '').toLowerCase();
-                    return entityName.includes(searchLower) || 
-                           problem.includes(searchLower) || 
+                    return entityName.includes(searchLower) ||
+                           unitName.includes(searchLower) ||
+                           problem.includes(searchLower) ||
                            details.includes(searchLower);
                 });
             }
@@ -848,11 +860,12 @@
             const typeIcon = getTypeIcon(report.report_type);
             const entityBadge = getEntityBadge(report.entity_type);
             const locationName = report.entity_name || report.entity_type || 'Unknown';
+            const locationHtml = getEntityDisplayHtml(report);
             const techName = getTechnicianName(report.technician_id);
-            
+
             const currentUser = window.getCurrentUser();
             const canEdit = currentUser && (
-                currentUser.isAuthorized === true || 
+                currentUser.isAuthorized === true ||
                 currentUser.canEditTechnicians === true ||
                 parseInt(currentUser.id) === report.technician_id
             );
@@ -862,7 +875,7 @@
                     <td class="col-id text-center"><strong>${rowNumber}</strong></td>
                     <td class="col-type"><span class="type-icon">${typeIcon}</span></td>
                     <td class="col-location">
-                        <span class="text-truncate-custom" title="${escapeHtml(locationName)}">${truncateText(locationName, 20)}</span>
+                        <span class="text-truncate-custom" title="${escapeHtml(locationName)}">${locationHtml}</span>
                         <br>${entityBadge}
                     </td>
                     <td class="col-problem">
@@ -924,7 +937,6 @@
 
         const modalBody = document.getElementById('viewReportBody');
         const techName = getTechnicianName(report.technician_id);
-        const locationName = report.entity_name || report.entity_type || 'Unknown';
         const isAcknowledged = report.team_leader_acknowledged;
 
         let acknowledgmentHtml = '';
@@ -954,7 +966,7 @@
                         </div>
                         <div class="col-md-6">
                             <p><strong>Entity Type:</strong> ${getEntityBadge(report.entity_type)}</p>
-                            <p><strong>Location:</strong> ${escapeHtml(locationName)}</p>
+                            <p><strong>Location:</strong> ${getEntityDisplayHtml(report)}</p>
                             <p><strong>Technician:</strong> ${escapeHtml(techName)}</p>
                             <p><strong>Created:</strong> ${formatDateTime(report.created_at)}</p>
                             <p><strong>Last Updated:</strong> ${formatDateTime(report.updated_at)}</p>
@@ -1059,7 +1071,7 @@
 
         const currentUser = window.getCurrentUser();
         const canEdit = currentUser && (
-            currentUser.isAuthorized === true || 
+            currentUser.isAuthorized === true ||
             currentUser.canEditTechnicians === true ||
             parseInt(currentUser.id) === report.technician_id
         );
