@@ -1099,7 +1099,7 @@
     
     async function loadDashboardData() {
         try {
-            const reportsResponse = await fetch('/api/technical-reports');
+            const reportsResponse = await fetch('/api/technical-reports?t=' + Date.now(), { cache: 'no-store' });
             allReports = await reportsResponse.json();
             
             const sortedReports = [...allReports].sort((a, b) => {
