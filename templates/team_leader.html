@@ -2,15 +2,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --primary-color: #9b59b6;
-        --primary-dark: #8e44ad;
-        --primary-light: #d4b8e8;
-        --secondary-color: #f3e5f5;
-    }
-
     .page-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         border-radius: 16px;
         padding: 20px 25px;
         margin-bottom: 25px;
@@ -577,7 +570,6 @@
     }
     .btn-print:hover { transform: translateY(-1px); }
 
-    /* ============ NEW: Tab system for Report + Task Slip ============ */
     .report-tabs {
         display: flex;
         gap: 0;
@@ -625,7 +617,6 @@
         display: block;
     }
 
-    /* Slip preview (used inside tab 2) */
     .slip-preview {
         border: 2px dashed var(--primary-color);
         border-radius: 12px;
@@ -1217,7 +1208,6 @@
         if (target) target.classList.add('selected');
     }
 
-    // ============ NEW: Tab switching for Report + Task Slip ============
     function switchReportTab(tabName) {
         document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.report-tab-content').forEach(c => c.classList.remove('active'));
@@ -1261,7 +1251,6 @@
         }
     }
 
-    // ============ NEW: Render the task slip tab content ============
     function renderTaskSlipTab(report) {
         const hasSlip = !!report.slip_id;
         if (!hasSlip) return '';
@@ -1294,7 +1283,7 @@
                 </div>
 
                 <div class="slip-highlight">
-                    <div><strong>COMPLAINT NUMBER:</strong> ${escapeHtml(report.slip_complaint_number || '-')}</div>
+                    <div><strong>REFERENCE NUMBER:</strong> ${escapeHtml(report.slip_complaint_number || '-')}</div>
                     <div style="margin-top: 5px;"><strong>KPI NUMBER:</strong> ${escapeHtml(report.slip_kpi_number || '-')}</div>
                 </div>
 
@@ -1430,7 +1419,6 @@
             inlineAckSection = `<div class="alert alert-warning mt-3"><i class="bi bi-lock"></i> You are not authorized to acknowledge this report.</div>`;
         }
 
-        // ============ Report tab content (page 1) ============
         const reportTabContent = `
             <div class="report-detail-container">
                 <div class="alert alert-info" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdef5 100%); border: none; border-left: 4px solid #17a2b8;">
@@ -1476,10 +1464,8 @@
             </div>
         `;
 
-        // ============ Task Slip tab content (page 2) ============
         const slipTabContent = hasSlip ? renderTaskSlipTab(report) : '';
 
-        // ============ Tab bar (only when slip exists) ============
         let tabBar = '';
         if (hasSlip) {
             tabBar = `
@@ -1494,7 +1480,6 @@
             `;
         }
 
-        // ============ Assemble final HTML ============
         let finalHtml;
         if (hasSlip) {
             finalHtml = `
@@ -1680,7 +1665,6 @@
             @page{size:A4;margin:1.4cm 1.8cm}
             .report-container{max-width:100%;margin:0 auto}
 
-            /* Header block — keep together, don't break after */
             .header{text-align:center;margin-bottom:12px;page-break-inside:avoid;break-inside:avoid;page-break-after:avoid;break-after:avoid}
             .header h2{font-size:11pt;font-weight:normal;margin:0;line-height:1.3}
             .header h1{font-size:15pt;font-weight:bold;margin:6px 0;text-transform:uppercase;line-height:1.2}
@@ -1688,10 +1672,8 @@
             .divider{border-top:2px solid #000;margin:8px 0 4px}
             .sub-divider{border-top:1px solid #000;margin:4px 0}
 
-            /* Report ID bar — keep together with header */
             .report-id{background:#f5f5f5;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;border:1px solid #ddd;border-radius:5px;font-size:10pt;page-break-inside:avoid;break-inside:avoid;page-break-after:avoid;break-after:avoid}
 
-            /* Table — allow breaks between rows but keep rows whole */
             table{width:100%;border-collapse:collapse;margin:8px 0;page-break-inside:auto;break-inside:auto}
             tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto}
             th,td{padding:7px 9px;border:1px solid #aaa;text-align:left;vertical-align:top;font-size:10.5pt}
