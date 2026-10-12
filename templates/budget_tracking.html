@@ -87,7 +87,6 @@
     .col-updated { width: 130px; }
     .col-actions { width: 100px; text-align: center; }
 
-    /* ============ Completed separator row ============ */
     .completed-separator td {
         padding: 0 !important;
         border: none !important;
@@ -166,7 +165,6 @@
     }
     .amount-cell.empty { color: #9ca3af; font-weight: 500; }
 
-    /* ============ NEW: Day counter chip per stage ============ */
     .stage-days-chip {
         display: inline-flex;
         flex-direction: column;
@@ -191,7 +189,6 @@
         text-transform: uppercase;
         letter-spacing: 0.4px;
     }
-    /* Color by elapsed days */
     .stage-fresh   { color: #16a34a; background: #dcfce7; border-color: #86efac; }
     .stage-mid     { color: #f59e0b; background: #fef3c7; border-color: #fde68a; }
     .stage-warn    { color: #ea580c; background: #ffedd5; border-color: #fdba74; }
@@ -635,12 +632,23 @@
     let techniciansMap = {};
     let currentUser = null;
 
-    // ============ Helpers ============
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // NEW: two-line entity display for departments
+    function getEntityDisplayHtml(item) {
+        const isDept = item.entity_type === 'department';
+        const unitName = item.entity_unit_name || '';
+        const deptName = item.entity_name || '';
+
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:9px;">${escapeHtml(deptName)}</small>`;
+        }
+        return escapeHtml(deptName || item.entity_type || '');
     }
 
     function formatDate(dateString) {
@@ -659,29 +667,24 @@
         } catch (e) { return dateString; }
     }
 
-    // ============ NEW: Days since a given timestamp (Day 1 = same day) ============
     function daysSince(dateString) {
         if (!dateString) return 1;
         try {
             const then = new Date(dateString);
             const now = new Date();
-            // Zero out time portion so it's calendar-day based
             then.setHours(0, 0, 0, 0);
             now.setHours(0, 0, 0, 0);
             const diffMs = now - then;
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            return diffDays + 1; // Same day = Day 1
+            return diffDays + 1;
         } catch (e) { return 1; }
     }
 
-    // ============ NEW: Days in current stage ============
-    // Uses budget_status_changed_at if available, falls back to created_at
     function daysInCurrentStage(item) {
         const start = item.budget_status_changed_at || item.created_at;
         return daysSince(start);
     }
 
-    // ============ NEW: Total days since report created ============
     function totalDays(item) {
         return daysSince(item.created_at);
     }
@@ -712,7 +715,6 @@
         return `<span class="budget-status-badge ${cls}">${info.icon} ${info.text}</span>`;
     }
 
-    // ============ NEW: Color class for stage days ============
     function stageDaysClass(days, isCompleted) {
         if (isCompleted) return 'stage-done';
         if (days <= 3) return 'stage-fresh';
@@ -750,7 +752,6 @@
         return `<span style="background:${s.bg}; color:${s.color}; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block;">${s.icon} ${s.text}</span>`;
     }
 
-    // ============ Loading ============
     async function loadTechnicians() {
         try {
             const response = await fetch('/api/technicians?t=' + Date.now(), { cache: 'no-store' });
@@ -830,6 +831,7 @@
             filtered = filtered.filter(i =>
                 String(i.id).includes(search) ||
                 (i.entity_name || '').toLowerCase().includes(search) ||
+                (i.entity_unit_name || '').toLowerCase().includes(search) ||
                 (i.problem_type || '').toLowerCase().includes(search) ||
                 (i.technician_name || '').toLowerCase().includes(search) ||
                 (i.budget_notes || '').toLowerCase().includes(search)
@@ -850,7 +852,6 @@
         applyFilters();
     }
 
-    // ============ Build a single row ============
     function buildRow(item, rowNumber, isCompleted) {
         const stageDays = daysInCurrentStage(item);
         const totalDaysCount = totalDays(item);
@@ -873,7 +874,7 @@
                 <td><strong style="color:#d97706;">#${item.id}</strong></td>
                 <td>${serviceBadge(item.report_type)}</td>
                 <td>
-                    <span class="entity-name-cell" title="${escapeHtml(item.entity_name || '-')}">${escapeHtml(item.entity_name || '-')}</span>
+                    <span class="entity-name-cell" title="${escapeHtml(item.entity_name || '-')}">${getEntityDisplayHtml(item)}</span>
                     <span class="entity-type-small">${item.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</span>
                 </td>
                 <td><span class="problem-cell" title="${escapeHtml(item.problem_type || '-')}">${escapeHtml(item.problem_type || '-')}</span></td>
@@ -902,7 +903,6 @@
         `;
     }
 
-    // ============ Display (with completed separator) ============
     function displayBudgetItems(items) {
         const tbody = document.getElementById('budgetTableBody');
         if (!items.length) {
@@ -947,7 +947,6 @@
         tbody.innerHTML = html;
     }
 
-    // ============ UPDATE BUDGET MODAL ============
     function openUpdateBudgetModal(reportId) {
         const item = allBudgetItems.find(x => x.id === reportId);
         if (!item) {
@@ -964,7 +963,7 @@
 
         document.getElementById('currentInfoBox').innerHTML = `
             <div class="row-line"><strong>Report #${item.id}</strong> — ${escapeHtml(item.problem_type || '')}</div>
-            <div class="row-line"><i class="bi bi-geo-alt-fill"></i> ${escapeHtml(item.entity_name || '-')} (${item.entity_type === 'school' ? 'School' : 'Department'})</div>
+            <div class="row-line"><i class="bi bi-geo-alt-fill"></i> ${getEntityDisplayHtml(item)} (${item.entity_type === 'school' ? 'School' : 'Department'})</div>
             <div class="row-line"><i class="bi bi-person-fill"></i> Reported by: ${escapeHtml(techName)}</div>
             <div class="row-line"><i class="bi bi-calendar-event"></i> Reported on: ${formatDateOnly(item.created_at)}</div>
             <div class="row-line"><i class="bi bi-hourglass-split"></i> Current stage: <strong>Day ${stageDays}</strong> (since ${formatDateOnly(stageStart)})</div>
@@ -1062,7 +1061,6 @@
         }
     }
 
-    // ============ VIEW REPORT MODAL ============
     async function viewReportDetail(reportId) {
         currentViewReportId = reportId;
         const body = document.getElementById('viewReportBody');
@@ -1133,7 +1131,7 @@
 
                 <div class="row mb-2">
                     <div class="col-4">Entity:</div>
-                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                    <div class="col-8">${getEntityDisplayHtml(report)} (${report.entity_type})</div>
                 </div>
                 <div class="row mb-2">
                     <div class="col-4">Problem Type:</div>
@@ -1190,7 +1188,6 @@
         }
     }
 
-    // ============ Init ============
     document.addEventListener('DOMContentLoaded', async function () {
         currentUser = window.getCurrentUser();
         await loadTechnicians();
