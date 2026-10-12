@@ -857,6 +857,18 @@
         return div.innerHTML;
     }
 
+    // NEW: two-line entity display for departments
+    function getEntityDisplayHtml(report) {
+        const isDept = report.entity_type === 'department';
+        const unitName = report.entity_unit_name || '';
+        const deptName = report.entity_name || '';
+
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:9px;">${escapeHtml(deptName)}</small>`;
+        }
+        return escapeHtml(deptName || report.entity_type || '');
+    }
+
     function cleanText(text) {
         if (!text) return '';
         let cleaned = String(text);
@@ -1061,7 +1073,7 @@
                         return `
                             <tr style="background: linear-gradient(135deg, #fff3cd 0%, #ffe0b2 100%);" data-id="${report.id}">
                                 <td class="col-id"><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${rowNumber}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i> Checked</span>' : ''}</td>
-                                <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${getEntityDisplayHtml(report)}</td>
                                 <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="col-priority priority-high-cell" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> HIGH</td>
                                 <td class="col-action">${getResolutionBadge(report)}</td>
@@ -1136,7 +1148,7 @@
                         return `
                             <tr data-id="${report.id}">
                                 <td class="col-id"><span class="report-id-link" onclick="viewReportDetail(${report.id})">#${rowNumber}</span>${isChecked ? ' <span class="checked-badge"><i class="bi bi-eye"></i> Checked</span>' : ''}</td>
-                                <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.entity_name || report.entity_type)}</td>
+                                <td class="col-entity entity-name" title="${escapeHtml(report.entity_name || report.entity_type)}" onclick="viewReportDetail(${report.id})">${getEntityDisplayHtml(report)}</td>
                                 <td class="col-problem problem-type" title="${escapeHtml(report.problem_type || '-')}" onclick="viewReportDetail(${report.id})">${escapeHtml(report.problem_type || '-')}</td>
                                 <td class="col-priority ${priorityClass}" onclick="viewReportDetail(${report.id})"><span class="priority-icon">${priorityIcon}</span> ${priorityText}</td>
                                 <td class="col-action">${getResolutionBadge(report)}</td>
@@ -1291,7 +1303,7 @@
                     <div class="slip-preview-row">
                         <div class="slip-preview-label">Location:</div>
                         <div class="slip-preview-value">
-                            <strong>${escapeHtml(report.entity_name || '-')}</strong>
+                            ${getEntityDisplayHtml(report)}
                             (${report.entity_type === 'school' ? 'School' : 'Department'})
                         </div>
                     </div>
@@ -1428,7 +1440,7 @@
                 </div>
                 <div class="row mb-2">
                     <div class="col-4 fw-bold">Entity:</div>
-                    <div class="col-8">${escapeHtml(report.entity_name || report.entity_type)} (${report.entity_type})</div>
+                    <div class="col-8">${getEntityDisplayHtml(report)} (${report.entity_type})</div>
                 </div>
                 ${report.account_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Account Number:</div><div class="col-8">${escapeHtml(report.account_number)}</div></div>` : ''}
                 ${report.meter_number ? `<div class="row mb-2"><div class="col-4 fw-bold">Meter Number:</div><div class="col-8">${escapeHtml(report.meter_number)}</div></div>` : ''}
@@ -1621,6 +1633,7 @@
         let referenceType = cleanText(report.reference_type || '');
         let problemType = cleanText(report.problem_type || '-');
         let entityName = cleanText(report.entity_name || report.entity_type || '');
+        let entityUnitName = cleanText(report.entity_unit_name || '');
         let technicianName = cleanText(getTechnicianName(report.technician_id));
         let teamLeaderName = cleanText(report.team_leader_name || 'Team Leader');
         let assistantName = cleanText(report.checked_by_assistant_name || '');
@@ -1716,6 +1729,7 @@
                 <table>
                     <tr><th>Entity Type</th><td>${report.entity_type === 'school' ? 'School' : 'Department'} </td></tr>
                     <tr><th>Entity Name</th><td>${escapeHtml(entityName)}</td></tr>
+                    ${entityUnitName ? `<tr><th>Unit Name</th><td>${escapeHtml(entityUnitName)}</td></tr>` : ''}
                     ${referenceNumber ? `<tr><th>Reference Number</th><td>${escapeHtml(referenceNumber)}</td></tr>` : ''}
                     ${accountNumber ? `<tr><th>Account Number</th><td>${escapeHtml(accountNumber)}</td></tr>` : ''}
                     ${meterNumber ? `<tr><th>Meter Number</th><td>${escapeHtml(meterNumber)}</td></tr>` : ''}
