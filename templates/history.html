@@ -14,7 +14,6 @@
     .page-header h2 i { margin-right: 12px; }
     .page-header p { margin: 8px 0 0; opacity: 0.9; font-size: 0.85rem; }
 
-    /* ============ LANDING VIEW ============ */
     .entity-search-bar {
         background: white;
         border-radius: 16px;
@@ -35,7 +34,6 @@
         outline: none;
     }
 
-    /* Section header for Schools / Departments */
     .entity-section-header {
         display: flex;
         align-items: center;
@@ -69,7 +67,6 @@
         margin-left: auto;
     }
 
-    /* Numbered list container */
     .entity-list-container {
         background: white;
         border-radius: 14px;
@@ -101,7 +98,6 @@
         color: #8e44ad;
     }
 
-    /* Number circle */
     .entity-num {
         flex-shrink: 0;
         width: 38px;
@@ -129,7 +125,6 @@
         transform: scale(1.08);
     }
 
-    /* Type icon (🏫 / 🏢) */
     .entity-icon {
         flex-shrink: 0;
         font-size: 22px;
@@ -137,7 +132,6 @@
         text-align: center;
     }
 
-    /* Name and meta info */
     .entity-info {
         flex: 1;
         min-width: 0;
@@ -172,7 +166,6 @@
         opacity: 0.7;
     }
 
-    /* Stats chips */
     .entity-stats {
         display: flex;
         gap: 6px;
@@ -196,7 +189,6 @@
     .entity-stat-chip.slips { background: #f3e5f5; color: #6a1b9a; }
     .entity-stat-chip.empty { background: #f3f4f6; color: #6b7280; }
 
-    /* Last activity */
     .entity-last {
         flex-shrink: 0;
         font-size: 11px;
@@ -209,7 +201,6 @@
         opacity: 0.7;
     }
 
-    /* Arrow indicator */
     .entity-arrow {
         flex-shrink: 0;
         font-size: 18px;
@@ -220,7 +211,6 @@
     .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
     .empty-state i { font-size: 56px; color: #ccc; margin-bottom: 15px; display: block; }
 
-    /* ============ STORY VIEW ============ */
     .story-header {
         background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
         border-radius: 16px;
@@ -629,7 +619,6 @@
     let renderedCount = 0;
     const PAGE_SIZE = 30;
 
-    // ============ Helpers ============
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -665,7 +654,6 @@
         return text.substring(0, n) + '...';
     }
 
-    // ============ Landing View ============
     async function loadEntities() {
         try {
             const response = await fetch('/api/history-entities?t=' + Date.now(), { cache: 'no-store' });
@@ -698,7 +686,6 @@
             return;
         }
 
-        // Split into schools and departments (each preserving order as received from backend)
         const schools = entities.filter(e => e.type === 'school');
         const departments = entities.filter(e => e.type === 'department');
 
@@ -744,7 +731,6 @@
         const displayName = entity.name || '-';
         const subName = isDept && entity.unit_name && entity.unit_name !== entity.name ? entity.unit_name : '';
 
-        // Meta line
         const metaParts = [];
         if (!isDept) {
             if (entity.cluster_number) metaParts.push(`Cluster: ${escapeHtml(entity.cluster_number)}`);
@@ -754,14 +740,12 @@
         else if (entity.contact_person) metaParts.push(escapeHtml(entity.contact_person));
         const metaLine = metaParts.join(' · ');
 
-        // Stat chips
         const chips = [];
         if (entity.report_count > 0) chips.push(`<span class="entity-stat-chip reports"><i class="bi bi-file-text"></i> ${entity.report_count}</span>`);
         if (entity.image_count > 0) chips.push(`<span class="entity-stat-chip images"><i class="bi bi-images"></i> ${entity.image_count}</span>`);
         if (entity.slip_count > 0) chips.push(`<span class="entity-stat-chip slips"><i class="bi bi-clipboard-check"></i> ${entity.slip_count}</span>`);
         if (chips.length === 0) chips.push(`<span class="entity-stat-chip empty"><i class="bi bi-dash-circle"></i> No activity</span>`);
 
-        // Last activity
         const lastActivity = entity.last_activity
             ? `<i class="bi bi-clock-history"></i> ${formatDateShort(entity.last_activity)}`
             : `<span style="color:#bdc3c7;"><i class="bi bi-clock"></i> No activity yet</span>`;
@@ -802,7 +786,6 @@
         renderEntityList(filtered);
     }
 
-    // ============ Story View ============
     async function openStory(entityType, entityId) {
         document.getElementById('landingView').style.display = 'none';
         document.getElementById('storyView').style.display = 'block';
@@ -1070,7 +1053,7 @@
                         ${s.report_id ? `<span class="story-badge badge-slip-completed">✅ Report linked</span>` : ''}
                     </div>
 
-                    ${s.complaint_number ? `<div class="story-field"><strong>Complaint #:</strong> <span class="value">${escapeHtml(s.complaint_number)}</span></div>` : ''}
+                    ${s.complaint_number ? `<div class="story-field"><strong>Reference #:</strong> <span class="value">${escapeHtml(s.complaint_number)}</span></div>` : ''}
                     ${s.kpi_number ? `<div class="story-field"><strong>KPI #:</strong> <span class="value">${escapeHtml(s.kpi_number)}</span></div>` : ''}
                     <div class="story-field"><strong>Issued by:</strong> <span class="value">${escapeHtml(s.issued_by_name || '-')}</span></div>
                     ${s.due_date ? `<div class="story-field"><strong>Due:</strong> <span class="value">${formatDateShort(s.due_date)}</span></div>` : ''}
@@ -1095,7 +1078,6 @@
         renderedCount = 0;
     }
 
-    // ============ Init ============
     document.addEventListener('DOMContentLoaded', function () {
         loadEntities();
     });
