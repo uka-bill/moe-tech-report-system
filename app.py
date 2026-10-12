@@ -14,6 +14,7 @@ import traceback
 import zipfile
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 
 # ============ TIMEZONE HELPER FUNCTIONS ============
 
@@ -1663,6 +1664,60 @@ def backup_images():
 def task_slips_page():
     return render_template('task_slips.html')
 
+
+def generate_next_slip_number():
+    """Compute next available slip number in format {running}/{month}/{year}.
+    Reuses running numbers left free by deleted slips within the current month/year."""
+    now = get_brunei_time()
+    month = now.month
+    year = now.year
+
+    try:
+        response = supabase.table("task_slips").select("slip_number").execute()
+    except Exception as e:
+        app.logger.warning(f"Could not fetch slip numbers: {e}")
+        response = None
+
+    used_running = set()
+    pattern = re.compile(r'^(\d+)/' + str(month) + r'/' + str(year) + r'$')
+
+    if response and response.data:
+        for s in response.data:
+            sn = (s.get('slip_number') or '').strip()
+            m = pattern.match(sn)
+            if m:
+                try:
+                    used_running.add(int(m.group(1)))
+                except (ValueError, TypeError):
+                    pass
+
+    next_num = 1
+    while next_num in used_running:
+        next_num += 1
+
+    slip_number = f"{next_num}/{month}/{year}"
+    return slip_number, next_num, month, year
+
+
+@app.route('/api/task-slips/next-number', methods=['GET'])
+def get_next_slip_number_endpoint():
+    """Return the next auto-generated slip number for the current month."""
+    try:
+        if not supabase:
+            return jsonify({'success': False, 'error': 'Database not connected'}), 500
+        slip_number, running, month, year = generate_next_slip_number()
+        return jsonify({
+            'success': True,
+            'slip_number': slip_number,
+            'running_number': running,
+            'month': month,
+            'year': year
+        })
+    except Exception as e:
+        app.logger.error(f"Error computing next slip number: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/task-slips', methods=['GET'])
 def get_task_slips():
     try:
@@ -1827,13 +1882,25 @@ def create_task_slip():
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        required = ['slip_number', 'entity_type', 'entity_id', 'assigned_to', 'issued_by']
+        required = ['entity_type', 'entity_id', 'assigned_to', 'issued_by']
         for field in required:
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'{field} is required'}), 400
 
+        # Auto slip number: use provided value if unique, otherwise generate next available
+        slip_number = (data.get('slip_number') or '').strip()
+        if not slip_number:
+            slip_number, _, _, _ = generate_next_slip_number()
+        else:
+            try:
+                existing = supabase.table("task_slips").select("id").eq("slip_number", slip_number).execute()
+                if existing.data and len(existing.data) > 0:
+                    slip_number, _, _, _ = generate_next_slip_number()
+            except Exception:
+                pass
+
         slip_data = {
-            "slip_number": data.get('slip_number'),
+            "slip_number": slip_number,
             "complaint_number": data.get('complaint_number', ''),
             "kpi_number": data.get('kpi_number', ''),
             "entity_type": data.get('entity_type'),
@@ -2026,7 +2093,6 @@ def get_history_entities():
             })
 
         # Sort: schools first (by id ascending), then departments (by id ascending)
-        # This matches the ordering in the Management tabs
         entities.sort(key=lambda x: (0 if x['type'] == 'school' else 1, x['id']))
 
         return jsonify(entities)
