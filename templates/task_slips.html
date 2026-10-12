@@ -112,7 +112,6 @@
     .status-badge-completed { background: #d4edda; color: #155724; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
     .status-badge-cancelled { background: #f8d7da; color: #721c24; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
 
-    /* ============ NEW: Report indicator badges ============ */
     .report-indicator {
         display: inline-flex;
         align-items: center;
@@ -180,7 +179,6 @@
     .empty-state { text-align: center; padding: 50px 20px; color: #6c757d; }
     .empty-state i { font-size: 48px; color: #ccc; margin-bottom: 15px; display: block; }
 
-    /* Slip preview (view modal) */
     .slip-preview {
         border: 2px dashed #9b59b6;
         border-radius: 12px;
@@ -280,7 +278,7 @@
         <div class="col-md-4">
             <label class="form-label">Search</label>
             <input type="text" class="form-control form-control-sm" id="searchInput"
-                   placeholder="Slip #, complaint #, KPI #, entity..." onkeyup="applyFilters()">
+                   placeholder="Slip #, reference #, KPI #, entity..." onkeyup="applyFilters()">
         </div>
         <div class="col-md-2">
             <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearFilters()">
@@ -296,7 +294,7 @@
             <tr>
                 <th class="col-id">#</th>
                 <th class="col-slip">Slip Number</th>
-                <th class="col-complaint">Complaint #</th>
+                <th class="col-complaint">Reference #</th>
                 <th class="col-kpi">KPI #</th>
                 <th class="col-entity">Location</th>
                 <th class="col-service">Service</th>
@@ -327,17 +325,21 @@
                 <input type="hidden" id="slipId">
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Slip Number *</label>
+                    <label class="form-label fw-bold">Slip Number (Auto-generated)</label>
                     <input type="text" class="form-control" id="slipNumber"
-                           placeholder="e.g., SLIP-2025-001" required>
-                    <small class="text-muted">Enter the slip number manually (must be unique)</small>
+                           placeholder="Loading..." readonly
+                           style="background:#f8f9fa; font-weight:600; font-family:'Courier New',monospace;">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Format: running number / month / year (e.g., 1/10/2026). Deleted numbers are reused.
+                    </small>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Complaint Number</label>
+                        <label class="form-label fw-bold">Reference Number (Memo/Minute)</label>
                         <input type="text" class="form-control" id="complaintNumber"
-                               placeholder="e.g., ADU-2025-00123">
+                               placeholder="e.g., Memo/Minute reference number">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">KPI Number</label>
@@ -482,16 +484,13 @@
         return '-';
     }
 
-    // ============ NEW: Report indicator badge ============
     function reportIndicatorBadge(slip) {
-        // Case 1: no report
         if (!slip.has_report) {
             return `<span class="report-indicator no-report" title="No report submitted yet by the technician">
                 <i class="bi bi-hourglass"></i> No Report
             </span>`;
         }
 
-        // Case 2: report exists and acknowledged with need_further_action
         if (slip.report_acknowledged && slip.report_acknowledgment_status === 'need_further_action') {
             const tip = buildTooltip(slip, 'Report acknowledged as NEED FURTHER ACTION');
             return `<span class="report-indicator need-action" title="${escapeHtml(tip)}">
@@ -499,7 +498,6 @@
             </span>`;
         }
 
-        // Case 3: report exists and acknowledged with done_reviewed
         if (slip.report_acknowledged) {
             const tip = buildTooltip(slip, 'Report acknowledged as DONE / REVIEWED');
             return `<span class="report-indicator acknowledged" title="${escapeHtml(tip)}">
@@ -507,7 +505,6 @@
             </span>`;
         }
 
-        // Case 4: report exists but not yet acknowledged
         return `<span class="report-indicator pending" title="Report submitted - waiting for team leader acknowledgment">
             <i class="bi bi-file-text"></i> Report Pending
         </span>`;
@@ -693,6 +690,26 @@
         document.getElementById('status').value = 'issued';
     }
 
+    // NEW: fetch the next available auto-generated slip number
+    async function loadNextSlipNumber() {
+        const field = document.getElementById('slipNumber');
+        field.value = 'Loading...';
+        try {
+            const response = await fetch('/api/task-slips/next-number?t=' + Date.now(), { cache: 'no-store' });
+            const result = await response.json();
+            if (result.success && result.slip_number) {
+                field.value = result.slip_number;
+            } else {
+                field.value = '';
+                window.showToast('Could not generate slip number', 'error');
+            }
+        } catch (e) {
+            console.error('Error loading next slip number:', e);
+            field.value = '';
+            window.showToast('Error loading slip number', 'error');
+        }
+    }
+
     function showCreateSlipModal() {
         if (!currentUser || !currentUser.id) {
             window.showToast('Please login first', 'error');
@@ -700,6 +717,8 @@
         }
         resetSlipForm();
         document.getElementById('slipFormTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Create Task Slip';
+        // NEW: fetch next number as soon as modal opens
+        loadNextSlipNumber();
         new bootstrap.Modal(document.getElementById('slipFormModal')).show();
     }
 
@@ -799,7 +818,6 @@
                 return;
             }
             currentSlip = result.data;
-            // Find matching slip in list to get report indicator info
             const listSlip = allSlips.find(s => s.id === id);
             if (listSlip) {
                 currentSlip.has_report = listSlip.has_report;
@@ -818,7 +836,6 @@
     }
 
     function renderSlipHTML(s) {
-        // Build report status info block (only shown if report has been submitted)
         let reportStatusHtml = '';
         if (s.has_report) {
             if (s.report_acknowledged && s.report_acknowledgment_status === 'need_further_action') {
@@ -868,7 +885,7 @@
                 </div>
 
                 <div class="slip-highlight">
-                    <div><strong>COMPLAINT NUMBER:</strong> ${escapeHtml(s.complaint_number || '-')}</div>
+                    <div><strong>REFERENCE NUMBER:</strong> ${escapeHtml(s.complaint_number || '-')}</div>
                     <div style="margin-top: 5px;"><strong>KPI NUMBER:</strong> ${escapeHtml(s.kpi_number || '-')}</div>
                 </div>
 
@@ -996,7 +1013,7 @@
                 <div class="row"><div class="lbl">Date Issued:</div><div class="val">${formatDateOnly(s.issue_date || s.created_at)}</div></div>
 
                 <div class="highlight">
-                    <div class="row"><div class="lbl">COMPLAINT NO:</div><div class="val">${escapeHtml(s.complaint_number || '-')}</div></div>
+                    <div class="row"><div class="lbl">REFERENCE NO:</div><div class="val">${escapeHtml(s.complaint_number || '-')}</div></div>
                     <div class="row"><div class="lbl">KPI NO:</div><div class="val">${escapeHtml(s.kpi_number || '-')}</div></div>
                 </div>
 
