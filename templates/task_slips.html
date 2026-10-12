@@ -454,6 +454,18 @@
         return div.innerHTML;
     }
 
+    // NEW: two-line entity display for departments
+    function getEntityDisplayHtml(slip) {
+        const isDept = slip.entity_type === 'department';
+        const unitName = slip.entity_unit_name || '';
+        const deptName = slip.entity_name || '';
+
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:9px;">${escapeHtml(deptName)}</small>`;
+        }
+        return `<strong>${escapeHtml(deptName || slip.entity_type || '')}</strong>`;
+    }
+
     function formatDate(dateString) {
         if (!dateString) return '-';
         try {
@@ -610,6 +622,7 @@
                 (s.complaint_number || '').toLowerCase().includes(search) ||
                 (s.kpi_number || '').toLowerCase().includes(search) ||
                 (s.entity_name || '').toLowerCase().includes(search) ||
+                (s.entity_unit_name || '').toLowerCase().includes(search) ||
                 (s.assigned_to_name || '').toLowerCase().includes(search)
             );
         }
@@ -655,7 +668,7 @@
                 <td>${s.complaint_number ? `<span class="complaint-badge">${escapeHtml(s.complaint_number)}</span>` : '-'}</td>
                 <td>${s.kpi_number ? `<span class="kpi-badge">${escapeHtml(s.kpi_number)}</span>` : '-'}</td>
                 <td>
-                    <strong>${escapeHtml(s.entity_name || '-')}</strong><br>
+                    ${getEntityDisplayHtml(s)}<br>
                     <small class="text-muted">${s.entity_type === 'school' ? '🏫 School' : '🏢 Department'}</small>
                 </td>
                 <td>${serviceLabel(s.problem_type)}</td>
@@ -690,7 +703,6 @@
         document.getElementById('status').value = 'issued';
     }
 
-    // NEW: fetch the next available auto-generated slip number
     async function loadNextSlipNumber() {
         const field = document.getElementById('slipNumber');
         field.value = 'Loading...';
@@ -717,7 +729,6 @@
         }
         resetSlipForm();
         document.getElementById('slipFormTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Create Task Slip';
-        // NEW: fetch next number as soon as modal opens
         loadNextSlipNumber();
         new bootstrap.Modal(document.getElementById('slipFormModal')).show();
     }
@@ -893,7 +904,7 @@
                     <div class="slip-preview-row">
                         <div class="slip-preview-label">Location:</div>
                         <div class="slip-preview-value">
-                            <strong>${escapeHtml(s.entity_name || '-')}</strong>
+                            ${getEntityDisplayHtml(s)}
                             (${s.entity_type === 'school' ? 'School' : 'Department'})
                         </div>
                     </div>
@@ -972,6 +983,11 @@
 
     function generatePrintSlipHTML(s) {
         const serviceText = serviceLabelText(s.problem_type);
+        const isDept = s.entity_type === 'department';
+        const unitName = s.entity_unit_name || '';
+        const deptName = s.entity_name || '';
+        const hasUnitName = isDept && unitName && deptName && unitName !== deptName;
+
         return `<!DOCTYPE html>
         <html><head><meta charset="UTF-8"><title>Task Slip - ${escapeHtml(s.slip_number || '')}</title>
         <style>
@@ -1017,7 +1033,7 @@
                     <div class="row"><div class="lbl">KPI NO:</div><div class="val">${escapeHtml(s.kpi_number || '-')}</div></div>
                 </div>
 
-                <div class="row"><div class="lbl">Location:</div><div class="val"><strong>${escapeHtml(s.entity_name || '-')}</strong> (${s.entity_type === 'school' ? 'School' : 'Department'})</div></div>
+                <div class="row"><div class="lbl">Location:</div><div class="val"><strong>${escapeHtml(hasUnitName ? unitName : deptName)}</strong>${hasUnitName ? '<br><span style="font-size:9pt;color:#555;">' + escapeHtml(deptName) + '</span>' : ''} (${s.entity_type === 'school' ? 'School' : 'Department'})</div></div>
                 ${s.entity_address ? `<div class="row"><div class="lbl">Address:</div><div class="val">${escapeHtml(s.entity_address)}</div></div>` : ''}
                 ${s.entity_contact ? `<div class="row"><div class="lbl">Contact Person:</div><div class="val">${escapeHtml(s.entity_contact)} ${s.entity_phone ? ' / ' + escapeHtml(s.entity_phone) : ''}</div></div>` : ''}
                 <div class="row"><div class="lbl">Service Type:</div><div class="val"><strong>${escapeHtml(serviceText)}</strong></div></div>
