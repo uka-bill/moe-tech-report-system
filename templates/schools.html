@@ -113,6 +113,33 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
     }
+
+    /* PABX cell styles */
+    .pabx-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        border-left: 3px solid #1976d2;
+    }
+    .pabx-details {
+        font-size: 10px;
+        color: #6c757d;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+    .pabx-details strong {
+        color: #495057;
+        font-weight: 600;
+    }
+    .pabx-none {
+        font-size: 11px;
+        color: #adb5bd;
+    }
 </style>
 
 <div class="page-header">
@@ -142,6 +169,7 @@
                         <th>School Name</th>
                         <th>Cluster</th>
                         <th>School Number</th>
+                        <th>PABX</th>
                         <th>Contact Person</th>
                         <th>Contact Number</th>
                         <th>Address</th>
@@ -149,13 +177,13 @@
                     </tr>
                 </thead>
                 <tbody id="schoolsTable">
-                    <tr><td colspan="8" class="text-center">
+                    <tr><td colspan="9" class="text-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div> Loading schools...
-                    </td
+                    </td></tr>
                 </tbody>
-             </div>
+            </table>
         </div>
     </div>
 </div>
@@ -222,7 +250,7 @@
 <script>
     async function loadSchools() {
         try {
-            const response = await fetch('/api/schools');
+            const response = await fetch('/api/schools?t=' + Date.now(), { cache: 'no-store' });
             const schools = await response.json();
             schools.sort((a, b) => a.id - b.id);
             document.getElementById('totalSchools').textContent = schools.length;
@@ -230,14 +258,14 @@
         } catch (error) {
             console.error('Error loading schools:', error);
             showToast('Error loading schools', 'error');
-            document.getElementById('schoolsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading schools. Please refresh.</td</tr>';
+            document.getElementById('schoolsTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading schools. Please refresh.</td></tr>';
         }
     }
     
     function displaySchools(schools) {
         const tbody = document.getElementById('schoolsTable');
         if (!schools || schools.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No schools found. Click "Add New School" to create one.</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No schools found. Click "Add New School" to create one.</td></tr>';
             return;
         }
         
@@ -247,6 +275,7 @@
                 <td><span class="school-name">${escapeHtml(school.name)}</span></td>
                 <td>${escapeHtml(school.cluster_number || '-')}</td>
                 <td>${escapeHtml(school.school_number || '-')}</td>
+                <td>${renderPabxCell(school)}</td>
                 <td>${escapeHtml(school.contact_person || '-')}<br><small class="text-muted">Contact</small></td>
                 <td>${escapeHtml(school.contact_phone || '-')}<br><small class="text-muted">Phone</small></td>
                 <td>${escapeHtml(school.address ? school.address.substring(0, 40) + (school.address.length > 40 ? '...' : '') : '-')}<br><small class="text-muted">Address</small></td>
@@ -260,6 +289,30 @@
                 </td>
             </tr>
         `).join('');
+    }
+
+    // NEW: PABX cell renderer — shows brand, pilot no, trailing no, line/extension no
+    function renderPabxCell(entity) {
+        if (!entity.has_pabx || !entity.pabx_name) {
+            return '<span class="pabx-none"><i class="bi bi-dash-circle"></i> No PABX</span>';
+        }
+
+        const name = escapeHtml(entity.pabx_name || '-');
+        const pilot = escapeHtml(entity.pabx_pilot_no || '');
+        const trailingList = (entity.pabx_trailing_no || []).filter(x => x);
+        const extensionList = (entity.pabx_extension_no || []).filter(x => x);
+        const trailing = trailingList.map(x => escapeHtml(x)).join(', ');
+        const extension = extensionList.map(x => escapeHtml(x)).join(', ');
+
+        let details = '';
+        if (pilot) details += `<div><strong>Pilot:</strong> ${pilot}</div>`;
+        if (trailing) details += `<div><strong>Trailing:</strong> ${trailing}</div>`;
+        if (extension) details += `<div><strong>Line:</strong> ${extension}</div>`;
+
+        return `
+            <span class="pabx-badge"><i class="bi bi-telephone-fill"></i> ${name}</span>
+            ${details ? `<div class="pabx-details">${details}</div>` : ''}
+        `;
     }
     
     function escapeHtml(text) {
@@ -280,7 +333,7 @@
     
     async function editSchool(id) {
         try {
-            const response = await fetch('/api/schools');
+            const response = await fetch('/api/schools?t=' + Date.now(), { cache: 'no-store' });
             const schools = await response.json();
             const school = schools.find(s => s.id === id);
             
