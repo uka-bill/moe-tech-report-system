@@ -146,6 +146,54 @@ def compress_image(file_content, filename):
         app.logger.error(f"Image compression error: {e}")
         return file_content, 'jpg'
 
+def build_pabx_map():
+    """Fetch latest PABX info from mapping_images for each (entity_type, entity_id).
+    Returns a dict: {(entity_type, entity_id): {pabx_name, pabx_pilot_no, pabx_trailing_no, pabx_extension_no}}"""
+    pabx_map = {}
+    if not supabase:
+        return pabx_map
+    try:
+        response = supabase.table("mapping_images").select(
+            "entity_type, entity_id, pabx_name, pabx_pilot_no, pabx_trailing_no, pabx_extension_no, uploaded_at"
+        ).execute()
+        if response.data:
+            rows = sorted(response.data, key=lambda r: r.get('uploaded_at') or '', reverse=True)
+            for r in rows:
+                if not r.get('pabx_name'):
+                    continue
+                key = (r.get('entity_type'), r.get('entity_id'))
+                if key in pabx_map:
+                    continue
+
+                def _norm_list(v):
+                    if v is None:
+                        return []
+                    if isinstance(v, list):
+                        return [str(x) for x in v if x not in (None, '')]
+                    if isinstance(v, str):
+                        s = v.strip()
+                        if not s:
+                            return []
+                        try:
+                            parsed = json.loads(s)
+                            if isinstance(parsed, list):
+                                return [str(x) for x in parsed if x not in (None, '')]
+                            return [str(parsed)]
+                        except Exception:
+                            return [s]
+                    return [str(v)]
+
+                pabx_map[key] = {
+                    'has_pabx': True,
+                    'pabx_name': r.get('pabx_name') or '',
+                    'pabx_pilot_no': r.get('pabx_pilot_no') or '',
+                    'pabx_trailing_no': _norm_list(r.get('pabx_trailing_no')),
+                    'pabx_extension_no': _norm_list(r.get('pabx_extension_no')),
+                }
+    except Exception as e:
+        app.logger.warning(f"Could not build PABX map: {e}")
+    return pabx_map
+
 # ============ ROUTES ============
 
 @app.route('/')
@@ -382,7 +430,25 @@ def get_schools():
         if not supabase:
             return jsonify([]), 500
         response = supabase.table("schools").select("*").order("id", desc=False).execute()
-        return jsonify(response.data if response.data else [])
+        schools = response.data if response.data else []
+
+        pabx_map = build_pabx_map()
+        for s in schools:
+            pabx = pabx_map.get(('school', s['id']))
+            if pabx:
+                s['has_pabx'] = True
+                s['pabx_name'] = pabx['pabx_name']
+                s['pabx_pilot_no'] = pabx['pabx_pilot_no']
+                s['pabx_trailing_no'] = pabx['pabx_trailing_no']
+                s['pabx_extension_no'] = pabx['pabx_extension_no']
+            else:
+                s['has_pabx'] = False
+                s['pabx_name'] = ''
+                s['pabx_pilot_no'] = ''
+                s['pabx_trailing_no'] = []
+                s['pabx_extension_no'] = []
+
+        return jsonify(schools)
     except Exception as e:
         app.logger.error(f"Error getting schools: {e}")
         return jsonify([]), 500
@@ -450,7 +516,25 @@ def get_departments():
         if not supabase:
             return jsonify([]), 500
         response = supabase.table("departments").select("*").order("id", desc=False).execute()
-        return jsonify(response.data if response.data else [])
+        departments = response.data if response.data else []
+
+        pabx_map = build_pabx_map()
+        for d in departments:
+            pabx = pabx_map.get(('department', d['id']))
+            if pabx:
+                d['has_pabx'] = True
+                d['pabx_name'] = pabx['pabx_name']
+                d['pabx_pilot_no'] = pabx['pabx_pilot_no']
+                d['pabx_trailing_no'] = pabx['pabx_trailing_no']
+                d['pabx_extension_no'] = pabx['pabx_extension_no']
+            else:
+                d['has_pabx'] = False
+                d['pabx_name'] = ''
+                d['pabx_pilot_no'] = ''
+                d['pabx_trailing_no'] = []
+                d['pabx_extension_no'] = []
+
+        return jsonify(departments)
     except Exception as e:
         app.logger.error(f"Error getting departments: {e}")
         return jsonify([]), 500
