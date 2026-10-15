@@ -113,6 +113,33 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
     }
+
+    /* PABX cell styles */
+    .pabx-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #0d47a1;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        border-left: 3px solid #1976d2;
+    }
+    .pabx-details {
+        font-size: 10px;
+        color: #6c757d;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+    .pabx-details strong {
+        color: #495057;
+        font-weight: 600;
+    }
+    .pabx-none {
+        font-size: 11px;
+        color: #adb5bd;
+    }
 </style>
 
 <div class="page-header">
@@ -142,6 +169,7 @@
                         <th>Dept Code</th>
                         <th>Unit Name</th>
                         <th>Department Name</th>
+                        <th>PABX</th>
                         <th>Contact Person</th>
                         <th>Contact Number</th>
                         <th>Address</th>
@@ -149,13 +177,13 @@
                     </tr>
                 </thead>
                 <tbody id="departmentsTable">
-                    <tr><td colspan="8" class="text-center">
+                    <tr><td colspan="9" class="text-center">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div> Loading departments...
-                    </td
+                    </td></tr>
                 </tbody>
-             </div>
+            </table>
         </div>
     </div>
 </div>
@@ -221,7 +249,7 @@
 <script>
     async function loadDepartments() {
         try {
-            const response = await fetch('/api/departments');
+            const response = await fetch('/api/departments?t=' + Date.now(), { cache: 'no-store' });
             const departments = await response.json();
             departments.sort((a, b) => a.id - b.id);
             document.getElementById('totalDepartments').textContent = departments.length;
@@ -229,14 +257,14 @@
         } catch (error) {
             console.error('Error loading departments:', error);
             showToast('Error loading departments', 'error');
-            document.getElementById('departmentsTable').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading departments. Please refresh.</td</tr>';
+            document.getElementById('departmentsTable').innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error loading departments. Please refresh.</td></tr>';
         }
     }
     
     function displayDepartments(departments) {
         const tbody = document.getElementById('departmentsTable');
         if (!departments || departments.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No departments found. Click "Add Department" to create one.</td</tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No departments found. Click "Add Department" to create one.</td></tr>';
             return;
         }
         
@@ -246,6 +274,7 @@
                 <td><span class="dept-code-badge">${escapeHtml(dept.department_code || '-')}</span></td>
                 <td><span class="unit-name">${escapeHtml(dept.unit_name || dept.name || '-')}</span><br><small class="text-muted">Unit</small></td>
                 <td><span class="dept-name">${escapeHtml(dept.name || '-')}</span><br><small class="text-muted">Department</small></td>
+                <td>${renderPabxCell(dept)}</td>
                 <td>${escapeHtml(dept.contact_person || '-')}<br><small class="text-muted">Contact</small></td>
                 <td>${escapeHtml(dept.contact_phone || '-')}<br><small class="text-muted">Phone</small></td>
                 <td>${escapeHtml(dept.address ? dept.address.substring(0, 40) + (dept.address.length > 40 ? '...' : '') : '-')}<br><small class="text-muted">Address</small></td>
@@ -259,6 +288,30 @@
                 </td>
             </tr>
         `).join('');
+    }
+
+    // NEW: PABX cell renderer — shows brand, pilot no, trailing no, line/extension no
+    function renderPabxCell(entity) {
+        if (!entity.has_pabx || !entity.pabx_name) {
+            return '<span class="pabx-none"><i class="bi bi-dash-circle"></i> No PABX</span>';
+        }
+
+        const name = escapeHtml(entity.pabx_name || '-');
+        const pilot = escapeHtml(entity.pabx_pilot_no || '');
+        const trailingList = (entity.pabx_trailing_no || []).filter(x => x);
+        const extensionList = (entity.pabx_extension_no || []).filter(x => x);
+        const trailing = trailingList.map(x => escapeHtml(x)).join(', ');
+        const extension = extensionList.map(x => escapeHtml(x)).join(', ');
+
+        let details = '';
+        if (pilot) details += `<div><strong>Pilot:</strong> ${pilot}</div>`;
+        if (trailing) details += `<div><strong>Trailing:</strong> ${trailing}</div>`;
+        if (extension) details += `<div><strong>Line:</strong> ${extension}</div>`;
+
+        return `
+            <span class="pabx-badge"><i class="bi bi-telephone-fill"></i> ${name}</span>
+            ${details ? `<div class="pabx-details">${details}</div>` : ''}
+        `;
     }
     
     function escapeHtml(text) {
@@ -280,7 +333,7 @@
     
     async function suggestNextDeptCode() {
         try {
-            const response = await fetch('/api/departments');
+            const response = await fetch('/api/departments?t=' + Date.now(), { cache: 'no-store' });
             const departments = await response.json();
             const count = departments.length;
             const nextNumber = String(count + 1).padStart(3, '0');
@@ -293,7 +346,7 @@
     
     async function editDepartment(id) {
         try {
-            const response = await fetch('/api/departments');
+            const response = await fetch('/api/departments?t=' + Date.now(), { cache: 'no-store' });
             const departments = await response.json();
             const dept = departments.find(d => d.id === id);
             
