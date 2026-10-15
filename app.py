@@ -146,6 +146,28 @@ def compress_image(file_content, filename):
         app.logger.error(f"Image compression error: {e}")
         return file_content, 'jpg'
 
+# ============ PABX + PHONE HELPERS ============
+
+def _to_str_list(v):
+    """Normalize a JSONB / list / string column to a clean list of strings."""
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x).strip() for x in v if x not in (None, '') and str(x).strip()]
+    if isinstance(v, str):
+        s = v.strip()
+        if not s:
+            return []
+        try:
+            parsed = json.loads(s)
+            if isinstance(parsed, list):
+                return [str(x).strip() for x in parsed if x not in (None, '') and str(x).strip()]
+            return [str(parsed).strip()]
+        except Exception:
+            return [s]
+    return [str(v).strip()]
+
+
 def build_pabx_map():
     """Fetch latest PABX info from mapping_images for each (entity_type, entity_id).
     Returns a dict: {(entity_type, entity_id): {pabx_name, pabx_pilot_no, pabx_trailing_no, pabx_extension_no}}"""
@@ -164,35 +186,60 @@ def build_pabx_map():
                 key = (r.get('entity_type'), r.get('entity_id'))
                 if key in pabx_map:
                     continue
-
-                def _norm_list(v):
-                    if v is None:
-                        return []
-                    if isinstance(v, list):
-                        return [str(x) for x in v if x not in (None, '')]
-                    if isinstance(v, str):
-                        s = v.strip()
-                        if not s:
-                            return []
-                        try:
-                            parsed = json.loads(s)
-                            if isinstance(parsed, list):
-                                return [str(x) for x in parsed if x not in (None, '')]
-                            return [str(parsed)]
-                        except Exception:
-                            return [s]
-                    return [str(v)]
-
                 pabx_map[key] = {
                     'has_pabx': True,
                     'pabx_name': r.get('pabx_name') or '',
                     'pabx_pilot_no': r.get('pabx_pilot_no') or '',
-                    'pabx_trailing_no': _norm_list(r.get('pabx_trailing_no')),
-                    'pabx_extension_no': _norm_list(r.get('pabx_extension_no')),
+                    'pabx_trailing_no': _to_str_list(r.get('pabx_trailing_no')),
+                    'pabx_extension_no': _to_str_list(r.get('pabx_extension_no')),
                 }
     except Exception as e:
         app.logger.warning(f"Could not build PABX map: {e}")
     return pabx_map
+
+
+def attach_pabx_and_phones(entity, entity_type, pabx_map):
+    """Fill in has_pabx / pabx_* / contact_phones for a school or department dict."""
+    own_pabx_name = (entity.get('pabx_name') or '').strip() if isinstance(entity.get('pabx_name'), str) else ''
+
+    if own_pabx_name:
+        entity['has_pabx'] = True
+        entity['pabx_name'] = own_pabx_name
+        entity['pabx_pilot_no'] = entity.get('pabx_pilot_no') or ''
+        entity['pabx_trailing_no'] = _to_str_list(entity.get('pabx_trailing_no'))
+        entity['pabx_extension_no'] = _to_str_list(entity.get('pabx_extension_no'))
+    else:
+        pabx = pabx_map.get((entity_type, entity['id']))
+        if pabx:
+            entity['has_pabx'] = True
+            entity['pabx_name'] = pabx['pabx_name']
+            entity['pabx_pilot_no'] = pabx['pabx_pilot_no']
+            entity['pabx_trailing_no'] = pabx['pabx_trailing_no']
+            entity['pabx_extension_no'] = pabx['pabx_extension_no']
+        else:
+            entity['has_pabx'] = False
+            entity['pabx_name'] = ''
+            entity['pabx_pilot_no'] = ''
+            entity['pabx_trailing_no'] = []
+            entity['pabx_extension_no'] = []
+
+    phones = _to_str_list(entity.get('contact_phones'))
+    if not phones and entity.get('contact_phone'):
+        phones = [str(entity['contact_phone'])]
+    entity['contact_phones'] = phones
+
+    return entity
+
+
+def extract_pabx_and_phones(data):
+    """Extract new PABX + multi-phone fields from a request payload."""
+    return {
+        'pabx_name': (data.get('pabx_name') or '').strip(),
+        'pabx_pilot_no': (data.get('pabx_pilot_no') or '').strip(),
+        'pabx_trailing_no': _to_str_list(data.get('pabx_trailing_no', [])),
+        'pabx_extension_no': _to_str_list(data.get('pabx_extension_no', [])),
+        'contact_phones': _to_str_list(data.get('contact_phones', [])),
+    }
 
 # ============ ROUTES ============
 
@@ -434,19 +481,7 @@ def get_schools():
 
         pabx_map = build_pabx_map()
         for s in schools:
-            pabx = pabx_map.get(('school', s['id']))
-            if pabx:
-                s['has_pabx'] = True
-                s['pabx_name'] = pabx['pabx_name']
-                s['pabx_pilot_no'] = pabx['pabx_pilot_no']
-                s['pabx_trailing_no'] = pabx['pabx_trailing_no']
-                s['pabx_extension_no'] = pabx['pabx_extension_no']
-            else:
-                s['has_pabx'] = False
-                s['pabx_name'] = ''
-                s['pabx_pilot_no'] = ''
-                s['pabx_trailing_no'] = []
-                s['pabx_extension_no'] = []
+            attach_pabx_and_phones(s, 'school', pabx_map)
 
         return jsonify(schools)
     except Exception as e:
@@ -465,11 +500,21 @@ def create_school():
             "school_number": data.get('school_number'),
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
-            "contact_phone": data.get('contact_phone'),
+            "contact_phone": data.get('contact_phone', ''),
             "created_at": get_brunei_time_iso()
         }
         if not school_data['name']:
             return jsonify({'success': False, 'error': 'School name is required'}), 400
+
+        extra = extract_pabx_and_phones(data)
+        school_data['contact_phones'] = extra['contact_phones']
+        school_data['pabx_name'] = extra['pabx_name']
+        school_data['pabx_pilot_no'] = extra['pabx_pilot_no']
+        school_data['pabx_trailing_no'] = extra['pabx_trailing_no']
+        school_data['pabx_extension_no'] = extra['pabx_extension_no']
+        if extra['contact_phones']:
+            school_data['contact_phone'] = extra['contact_phones'][0]
+
         response = supabase.table("schools").insert(school_data).execute()
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
@@ -484,7 +529,28 @@ def update_school(school_id):
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
         data = request.get_json()
-        response = supabase.table("schools").update(data).eq("id", school_id).execute()
+        update_data = {}
+        allowed_fields = ['name', 'cluster_number', 'school_number', 'address', 'contact_person', 'contact_phone']
+        for field in allowed_fields:
+            if field in data and data[field] is not None:
+                update_data[field] = data[field]
+
+        if 'pabx_name' in data or 'pabx_pilot_no' in data or 'pabx_trailing_no' in data or 'pabx_extension_no' in data or 'contact_phones' in data:
+            extra = extract_pabx_and_phones(data)
+            update_data['contact_phones'] = extra['contact_phones']
+            update_data['pabx_name'] = extra['pabx_name']
+            update_data['pabx_pilot_no'] = extra['pabx_pilot_no']
+            update_data['pabx_trailing_no'] = extra['pabx_trailing_no']
+            update_data['pabx_extension_no'] = extra['pabx_extension_no']
+            if extra['contact_phones']:
+                update_data['contact_phone'] = extra['contact_phones'][0]
+            elif 'contact_phones' in data:
+                update_data['contact_phone'] = ''
+
+        if not update_data:
+            return jsonify({'success': False, 'error': 'No data to update'}), 400
+
+        response = supabase.table("schools").update(update_data).eq("id", school_id).execute()
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
         return jsonify({'success': False, 'error': 'School not found'}), 404
@@ -520,19 +586,7 @@ def get_departments():
 
         pabx_map = build_pabx_map()
         for d in departments:
-            pabx = pabx_map.get(('department', d['id']))
-            if pabx:
-                d['has_pabx'] = True
-                d['pabx_name'] = pabx['pabx_name']
-                d['pabx_pilot_no'] = pabx['pabx_pilot_no']
-                d['pabx_trailing_no'] = pabx['pabx_trailing_no']
-                d['pabx_extension_no'] = pabx['pabx_extension_no']
-            else:
-                d['has_pabx'] = False
-                d['pabx_name'] = ''
-                d['pabx_pilot_no'] = ''
-                d['pabx_trailing_no'] = []
-                d['pabx_extension_no'] = []
+            attach_pabx_and_phones(d, 'department', pabx_map)
 
         return jsonify(departments)
     except Exception as e:
@@ -550,11 +604,21 @@ def create_department():
             "unit_name": data.get('unit_name') or data.get('name'),
             "address": data.get('address'),
             "contact_person": data.get('contact_person'),
-            "contact_phone": data.get('contact_phone'),
+            "contact_phone": data.get('contact_phone', ''),
             "created_at": get_brunei_time_iso()
         }
         if not dept_data['name']:
             return jsonify({'success': False, 'error': 'Department name is required'}), 400
+
+        extra = extract_pabx_and_phones(data)
+        dept_data['contact_phones'] = extra['contact_phones']
+        dept_data['pabx_name'] = extra['pabx_name']
+        dept_data['pabx_pilot_no'] = extra['pabx_pilot_no']
+        dept_data['pabx_trailing_no'] = extra['pabx_trailing_no']
+        dept_data['pabx_extension_no'] = extra['pabx_extension_no']
+        if extra['contact_phones']:
+            dept_data['contact_phone'] = extra['contact_phones'][0]
+
         response = supabase.table("departments").insert(dept_data).execute()
         if response.data:
             return jsonify({'success': True, 'data': response.data[0]})
@@ -574,6 +638,19 @@ def update_department(dept_id):
         for field in allowed_fields:
             if field in data and data[field] is not None:
                 update_data[field] = data[field]
+
+        if 'pabx_name' in data or 'pabx_pilot_no' in data or 'pabx_trailing_no' in data or 'pabx_extension_no' in data or 'contact_phones' in data:
+            extra = extract_pabx_and_phones(data)
+            update_data['contact_phones'] = extra['contact_phones']
+            update_data['pabx_name'] = extra['pabx_name']
+            update_data['pabx_pilot_no'] = extra['pabx_pilot_no']
+            update_data['pabx_trailing_no'] = extra['pabx_trailing_no']
+            update_data['pabx_extension_no'] = extra['pabx_extension_no']
+            if extra['contact_phones']:
+                update_data['contact_phone'] = extra['contact_phones'][0]
+            elif 'contact_phones' in data:
+                update_data['contact_phone'] = ''
+
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
         response = supabase.table("departments").update(update_data).eq("id", dept_id).execute()
@@ -714,7 +791,6 @@ def get_single_technical_report(report_id):
         if not response.data:
             return jsonify({'success': False, 'error': 'Report not found'}), 404
         report_data = dict(response.data[0])
-        # ---- ENTITY LOOKUP ----
         if report_data['entity_type'] == 'school':
             entity = supabase.table("schools").select("name").eq("id", report_data['entity_id']).execute()
             if entity.data:
@@ -730,7 +806,6 @@ def get_single_technical_report(report_id):
                 report_data['entity_unit_name'] = dept.get('unit_name') or ''
             else:
                 report_data['entity_unit_name'] = ''
-        # ---- END ----
         if report_data.get('technician_id'):
             tech = supabase.table("technicians").select("name, role").eq("id", report_data['technician_id']).execute()
             if tech.data:
@@ -796,7 +871,6 @@ def create_technical_report():
             "updated_at": get_brunei_time_iso()
         }
 
-        # Auto-initialize budget tracking + stage timer if this is a Need Budget report
         if report_data['resolution_status'] == 'need_budget':
             now_iso = get_brunei_time_iso()
             report_data['budget_status'] = 'waiting_quote'
@@ -840,7 +914,6 @@ def update_technical_report(report_id):
                 else:
                     update_data[field] = data[field]
 
-        # Handle resolution_status <-> budget_status transition + stage timer reset
         if 'resolution_status' in data:
             new_rs = data.get('resolution_status')
             current = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -978,7 +1051,6 @@ def check_report_by_assistant(report_id):
 
 @app.route('/api/budget-reports', methods=['GET'])
 def get_budget_reports():
-    """Returns all reports that are or have been budget items."""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -986,7 +1058,6 @@ def get_budget_reports():
 
         response = supabase.table("technical_reports").select("*").order("created_at", desc=True).execute()
 
-        # ============ BATCH PREFETCH ============
         schools_map = {}
         departments_map = {}
         technicians_map = {}
@@ -1017,7 +1088,6 @@ def get_budget_reports():
                     technicians_map[t['id']] = t.get('name') or ''
         except Exception as e:
             app.logger.warning(f"Could not prefetch technicians: {e}")
-        # ============ END BATCH PREFETCH ============
 
         reports = []
         if response.data:
@@ -1061,7 +1131,6 @@ def get_budget_reports():
 
 @app.route('/api/budget-reports/<int:report_id>', methods=['PUT'])
 def update_budget_report(report_id):
-    """Update the budget tracking fields for a report. Anyone logged in can use this."""
     try:
         if not supabase:
             return jsonify({'error': 'Database not connected'}), 500
@@ -1090,7 +1159,6 @@ def update_budget_report(report_id):
         if not update_data:
             return jsonify({'success': False, 'error': 'No data to update'}), 400
 
-        # If the budget_status is actually CHANGING, reset the stage timer
         if 'budget_status' in update_data:
             try:
                 current_row = supabase.table("technical_reports").select("budget_status").eq("id", report_id).execute()
@@ -1117,7 +1185,6 @@ def update_budget_report(report_id):
 
 @app.route('/api/budget-stats', methods=['GET'])
 def get_budget_stats():
-    """Returns counts by budget status for the dashboard tile and page header."""
     try:
         if not supabase:
             return jsonify({}), 500
@@ -1750,8 +1817,6 @@ def task_slips_page():
 
 
 def generate_next_slip_number():
-    """Compute next available slip number in format {running}/{month}/{year}.
-    Reuses running numbers left free by deleted slips within the current month/year."""
     now = get_brunei_time()
     month = now.month
     year = now.year
@@ -1785,7 +1850,6 @@ def generate_next_slip_number():
 
 @app.route('/api/task-slips/next-number', methods=['GET'])
 def get_next_slip_number_endpoint():
-    """Return the next auto-generated slip number for the current month."""
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
@@ -1818,7 +1882,6 @@ def get_task_slips():
             query = query.eq("entity_id", int(request.args.get('entity_id')))
         response = query.order("created_at", desc=True).execute()
 
-        # ============ BATCH PREFETCH ============
         schools_map = {}
         departments_map = {}
         technicians_map = {}
@@ -1863,7 +1926,6 @@ def get_task_slips():
                             reports_map[r['id']] = r
         except Exception as re:
             app.logger.warning(f"Could not fetch linked reports: {re}")
-        # ============ END BATCH PREFETCH ============
 
         slips = []
         if response.data:
@@ -1914,7 +1976,6 @@ def get_available_task_slips(technician_id):
             return jsonify([]), 500
         response = supabase.table("task_slips").select("*").eq("assigned_to", technician_id).is_("report_id", "null").execute()
 
-        # ============ BATCH PREFETCH ============
         schools_map = {}
         departments_map = {}
 
@@ -1936,7 +1997,6 @@ def get_available_task_slips(technician_id):
                     }
         except Exception as e:
             app.logger.warning(f"Could not prefetch departments: {e}")
-        # ============ END BATCH PREFETCH ============
 
         slips = []
         if response.data:
@@ -1971,7 +2031,6 @@ def create_task_slip():
             if not data.get(field):
                 return jsonify({'success': False, 'error': f'{field} is required'}), 400
 
-        # Auto slip number: use provided value if unique, otherwise generate next available
         slip_number = (data.get('slip_number') or '').strip()
         if not slip_number:
             slip_number, _, _, _ = generate_next_slip_number()
@@ -2017,7 +2076,6 @@ def get_single_task_slip(slip_id):
         if not response.data:
             return jsonify({'success': False, 'error': 'Slip not found'}), 404
         s = dict(response.data[0])
-        # ---- ENTITY LOOKUP ----
         if s['entity_type'] == 'school':
             entity = supabase.table("schools").select("name, address, contact_person, contact_phone").eq("id", s['entity_id']).execute()
             if entity.data:
@@ -2039,7 +2097,6 @@ def get_single_task_slip(slip_id):
                 s['entity_phone'] = dept.get('contact_phone', '')
             else:
                 s['entity_unit_name'] = ''
-        # ---- END ----
         if s.get('assigned_to'):
             tech = supabase.table("technicians").select("name, employee_id").eq("id", s['assigned_to']).execute()
             if tech.data:
@@ -2096,7 +2153,7 @@ def delete_task_slip(slip_id):
         app.logger.error(f"Error deleting task slip: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ============ HISTORY API (read-only storybook view) ============
+# ============ HISTORY API ============
 
 @app.route('/history')
 def history_page():
@@ -2105,7 +2162,6 @@ def history_page():
 
 @app.route('/api/history-entities', methods=['GET'])
 def get_history_entities():
-    """Returns list of all schools + departments with activity counts."""
     try:
         if not supabase:
             return jsonify([]), 500
@@ -2176,7 +2232,6 @@ def get_history_entities():
                 'last_activity': max(last_dates) if last_dates else None
             })
 
-        # Sort: schools first (by id ascending), then departments (by id ascending)
         entities.sort(key=lambda x: (0 if x['type'] == 'school' else 1, x['id']))
 
         return jsonify(entities)
@@ -2187,7 +2242,6 @@ def get_history_entities():
 
 @app.route('/api/history/<entity_type>/<int:entity_id>', methods=['GET'])
 def get_entity_history(entity_type, entity_id):
-    """Returns the full story timeline for a single entity (school or department)."""
     try:
         if not supabase:
             return jsonify({'success': False, 'error': 'Database not connected'}), 500
