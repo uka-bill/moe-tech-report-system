@@ -608,6 +608,16 @@
     let availableSlips = [];
     let selectedSlipId = null;
 
+    // NEW: read slip_id from URL (?slip_id=123) so the form can pre-select it
+    let preselectedSlipId = null;
+    (function parsePreselectSlip() {
+        const params = new URLSearchParams(window.location.search);
+        const slipParam = params.get('slip_id');
+        if (slipParam && slipParam !== '' && slipParam !== 'null' && slipParam !== 'undefined') {
+            preselectedSlipId = parseInt(slipParam);
+        }
+    })();
+
     // ============ Parse edit mode from URL ============
     (function parseUrl() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -756,6 +766,53 @@
         setTimeout(() => {
             document.getElementById('slipSelectorBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
+    }
+
+    // NEW: auto-select a slip by its ID after the dropdown has been loaded
+    function tryAutoSelectSlip(slipId) {
+        const sel = document.getElementById('slipSelector');
+        if (!sel) return;
+        const exists = Array.from(sel.options).some(o => String(o.value) === String(slipId));
+        if (exists) {
+            sel.value = String(slipId);
+            onSlipSelected();
+            const box = document.getElementById('slipSelectorBox');
+            if (box) {
+                setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+            }
+        } else {
+            fetchAndAddSlipToDropdown(slipId);
+        }
+    }
+
+    // NEW: fetch a specific slip and inject it into the dropdown when it wasn't in the available list
+    async function fetchAndAddSlipToDropdown(slipId) {
+        try {
+            const response = await fetch(`/api/task-slips/${slipId}?t=${Date.now()}`, { cache: 'no-store' });
+            const result = await response.json();
+            if (!result.success || !result.data) {
+                window.showToast('Could not load the selected task slip. Please pick it manually.', 'error');
+                return;
+            }
+            const slip = result.data;
+            const box = document.getElementById('slipSelectorBox');
+            if (box) box.style.display = 'block';
+            const sel = document.getElementById('slipSelector');
+            if (sel) {
+                const opt = document.createElement('option');
+                opt.value = String(slip.id);
+                const svc = slip.problem_type === 'water' ? '💧' : (slip.problem_type === 'electricity' ? '⚡' : (slip.problem_type === 'telephone' ? '📞' : '📋'));
+                opt.textContent = `${svc} ${slip.slip_number || ''} — ${slip.entity_name || slip.entity_type}`;
+                sel.appendChild(opt);
+                sel.value = String(slip.id);
+                // Keep it in availableSlips so onSlipSelected can find it
+                availableSlips.push(slip);
+                onSlipSelected();
+            }
+        } catch (e) {
+            console.error('Error loading preselected slip:', e);
+            window.showToast('Could not load the selected task slip. Please pick it manually.', 'error');
+        }
     }
 
     // ============ Remove account entry ============
@@ -1460,6 +1517,9 @@
         // ============ Load available task slips (only in new mode) ============
         if (!isEditMode) {
             await loadAvailableSlips();
+            if (preselectedSlipId) {
+                tryAutoSelectSlip(preselectedSlipId);
+            }
         }
         
         if (isEditMode && editReportId) {
