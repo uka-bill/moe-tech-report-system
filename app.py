@@ -1816,6 +1816,93 @@ def task_slips_page():
     return render_template('task_slips.html')
 
 
+@app.route('/my-task-slips')
+def my_task_slips_page():
+    return render_template('my_task_slips.html')
+
+
+@app.route('/api/my-task-slips/<int:technician_id>', methods=['GET'])
+def get_my_task_slips(technician_id):
+    """Rich pending task slips for a specific technician (no report submitted yet)."""
+    try:
+        if not supabase:
+            return jsonify([]), 500
+        response = supabase.table("task_slips").select("*").eq("assigned_to", technician_id).is_("report_id", "null").order("created_at", desc=True).execute()
+
+        schools_map = {}
+        departments_map = {}
+        technicians_map = {}
+
+        try:
+            schools_resp = supabase.table("schools").select("id, name, address, contact_person, contact_phone").execute()
+            if schools_resp.data:
+                for s in schools_resp.data:
+                    schools_map[s['id']] = {
+                        'name': s.get('name') or '',
+                        'address': s.get('address') or '',
+                        'contact_person': s.get('contact_person') or '',
+                        'contact_phone': s.get('contact_phone') or '',
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch schools: {e}")
+
+        try:
+            depts_resp = supabase.table("departments").select("id, name, unit_name, address, contact_person, contact_phone").execute()
+            if depts_resp.data:
+                for d in depts_resp.data:
+                    departments_map[d['id']] = {
+                        'name': d.get('name') or '',
+                        'unit_name': d.get('unit_name') or '',
+                        'address': d.get('address') or '',
+                        'contact_person': d.get('contact_person') or '',
+                        'contact_phone': d.get('contact_phone') or '',
+                    }
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch departments: {e}")
+
+        try:
+            techs_resp = supabase.table("technicians").select("id, name").execute()
+            if techs_resp.data:
+                for t in techs_resp.data:
+                    technicians_map[t['id']] = t.get('name') or ''
+        except Exception as e:
+            app.logger.warning(f"Could not prefetch technicians: {e}")
+
+        slips = []
+        if response.data:
+            for slip in response.data:
+                s = dict(slip)
+                if s.get('status') not in ('issued', 'accepted', 'in_progress'):
+                    continue
+
+                entity_id = s['entity_id']
+                if s['entity_type'] == 'school':
+                    ent = schools_map.get(entity_id) or {}
+                    s['entity_name'] = ent.get('name') or ''
+                    s['entity_unit_name'] = ''
+                    s['entity_address'] = ent.get('address') or ''
+                    s['entity_contact'] = ent.get('contact_person') or ''
+                    s['entity_phone'] = ent.get('contact_phone') or ''
+                else:
+                    ent = departments_map.get(entity_id) or {}
+                    s['entity_name'] = ent.get('name') or ''
+                    s['entity_unit_name'] = ent.get('unit_name') or ''
+                    s['entity_address'] = ent.get('address') or ''
+                    s['entity_contact'] = ent.get('contact_person') or ''
+                    s['entity_phone'] = ent.get('contact_phone') or ''
+
+                if s.get('issued_by'):
+                    s['issued_by_name'] = technicians_map.get(s['issued_by'], '')
+                s['assigned_to_name'] = technicians_map.get(technician_id, '')
+
+                slips.append(s)
+
+        return jsonify(slips)
+    except Exception as e:
+        app.logger.error(f"Error getting my task slips: {e}")
+        return jsonify([]), 500
+
+
 def generate_next_slip_number():
     now = get_brunei_time()
     month = now.month
