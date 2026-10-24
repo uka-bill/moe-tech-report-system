@@ -2006,7 +2006,7 @@ def get_task_slips():
                 report_ids = [s['report_id'] for s in response.data if s.get('report_id')]
                 if report_ids:
                     reports_resp = supabase.table("technical_reports").select(
-                        "id, team_leader_acknowledged, acknowledgment_status, team_leader_notes, team_leader_acknowledged_at, team_leader_name, report_type"
+                        "id, created_at, technician_id, team_leader_acknowledged, acknowledgment_status, team_leader_notes, team_leader_acknowledged_at, team_leader_name, report_type"
                     ).in_("id", report_ids).execute()
                     if reports_resp.data:
                         for r in reports_resp.data:
@@ -2039,6 +2039,8 @@ def get_task_slips():
                 if s.get('report_id') and s['report_id'] in reports_map:
                     rpt = reports_map[s['report_id']]
                     s['has_report'] = True
+                    s['report_created_at'] = rpt.get('created_at', '')
+                    s['report_technician_name'] = technicians_map.get(rpt.get('technician_id'), '') if rpt.get('technician_id') else ''
                     s['report_acknowledged'] = rpt.get('team_leader_acknowledged', False)
                     s['report_acknowledgment_status'] = rpt.get('acknowledgment_status', '')
                     s['report_team_leader_name'] = rpt.get('team_leader_name', '')
