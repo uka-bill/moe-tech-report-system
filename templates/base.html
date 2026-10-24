@@ -358,6 +358,13 @@
                             <i class="bi bi-clipboard-check"></i> Task Slips
                         </a>
                     </li>
+                    <!-- NEW: My Task Slips with pending count badge -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_task_slips_page') }}">
+                            <i class="bi bi-clipboard2-check"></i> My Task Slips
+                            <span class="badge rounded-pill bg-danger ms-1" id="myTaskSlipsBadge" style="display:none; font-size:10px; vertical-align:middle;">0</span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-file-text"></i> Reports
@@ -572,6 +579,7 @@
                     document.getElementById('currentUserName').textContent = pendingUser.name;
                     bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
                     showToast(`Welcome ${pendingUser.name}!`);
+                    updateMyTaskSlipsBadge();
                     setTimeout(() => location.reload(), 500);
                 } else {
                     showToast('Invalid password', 'error');
@@ -772,11 +780,37 @@
                 }
             });
         }
+
+        // ============ MY TASK SLIPS BADGE ============
+        async function updateMyTaskSlipsBadge() {
+            const badge = document.getElementById('myTaskSlipsBadge');
+            if (!badge) return;
+            const userId = localStorage.getItem('userId');
+            if (!userId || userId === 'null' || userId === 'temp' || userId === '') {
+                badge.style.display = 'none';
+                return;
+            }
+            try {
+                const response = await fetch(`/api/my-task-slips/${userId}?t=${Date.now()}`, { cache: 'no-store' });
+                const slips = await response.json();
+                if (Array.isArray(slips) && slips.length > 0) {
+                    badge.textContent = slips.length;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Could not update my task slips badge:', e);
+                badge.style.display = 'none';
+            }
+        }
+        window.updateMyTaskSlipsBadge = updateMyTaskSlipsBadge;
         
         loadStoredUser();
         loadUsers();
         checkPermissions();
         highlightActiveNav();
+        updateMyTaskSlipsBadge();
         
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
