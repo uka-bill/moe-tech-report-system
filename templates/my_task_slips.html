@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        border-radius: 16px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .page-header h2 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+    .page-header h2 i { margin-right: 12px; }
+    .page-header p { margin: 8px 0 0; opacity: 0.9; font-size: 0.85rem; }
+
+    .stat-card {
+        background: white; border-radius: 16px; padding: 15px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        display: flex; align-items: center; gap: 15px;
+        border: 1px solid #eef2f7; height: 100%;
+    }
+    .stat-icon {
+        width: 50px; height: 50px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px;
+    }
+    .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .stat-number { font-size: 28px; font-weight: 700; color: #2c3e50; line-height: 1.2; }
+    .stat-label { color: #6c757d; font-size: 11px; font-weight: 500; }
+
+    .slip-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+        border-left: 4px solid #9b59b6;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+        overflow: hidden;
+    }
+    .slip-card:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    .slip-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid #f0f0f0;
+        flex-wrap: wrap;
+    }
+    .slip-number-block {
+        flex: 1;
+        min-width: 200px;
+    }
+    .slip-number {
+        font-size: 15px;
+        color: #2c3e50;
+    }
+    .slip-number strong {
+        color: #9b59b6;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+        margin-left: 4px;
+    }
+    .slip-sub {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+    .slip-sub i {
+        margin-right: 4px;
+        opacity: 0.7;
+    }
+    .service-badge {
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 11px; font-weight: 600;
+        display: inline-block; white-space: nowrap;
+    }
+    .service-water       { background: #e3f2fd; color: #1976d2; }
+    .service-electricity { background: #fff3e0; color: #f57c00; }
+    .service-telephone   { background: #e8f5e9; color: #388e3c; }
+    .service-default     { background: #e9ecef; color: #495057; }
+
+    .slip-card-body {
+        padding: 14px 20px;
+    }
+    .slip-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px 20px;
+    }
+    .slip-detail-item {
+        font-size: 12px;
+    }
+    .slip-detail-label {
+        color: #6c757d;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 2px;
+    }
+    .slip-detail-value {
+        color: #2c3e50;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+    .slip-detail-value .unit-line {
+        font-weight: 700;
+    }
+    .slip-detail-value .dept-line {
+        font-size: 10px;
+        color: #6c757d;
+        font-weight: 400;
+    }
+    .slip-notes {
+        margin-top: 12px;
+        padding: 10px 14px;
+        background: #fafafa;
+        border-left: 3px solid #d4b8e8;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #495057;
+        white-space: pre-wrap;
+    }
+    .slip-card-actions {
+        padding: 12px 20px 16px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-top: 1px solid #f5f5f5;
+    }
+    .btn-create-report {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-create-report:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.35);
+        color: white;
+    }
+    .btn-print-slip {
+        background: white;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+        padding: 9px 18px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-print-slip:hover {
+        background: #f8f9fa;
+        color: #495057;
+        border-color: #ced4da;
+    }
+
+    .empty-state {
+        background: white;
+        border-radius: 16px;
+        padding: 60px 20px;
+        text-align: center;
+        color: #6c757d;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #eef2f7;
+    }
+    .empty-state i {
+        font-size: 64px;
+        color: #ccc;
+        margin-bottom: 15px;
+        display: block;
+    }
+    .empty-state h5 {
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .slip-card-header {
+            flex-direction: column;
+        }
+        .slip-card-actions {
+            flex-direction: column;
+        }
+        .btn-create-report, .btn-print-slip {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h2><i class="bi bi-clipboard2-check"></i> My Task Slips</h2>
+    <p>Task slips assigned to you that are waiting for a report to be submitted</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon primary"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+                <div class="stat-number" id="statPending">0</div>
+                <div class="stat-label">Pending Task Slips</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="slipsContainer">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2 small text-muted">Loading your task slips...</p>
+    </div>
+</div>
+
+<script>
+    let mySlips = [];
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatDateOnly(dateString) {
+        if (!dateString) return '-';
+        try {
+            const d = new Date(dateString);
+            return d.toLocaleDateString('en-GB');
+        } catch (e) { return dateString; }
+    }
+
+    function serviceBadge(svc) {
+        if (svc === 'water') return '<span class="service-badge service-water">💧 Water</span>';
+        if (svc === 'electricity') return '<span class="service-badge service-electricity">⚡ Electricity</span>';
+        if (svc === 'telephone') return '<span class="service-badge service-telephone">📞 Telephone</span>';
+        return '<span class="service-badge service-default">-</span>';
+    }
+
+    function serviceLabelText(svc) {
+        if (svc === 'water') return 'Water';
+        if (svc === 'electricity') return 'Electricity';
+        if (svc === 'telephone') return 'Telephone';
+        return '-';
+    }
+
+    function renderEntity(slip) {
+        const isDept = slip.entity_type === 'department';
+        const unitName = slip.entity_unit_name || '';
+        const deptName = slip.entity_name || '';
+        if (isDept && unitName && deptName && unitName !== deptName) {
+            return `<div class="unit-line">${escapeHtml(unitName)}</div><div class="dept-line">${escapeHtml(deptName)}</div>`;
+        }
+        return `<div class="unit-line">${escapeHtml(deptName || slip.entity_type || '-')}</div>`;
+    }
+
+    async function loadMyTaskSlips() {
+        const container = document.getElementById('slipsContainer');
+        const userId = localStorage.getItem('userId');
+
+        if (!userId || userId === 'null' || userId === 'temp' || userId === '') {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-person-x"></i>
+                    <h5>Not logged in</h5>
+                    <p class="small text-muted">Please select your account from the top-right menu, then reload this page.</p>
+                </div>
+            `;
+            document.getElementById('statPending').textContent = '0';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 small text-muted">Loading your task slips...</p>
+            </div>
+        `;
+
+        try {
+            const response = await fetch(`/api/my-task-slips/${userId}?t=${Date.now()}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            mySlips = await response.json();
+            if (!Array.isArray(mySlips)) mySlips = [];
+
+            document.getElementById('statPending').textContent = mySlips.length;
+
+            if (mySlips.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-clipboard-check"></i>
+                        <h5>No pending task slips</h5>
+                        <p class="small text-muted">You don't have any task slips waiting for a report. Well done!</p>
+                        <a href="/new-report" class="btn btn-primary btn-sm mt-3" style="text-decoration:none;">
+                            <i class="bi bi-plus-circle"></i> Create Manual Report
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = mySlips.map(renderSlipCard).join('');
+        } catch (e) {
+            console.error('Error loading my task slips:', e);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-exclamation-triangle" style="color:#dc3545;"></i>
+                    <h5>Error loading task slips</h5>
+                    <p class="small text-muted">${escapeHtml(e.message || 'Please try again.')}</p>
+                    <button class="btn btn-primary btn-sm mt-3" onclick="loadMyTaskSlips()">
+                        <i class="bi bi-arrow-clockwise"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    function renderSlipCard(slip) {
+        const dueDate = slip.due_date ? formatDateOnly(slip.due_date) : '';
+        const issuedDate = formatDateOnly(slip.issue_date || slip.created_at);
+        const isOverdue = slip.due_date && new Date(slip.due_date) < new Date(new Date().toDateString());
+        const notesBlock = slip.notes ? `<div class="slip-notes"><strong>Notes:</strong> ${escapeHtml(slip.notes)}</div>` : '';
+
+        return `
+            <div class="slip-card">
+                <div class="slip-card-header">
+                    <div class="slip-number-block">
+                        <div class="slip-number">Slip No. <strong>${escapeHtml(slip.slip_number || '-')}</strong></div>
+                        <div class="slip-sub">
+                            <i class="bi bi-calendar-plus"></i> Issued: ${issuedDate}
+                            ${dueDate ? ` &nbsp;·&nbsp; <i class="bi bi-calendar-event"></i> Due: <span style="color:${isOverdue ? '#dc3545' : '#2c3e50'}; font-weight:600;">${dueDate}</span>` : ''}
+                        </div>
+                    </div>
+                    ${serviceBadge(slip.problem_type)}
+                </div>
+                <div class="slip-card-body">
+                    <div class="slip-detail-grid">
+                        <div class="slip-detail-item">
+                            <div class="slip-detail-label">Location</div>
+                            <div class="slip-detail-value">${renderEntity(slip)}</div>
+                        </div>
+                        <div class="slip-detail-item">
+                            <div class="slip-detail-label">Reference Number</div>
+                            <div class="slip-detail-value">${escapeHtml(slip.complaint_number || '-')}</div>
+                        </div>
+                        <div class="slip-detail-item">
+                            <div class="slip-detail-label">KPI Number</div>
+                            <div class="slip-detail-value">${escapeHtml(slip.kpi_number || '-')}</div>
+                        </div>
+                        <div class="slip-detail-item">
+                            <div class="slip-detail-label">Issued By</div>
+                            <div class="slip-detail-value">${escapeHtml(slip.issued_by_name || '-')}</div>
+                        </div>
+                    </div>
+                    ${notesBlock}
+                </div>
+                <div class="slip-card-actions">
+                    <button class="btn-create-report" onclick="createReportFromSlip(${slip.id})">
+                        <i class="bi bi-plus-circle-fill"></i> Create Report
+                    </button>
+                    <button class="btn-print-slip" onclick="printSlip(${slip.id})">
+                        <i class="bi bi-printer"></i> Print Slip
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function createReportFromSlip(slipId) {
+        window.location.href = `/new-report?slip_id=${slipId}`;
+    }
+
+    async function printSlip(slipId) {
+        try {
+            const response = await fetch(`/api/task-slips/${slipId}?t=${Date.now()}`, { cache: 'no-store' });
+            const result = await response.json();
+            if (!result.success || !result.data) {
+                if (window.showToast) window.showToast('Could not load slip for printing', 'error');
+                return;
+            }
+            const s = result.data;
+            const printWindow = window.open('', '_blank', 'width=800,height=900');
+            printWindow.document.write(generatePrintSlipHTML(s));
+            printWindow.document.close();
+        } catch (e) {
+            console.error('Error printing slip:', e);
+            if (window.showToast) window.showToast('Error printing slip', 'error');
+        }
+    }
+
+    function generatePrintSlipHTML(s) {
+        const serviceText = serviceLabelText(s.problem_type);
+        const isDept = s.entity_type === 'department';
+        const unitName = s.entity_unit_name || '';
+        const deptName = s.entity_name || '';
+        const hasUnitName = isDept && unitName && deptName && unitName !== deptName;
+        const displayLocation = hasUnitName ? unitName : deptName;
+        const subLine = hasUnitName ? `<br><span style="font-size:9pt;color:#555;">${escapeHtml(deptName)}</span>` : '';
+
+        return `<!DOCTYPE html>
+        <html><head><meta charset="UTF-8"><title>Task Slip - ${escapeHtml(s.slip_number || '')}</title>
+        <style>
+            *{margin:0;padding:0;box-sizing:border-box}
+            body{font-family:Arial,sans-serif;padding:15mm;font-size:11pt;background:white}
+            .slip{border:2px solid #000;padding:8mm;border-radius:6px;max-width:100%}
+            .hdr{text-align:center;margin-bottom:5mm}
+            .hdr h3{font-size:13pt;margin:1mm 0}
+            .hdr h4{font-size:11pt;font-weight:normal;margin:1mm 0}
+            .title{background:#000;color:#fff;padding:2mm;text-align:center;font-weight:bold;letter-spacing:2px;margin:4mm 0;font-size:12pt}
+            .row{display:flex;margin-bottom:2mm;font-size:11pt}
+            .lbl{width:45mm;font-weight:bold}
+            .val{flex:1}
+            .highlight{border:2px solid #000;padding:3mm;margin:3mm 0;background:#f5f5f5}
+            .highlight .row{margin-bottom:1.5mm}
+            .highlight .lbl{font-size:10pt}
+            .highlight .val{font-size:13pt;font-weight:bold;letter-spacing:1px}
+            .sigs{display:flex;justify-content:space-between;margin-top:15mm;gap:20mm}
+            .sig{flex:1;text-align:center}
+            .sig .line{border-top:1px solid #000;padding-top:2mm;margin-top:15mm;font-weight:bold}
+            .sig small{color:#555}
+            hr{border:none;border-top:1px dashed #999;margin:4mm 0}
+            .footer{text-align:center;font-size:9pt;color:#666;margin-top:8mm}
+            @media print{body{padding:10mm}}
+        </style></head>
+        <body>
+            <div class="slip">
+                <div class="hdr">
+                    <h3>UNIT KEMUDAHAN ASAS (UKA)</h3>
+                    <h4>Ministry of Education, Brunei Darussalam</h4>
+                    <h4>Department of Administration and Services</h4>
+                </div>
+                <div class="title">TASK ASSIGNMENT SLIP</div>
+                <div class="row"><div class="lbl">Slip Number:</div><div class="val"><strong>${escapeHtml(s.slip_number || '')}</strong></div></div>
+                <div class="row"><div class="lbl">Date Issued:</div><div class="val">${formatDateOnly(s.issue_date || s.created_at)}</div></div>
+                <div class="highlight">
+                    <div class="row"><div class="lbl">REFERENCE NO:</div><div class="val">${escapeHtml(s.complaint_number || '-')}</div></div>
+                    <div class="row"><div class="lbl">KPI NO:</div><div class="val">${escapeHtml(s.kpi_number || '-')}</div></div>
+                </div>
+                <div class="row"><div class="lbl">Location:</div><div class="val"><strong>${escapeHtml(displayLocation)}</strong>${subLine} (${s.entity_type === 'school' ? 'School' : 'Department'})</div></div>
+                ${s.entity_address ? `<div class="row"><div class="lbl">Address:</div><div class="val">${escapeHtml(s.entity_address)}</div></div>` : ''}
+                ${s.entity_contact ? `<div class="row"><div class="lbl">Contact Person:</div><div class="val">${escapeHtml(s.entity_contact)} ${s.entity_phone ? ' / ' + escapeHtml(s.entity_phone) : ''}</div></div>` : ''}
+                <div class="row"><div class="lbl">Service Type:</div><div class="val"><strong>${escapeHtml(serviceText)}</strong></div></div>
+                <div class="row"><div class="lbl">Assigned To:</div><div class="val"><strong>${escapeHtml(s.assigned_to_name || '-')}</strong>${s.assigned_to_employee_id ? ' (' + escapeHtml(s.assigned_to_employee_id) + ')' : ''}</div></div>
+                <div class="row"><div class="lbl">Issued By:</div><div class="val">${escapeHtml(s.issued_by_name || '-')}</div></div>
+                ${s.due_date ? `<div class="row"><div class="lbl">Due Date:</div><div class="val"><strong>${formatDateOnly(s.due_date)}</strong></div></div>` : ''}
+                ${s.notes ? `<hr><div><strong>Notes:</strong></div><div style="white-space:pre-wrap;margin-top:2mm">${escapeHtml(s.notes)}</div>` : ''}
+                <div class="sigs">
+                    <div class="sig">
+                        <div class="line">Technician's Signature</div>
+                        <small>${escapeHtml(s.assigned_to_name || '')}</small>
+                    </div>
+                    <div class="sig">
+                        <div class="line">Team Leader's Signature</div>
+                        <small>${escapeHtml(s.issued_by_name || '')}</small>
+                    </div>
+                </div>
+                <div class="footer">
+                    This is an official task assignment slip from Unit Kemudahan Asas, Ministry of Education.
+                    <br>Printed on: ${new Date().toLocaleString('en-GB')}
+                </div>
+            </div>
+            <script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script>
+        </body></html>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        loadMyTaskSlips();
+    });
+</script>
+{% endblock %}
