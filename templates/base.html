@@ -353,13 +353,14 @@
                             <i class="bi bi-plus-circle"></i> New
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <!-- Task Slips — visible for Team Leader / Senior Tech / Assistant Leader / Managers -->
+                    <li class="nav-item" id="taskSlipsNav">
                         <a class="nav-link" href="{{ url_for('task_slips_page') }}">
                             <i class="bi bi-clipboard-check"></i> Task Slips
                         </a>
                     </li>
-                    <!-- NEW: My Task Slips with pending count badge -->
-                    <li class="nav-item">
+                    <!-- My Task Slips — visible for everyone -->
+                    <li class="nav-item" id="myTaskSlipsNav">
                         <a class="nav-link" href="{{ url_for('my_task_slips_page') }}">
                             <i class="bi bi-clipboard2-check"></i> My Task Slips
                             <span class="badge rounded-pill bg-danger ms-1" id="myTaskSlipsBadge" style="display:none; font-size:10px; vertical-align:middle;">0</span>
@@ -747,6 +748,7 @@
         window.isTeamLeader = () => localStorage.getItem('isAuthorized') === 'true';
         window.canEditTechnicians = () => localStorage.getItem('canEditTechnicians') === 'true';
         window.isAssistantLeader = () => localStorage.getItem('isAssistantLeader') === 'true';
+        window.isSeniorTechnician = () => localStorage.getItem('userRole') === 'senior_technician';
         window.showToast = showToast;
         
         function loadStoredUser() {
@@ -759,12 +761,35 @@
         
         function checkPermissions() {
             const canEdit = window.canEditTechnicians();
-            const techniciansLink = document.getElementById('techniciansNavLink');
-            const teamLeaderNav = document.getElementById('teamLeaderNav');
             const isAuth = window.isTeamLeader();
-            
+            const isSenior = window.isSeniorTechnician();
+            const isAssistant = window.isAssistantLeader();
+
+            // ============ MANAGEMENT → TECHNICIANS ============
+            // Visible only for users with "can_edit_technicians" permission
+            const techniciansLink = document.getElementById('techniciansNavLink');
             if (techniciansLink) techniciansLink.style.display = canEdit ? 'block' : 'none';
+
+            // ============ LEADER ============
+            // Visible only for authorized Team Leaders
+            const teamLeaderNav = document.getElementById('teamLeaderNav');
             if (teamLeaderNav) teamLeaderNav.style.display = isAuth ? 'block' : 'none';
+
+            // ============ TASK SLIPS TAB ============
+            // Visible for: Team Leader, Senior Technician, Assistant Leader, or managers
+            // Hidden for: regular technicians
+            const canManageSlips = isAuth || isSenior || isAssistant || canEdit;
+            const taskSlipsNav = document.getElementById('taskSlipsNav');
+            if (taskSlipsNav) {
+                taskSlipsNav.style.display = canManageSlips ? '' : 'none';
+            }
+
+            // ============ MY TASK SLIPS TAB ============
+            // Visible for everyone
+            const myTaskSlipsNav = document.getElementById('myTaskSlipsNav');
+            if (myTaskSlipsNav) {
+                myTaskSlipsNav.style.display = '';
+            }
         }
         
         function highlightActiveNav() {
