@@ -4,3 +4,4 @@ Pillow==10.4.0
 Werkzeug==2.3.7
 gunicorn==21.2.0
 python-dotenv==1.0.0
+certifi>=2026.10.19
