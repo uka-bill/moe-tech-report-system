@@ -325,6 +325,47 @@
         .password-match { font-size: 12px; margin-top: 5px; }
         .match-success { color: #28a745; }
         .match-error { color: #dc3545; }
+
+        /* ================================================ */
+        /* MOBILE FIX: Enable horizontal scroll on all      */
+        /* table wrappers (overrides overflow: hidden)      */
+        /* ================================================ */
+        .slips-table-wrapper,
+        .budget-table-wrapper,
+        .reports-table-wrapper,
+        .ack-table-container,
+        .mapping-table-container {
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Ensure fixed-width tables don't get crushed */
+        .slips-table,
+        .budget-table,
+        .reports-table,
+        .ack-table,
+        .mapping-table {
+            min-width: 700px;
+        }
+
+        /* Catch any remaining page-level horizontal overflow on phones */
+        @media (max-width: 992px) {
+            html, body {
+                overflow-x: auto !important;
+            }
+        }
+
+        /* Reduce rounded corners on mobile so scrolled content looks clean */
+        @media (max-width: 768px) {
+            .slips-table-wrapper,
+            .budget-table-wrapper,
+            .reports-table-wrapper,
+            .ack-table-container,
+            .mapping-table-container {
+                border-radius: 8px;
+            }
+        }
     </style>
 </head>
 <body>
