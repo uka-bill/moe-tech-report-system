@@ -43,6 +43,17 @@
         .navbar-brand i {
             margin-right: 8px;
         }
+
+        /* Force the hamburger menu to be visible and styled correctly */
+        .navbar-toggler {
+            border: 1px solid rgba(255,255,255,0.5);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .navbar-toggler:focus {
+            box-shadow: none;
+            outline: none;
+        }
         
         .navbar-nav .nav-link {
             color: rgba(255,255,255,0.9) !important;
@@ -374,8 +385,9 @@
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
                 <i class="bi bi-clipboard-check"></i> UKA Technical Report System
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            <!-- FIX: Replaced invisible SVG with a clear Bootstrap Icon -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="bi bi-list text-white" style="font-size: 1.8rem;"></i>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
