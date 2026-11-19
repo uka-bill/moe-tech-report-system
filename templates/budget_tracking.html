@@ -639,16 +639,36 @@
         return div.innerHTML;
     }
 
-    // NEW: two-line entity display for departments
+    // UPDATED: robust two-line entity display for departments
     function getEntityDisplayHtml(item) {
-        const isDept = item.entity_type === 'department';
-        const unitName = item.entity_unit_name || '';
-        const deptName = item.entity_name || '';
+        if (!item) return '';
 
-        if (isDept && unitName && deptName && unitName !== deptName) {
+        // Try all possible field names your API might be sending
+        let unitName = item.entity_unit_name || item.unit_name || '';
+        let deptName = item.entity_name || item.department_name || '';
+
+        // If it's the raw department object (has name and unit_name)
+        if (item.name && item.unit_name) {
+            unitName = item.unit_name;
+            deptName = item.name;
+        }
+
+        // Handle the slash fallback (e.g. "Kementerian Pendidikan / Bilik MDF")
+        if (!deptName && unitName && unitName.includes('/')) {
+            const parts = unitName.split('/');
+            if (parts.length >= 2) {
+                deptName = parts[0].trim();
+                unitName = parts.slice(1).join('/').trim();
+            }
+        }
+
+        // If it's a department and both exist, show two lines
+        if ((item.entity_type === 'department' || item.entity_id) && unitName && deptName && unitName !== deptName) {
             return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:9px;">${escapeHtml(deptName)}</small>`;
         }
-        return escapeHtml(deptName || item.entity_type || '');
+
+        // Fallback: just show whatever is available
+        return escapeHtml(unitName || deptName || item.entity_type || '');
     }
 
     function formatDate(dateString) {
