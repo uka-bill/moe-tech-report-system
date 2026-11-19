@@ -970,16 +970,36 @@
         return '<i class="bi bi-file-text"></i>';
     }
 
-    // NEW: two-line entity display for departments
+    // UPDATED: robust two-line entity display for departments
     function getEntityDisplayHtml(report) {
-        const isDept = report.entity_type === 'department';
-        const unitName = report.entity_unit_name || '';
-        const deptName = report.entity_name || '';
+        if (!report) return '';
 
-        if (isDept && unitName && deptName && unitName !== deptName) {
+        // Try all possible field names your API might be sending
+        let unitName = report.entity_unit_name || report.unit_name || '';
+        let deptName = report.entity_name || report.department_name || '';
+
+        // If it's the raw department object (has name and unit_name)
+        if (report.name && report.unit_name) {
+            unitName = report.unit_name;
+            deptName = report.name;
+        }
+
+        // Handle the slash fallback (e.g. "Kementerian Pendidikan / Bilik MDF")
+        if (!deptName && unitName && unitName.includes('/')) {
+            const parts = unitName.split('/');
+            if (parts.length >= 2) {
+                deptName = parts[0].trim();
+                unitName = parts.slice(1).join('/').trim();
+            }
+        }
+
+        // If it's a department and both exist, show two lines
+        if ((report.entity_type === 'department' || report.entity_id) && unitName && deptName && unitName !== deptName) {
             return `<strong>${escapeHtml(unitName)}</strong><br><small class="text-muted" style="font-size:10px;">${escapeHtml(deptName)}</small>`;
         }
-        return escapeHtml(deptName || report.entity_type || '');
+
+        // Fallback: just show whatever is available
+        return escapeHtml(unitName || deptName || report.entity_type || '');
     }
     
     function goToMappingImages(entityType, entityId) {
