@@ -6,6 +6,8 @@
     <title>UKA Technical Report System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- NEW: Select2 CSS — shared by every page that uses a rich entity dropdown -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- html2pdf.js library for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -385,7 +387,6 @@
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
                 <i class="bi bi-clipboard-check"></i> UKA Technical Report System
             </a>
-            <!-- FIX: Replaced invisible SVG with a clear Bootstrap Icon -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <i class="bi bi-list text-white" style="font-size: 1.8rem;"></i>
             </button>
@@ -406,13 +407,11 @@
                             <i class="bi bi-plus-circle"></i> New
                         </a>
                     </li>
-                    <!-- Task Slips — visible for Team Leader / Senior Tech / Assistant Leader / Managers -->
                     <li class="nav-item" id="taskSlipsNav">
                         <a class="nav-link" href="{{ url_for('task_slips_page') }}">
                             <i class="bi bi-clipboard-check"></i> Task Slips
                         </a>
                     </li>
-                    <!-- My Task Slips — visible for everyone -->
                     <li class="nav-item" id="myTaskSlipsNav">
                         <a class="nav-link" href="{{ url_for('my_task_slips_page') }}">
                             <i class="bi bi-clipboard2-check"></i> My Task Slips
@@ -557,6 +556,9 @@
         </div>
     </div>
     
+    <!-- NEW: jQuery → Select2 → Bootstrap bundle (order matters) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
@@ -818,27 +820,18 @@
             const isSenior = window.isSeniorTechnician();
             const isAssistant = window.isAssistantLeader();
 
-            // ============ MANAGEMENT → TECHNICIANS ============
-            // Visible only for users with "can_edit_technicians" permission
             const techniciansLink = document.getElementById('techniciansNavLink');
             if (techniciansLink) techniciansLink.style.display = canEdit ? 'block' : 'none';
 
-            // ============ LEADER ============
-            // Visible only for authorized Team Leaders
             const teamLeaderNav = document.getElementById('teamLeaderNav');
             if (teamLeaderNav) teamLeaderNav.style.display = isAuth ? 'block' : 'none';
 
-            // ============ TASK SLIPS TAB ============
-            // Visible for: Team Leader, Senior Technician, Assistant Leader, or managers
-            // Hidden for: regular technicians
             const canManageSlips = isAuth || isSenior || isAssistant || canEdit;
             const taskSlipsNav = document.getElementById('taskSlipsNav');
             if (taskSlipsNav) {
                 taskSlipsNav.style.display = canManageSlips ? '' : 'none';
             }
 
-            // ============ MY TASK SLIPS TAB ============
-            // Visible for everyone
             const myTaskSlipsNav = document.getElementById('myTaskSlipsNav');
             if (myTaskSlipsNav) {
                 myTaskSlipsNav.style.display = '';
@@ -902,6 +895,82 @@
             const date = new Date(dateString);
             date.setHours(date.getHours() + 8);
             return date.toLocaleDateString('en-GB');
+        };
+    </script>
+
+    <!-- ============================================================
+         NEW: SHARED ENTITY DROPDOWN HELPERS (Select2)
+         Available on every page that extends base.html.
+         A page only needs to:
+           1. Put data-unit-name / data-dept-name on <option> tags
+           2. Call window.initEntitySelect2('#mySelect') after populating it
+         ============================================================ -->
+    <script>
+        window.escapeAttr = function (text) {
+            return String(text == null ? '' : text)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        };
+
+        window.formatEntityOption = function (item) {
+            if (item.loading) return item.text;
+            if (!item.element || typeof jQuery === 'undefined') return item.text;
+
+            const $opt = jQuery(item.element);
+            const unit = $opt.data('unit-name')  || '';
+            const dept = $opt.data('dept-name')  || '';
+            const name = $opt.data('plain-name') || item.text;
+
+            const wrap = document.createElement('span');
+            if (!unit || !dept || unit === dept) {
+                wrap.textContent = name;
+                return wrap;
+            }
+            const strong = document.createElement('strong');
+            strong.textContent = unit;
+            wrap.appendChild(strong);
+            wrap.appendChild(document.createTextNode(' '));
+            const small = document.createElement('small');
+            small.textContent = '— ' + dept;
+            wrap.appendChild(small);
+            return wrap;
+        };
+
+        window.formatEntitySelection = function (item) {
+            if (!item.id || typeof jQuery === 'undefined') return item.text;
+            const $opt = jQuery(item.element);
+            return $opt.data('unit-name') || $opt.data('plain-name') || item.text;
+        };
+
+        window.initEntitySelect2 = function (selectorOrEl, options) {
+            if (typeof jQuery === 'undefined' || !jQuery.fn.select2) return;
+            const $sel = jQuery(selectorOrEl || '#entityId');
+            if (!$sel.length) return;
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                try { $sel.select2('destroy'); } catch (e) { /* ignore */ }
+            }
+            $sel.select2(Object.assign({
+                width: '100%',
+                placeholder: '— Select —',
+                templateResult:    window.formatEntityOption,
+                templateSelection: window.formatEntitySelection,
+                escapeMarkup: m => m
+            }, options || {}));
+            if ($sel.prop('disabled')) {
+                $sel.prop('disabled', true);
+            }
+        };
+
+        window.destroySelect2 = function (selectorOrEl) {
+            if (typeof jQuery === 'undefined' || !jQuery.fn.select2) return;
+            const $sel = jQuery(selectorOrEl || '#entityId');
+            if (!$sel.length) return;
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                try { $sel.select2('destroy'); } catch (e) { /* ignore */ }
+            }
         };
     </script>
 </body>
