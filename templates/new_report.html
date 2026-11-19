@@ -1072,27 +1072,21 @@
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) await loadDepartments();
             
-            // 🔥 PRINT EXACTLY WHAT THE API RETURNS TO THE CONSOLE
-            if (departmentsList.length > 0) {
-                console.log("🚨 RAW DEPARTMENT DATA:", departmentsList[0]);
-            }
-
             let options = '<option value="">-- Select Unit --</option>';
 
             departmentsList.forEach(d => {
-                let rawName = d.name || d.unit_name || d.entity_unit_name || 'Unnamed';
-                let unitName = rawName;
-                let deptName = '';
+                // Based on the console dump: d.name is the parent department, d.unit_name is the specific unit.
+                let deptName = d.name || d.department_name || '';
+                let unitName = d.unit_name || d.entity_unit_name || d.name || 'Unnamed Unit';
 
-                // 1. Check explicit fields (department_name, parent_name, etc)
-                if (d.department_name) deptName = d.department_name;
-                else if (d.parent_name) deptName = d.parent_name;
-                else if (d.dept_name) deptName = d.dept_name;
-                else if (d.department) deptName = d.department;
+                // If the unit name and dept name are exactly the same, just show one
+                if (unitName === deptName) {
+                    deptName = '';
+                }
 
-                // 2. Unconditionally check for slashes (e.g. "Dept / Unit")
-                if (!deptName && rawName.includes('/')) {
-                    const parts = rawName.split('/');
+                // Handle cases where the department name is still empty but has a slash
+                if (!deptName && unitName.includes('/')) {
+                    const parts = unitName.split('/');
                     if (parts.length >= 2) {
                         deptName = parts[0].trim();
                         unitName = parts.slice(1).join('/').trim();
