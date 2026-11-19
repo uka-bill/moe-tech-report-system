@@ -680,12 +680,6 @@
         document.getElementById('editLoadingOverlay').style.display = 'flex';
     }
 
-    /* ============================================================
-       PAGE-SPECIFIC: only setEntityDropdownState is local.
-       All shared helpers (escapeAttr, formatEntityOption,
-       formatEntitySelection, initEntitySelect2, destroySelect2)
-       live in base.html.
-       ============================================================ */
     function setEntityDropdownState(disabled) {
         const el = document.getElementById('entityId');
         if (!el) return;
@@ -703,7 +697,6 @@
         return window.location.origin + (imagePath.startsWith('/') ? imagePath : '/' + imagePath);
     }
 
-    // ============ Task slip functions ============
     async function loadAvailableSlips() {
         if (isEditMode) return;
         if (!currentTechnicianId) {
@@ -1057,11 +1050,9 @@
         } catch (error) { console.error('Error loading departments:', error); return []; }
     }
 
-    /* populateEntityDropdown — uses shared helpers from base.html */
     async function populateEntityDropdown(entityType, selectedId = null) {
         const entitySelect = document.getElementById('entityId');
 
-        // Destroy any existing Select2 first
         if (typeof window.destroySelect2 === 'function') {
             window.destroySelect2('#entityId');
         }
@@ -1074,26 +1065,55 @@
             schoolsList.forEach(s => {
                 const selected = (!isNaN(selNum) && Number(s.id) === selNum) ? 'selected' : '';
                 const safeName = escapeAttr(s.name);
-                options += `<option value="${s.id}"
-                              data-plain-name="${safeName}"
-                              ${selected}>${escapeHtml(s.name)}</option>`;
+                options += `<option value="${s.id}" data-plain-name="${safeName}" ${selected}>${escapeHtml(s.name)}</option>`;
             });
             entitySelect.innerHTML = options;
             setEntityDropdownState(false);
 
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) await loadDepartments();
+            
             let options = '<option value="">-- Select Unit --</option>';
-            departmentsList.forEach(d => {
-                const unitName = d.unit_name || d.entity_unit_name || d.name || 'Unnamed Unit';
-                const deptName = d.department_name || d.parent_department ||
-                                 d.entity_name   || d.department     ||
-                                 d.parent_name   || '';
-                const selected = (!isNaN(selNum) && Number(d.id) === selNum) ? 'selected' : '';
+            let shownDebugWarning = false;
 
-                const fallback = (deptName && deptName !== unitName)
-                    ? `${unitName} — ${deptName}`
-                    : unitName;
+            departmentsList.forEach(d => {
+                let unitName = d.unit_name || d.entity_unit_name || d.name || d.unit || 'Unnamed Unit';
+                
+                // 1. Try to find the exact department name from the database
+                let deptName = d.department_name || d.parent_department || 
+                               d.parent_name || d.dept_name || d.department || 
+                               d.dept || d.category || d.unit_group ||
+                               (d.parent && d.parent.name) || '';
+
+                // 2. Brute-force search for ANY field that looks like a department
+                if (!deptName) {
+                    for (let key in d) {
+                        const lowerKey = key.toLowerCase();
+                        if ((lowerKey.includes('dept') || lowerKey.includes('parent') || lowerKey.includes('group')) 
+                            && typeof d[key] === 'string' && d[key].trim() !== '' && d[key] !== unitName) {
+                            deptName = d[key];
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Fallback: If name has a slash (e.g. "Dept / Unit")
+                if (!deptName && unitName.includes('/')) {
+                    const parts = unitName.split('/');
+                    if (parts.length >= 2) {
+                        deptName = parts[0].trim();
+                        unitName = parts.slice(1).join('/').trim();
+                    }
+                }
+
+                // 4. If we STILL can't find a department name, warn in the console
+                if (!deptName && !shownDebugWarning) {
+                    console.warn('⚠️ DEBUG: No department name found in API. Raw data for first unit:', d);
+                    shownDebugWarning = true;
+                }
+
+                const selected = (!isNaN(selNum) && Number(d.id) === selNum) ? 'selected' : '';
+                const fallback = (deptName && deptName !== unitName) ? `${unitName} — ${deptName}` : unitName;
 
                 options += `<option value="${d.id}"
                               data-unit-name="${escapeAttr(unitName)}"
@@ -1109,7 +1129,6 @@
             setEntityDropdownState(true);
         }
 
-        // (Re)initialise Select2 via base.html helper
         if (typeof window.initEntitySelect2 === 'function') {
             window.initEntitySelect2('#entityId');
         }
