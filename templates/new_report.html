@@ -77,7 +77,6 @@
         color: #856404;
         font-weight: 600;
     }
-    /* ============ TASK SLIP SELECTOR ============ */
     .slip-selector-box {
         background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
         border: 2px solid #2196f3;
@@ -266,9 +265,52 @@
         font-weight: 600;
         margin-left: 8px;
     }
+
+    /* Select2 styling — matches form controls on this page */
+    .select2-container--default .select2-selection--single {
+        height: 44px;
+        padding: 9px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        background: #fff;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 26px;
+        padding-left: 0;
+        color: #212529;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px;
+        right: 8px;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+    }
+    .select2-container--default.select2-container--disabled .select2-selection--single {
+        background: #f4f4f5;
+        cursor: not-allowed;
+    }
+    .select2-results__option strong {
+        font-weight: 600;
+        color: #212529;
+    }
+    .select2-results__option small {
+        color: #95a5a6;
+        font-weight: 400;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] strong,
+    .select2-container--default .select2-results__option--highlighted[aria-selected] small {
+        color: white;
+    }
+    .select2-container .select2-selection--single { height: 44px; }
 </style>
 
-<!-- Full screen loader shown while edit loads -->
 <div id="editLoadingOverlay" class="loading-overlay" style="display: none;">
     <div class="spinner-large"></div>
     <div><strong>Loading report for editing...</strong></div>
@@ -287,7 +329,6 @@
             <i class="bi bi-info-circle"></i> <strong>Instructions:</strong> Please fill in all required fields.
         </div>
 
-        <!-- ============ TASK SLIP SELECTOR (only shown in new report mode) ============ -->
         <div class="slip-selector-box" id="slipSelectorBox" style="display: none;">
             <div class="slip-selector-title">
                 <i class="bi bi-clipboard-check"></i> Start from a Task Slip
@@ -608,7 +649,6 @@
     let availableSlips = [];
     let selectedSlipId = null;
 
-    // NEW: read slip_id from URL (?slip_id=123) so the form can pre-select it
     let preselectedSlipId = null;
     (function parsePreselectSlip() {
         const params = new URLSearchParams(window.location.search);
@@ -618,7 +658,6 @@
         }
     })();
 
-    // ============ Parse edit mode from URL ============
     (function parseUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         const idParam = urlParams.get('id');
@@ -641,6 +680,23 @@
         document.getElementById('editLoadingOverlay').style.display = 'flex';
     }
 
+    /* ============================================================
+       PAGE-SPECIFIC: only setEntityDropdownState is local.
+       All shared helpers (escapeAttr, formatEntityOption,
+       formatEntitySelection, initEntitySelect2, destroySelect2)
+       live in base.html.
+       ============================================================ */
+    function setEntityDropdownState(disabled) {
+        const el = document.getElementById('entityId');
+        if (!el) return;
+        el.disabled = disabled;
+        if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+            try {
+                jQuery('#entityId').prop('disabled', disabled);
+            } catch (e) { /* ignore */ }
+        }
+    }
+
     function getFullImageUrl(imagePath) {
         if (!imagePath) return '';
         if (imagePath.startsWith('http')) return imagePath;
@@ -649,7 +705,7 @@
 
     // ============ Task slip functions ============
     async function loadAvailableSlips() {
-        if (isEditMode) return;  // Don't show in edit mode
+        if (isEditMode) return;
         if (!currentTechnicianId) {
             console.log('No technician id yet, skipping slip load');
             return;
@@ -667,7 +723,6 @@
                 return;
             }
 
-            // Build options
             let opts = '<option value="">-- Manual entry (no slip) --</option>';
             availableSlips.forEach(slip => {
                 const svcIcon = slip.problem_type === 'water' ? '💧' : (slip.problem_type === 'electricity' ? '⚡' : (slip.problem_type === 'telephone' ? '📞' : '📋'));
@@ -707,8 +762,6 @@
 
         selectedSlipId = slip.id;
 
-        // Fill in the auto-fillable fields
-        // 1. Service type / report type
         if (slip.problem_type === 'water' || slip.problem_type === 'electricity' || slip.problem_type === 'telephone') {
             const radio = document.querySelector(`input[name="reportType"][value="${slip.problem_type}"]`);
             if (radio) {
@@ -717,26 +770,25 @@
             }
         }
 
-        // 2. Entity type + entity
         if (slip.entity_type && slip.entity_id) {
             document.getElementById('entityType').value = slip.entity_type;
             populateEntityDropdown(slip.entity_type, slip.entity_id).then(() => {
                 document.getElementById('entityId').value = slip.entity_id;
-                document.getElementById('entityId').disabled = false;
+                if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+                    jQuery('#entityId').trigger('change');
+                }
+                setEntityDropdownState(false);
             });
         }
 
-        // 3. Reference number ← complaint number
         if (slip.complaint_number) {
             document.getElementById('referenceNumber').value = slip.complaint_number;
         }
 
-        // 4. Reference type auto = "other"
         if (slip.complaint_number || slip.kpi_number) {
             document.getElementById('referenceType').value = 'other';
         }
 
-        // 5. Complaint details ← notes from slip
         const complaintBox = document.getElementById('complaintDetails');
         if (slip.notes) {
             complaintBox.value = slip.notes;
@@ -744,7 +796,6 @@
             complaintBox.value = `As per task slip ${slip.slip_number || ''}.`;
         }
 
-        // 6. Technician notes ← KPI number for traceability
         const notesBox = document.getElementById('technicianNotes');
         const pieces = [];
         if (slip.kpi_number) pieces.push(`KPI No: ${slip.kpi_number}`);
@@ -753,7 +804,6 @@
             notesBox.value = pieces.join(' | ');
         }
 
-        // Update the loaded panel display
         document.getElementById('loadedSlipNumber').textContent = slip.slip_number || '-';
         document.getElementById('loadedSlipComplaint').textContent = slip.complaint_number || '-';
         document.getElementById('loadedSlipKpi').textContent = slip.kpi_number || '-';
@@ -762,13 +812,11 @@
         document.getElementById('loadedSlipService').textContent = svcMap[slip.problem_type] || slip.problem_type || '-';
         panel.classList.add('active');
 
-        // Scroll to top of form so they can see the filled location
         setTimeout(() => {
             document.getElementById('slipSelectorBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     }
 
-    // NEW: auto-select a slip by its ID after the dropdown has been loaded
     function tryAutoSelectSlip(slipId) {
         const sel = document.getElementById('slipSelector');
         if (!sel) return;
@@ -785,7 +833,6 @@
         }
     }
 
-    // NEW: fetch a specific slip and inject it into the dropdown when it wasn't in the available list
     async function fetchAndAddSlipToDropdown(slipId) {
         try {
             const response = await fetch(`/api/task-slips/${slipId}?t=${Date.now()}`, { cache: 'no-store' });
@@ -805,7 +852,6 @@
                 opt.textContent = `${svc} ${slip.slip_number || ''} — ${slip.entity_name || slip.entity_type}`;
                 sel.appendChild(opt);
                 sel.value = String(slip.id);
-                // Keep it in availableSlips so onSlipSelected can find it
                 availableSlips.push(slip);
                 onSlipSelected();
             }
@@ -815,13 +861,11 @@
         }
     }
 
-    // ============ Remove account entry ============
     function removeEntry(button) {
         const entry = button.closest('.account-entry');
         if (entry) entry.remove();
     }
 
-    // ============ WATER ============
     function addWaterAccountField() {
         const container = document.getElementById('waterAccountsContainer');
         const newEntry = document.createElement('div');
@@ -844,7 +888,6 @@
         accountEntry.insertBefore(meterInput, button);
     }
 
-    // ============ ELECTRICITY ============
     function addElectricityAccountField() {
         const container = document.getElementById('electricityAccountsContainer');
         const newEntry = document.createElement('div');
@@ -867,7 +910,6 @@
         accountEntry.insertBefore(meterInput, button);
     }
 
-    // ============ TELEPHONE ============
     function addTelephoneAccountField() {
         const container = document.getElementById('telephoneAccountsContainer');
         const newEntry = document.createElement('div');
@@ -890,7 +932,6 @@
         accountEntry.insertBefore(phoneInput, button);
     }
 
-    // ============ Collect account data ============
     function getAllAccountData() {
         const accountData = { water_accounts: [], electricity_accounts: [], telephone_accounts: [] };
         
@@ -1016,33 +1057,61 @@
         } catch (error) { console.error('Error loading departments:', error); return []; }
     }
 
+    /* populateEntityDropdown — uses shared helpers from base.html */
     async function populateEntityDropdown(entityType, selectedId = null) {
         const entitySelect = document.getElementById('entityId');
-        
+
+        // Destroy any existing Select2 first
+        if (typeof window.destroySelect2 === 'function') {
+            window.destroySelect2('#entityId');
+        }
+
+        const selNum = parseInt(selectedId);
+
         if (entityType === 'school') {
             if (schoolsList.length === 0) await loadSchools();
             let options = '<option value="">-- Select School --</option>';
-            const selNum = parseInt(selectedId);
             schoolsList.forEach(s => {
                 const selected = (!isNaN(selNum) && Number(s.id) === selNum) ? 'selected' : '';
-                options += `<option value="${s.id}" ${selected}>${escapeHtml(s.name)}</option>`;
+                const safeName = escapeAttr(s.name);
+                options += `<option value="${s.id}"
+                              data-plain-name="${safeName}"
+                              ${selected}>${escapeHtml(s.name)}</option>`;
             });
             entitySelect.innerHTML = options;
-            entitySelect.disabled = false;
+            setEntityDropdownState(false);
+
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) await loadDepartments();
             let options = '<option value="">-- Select Unit --</option>';
-            const selNum = parseInt(selectedId);
             departmentsList.forEach(d => {
-                const displayName = d.unit_name || d.name || 'Unnamed Unit';
+                const unitName = d.unit_name || d.entity_unit_name || d.name || 'Unnamed Unit';
+                const deptName = d.department_name || d.parent_department ||
+                                 d.entity_name   || d.department     ||
+                                 d.parent_name   || '';
                 const selected = (!isNaN(selNum) && Number(d.id) === selNum) ? 'selected' : '';
-                options += `<option value="${d.id}" ${selected}>${escapeHtml(displayName)}</option>`;
+
+                const fallback = (deptName && deptName !== unitName)
+                    ? `${unitName} — ${deptName}`
+                    : unitName;
+
+                options += `<option value="${d.id}"
+                              data-unit-name="${escapeAttr(unitName)}"
+                              data-dept-name="${escapeAttr(deptName)}"
+                              data-plain-name="${escapeAttr(unitName)}"
+                              ${selected}>${escapeHtml(fallback)}</option>`;
             });
             entitySelect.innerHTML = options;
-            entitySelect.disabled = false;
+            setEntityDropdownState(false);
+
         } else {
             entitySelect.innerHTML = '<option value="">Select Entity Type First</option>';
-            entitySelect.disabled = true;
+            setEntityDropdownState(true);
+        }
+
+        // (Re)initialise Select2 via base.html helper
+        if (typeof window.initEntitySelect2 === 'function') {
+            window.initEntitySelect2('#entityId');
         }
     }
 
@@ -1052,8 +1121,15 @@
         } else if (this.value === 'department') {
             await populateEntityDropdown('department');
         } else {
-            document.getElementById('entityId').innerHTML = '<option value="">Select Entity Type First</option>';
-            document.getElementById('entityId').disabled = true;
+            if (typeof window.destroySelect2 === 'function') {
+                window.destroySelect2('#entityId');
+            }
+            document.getElementById('entityId').innerHTML =
+                '<option value="">Select Entity Type First</option>';
+            setEntityDropdownState(true);
+            if (typeof window.initEntitySelect2 === 'function') {
+                window.initEntitySelect2('#entityId');
+            }
         }
     });
 
@@ -1154,10 +1230,18 @@
             selectedSlipId = null;
             document.getElementById('slipLoadedPanel').classList.remove('active');
             document.getElementById('slipSelector').value = '';
+
+            if (typeof window.destroySelect2 === 'function') {
+                window.destroySelect2('#entityId');
+            }
+            document.getElementById('entityId').innerHTML = '<option value="">Select Entity Type First</option>';
+            setEntityDropdownState(true);
+            if (typeof window.initEntitySelect2 === 'function') {
+                window.initEntitySelect2('#entityId');
+            }
         }
     }
 
-    // ============ BULLETPROOF EDIT LOADER ============
     async function loadReportForEdit(id) {
         console.log('>>> Loading report for edit:', id);
         const overlay = document.getElementById('editLoadingOverlay');
@@ -1203,7 +1287,11 @@
             if (report.entity_type === 'department' && departmentsList.length === 0) await loadDepartments();
             
             await populateEntityDropdown(report.entity_type, report.entity_id);
-            document.getElementById('entityId').disabled = false;
+            document.getElementById('entityId').value = report.entity_id;
+            if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+                jQuery('#entityId').trigger('change');
+            }
+            setEntityDropdownState(false);
             
             document.getElementById('problemType').value = report.problem_type || '';
             document.getElementById('complaintDetails').value = report.complaint_details || '';
@@ -1440,7 +1528,6 @@
             account_details: JSON.stringify(accountData)
         };
         
-        // Include slip_id if a slip was selected (new mode only)
         if (!isEditMode && selectedSlipId) {
             reportData.slip_id = selectedSlipId;
         }
@@ -1473,7 +1560,6 @@
         }
     });
 
-    // ============ INIT ============
     async function init() {
         console.log('>>> init() called. isEditMode:', isEditMode, 'editReportId:', editReportId);
         setReportDateTime();
@@ -1514,7 +1600,6 @@
             });
         });
         
-        // ============ Load available task slips (only in new mode) ============
         if (!isEditMode) {
             await loadAvailableSlips();
             if (preselectedSlipId) {
@@ -1532,7 +1617,6 @@
     
     init();
 
-    // Expose functions globally
     window.addWaterAccountField = addWaterAccountField;
     window.addWaterMeterField = addWaterMeterField;
     window.addElectricityAccountField = addElectricityAccountField;
