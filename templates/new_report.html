@@ -266,7 +266,6 @@
         margin-left: 8px;
     }
 
-    /* Select2 styling — matches form controls on this page */
     .select2-container--default .select2-selection--single {
         height: 44px;
         padding: 9px 12px;
@@ -1073,43 +1072,31 @@
         } else if (entityType === 'department') {
             if (departmentsList.length === 0) await loadDepartments();
             
+            // 🔥 PRINT EXACTLY WHAT THE API RETURNS TO THE CONSOLE
+            if (departmentsList.length > 0) {
+                console.log("🚨 RAW DEPARTMENT DATA:", departmentsList[0]);
+            }
+
             let options = '<option value="">-- Select Unit --</option>';
-            let shownDebugWarning = false;
 
             departmentsList.forEach(d => {
-                let unitName = d.unit_name || d.entity_unit_name || d.name || d.unit || 'Unnamed Unit';
-                
-                // 1. Try to find the exact department name from the database
-                let deptName = d.department_name || d.parent_department || 
-                               d.parent_name || d.dept_name || d.department || 
-                               d.dept || d.category || d.unit_group ||
-                               (d.parent && d.parent.name) || '';
+                let rawName = d.name || d.unit_name || d.entity_unit_name || 'Unnamed';
+                let unitName = rawName;
+                let deptName = '';
 
-                // 2. Brute-force search for ANY field that looks like a department
-                if (!deptName) {
-                    for (let key in d) {
-                        const lowerKey = key.toLowerCase();
-                        if ((lowerKey.includes('dept') || lowerKey.includes('parent') || lowerKey.includes('group')) 
-                            && typeof d[key] === 'string' && d[key].trim() !== '' && d[key] !== unitName) {
-                            deptName = d[key];
-                            break;
-                        }
-                    }
-                }
+                // 1. Check explicit fields (department_name, parent_name, etc)
+                if (d.department_name) deptName = d.department_name;
+                else if (d.parent_name) deptName = d.parent_name;
+                else if (d.dept_name) deptName = d.dept_name;
+                else if (d.department) deptName = d.department;
 
-                // 3. Fallback: If name has a slash (e.g. "Dept / Unit")
-                if (!deptName && unitName.includes('/')) {
-                    const parts = unitName.split('/');
+                // 2. Unconditionally check for slashes (e.g. "Dept / Unit")
+                if (!deptName && rawName.includes('/')) {
+                    const parts = rawName.split('/');
                     if (parts.length >= 2) {
                         deptName = parts[0].trim();
                         unitName = parts.slice(1).join('/').trim();
                     }
-                }
-
-                // 4. If we STILL can't find a department name, warn in the console
-                if (!deptName && !shownDebugWarning) {
-                    console.warn('⚠️ DEBUG: No department name found in API. Raw data for first unit:', d);
-                    shownDebugWarning = true;
                 }
 
                 const selected = (!isNaN(selNum) && Number(d.id) === selNum) ? 'selected' : '';
